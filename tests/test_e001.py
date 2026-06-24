@@ -37,6 +37,14 @@ def test_e001_quick_run_emerges():
     assert result["norm_drift"] < 1e-6
 
 
+def test_quick_result_is_json_serializable():
+    # result dicts are written to result.json -- guard against numpy scalar
+    # types (np.int64/np.bool_) sneaking in and breaking json.dump.
+    run = _load_run_module()
+    result = run.simulate({"n_imag": 120, "n_real": 1000, "sample": 50})
+    json.dumps(result)  # raises TypeError if any value is not JSON-native
+
+
 def test_committed_result_json_in_range():
     path = os.path.abspath(os.path.join(_E001_DIR, "result.json"))
     if not os.path.exists(path):

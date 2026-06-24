@@ -107,16 +107,15 @@ def simulate(params=None, seed=0, verbose=False, quick=False):
     #    is free of spurious sound.
     for _ in range(p["n_imag"]):
         psi = field.step_imag(psi, V, k2, p["g"], p["mu"], p["dtau"])
-        amp = np.abs(psi)
-        amp *= np.sqrt(norm0 / np.sum(amp ** 2))
-        psi = amp * np.exp(1j * phase0)
+        psi = field.renormalize(psi, norm0)          # density only, norm fixed
+        psi = np.abs(psi) * np.exp(1j * phase0)       # re-pin the vortex phase
 
     quantized_start = vortex.is_circulation_quantized(psi)
 
     # 3) real-time evolution -- the vortex is now free; nothing is pinned.
     e0 = measure.energy(psi, V, p["g"])
     n0 = measure.norm(psi)
-    angles, radii, charges, energies, norms = [], [], [], [], []
+    angles, radii, charges = [], [], []
     prev = None
     for step in range(p["n_real"]):
         psi = field.step_real(psi, V, k2, p["g"], p["mu"], p["dt"])
@@ -127,12 +126,17 @@ def simulate(params=None, seed=0, verbose=False, quick=False):
                 radii.append(core["radius"])
                 charges.append(core["charge"])
                 prev = core
-                energies.append(measure.energy(psi, V, p["g"]))
-                norms.append(measure.norm(psi))
 
+    if not radii:
+        # The vortex was never detected -- there is nothing to measure. Fail
+        # loudly rather than letting numpy raise an opaque empty-reduction error.
+        raise RuntimeError(
+            "no vortex tracked during real-time evolution "
+            f"(params={p}); cannot report precession measurements"
+        )
     radii = np.asarray(radii)
     cum_deg = np.degrees(measure.unwrap_cumulative(angles))
-    charge_set = sorted(set(charges))
+    charge_set = sorted(int(c) for c in set(charges))  # plain ints -> JSON-safe
     result = {
         "params": p,
         "n_samples": len(radii),
