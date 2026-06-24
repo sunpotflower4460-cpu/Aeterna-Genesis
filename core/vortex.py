@@ -105,3 +105,53 @@ def track_single_vortex(psi, V, mu, center, prev=None, bulk_factor=0.8):
     core["radius"] = float(np.hypot(dx, dy))
     core["angle"] = float(np.arctan2(dy, dx))
     return core
+
+
+def _plaquette_density(psi):
+    """Average |psi|^2 over each plaquette, shape (L-1, L-1)."""
+    rho = np.abs(psi) ** 2
+    return 0.25 * (rho[:-1, :-1] + rho[1:, :-1] + rho[:-1, 1:] + rho[1:, 1:])
+
+
+def track_two_vortices(psi, prev_positions, signs, window=8):
+    """Continuity-track two vortices, each within +-window of its last position.
+
+    For each (prev_position, target_sign) pair, search only the +-window box of
+    plaquettes around the previous position for cells whose winding has the
+    target sign, and pick the one of minimal local density (the deepest core).
+    The position is then sub-grid refined.
+
+    Searching locally per vortex -- rather than scanning the whole grid -- is
+    what keeps the two cores separated and rejects the sound-wave false cores a
+    global scan would pick up (LAW.md audit 4/7: measured, not asserted).
+
+    Args:
+        prev_positions: iterable of (x, y) for each vortex's last known position.
+        signs:          iterable of target charges (+1 / -1), same length/order.
+        window:         half-width (in grid cells) of the local search box.
+
+    Returns a list (same order) of {'x','y','charge'} dicts, or None for a
+    vortex that has no matching-sign core left in its window (left the clean
+    window / annihilated).
+    """
+    charges = np.rint(winding_field(psi)).astype(int)
+    rho_plaq = _plaquette_density(psi)
+    n = charges.shape[0]  # L - 1
+    out = []
+    for (px, py), s in zip(prev_positions, signs):
+        pi, pj = int(round(px)), int(round(py))
+        target = 1 if s > 0 else -1
+        i0, i1 = max(0, pi - window), min(n, pi + window + 1)
+        j0, j1 = max(0, pj - window), min(n, pj + window + 1)
+        sub_charge = charges[i0:i1, j0:j1]
+        cand = np.argwhere(sub_charge == target)
+        if len(cand) == 0:
+            out.append(None)
+            continue
+        # Among matching-sign cells, the true core is the deepest density hole.
+        rhos = np.array([rho_plaq[i0 + a, j0 + b] for a, b in cand])
+        a, b = cand[int(np.argmin(rhos))]
+        i, j = i0 + a, j0 + b
+        x, y = _refine_core(psi, int(i), int(j))
+        out.append({"x": x, "y": y, "charge": int(charges[i, j])})
+    return out

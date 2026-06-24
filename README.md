@@ -38,7 +38,7 @@
 | モジュール | 問い | STATUS | tier | A/B |
 |---|---|---|---|---|
 | [e001 GPE 渦の歳差](experiments/e001_gpe_vortex_precession/) | トラップ中の渦は場の方程式だけから歳差するか | **GREEN** | measured | (A) |
-| e002 GPE 二渦の相互作用 | 二渦は回り合う／対で並進するか | 計画 | — | (A) |
+| [e002 GPE 二渦の相互作用](experiments/e002_gpe_two_vortex/) | 二渦は回り合う（同符号）／対で並進する（逆符号）か | **GREEN** | measured / analogy | (A) |
 | e003 GPE 3D 渦リング | リングは伝播・リンクするか（トーラス） | 計画 | — | (A) |
 | e004 白→形 | 一様＋ノイズから対称が自分で破れるか | 計画 | — | (A) |
 | e005 因果順序→次元 | 座標なしの因果集合から次元が出るか | 計画 | — | (A) |
@@ -59,11 +59,17 @@ Aeterna-Genesis/
 │   ├── vortex.py          # 渦検出（位相巻き数＋密度極小）、循環の量子化チェック
 │   └── measure.py         # 保存量・累積回転・（後で）次元/相関/スペクトル
 ├── experiments/
-│   └── e001_gpe_vortex_precession/
-│       ├── run.py         # 監査ヘッダ＋測定を表示、result.json を保存
-│       ├── robustness.py  # 監査6：R0×Ω スイープ
-│       ├── AUDIT.md       # 7監査の結果（人間可読）
-│       ├── result.json    # 基準測定値（再現確認用）
+│   ├── e001_gpe_vortex_precession/
+│   │   ├── run.py         # 監査ヘッダ＋測定を表示、result.json を保存
+│   │   ├── robustness.py  # 監査6：R0×Ω スイープ
+│   │   ├── AUDIT.md       # 7監査の結果（人間可読）
+│   │   ├── result.json    # 基準測定値（再現確認用）
+│   │   └── robustness.json
+│   └── e002_gpe_two_vortex/
+│       ├── run.py         # 同符号＝共回転／逆符号＝並進、result.json を保存
+│       ├── robustness.py  # 監査6：間隔 d スイープ
+│       ├── AUDIT.md       # 7監査＋正直な注記（クリーン窓）
+│       ├── result.json
 │       └── robustness.json
 ├── docs/
 │   ├── 00_grand_map.md    # 全体地図（背骨と剥がす順番）
