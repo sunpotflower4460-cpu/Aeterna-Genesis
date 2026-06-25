@@ -83,7 +83,12 @@ def build_octave_hierarchy(L0):
     Each layer halves; intra-layer ring edges encode "nearness in that band";
     inter-layer edges (the fold / spiral step) connect parent i in layer l to
     children {2i, 2i+1} in layer l-1.
+
+    L0 must be a power of 2 so the halving is exact and every child has a
+    parent (no orphans); we assert it rather than silently build a ragged tree.
     """
+    if L0 < 2 or (L0 & (L0 - 1)) != 0:
+        raise ValueError("L0 must be a power of 2 (got %r)" % (L0,))
     sizes = []
     s = L0
     while s >= 1:
@@ -123,6 +128,39 @@ def bfs_distances(adj, src):
     return dist
 
 
+def build_flat_lattice(side):
+    """A periodic 2D square grid -- a KNOWN-FLAT control geometry.
+
+    Used to prove the measurement DISCRIMINATES: the same pipeline must classify
+    this as flat (power-law ball growth, diameter ~ N^(1/2)), not hyperbolic.
+    Without such a control the hierarchy's "hyperbolic" numbers could be fit
+    artifacts; with it, the classification is a real test (see AUDIT.md).
+    """
+    adj = {(i, j): set() for i in range(side) for j in range(side)}
+    for i in range(side):
+        for j in range(side):
+            a = (i, j)
+            for di, dj in ((1, 0), (0, 1)):
+                b = ((i + di) % side, (j + dj) % side)
+                adj[a].add(b)
+                adj[b].add(a)
+    return adj
+
+
+def _approx_diameter(adj):
+    """Double-sweep diameter (a lower bound; exact on trees). Good enough to
+    read the SCALING exponent, which is all we use it for."""
+    far = max(bfs_distances(adj, next(iter(adj))).items(), key=lambda kv: kv[1])[0]
+    return max(bfs_distances(adj, far).values())
+
+
+def _dimension_slope(N_list, diam_list):
+    """Slope of log(diameter) vs log(N) = 1/d_eff (transform-fair, unlike an
+    R^2 comparison across different x-transforms). Flat d-dim -> 1/d (0.5 for
+    2D); hyperbolic (diameter ~ log N) -> ~0."""
+    return float(np.polyfit(np.log(N_list), np.log(diam_list), 1)[0])
+
+
 def _fit_r2(x, y):
     """Least-squares linear fit; return R^2 (coefficient of determination)."""
     x = np.asarray(x, float)
@@ -138,47 +176,82 @@ def _fit_r2(x, y):
 
 
 # --------------------------------------------------------------------------
-# Part A -- is the octave/fold hierarchy hyperbolic?
+# Part A -- is the octave/fold hierarchy hyperbolic? (vs a flat control)
 # --------------------------------------------------------------------------
-def part_a(L0, scaling_L0):
-    adj, sizes = build_octave_hierarchy(L0)
-    N = len(adj)
-    dist = bfs_distances(adj, (0, 0))
+def _ball_growth_fits(adj, src, N):
+    """Return (r2_exponential, r2_power, n_points) for ball growth from src.
+
+    NOTE (honest, see AUDIT.md): R^2 of log(ball)-vs-r and log(ball)-vs-log(r)
+    are fits on DIFFERENT x-transforms, so the comparison is a heuristic
+    discriminator, NOT a formal model-selection test. Its validity is checked
+    by requiring it to classify the flat control correctly (power wins there).
+    """
+    dist = bfs_distances(adj, src)
     maxd = max(dist.values())
     ball = np.array([sum(1 for d in dist.values() if d <= r)
                      for r in range(maxd + 1)], dtype=float)
     rs = np.arange(maxd + 1)
     sel = (rs >= 1) & (ball < 0.6 * N)               # unsaturated regime
-    r2_exp = _fit_r2(rs[sel], np.log(ball[sel]))         # log(ball) vs r
-    r2_pow = _fit_r2(np.log(rs[sel]), np.log(ball[sel]))  # log(ball) vs log(r)
+    if int(sel.sum()) < 3:
+        raise ValueError("too few unsaturated points to fit ball growth "
+                         "(N=%d, points=%d) -- use a larger graph" % (N, sel.sum()))
+    r2_exp = _fit_r2(rs[sel], np.log(ball[sel]))
+    r2_pow = _fit_r2(np.log(rs[sel]), np.log(ball[sel]))
+    return r2_exp, r2_pow, int(sel.sum()), ball
 
-    # diameter scaling across sizes (double-sweep estimate)
+
+def part_a(L0, scaling_L0):
+    adj, sizes = build_octave_hierarchy(L0)
+    N = len(adj)
+    dist = bfs_distances(adj, (0, 0))
+    r2_exp, r2_pow, npts, ball = _ball_growth_fits(adj, (0, 0), N)
+
+    # diameter scaling across sizes -> transform-fair dimension slope (1/d_eff).
     diam_rows = []
     for L in scaling_L0:
         a, _ = build_octave_hierarchy(L)
-        far = max(bfs_distances(a, (0, 0)).items(), key=lambda kv: kv[1])[0]
-        diam = max(bfs_distances(a, far).values())
-        diam_rows.append({"L0": L, "N": len(a), "diameter": int(diam)})
+        diam_rows.append({"L0": L, "N": len(a), "diameter": int(_approx_diameter(a))})
     Ns = [r["N"] for r in diam_rows]
     Ds = [r["diameter"] for r in diam_rows]
-    r2_diam_log = _fit_r2(np.log(Ns), Ds)                # diam ~ log N (hyperbolic)
-    r2_diam_pow = _fit_r2(np.log(Ns), np.log(Ds))        # log diam ~ log N (power)
+    dim_slope = _dimension_slope(Ns, Ds)   # ~0 hyperbolic, 0.5 flat-2D
 
-    # radial distance to the same position 0 across octaves (dream point 3)
+    # CONTROL: a known-flat 2D lattice run through the SAME pipeline.
+    flat_sides = [16, 23, 32, 45, 64]
+    flat = build_flat_lattice(flat_sides[0])
+    f_exp, f_pow, _, _ = _ball_growth_fits(flat, (0, 0), len(flat))
+    flat_rows = [(len(build_flat_lattice(s)),
+                  _approx_diameter(build_flat_lattice(s))) for s in flat_sides]
+    flat_dim_slope = _dimension_slope([r[0] for r in flat_rows],
+                                      [r[1] for r in flat_rows])
+
+    # radial coordinate: distance (0,0)->(l,0) is exactly l by tree construction
+    # (a structural check that the fold direction is the radial direction; this
+    # is tautological, not an emergent discovery -- see AUDIT.md).
     radial = [int(dist[(l, 0)]) for l in range(len(sizes))]
 
     return {
-        "L0": L0, "N": N, "n_layers": len(sizes), "max_distance": int(maxd),
+        "L0": L0, "N": N, "n_layers": len(sizes),
         "ball_growth": ball.tolist(),
         "r2_ball_exponential": r2_exp, "r2_ball_power": r2_pow,
+        "ball_points_fitted": npts,
         "hyperbolic_wins": bool(r2_exp > r2_pow),
         "diameter_scaling": diam_rows,
-        "r2_diameter_vs_logN": r2_diam_log,
-        "r2_logdiameter_vs_logN": r2_diam_pow,
-        "diameter_is_logN": bool(r2_diam_log > r2_diam_pow and r2_diam_log > 0.99),
+        "dimension_slope": dim_slope,              # 1/d_eff (transform-fair)
+        # control: same method must call the flat lattice flat
+        "control_flat_r2_exp": f_exp, "control_flat_r2_pow": f_pow,
+        "control_flat_power_wins": bool(f_pow > f_exp),
+        "control_flat_dimension_slope": flat_dim_slope,   # expect ~0.5
+        "method_discriminates": bool(f_pow > f_exp and r2_exp > r2_pow
+                                     and dim_slope < 0.3 < flat_dim_slope),
+        # tautological structural checks (consequences of the binary tree)
         "radial_distance_per_octave": radial,
         "radial_increases_with_octave": bool(all(
             radial[l + 1] > radial[l] for l in range(len(radial) - 1))),
+        "tautological_note": (
+            "diameter~log(N), boundary~log(sep) and radial=layer are CONSEQUENCES "
+            "of the binary tree, not discoveries. The discriminating evidence is "
+            "the dimension slope (hierarchy~0 vs flat~0.5) and ball-growth model "
+            "validated against the flat control."),
     }
 
 
@@ -275,10 +348,11 @@ def part_d(a_result, c_result):
             // c_result["layer_sizes_radial"][-1] == 2 ** (a_result["n_layers"] - 1)),
         "note": (
             "Each fold layer halves the dof (RG step) and is one radial shell of "
-            "the measured hyperbolic geometry; boundary distance ~ log(separation) "
-            "is structurally the Ryu-Takayanagi behaviour (geodesic through the "
-            "bulk). This is a STRUCTURAL correspondence (interpretive/speculative), "
-            "not a quantitative proof, and flat real space still needs a 2-cell."),
+            "the hierarchy; boundary distance ~ log(separation) has the SAME FORM "
+            "as Ryu-Takayanagi (geodesic through the bulk), but here it is a "
+            "tautological tree-path property, so the correspondence is STRUCTURAL "
+            "ANALOGY (interpretive/speculative), not a quantitative proof -- and "
+            "flat real space still needs a 2-cell."),
         "claim_tier": "interpretive/speculative",
     }
 
@@ -305,14 +379,20 @@ def evaluate(result):
     """
     a, b, c = result["part_a"], result["part_b"], result["part_c"]
     checks = {
-        "A_ball_exponential_beats_power": a["hyperbolic_wins"],
-        "A_diameter_scales_as_logN": a["diameter_is_logN"],
-        "A_radial_grows_with_octave": a["radial_increases_with_octave"],
+        # discriminating evidence (validated against the flat control)
+        "A_method_classifies_flat_as_flat": a["control_flat_power_wins"],
+        "A_hierarchy_ball_exponential_beats_power": a["hyperbolic_wins"],
+        "A_dimension_slope_hyperbolic_vs_flat": a["method_discriminates"],
+        # tautological structural checks (consequences of the binary tree)
+        "A_radial_equals_layer(tautological)": a["radial_increases_with_octave"],
+        # spiral
         "B_symmetric_circle_closes": b["closes_when_symmetric"],
         "B_asymmetric_spiral_progresses": b["progresses_when_asymmetric"],
-        "B_one_octave_per_turn": b["one_octave_per_turn"],
+        "B_one_octave_per_turn(construction)": b["one_octave_per_turn"],
+        # bundling
         "C_bundle_connected": c["connected"],
-        "C_boundary_distance_logarithmic": c["boundary_distance_is_logarithmic"],
+        "C_boundary_distance_logarithmic(tautological)":
+            c["boundary_distance_is_logarithmic"],
     }
     return all(checks.values()), checks
 
@@ -324,15 +404,21 @@ def _print_report(result):
     print("------------------------------ MEASUREMENTS ------------------------------")
     print("[Part A] octave/fold hierarchy geometry  (L0=%d, N=%d, layers=%d)"
           % (a["L0"], a["N"], a["n_layers"]))
-    print("  ball growth: R^2 exponential=%.4f  vs  power=%.4f  -> hyperbolic wins: %s"
+    print("  DISCRIMINATING evidence (validated by a known-flat control):")
+    print("    ball growth: hierarchy R^2 exp=%.4f vs pow=%.4f (exp wins: %s)"
           % (a["r2_ball_exponential"], a["r2_ball_power"], a["hyperbolic_wins"]))
-    print("  diameter vs log(N): R^2=%.4f  (log diam vs log N: R^2=%.4f) -> log(N): %s"
-          % (a["r2_diameter_vs_logN"], a["r2_logdiameter_vs_logN"],
-             a["diameter_is_logN"]))
-    print("    " + "  ".join("L0=%d:diam=%d" % (r["L0"], r["diameter"])
-                             for r in a["diameter_scaling"]))
-    print("  radial distance to (layer l, pos 0): %s -> grows with octave: %s"
-          % (a["radial_distance_per_octave"], a["radial_increases_with_octave"]))
+    print("                flat control R^2 exp=%.4f vs pow=%.4f (pow wins: %s)"
+          % (a["control_flat_r2_exp"], a["control_flat_r2_pow"],
+             a["control_flat_power_wins"]))
+    print("    dimension slope 1/d_eff: hierarchy=%.3f  vs  flat=%.3f"
+          " (~0 hyperbolic, ~0.5 flat-2D)"
+          % (a["dimension_slope"], a["control_flat_dimension_slope"]))
+    print("    -> method discriminates geometry: %s" % a["method_discriminates"])
+    print("    diameters: " + "  ".join("L0=%d:%d" % (r["L0"], r["diameter"])
+                                        for r in a["diameter_scaling"]))
+    print("  TAUTOLOGICAL (binary-tree consequences, not discoveries):")
+    print("    radial distance to (layer l, pos 0) = %s (= layer index)"
+          % a["radial_distance_per_octave"])
     print("[Part B] spiral = repetition + asymmetry  (N=%d, eps=%.3f)"
           % (b["N"], b["eps"]))
     print("  symmetric (eps=0): closure displacement=%.2e -> circle closes: %s"
@@ -348,7 +434,9 @@ def _print_report(result):
           % (c["connected"], c["layer_sizes_radial"]))
     print("  boundary dist vs separation: %s for j=%s"
           % (c["boundary_distance"], c["boundary_separations"]))
-    print("    R^2 vs log(sep)=%.4f  vs  linear(sep)=%.4f -> logarithmic (RT-like): %s"
+    print("    R^2 vs log(sep)=%.4f vs linear=%.4f -> logarithmic: %s"
+          " (tautological tree path: up to ancestor + back ~ 2 log2(sep);"
+          " RT-like only by ANALOGY)"
           % (c["r2_boundary_vs_log_separation"],
              c["r2_boundary_vs_linear_separation"],
              c["boundary_distance_is_logarithmic"]))

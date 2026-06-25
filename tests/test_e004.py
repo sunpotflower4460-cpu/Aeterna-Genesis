@@ -21,13 +21,25 @@ def _load():
     return mod
 
 
-def test_part_a_hierarchy_is_hyperbolic():
+def test_part_a_hierarchy_is_hyperbolic_and_method_discriminates():
     run = _load()
     a = run.part_a(256, [128, 256, 512])
+    # the hierarchy classifies as hyperbolic ...
     assert a["r2_ball_exponential"] > a["r2_ball_power"]      # exp beats power
-    assert a["diameter_is_logN"]                              # diam ~ log N
-    assert a["r2_diameter_vs_logN"] > 0.99
-    assert a["radial_increases_with_octave"]
+    assert a["dimension_slope"] < 0.3                         # 1/d_eff ~ 0
+    # ... AND the SAME method classifies a known-flat lattice as flat,
+    # so the classification is a real discriminator, not a fit artifact.
+    assert a["control_flat_power_wins"]                       # flat -> power
+    assert a["control_flat_dimension_slope"] > 0.4            # flat -> 1/d ~ 0.5
+    assert a["method_discriminates"]
+    assert a["radial_increases_with_octave"]                  # (tautological)
+
+
+def test_power_of_two_required():
+    run = _load()
+    import pytest
+    with pytest.raises(ValueError):
+        run.build_octave_hierarchy(100)                       # not a power of 2
 
 
 def test_part_b_spiral_closes_then_progresses():
