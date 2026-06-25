@@ -1,0 +1,203 @@
+{
+  "result": {
+    "params": {
+      "L": 40,
+      "box": 6.0,
+      "scale": 1.4,
+      "c2": 1.0,
+      "c4_list": [
+        0.0,
+        10.0,
+        25.0
+      ],
+      "n_steps": 2000,
+      "n_check": 5
+    },
+    "runs": [
+      {
+        "c4": 0.0,
+        "dt": 0.0003,
+        "Q_H_initial": 0.991,
+        "Q_H_final": 0.063,
+        "size_initial": 2.569,
+        "size_final": 1.864,
+        "size_ratio": 0.726,
+        "E_initial": 936.93,
+        "E_final": 262.06,
+        "energy_monotone_decrease": true,
+        "collapsed": true,
+        "trace": [
+          {
+            "step": 400,
+            "Q_H": 0.995,
+            "size": 1.751,
+            "E": 512.78
+          },
+          {
+            "step": 800,
+            "Q_H": 0.718,
+            "size": 1.71,
+            "E": 409.83
+          },
+          {
+            "step": 1200,
+            "Q_H": 0.223,
+            "size": 1.907,
+            "E": 343.23
+          },
+          {
+            "step": 1600,
+            "Q_H": 0.108,
+            "size": 1.912,
+            "E": 297.45
+          },
+          {
+            "step": 2000,
+            "Q_H": 0.063,
+            "size": 1.864,
+            "E": 262.06
+          }
+        ]
+      },
+      {
+        "c4": 10.0,
+        "dt": 9.999999999999999e-05,
+        "Q_H_initial": 0.991,
+        "Q_H_final": 0.118,
+        "size_initial": 2.569,
+        "size_final": 4.302,
+        "size_ratio": 1.675,
+        "E_initial": 2827.42,
+        "E_final": 484.63,
+        "energy_monotone_decrease": true,
+        "collapsed": true,
+        "trace": [
+          {
+            "step": 400,
+            "Q_H": 0.223,
+            "size": 3.693,
+            "E": 929.15
+          },
+          {
+            "step": 800,
+            "Q_H": 0.188,
+            "size": 4.082,
+            "E": 713.18
+          },
+          {
+            "step": 1200,
+            "Q_H": 0.169,
+            "size": 4.223,
+            "E": 604.62
+          },
+          {
+            "step": 1600,
+            "Q_H": 0.15,
+            "size": 4.273,
+            "E": 535.64
+          },
+          {
+            "step": 2000,
+            "Q_H": 0.118,
+            "size": 4.302,
+            "E": 484.63
+          }
+        ]
+      },
+      {
+        "c4": 25.0,
+        "dt": 4.9999999999999996e-05,
+        "Q_H_initial": 0.991,
+        "Q_H_final": 0.108,
+        "size_initial": 2.569,
+        "size_final": 4.514,
+        "size_ratio": 1.757,
+        "E_initial": 5663.14,
+        "E_final": 700.02,
+        "energy_monotone_decrease": true,
+        "collapsed": true,
+        "trace": [
+          {
+            "step": 400,
+            "Q_H": 0.227,
+            "size": 3.768,
+            "E": 1297.49
+          },
+          {
+            "step": 800,
+            "Q_H": 0.192,
+            "size": 4.125,
+            "E": 1010.41
+          },
+          {
+            "step": 1200,
+            "Q_H": 0.158,
+            "size": 4.312,
+            "E": 865.76
+          },
+          {
+            "step": 1600,
+            "Q_H": 0.133,
+            "size": 4.419,
+            "E": 771.41
+          },
+          {
+            "step": 2000,
+            "Q_H": 0.108,
+            "size": 4.514,
+            "E": 700.02
+          }
+        ]
+      }
+    ],
+    "bare_collapses": true,
+    "third_resists_collapse": false,
+    "final_QH_increases_with_c4": false,
+    "all_energy_monotone": true,
+    "full_self_stabilisation": false
+  },
+  "atlas": [
+    {
+      "experiment": "e012 hopfion flow",
+      "tier": "measured",
+      "put_in": "Q_H=1 hopfion + Faddeev-Skyrme gradient flow (|n|=1 projection); no target size",
+      "emerged": [
+        "bare (c4=0) UNWINDS: Q_H 0.99 -> 0.06 (dynamic Derrick collapse, e009 confirmed)",
+        "the discrete gradient is correct (energy decreases monotonically every run)"
+      ],
+      "surprises": [
+        "the bare soliton's collapse emerges from the flow, not put in"
+      ],
+      "persistence": "c4=0 collapses (robust); c4>0 partial resistance is fragile; full Q_H~1 persistence = frontier",
+      "measured_numbers": {
+        "runs": [
+          {
+            "c4": 0.0,
+            "Q_H_final": 0.063,
+            "size_ratio": 0.726
+          },
+          {
+            "c4": 10.0,
+            "Q_H_final": 0.118,
+            "size_ratio": 1.675
+          },
+          {
+            "c4": 25.0,
+            "Q_H_final": 0.108,
+            "size_ratio": 1.757
+          }
+        ],
+        "third_partial_resistance_observed": false,
+        "full_self_stabilisation": false
+      },
+      "not_scripted_check": "Q_H from B=curl A; energy monotone-decrease verifies the gradient; no size imposed",
+      "claim_tier": "measured (bare collapse, energy-monotone) ; frontier-observation (robust resistance & full self-stabilisation) ; analogy (particle)",
+      "floors": [
+        "dynamic 'third resists' is real at fine resolution but FRAGILE (depends on L/dt/steps; c4>0 can go unstable)",
+        "quartic term is stiff -> tiny explicit dt; lattice cutoff competes with L*",
+        "full persistent Q_H~1 needs finer grid / implicit stepping (scale candidate); static Derrick is the solid finite-L* evidence",
+        "fixed lattice; 'particle' is analogy, not an electron"
+      ]
+    }
+  ]
+}
