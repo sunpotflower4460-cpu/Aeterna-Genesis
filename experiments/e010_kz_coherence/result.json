@@ -1,0 +1,105 @@
+{
+  "result": {
+    "params": {
+      "L": 192,
+      "g": 1.0,
+      "mu_i": -0.2,
+      "mu_f": 1.0,
+      "dt": 0.05,
+      "gamma": 1.0,
+      "noise": 0.05,
+      "hold": 150,
+      "tauQ_list": [
+        50,
+        100,
+        200,
+        400,
+        800
+      ],
+      "seeds": [
+        1,
+        2,
+        3
+      ],
+      "frac": 0.1
+    },
+    "rows": [
+      {
+        "tauQ": 50,
+        "N": 159.3,
+        "spacing": 15.211,
+        "xi": 5.734,
+        "spacing_over_xi": 2.653,
+        "rho_median": 0.939
+      },
+      {
+        "tauQ": 100,
+        "N": 121.3,
+        "spacing": 17.431,
+        "xi": 6.437,
+        "spacing_over_xi": 2.708,
+        "rho_median": 0.955
+      },
+      {
+        "tauQ": 200,
+        "N": 70.7,
+        "spacing": 22.84,
+        "xi": 7.742,
+        "spacing_over_xi": 2.95,
+        "rho_median": 0.97
+      },
+      {
+        "tauQ": 400,
+        "N": 52.3,
+        "spacing": 26.541,
+        "xi": 9.517,
+        "spacing_over_xi": 2.789,
+        "rho_median": 0.982
+      },
+      {
+        "tauQ": 800,
+        "N": 33.7,
+        "spacing": 33.09,
+        "xi": 12.523,
+        "spacing_over_xi": 2.642,
+        "rho_median": 0.99
+      }
+    ],
+    "spacing_over_xi_mean": 2.748,
+    "spacing_over_xi_cv": 0.0413,
+    "xi_exponent_sigma": 0.282,
+    "defect_exponent_b": 0.57,
+    "two_sigma": 0.564,
+    "internal_consistency_rel": 0.01,
+    "rho_median_min": 0.939
+  },
+  "atlas": [
+    {
+      "experiment": "e010 coherence length",
+      "tier": "measured",
+      "put_in": "damped GPE + white noise + mu quench (tau_Q steps); no length/vortex named",
+      "emerged": [
+        "defect spacing is a CONSTANT multiple of the coherence length xi",
+        "xi ~ tau_Q^0.282 and N ~ tau_Q^-0.570 (b = 2 sigma)"
+      ],
+      "surprises": [
+        "spacing/xi constant to CV=0.041 over a 16x range of tau_Q"
+      ],
+      "persistence": "frozen post-quench; closed with full condensation (rho_median>=0.94)",
+      "measured_numbers": {
+        "spacing_over_xi": 2.748,
+        "cv": 0.0413,
+        "sigma": 0.282,
+        "b": 0.57,
+        "two_sigma": 0.564
+      },
+      "not_scripted_check": "xi from g1 1/e, N from winding+density gate; the law never says 'coherence length'",
+      "claim_tier": "measured (spacing \u221d xi, 2 sigma = b) ; interpretive (KZ mechanism)",
+      "floors": [
+        "absolute b is protocol dependent (gamma/threshold/hold)",
+        "spacing/xi value depends on the xi convention (1/e of g1)",
+        "fixed lattice = space is given"
+      ]
+    }
+  ]
+}
