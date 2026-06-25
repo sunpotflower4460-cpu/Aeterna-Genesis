@@ -11,7 +11,9 @@ We imprint a +/- pair, track it by continuity (track_two_vortices, a TIGHT
 window so we follow THIS pair and not thermally nucleated background vortices --
 designer's trap c), and record the lifetime = steps until the pair annihilates
 (separation -> 0) or its cores are lost. At T=0 the pair survives the window
-(bound); raising T shortens the lifetime monotonically = thermal dissociation.
+(the DAMPED reference -- damping-driven annihilation is slower than the cap; the
+truly bound pair is the conservative Stage-1 one); raising T shortens the
+lifetime monotonically = thermal dissociation.
 
 MEASURED: lifetime decreases with T (T up -> lifetime down). The Arrhenius form
 tau ~ exp(dE/T) is reported as a fit but kept interpretive -- low-T runs are
@@ -134,7 +136,7 @@ def _atlas(result):
                     "lifetime drop %.0f%% from T=0 to T=%.2f"
                     % (100 * result["lifetime_drop_frac"], result["params"]["T_list"][-1])],
         "surprises": ["a thermal bath alone converts a stable bound pair into a decaying one"],
-        "persistence": "T=0 bound (survives the window); finite T -> finite lifetime",
+        "persistence": "T=0 survives the window (damped reference); finite T -> finite lifetime",
         "measured_numbers": {"rows": result["rows"],
                              "lifetime_vs_T_slope": result["lifetime_vs_T_slope"],
                              "arrhenius_dE": result["arrhenius_dE"]},

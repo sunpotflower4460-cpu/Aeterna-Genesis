@@ -15,27 +15,31 @@ What we MEASURE (Q_H tracked, the topology that cannot be faked):
   * c4 = 0 (bare): the hopfion UNWINDS -- Q_H -> 0 and the Skyrme-density size
     shrinks. This is the DYNAMIC confirmation of e009's shrinking bare-GPE
     hopfion: pure gradient energy has no stable size on a lattice (Derrick).
-  * c4 > 0 ("the third"): collapse is RESISTED -- the larger c4, the more of Q_H
-    survives and the higher the settled energy/size. The higher-derivative term
-    pushes back against Derrick collapse, exactly as the static landscape says.
+  * c4 > 0 ("the third"): collapse is PARTIALLY RESISTED / DELAYED at fine
+    resolution -- more of Q_H can survive for larger c4. BUT this effect is
+    FRAGILE: at coarser resolution / with the explicit time step it forces, the
+    c4>0 runs can collapse just as far, or go numerically unstable (Q_H even
+    overshoots sign). So we report it as an OBSERVATION, not a robust GREEN.
 
 Floors (honest, not hidden): FULL dynamic self-stabilisation to a persistent
-Q_H~=1 hopfion is NOT cleanly reached here -- the quartic term is stiff (an
-effective 4th-order operator), forcing a tiny explicit time step, while the
-lattice cutoff competes with L*. So at accessible resolution the flow shows
-"collapse (c4=0) vs monotonically increasing RESISTANCE (c4>0)", and full
-stabilisation is a frontier-observation pending finer grids / implicit (Fourier)
-treatment of the gradient term (a scale candidate). The STATIC Derrick (Stage 1)
-already proves the finite-L* minimum exists; this stage shows the dynamics move
-toward it and that the third resists collapse. "Particle" is analogy.
+Q_H~=1 hopfion is NOT reached here, and even the partial resistance is
+resolution-sensitive -- the quartic term is stiff (an effective 4th-order
+operator), forcing a tiny explicit time step, while the lattice cutoff competes
+with L*. The ROBUST, resolution-independent results are: the gradient is correct
+(energy decreases monotonically) and the bare hopfion COLLAPSES (Q_H -> 0). Full
+stabilisation (and robust resistance) is a frontier-observation pending finer
+grids / implicit (Fourier) treatment of the gradient term (a scale candidate).
+The solid stabilisation evidence is the STATIC Derrick finite-L* minimum
+(Stage 1, hopfion_static); this stage confirms the bare collapse dynamically.
+"Particle" is analogy.
 
 MODULE:   e012_hopf_stabilization (Stage 2: dynamic gradient flow)
 QUESTION: Does the Faddeev-Skyrme flow collapse the bare hopfion and does the 'third' resist it?
 PUT IN:   Q_H=1 hopfion + gradient flow of E=c2*E2+c4*E4, |n|=1 projection. No target size is put in.
-EMERGED:  (measured) c4=0 unwinds (Q_H->0); c4>0 resists (final Q_H & energy rise monotonically with c4).
-CLAIM TIER: measured(collapse vs resistance, energy-monotone) ; frontier-observation(full self-stabilisation) ; analogy(particle).
+EMERGED:  (measured) c4=0 unwinds (Q_H->0), energy monotone; (observed, fragile) c4>0 can partially delay collapse.
+CLAIM TIER: measured(bare collapse, energy-monotone) ; frontier-observation(robust resistance & full self-stabilisation) ; analogy(particle).
 KNOWN MATCH: Derrick 1964; Faddeev-Niemi hopfion; e009 (bare-GPE hopfion shrinks).
-STATUS:   GREEN on collapse+resistance (measured); full stabilisation = frontier (resolution/dt floor).
+STATUS:   GREEN on energy-monotone + bare collapse (robust); resistance fragile, full stabilisation = frontier.
 A_OR_B:   (A) faithful. Hand input = S^2 field + Faddeev-Skyrme energy + gradient flow. Lattice = space, given.
 """
 
@@ -52,8 +56,8 @@ if _REPO_ROOT not in sys.path:
 
 from core import hopf  # noqa: E402
 
-DEFAULT = {"L": 48, "box": 6.0, "scale": 1.4, "c2": 1.0,
-           "c4_list": [0.0, 10.0, 30.0], "n_steps": 2500, "n_check": 5}
+DEFAULT = {"L": 40, "box": 6.0, "scale": 1.4, "c2": 1.0,
+           "c4_list": [0.0, 10.0, 25.0], "n_steps": 2000, "n_check": 5}
 QUICK = {"L": 36, "box": 5.5, "scale": 1.3, "c4_list": [0.0, 8.0, 12.0],
          "n_steps": 1500, "n_check": 4}
 
@@ -112,11 +116,17 @@ def simulate(quick=False):
 
 
 def evaluate(result, quick=False):
+    # GREEN gates ONLY on the resolution-ROBUST facts: the discrete gradient is
+    # correct (energy decreases monotonically) and the bare (c4=0) hopfion
+    # dynamically COLLAPSES (Q_H -> 0), the dynamic confirmation of e009. The
+    # dynamic "third resists" effect is REAL at fine resolution but FRAGILE
+    # (sign/size of the partial resistance depends on L/dt/steps, and c4>0 runs
+    # can even go numerically unstable), so it is reported as an observation, NOT
+    # a pass gate -- gating on it would be tuning-to-pass. The solid stabilisation
+    # evidence is the STATIC Derrick finite-L* minimum (hopfion_static).
     checks = {
         "energy_monotone_decrease(sanity)": result["all_energy_monotone"],
         "bare_collapses(Q_H->0)": result["bare_collapses"],
-        "third_resists_collapse": result["third_resists_collapse"],
-        "resistance_grows_with_c4": result["final_QH_increases_with_c4"],
     }
     return all(checks.values()), checks
 
@@ -127,20 +137,20 @@ def _atlas(result):
     return [{
         "experiment": "e012 hopfion flow", "tier": "measured",
         "put_in": "Q_H=1 hopfion + Faddeev-Skyrme gradient flow (|n|=1 projection); no target size",
-        "emerged": ["bare (c4=0) UNWINDS: Q_H %.2f -> %.2f (dynamic Derrick collapse)"
+        "emerged": ["bare (c4=0) UNWINDS: Q_H %.2f -> %.2f (dynamic Derrick collapse, e009 confirmed)"
                     % (bare.get("Q_H_initial", 1), bare.get("Q_H_final", 0)),
-                    "the 'third' (c4>0) RESISTS: final Q_H rises to %.2f at c4=%.0f"
-                    % (top.get("Q_H_final", 0), top.get("c4", 0))],
-        "surprises": ["a single quartic term turns a collapsing soliton into a resisting one;"
-                      " collapse and resistance both emerge from the flow, not put in"],
-        "persistence": "c4=0 collapses; c4>0 resists (full Q_H~1 persistence = frontier here)",
+                    "the discrete gradient is correct (energy decreases monotonically every run)"],
+        "surprises": ["the bare soliton's collapse emerges from the flow, not put in"],
+        "persistence": "c4=0 collapses (robust); c4>0 partial resistance is fragile; full Q_H~1 persistence = frontier",
         "measured_numbers": {"runs": [{"c4": r["c4"], "Q_H_final": r["Q_H_final"],
                                        "size_ratio": r["size_ratio"]} for r in result["runs"]],
+                             "third_partial_resistance_observed": result["third_resists_collapse"],
                              "full_self_stabilisation": result["full_self_stabilisation"]},
         "not_scripted_check": "Q_H from B=curl A; energy monotone-decrease verifies the gradient; no size imposed",
-        "claim_tier": "measured (collapse vs resistance) ; frontier-observation (full self-stabilisation) ; analogy (particle)",
-        "floors": ["quartic term is stiff -> tiny explicit dt; lattice cutoff competes with L*",
-                   "full persistent Q_H~1 needs finer grid / implicit stepping (scale candidate)",
+        "claim_tier": "measured (bare collapse, energy-monotone) ; frontier-observation (robust resistance & full self-stabilisation) ; analogy (particle)",
+        "floors": ["dynamic 'third resists' is real at fine resolution but FRAGILE (depends on L/dt/steps; c4>0 can go unstable)",
+                   "quartic term is stiff -> tiny explicit dt; lattice cutoff competes with L*",
+                   "full persistent Q_H~1 needs finer grid / implicit stepping (scale candidate); static Derrick is the solid finite-L* evidence",
                    "fixed lattice; 'particle' is analogy, not an electron"],
     }]
 
@@ -157,13 +167,13 @@ def main(argv=None):
         print("  c4=%5.1f: Q_H %.2f -> %.2f  size x%.2f  E %.0f->%.0f  [%s]  mono=%s"
               % (run["c4"], run["Q_H_initial"], run["Q_H_final"], run["size_ratio"],
                  run["E_initial"], run["E_final"], tag, run["energy_monotone_decrease"]))
-    print("  bare collapses=%s ; third resists=%s ; resistance grows with c4=%s ; full stabilisation=%s"
+    print("  bare collapses=%s ; third partially resists/delays=%s ; resistance grows with c4=%s ; full stabilisation=%s"
           % (r["bare_collapses"], r["third_resists_collapse"],
              r["final_QH_increases_with_c4"], r["full_self_stabilisation"]))
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))
-    print("STATUS: %s (collapse + resistance measured; full self-stabilisation = frontier)"
+    print("STATUS: %s (energy-monotone + bare collapse measured; resistance fragile, full self-stabilisation = frontier)"
           % ("GREEN" if passed else "RED"))
     if not args.no_write and not args.quick:
         os.makedirs(os.path.join(os.path.dirname(__file__), "results"), exist_ok=True)

@@ -112,7 +112,7 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 1 | KZ 欠陥間隔は凍結コヒーレンス長 ξ の**一定倍**（間隔∝ξ＝KZ 機構） | **measured** | `result.json`：間隔/ξ=2.75、CV=0.041（16倍の τ_Q 範囲で一定） |
 | 2 | ξ∝τ_Q^σ かつ N∝τ_Q^{−2σ}（**内部整合 b=2σ**） | **measured** | σ=0.282、b=0.570、2σ=0.564（相対差 1%） |
 | 3 | 数えた芯は実在の凝縮体中の渦（γ未凝縮の罠を回避） | **measured** | ρ_median 0.94–0.99（全凝縮で締める） |
-| 4 | z 順序 b(z=1) > b(z=2)＝KZ b=(D−d)ν/(1+νz) と同じ向き（小 z→大 b） | **measured(順序)/interpretive(KZ)** | 整合プロトコルで NLKG(z=1) b≈0.5 > GPE(z=2) b≈0.24（`robustness.json`） |
+| 4 | z 順序 b(z=1) > b(z=2)＝KZ b=(D−d)ν/(1+νz) と同じ向き（小 z→大 b） | **measured(順序)/interpretive(KZ)** | 軽い減衰の自然 z プロトコル（γ/η は別演算子＝「整合」でない）で NLKG(z=1) b≈0.5 > GPE(z=2) b≈0.24（`robustness.json`） |
 | 5 | 絶対 b は protocol 依存／間隔/ξ 値は ξ 定義依存／z 対比は減衰に敏感（床） | **（床の明示）** | AUDIT.md 床1–4 |
 
 ## e011 — 欠陥の動的化学（±束縛 ＋ 有限温度の解離）  (STATUS: GREEN)
@@ -131,7 +131,7 @@ tier: `measured | observed | interpretive | analogy | frontier`
 |---|---|---|---|
 | 1 | Q_H=1 ホップ粒子の Hopf 不変量は整数（滑らかな構成から ≈1） | **measured** | `results/hopfion_static.json`：Q_H=1.00（Whitehead (1/16π²)∫A·B、box/L で安定） |
 | 2 | Derrick 地形：素(c4=0)は崩壊、第三(c4>0)で有限 L*＝√(c4·E4/E2)、L*∝√c4 | **measured** | L*=0.565/1.130/1.696（c4=1/4/9＝1:2:3） |
-| 3 | 動的：素(c4=0)はホップ粒子が崩壊（Q_H→0、e009 の縮みの動的確認） | **measured** | `results/hopfion_flow.json`：Q_H 0.99→~0、エネルギー単調減 |
-| 4 | 動的：第三(c4>0)は崩壊に抵抗（最終 Q_H・整定エネルギーが c4 で単調増） | **measured** | 最終 Q_H が c4 とともに増加（単調） |
+| 3 | 動的：素(c4=0)はホップ粒子が崩壊（Q_H→0、e009 の縮みの動的確認）。エネルギー単調減で勾配検算 | **measured** | `results/hopfion_flow.json`：Q_H 0.99→~0、ΔE/予測≈1.0 |
+| 4 | 動的：第三(c4>0)の崩壊抵抗は脆い（細格子では最終 Q_H↑だが粗格子/陽的 dt では崩壊・数値不安定）。GREEN ゲートにしない | **frontier-observation** | 解像度依存（L=36 で抵抗、L≥44 で崩壊/負 Q_H）。安定化の確証は静的 Derrick の有限 L* |
 | 5 | 完全な自己安定化（Q_H≈1 を保つ持続）は本解像度で未達 | **frontier-observation** | 四次項の剛性で陽的 dt 極小・格子カットオフが L* と競合（細格子/陰的処理が要） |
 | 6 | 絶対 E2,E4 は解像度(dx)依存／「粒子」は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |
