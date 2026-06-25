@@ -1,0 +1,91 @@
+{
+  "result": {
+    "tierA_persistent_current": {
+      "n=1": {
+        "winding_end": 1.0,
+        "persists": true,
+        "energy_drift": 2.715283761596118e-13
+      },
+      "n=2": {
+        "winding_end": 2.0,
+        "persists": true,
+        "energy_drift": 4.286172176252124e-13
+      },
+      "n=3": {
+        "winding_end": 3.0,
+        "persists": true,
+        "energy_drift": 4.0947861367598133e-13
+      },
+      "noise_n=2": {
+        "winding_end": 2.0,
+        "protected": true
+      }
+    },
+    "tierC_hopf_rings": {
+      "core_volume_t": [
+        0,
+        2368,
+        1936,
+        1669,
+        1243,
+        918,
+        931
+      ],
+      "shrinks": false,
+      "survives_to_end": true
+    }
+  },
+  "atlas": [
+    {
+      "experiment": "X1",
+      "tier": "A",
+      "put_in": "GPE on 3-torus + phase winding n around z (quantized circulation)",
+      "emerged": [
+        "persistent quantized current",
+        "topological protection vs noise"
+      ],
+      "surprises": [],
+      "persistence": "persists for full run; noise does not cause phase slip",
+      "measured_numbers": {
+        "winding_n1_end": 1.0,
+        "winding_n2_end": 2.0,
+        "noise_protected": true,
+        "energy_drift_n2": 4.286172176252124e-13
+      },
+      "not_scripted_check": "winding is MEASURED from the phase; the law never says 'persist'",
+      "claim_tier": "measured (persistence/quantization) ; analogy (electron-like)",
+      "floors": [
+        "fixed lattice",
+        "electron-like is analogy, not an electron"
+      ]
+    },
+    {
+      "experiment": "X1",
+      "tier": "C",
+      "put_in": "GPE + two interlocking imprinted vortex rings (Hopf-like)",
+      "emerged": [
+        "linked-ring core"
+      ],
+      "surprises": [
+        "core volume trajectory [0, 2368, 1936, 1669, 1243, 918, 931]"
+      ],
+      "persistence": "shrinks=False, survives_to_end=True",
+      "measured_numbers": {
+        "core_volume_t": [
+          0,
+          2368,
+          1936,
+          1669,
+          1243,
+          918,
+          931
+        ]
+      },
+      "not_scripted_check": "size is measured from density depletion; no target imposed",
+      "claim_tier": "measured (size/time) ; frontier-observation (stability of a Hopfion in bare GPE)",
+      "floors": [
+        "bare GPE lacks a stabiliser -> a shrink is the expected, honest result"
+      ]
+    }
+  ]
+}
