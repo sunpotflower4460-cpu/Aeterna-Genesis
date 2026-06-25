@@ -106,6 +106,9 @@ def kz_scaling(p, seeds, tauQ_list):
     # power law does not cover it. Fit the slow-quench power-law regime (upper
     # half of tau_Q) and separately flag the saturation as an emergent feature.
     n = len(taus)
+    if n < 3:
+        raise ValueError("kz_scaling needs >=3 tau_Q values for a meaningful "
+                         "slow-regime power-law fit (got %d)" % n)
     slow = np.arange(n) >= max(1, n // 2 - 1)        # drop the saturated tail
     b_slow, r2_slow = _fit(slow)
     b_all, r2_all = _fit(np.ones(n, bool))
@@ -164,6 +167,8 @@ def echo(p, tstar=600, seed=1):
     psi = np.conj(psi)
     num = np.abs(np.vdot(psi0, psi)) ** 2
     den = np.vdot(psi0, psi0).real * np.vdot(psi, psi).real
+    if den <= 0.0:                          # zero field => fidelity undefined
+        return float("nan")
     return float(num / den)
 
 
@@ -183,6 +188,7 @@ def simulate(quick=False):
         "matter_kz": {"rows": rows, "kz_exponent_b": b, "kz_loglog_r2": r2,
                       "kz_saturation": extra,
                       "net_winding_absmean": net_abs,
+                      "defects_mean": float(np.mean([r["N_mean"] for r in rows])),
                       "circulation_quantized": quantized},
         "time_arrow": {"coarsening": coa, "echo_fidelity": fid},
         "co_emergence": {
@@ -195,16 +201,24 @@ def simulate(quick=False):
 
 
 EXPECT = {"b_lo": 0.15, "b_hi": 0.9, "r2_min": 0.9,
-          "net_abs_max": 20.0, "echo_min": 0.99}
+          "net_over_sqrtN_max": 2.0, "echo_min": 0.99}
 
 
 def evaluate(result, quick=False):
     m = result["matter_kz"]
     t = result["time_arrow"]
+    # A balanced +/- defect gas has net winding of order sqrt(N), NOT N. So the
+    # physically meaningful "balanced" test is net_abs / sqrt(N) ~ O(1), not an
+    # arbitrary absolute constant (which is loose at large N). See review F7.
+    defects_mean = m.get("defects_mean")
+    if defects_mean is None:                # older result.json: derive from rows
+        defects_mean = float(np.mean([r["N_mean"] for r in m["rows"]]))
+    sqrtN = float(np.sqrt(max(defects_mean, 1.0)))
+    net_balanced = (m["net_winding_absmean"] / sqrtN) < EXPECT["net_over_sqrtN_max"]
     checks = {
         "kz_power_law": EXPECT["b_lo"] < m["kz_exponent_b"] < EXPECT["b_hi"],
         "kz_loglog_clean": m["kz_loglog_r2"] > EXPECT["r2_min"],
-        "net_winding_balanced": m["net_winding_absmean"] < EXPECT["net_abs_max"],
+        "net_winding_balanced": net_balanced,
         "circulation_quantized": m["circulation_quantized"],
         "coarsening_arrow": t["coarsening"]["spacing_grows"]
         and t["coarsening"]["N_decreases"],

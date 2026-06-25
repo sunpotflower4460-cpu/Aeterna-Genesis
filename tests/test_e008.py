@@ -49,7 +49,9 @@ def test_e008_quick_kz_and_echo():
     # KZ power law: negative slope -> b in a physical band, clean log-log
     assert 0.1 < m["kz_exponent_b"] < 1.0
     assert m["kz_loglog_r2"] > 0.9
-    assert m["net_winding_absmean"] < 20            # balanced +/-
+    # balanced +/-: net winding is of order sqrt(N), not N (relative check)
+    sqrtN = np.sqrt(max(m["defects_mean"], 1.0))
+    assert m["net_winding_absmean"] / sqrtN < 2.0
     assert m["circulation_quantized"]
     # arrow + echo
     assert t["coarsening"]["spacing_grows"]
