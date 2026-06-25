@@ -161,6 +161,29 @@ def step_damped_2d(psi, V, k2, g, mu, dt, gamma):
     return psi
 
 
+def step_sgpe_2d(psi, V, k2, g, mu, dt, gamma, T, rng):
+    """One step of the STOCHASTIC (finite-temperature) GPE -- a Langevin bath.
+
+        d psi = -(i + gamma)(H - mu) psi dt  +  sqrt(2 gamma T) dW
+
+    i.e. the damped GPE step (relaxation toward the ground state) followed by an
+    additive complex Gaussian kick of variance 2 gamma T dt per site -- the
+    fluctuation-dissipation pairing (the noise amplitude is set by the SAME gamma
+    that damps). T=0 recovers the deterministic damped GPE. Used by e011 to
+    dissociate a bound +/- pair thermally: raising T shortens the pair lifetime.
+
+    `rng` is a caller-owned numpy Generator (reproducibility). dx=1, so the
+    per-site noise variance is 2 gamma T dt (volume element = 1).
+    """
+    psi = step_damped_2d(psi, V, k2, g, mu, dt, gamma)
+    if T > 0.0:
+        amp = np.sqrt(2.0 * gamma * T * dt)
+        noise = (rng.standard_normal(psi.shape)
+                 + 1j * rng.standard_normal(psi.shape)) / np.sqrt(2.0)
+        psi = psi + amp * noise
+    return psi
+
+
 # --- 3D split-step (e003 vortex ring) -------------------------------------
 # The potential half-steps are element-wise, so they are reused unchanged; only
 # the kinetic step changes fft2 -> fftn over all three axes.
