@@ -1,16 +1,26 @@
 #!/usr/bin/env python3
-"""e008 Stage 2 (3D): closed vortex loops (the torus) from a 3D quench.
+"""e008 Stage 2 (3D): quantized vortex LINES from a 3D quench.
 
 Same white start + one law (damped 3D GPE) as Stage 1, now in 3D: the quench
 nucleates a tangle of vortex LINES. We label the depleted-core voxels into
-connected components and classify each as a CLOSED LOOP (bounded extent -- a
-torus topologically) or a line that SPANS the periodic box. Measured: the
-closed-loop fraction and how the loop count falls as the quench slows (3D KZ).
+(periodic-aware) connected components and classify each as a CONTRACTIBLE loop
+(bounded, lives in the bulk) or a TORUS-WRAPPING line (reaches both faces of an
+axis -- a non-contractible cycle of the periodic box). NOTE: in a periodic box
+BOTH are genuine closed quantized vortex lines (a wrapping line closes through
+the boundary); there are no open ends. Measured: that lines emerge, the
+contractible fraction, and how the line count falls as the quench slows (3D KZ).
+
+HONESTY / correction (Codex review P2): an earlier version used non-periodic
+ndimage.label, which SPLIT torus-wrapping lines at the faces into fragments that
+each looked like a small contractible loop -- inflating the "closed fraction" to
+~0.94. With correct periodic union-find the contractible fraction is ~0.30: most
+lines actually WRAP the torus. The robust, defensible claim is therefore
+"quantized vortex lines emerge from white noise and thin out with slower quench
+(3D KZ)" -- NOT "mostly small closed loops" (that was an artifact).
 
 Floors (honest): the field is only PARTIALLY condensed at the count time (thick
-cores), so the closed/spanning split is a voxel-topology PROXY, not an exact
-vortex-line trace. "Torus" = the topological fact that the core is a closed
-loop, not a claim about spacetime. Reuses core 3D (e003).
+cores), so the contractible/wrapping split is still a voxel-topology PROXY, not
+an exact vortex-line trace. Reuses core 3D (e003).
 """
 
 import argparse
@@ -54,18 +64,58 @@ def quench3d(p, tauQ, seed=1):
 
 
 def loop_fraction(psi, frac):
-    """Closed-loop vs box-spanning classification of depleted-core components."""
+    """Closed-loop vs box-spanning classification of depleted-core components.
+
+    The field lives in an FFT-PERIODIC box, but ndimage.label uses non-periodic
+    adjacency, so a vortex line crossing an opposite face is SPLIT into pieces
+    that would each look like a small closed loop -- inflating the closed
+    fraction (Codex review P2). We union components across opposite faces with a
+    union-find before classifying. A unioned component that touches both faces
+    of an axis (extent ~L) wraps the torus -> spanning; a bulk component that
+    never reaches a face -> closed. Still a voxel-topology PROXY, not an exact
+    vortex-line trace (floor stated in AUDIT/harvest).
+    """
     rho = np.abs(psi) ** 2
     mask = rho < frac * rho.mean()
     lab, n = ndimage.label(mask, structure=np.ones((3, 3, 3)))
     L = psi.shape[0]
-    closed = spanning = 0
+
+    parent = list(range(n + 1))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    # Union masked voxels that are 26-adjacent across each periodic face pair.
+    for axis in range(3):
+        f0 = np.take(lab, 0, axis=axis)
+        f1 = np.take(lab, L - 1, axis=axis)
+        h, w = f0.shape
+        for da in (-1, 0, 1):
+            for db in (-1, 0, 1):
+                rolled = np.roll(f1, (da, db), axis=(0, 1))
+                both = (f0 > 0) & (rolled > 0)
+                for l0, l1 in zip(f0[both], rolled[both]):
+                    union(int(l0), int(l1))
+
+    groups = {}
     for i in range(1, n + 1):
-        pts = np.argwhere(lab == i)
+        groups.setdefault(find(i), []).append(i)
+
+    closed = spanning = 0
+    for members in groups.values():
+        pts = np.concatenate([np.argwhere(lab == i) for i in members])
         if len(pts) < 4:                     # ignore tiny specks
             continue
         ext = pts.max(0) - pts.min(0) + 1
-        if any(e >= L - 1 for e in ext):
+        if any(e >= L - 1 for e in ext):     # reaches both faces of an axis = wraps
             spanning += 1
         else:
             closed += 1
@@ -81,23 +131,28 @@ def simulate(quick=False):
     for tauQ in p["tauQ_list"]:
         psi = quench3d(p, tauQ)
         c, s, cf, rm = loop_fraction(psi, p["frac"])
-        rows.append({"tauQ": tauQ, "closed_loops": c, "spanning_lines": s,
-                     "closed_fraction": round(cf, 3), "rho_median": round(rm, 3)})
-    loops = [r["closed_loops"] + r["spanning_lines"] for r in rows]
+        rows.append({"tauQ": tauQ, "contractible_loops": c, "wrapping_lines": s,
+                     "contractible_fraction": round(cf, 3),
+                     "rho_median": round(rm, 3)})
+    lines = [r["contractible_loops"] + r["wrapping_lines"] for r in rows]
     return {
         "params": p, "rows": rows,
-        "closed_loops_emerge": bool(all(r["closed_loops"] > 0 for r in rows)),
-        "mean_closed_fraction": round(
-            float(np.mean([r["closed_fraction"] for r in rows])), 3),
-        "loops_decrease_with_tauQ": bool(loops[-1] <= loops[0]),
+        "vortex_lines_emerge": bool(all(li > 0 for li in lines)),
+        # reported data, NOT a pass gate: a wrapping line is also a closed line.
+        "mean_contractible_fraction": round(
+            float(np.mean([r["contractible_fraction"] for r in rows])), 3),
+        "lines_decrease_with_tauQ": bool(lines[-1] <= lines[0]),
     }
 
 
 def evaluate(result):
+    # GREEN gates ONLY on defensible facts: quantized vortex lines emerge from
+    # white noise, and their count thins with slower quench (3D KZ). The
+    # contractible-vs-wrapping split is reported as DATA, not a gate -- in a
+    # periodic box a torus-wrapping line is an equally valid closed vortex line.
     checks = {
-        "closed_loops_emerge": result["closed_loops_emerge"],
-        "mostly_closed_loops": result["mean_closed_fraction"] > 0.5,
-        "loops_decrease_with_tauQ(3D_KZ)": result["loops_decrease_with_tauQ"],
+        "vortex_lines_emerge": result["vortex_lines_emerge"],
+        "lines_decrease_with_tauQ(3D_KZ)": result["lines_decrease_with_tauQ"],
     }
     return all(checks.values()), checks
 
@@ -109,18 +164,19 @@ def main(argv=None):
     args = ap.parse_args(argv)
     result = simulate(quick=args.quick)
     print(__doc__)
-    print("------------------------- 3D vortex loops -------------------------")
+    print("------------------------- 3D vortex lines -------------------------")
     for r in result["rows"]:
-        print("  tauQ=%4d  closed_loops=%3d  spanning=%2d  closed_frac=%.2f  rho_med=%.2f"
-              % (r["tauQ"], r["closed_loops"], r["spanning_lines"],
-                 r["closed_fraction"], r["rho_median"]))
-    print("  mean closed-loop fraction = %.2f (torus = closed vortex line)"
-          % result["mean_closed_fraction"])
+        print("  tauQ=%4d  contractible=%3d  wrapping=%2d  contractible_frac=%.2f  rho_med=%.2f"
+              % (r["tauQ"], r["contractible_loops"], r["wrapping_lines"],
+                 r["contractible_fraction"], r["rho_median"]))
+    print("  mean contractible fraction = %.2f (rest WRAP the torus = also closed lines;"
+          " ~0.94 in the old non-periodic labeling was an artifact)"
+          % result["mean_contractible_fraction"])
     passed, checks = evaluate(result)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))
-    print("STATUS: %s (measured: loops + fraction; 'torus'=topology; floor: partial condensation)"
-          % ("GREEN" if passed else "RED"))
+    print("STATUS: %s (GREEN gate = lines emerge + 3D KZ; contractible split reported as data;"
+          " floor: partial condensation)" % ("GREEN" if passed else "RED"))
     if not args.no_write and not args.quick:
         out = os.path.join(os.path.dirname(__file__), "result3d.json")
         with open(out, "w") as f:

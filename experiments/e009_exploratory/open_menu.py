@@ -99,8 +99,14 @@ def open2_defect_chemistry(quick=False):
     pos, sign = pos[keep], sign[keep]
     if len(pos) < 6:
         return {"n_defects": int(len(pos)), "note": "too few to measure"}
-    dmat = np.hypot(pos[:, 0, None] - pos[None, :, 0],
-                    pos[:, 1, None] - pos[None, :, 1])
+    # The GPE evolves in an FFT-PERIODIC box, so separations must use the
+    # minimum-image convention: a neighbour across an opposite face is NEAR,
+    # not far (Codex review P2). dx -> min(dx, L - dx) on each axis.
+    dx = np.abs(pos[:, 0, None] - pos[None, :, 0])
+    dy = np.abs(pos[:, 1, None] - pos[None, :, 1])
+    dx = np.minimum(dx, L - dx)
+    dy = np.minimum(dy, L - dy)
+    dmat = np.hypot(dx, dy)
     np.fill_diagonal(dmat, np.inf)
 
     def gap(signs):

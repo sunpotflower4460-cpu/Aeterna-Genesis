@@ -92,7 +92,7 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | 速クエンチで欠陥密度が飽和（KZ の膝）＝狙っていない KZ 特徴 | **measured** | fast_quench_saturates=True、full-range b=0.31 |
 | 4 | 粗大化の矢：クエンチ後 N が減りスペーシング L/√N が伸びる | **measured** | spacing 8.2→28.0 単調増 |
 | 5 | 可逆 echo：保存GPE(γ=0)で戻り忠実度 1.0000 → 矢は法則に無い | **measured(忠実度)/interpretive(教訓)** | echo_fidelity=1.0000。矢は散逸+低S始端から |
-| 6 | 3Dで閉じた渦線(トーラス)が白から創発、平均閉率 0.94、ループ数は τ_Q で減少 | **measured** | `result3d.json`（閉率0.92–0.95、3D KZ） |
+| 6 | 3Dで量子化渦線が白から創発し、線数は τ_Q で減少（3D KZ）。線の大半は**トーラスを巻く**（収縮可能率 ≈0.30、残りも周期境界で閉じる渦線） | **measured** | `result3d.json`（周期 union-find。**訂正**：旧「閉率0.94」は非周期ラベリングのアーティファクト＝Codex P2、収縮可能率0.30に修正） |
 | 7 | 物質・時間・空間の「同時共創発」 | **interpretive** | measured は各創発と KZ 数。統合は読み |
 | 8 | 固定格子＝空間は与えられている／「幾何」は相関・折りたたみでRT幾何でない／b は protocol 依存（床） | **（床の明示）** | AUDIT.md 床1–6 |
 
@@ -101,4 +101,6 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | # | 主張 | tier | 裏づけ |
 |---|---|---|---|
 | X1-A | 3-トーラス上の量子化循環は持続し、ノイズでも位相すべりせず保護される（打ち消さない循環） | **measured / analogy(電子的)** | `results/x1.json`：winding n=1,2,3 持続、noise でも n=2 維持、Edrift~1e-13 |
-| X1-C | リンクした渦輪(Hopf的)は素のGPEで形成後に縮む（安定化項なし） | **measured(サイズ)/frontier-observation** | core_volume 2368→931。素のGPEに安定化なし＝縮むのは正直な結果 |
+| X1-C | リンクした渦輪(Hopf的)は素のGPEで形成後に縮む（安定化項なし） | **measured(サイズ)/frontier-observation** | core_volume 2368→931。素のGPEに安定化なし＝縮むのは正直な結果（**訂正**：縮小判定の baseline を一様初期密度=0 から形成後の芯体積に修正し shrinks=True に＝Codex P2） |
+| open-1 | 相対論的複素スカラー(非GPE)の白からも KZ 渦が出る＝共創発は基板非依存 | **measured / interpretive(普遍)** | `results/open_menu.json`：N∝τ_Q^{−0.50}、ρ_med≈1.0 |
+| open-2 | クエンチ後 ±渦は逆符号が同符号より近い（対形成）。符号入替え帰無に対し有意 | **measured / frontier-observation** | 最近接 同13.5 vs 逆8.6（**最小像距離**）、置換検定 p<0.003 |

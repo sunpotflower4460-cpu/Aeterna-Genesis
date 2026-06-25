@@ -104,9 +104,16 @@ def tierC_hopf_rings(L=40, g=1.0, mu=1.0, dt=0.03, steps=900, R=8.0, seed=1):
     for k in range(6):
         psi = _evolve(psi, k2, g, mu, dt, steps // 6, gamma=0.0)
         sizes.append(low_density_volume(psi))
+    # The pure-phase imprint has UNIFORM |psi|^2, so sizes[0]==0 (no depletion
+    # cores exist until the field evolves). Using it as the baseline would make
+    # the shrink/survive ratios divide by ~0 and misclassify (Codex review P2).
+    # Use the first POST-FORMATION core volume as the baseline instead.
+    formed = [s for s in sizes if s > 0]
+    base = formed[0] if formed else 0
     return {"core_volume_t": sizes,
-            "shrinks": bool(sizes[-1] < 0.6 * sizes[0]),
-            "survives_to_end": bool(sizes[-1] > 0.1 * sizes[0])}
+            "core_baseline": base,
+            "shrinks": bool(base > 0 and sizes[-1] < 0.6 * base),
+            "survives_to_end": bool(base > 0 and sizes[-1] > 0.1 * base)}
 
 
 def simulate(quick=False):
