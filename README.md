@@ -39,11 +39,16 @@
 |---|---|---|---|---|
 | [e001 GPE 渦の歳差](experiments/e001_gpe_vortex_precession/) | トラップ中の渦は場の方程式だけから歳差するか | **GREEN** | measured | (A) |
 | [e002 GPE 二渦の相互作用](experiments/e002_gpe_two_vortex/) | 二渦は回り合う（同符号）／対で並進する（逆符号）か | **GREEN** | measured / analogy | (A) |
+| [e004 オクターブ階層/ホログラフィー](experiments/e004_octave_holography/) | 折り畳み階層は双曲(AdS/MERA的)幾何を持つか／螺旋＝繰り返し＋微小な非対称は進むか | **YELLOW** | measured / analogy | (A↔analogy) |
 | e003 GPE 3D 渦リング | リングは伝播・リンクするか（トーラス） | 計画 | — | (A) |
-| e004 白→形 | 一様＋ノイズから対称が自分で破れるか | 計画 | — | (A) |
-| e005 因果順序→次元 | 座標なしの因果集合から次元が出るか | 計画 | — | (A) |
-| e006 物質⇄重力 | 場の構造が重力を生み幾何が返るか | 計画 | — | (A→B) |
+| e00x 白→形 | 一様＋ノイズから対称が自分で破れるか | 計画 | — | (A) |
+| e00x 因果順序→次元 | 座標なしの因果集合から次元が出るか | 計画 | — | (A) |
+| e00x 物質⇄重力 | 場の構造が重力を生み幾何が返るか | 計画 | — | (A→B) |
 | e0xx 重力の創発 | 誘導重力をエンタングルメントから | frontier | — | (B) |
+
+> e004 は **YELLOW（measured-structural／示唆）**：数値は測定だが、双曲幾何は手作り
+> 階層に内在し ε も手入れ。MERA/AdS の構造再現であり忠実な創発ではない。GREEN とは
+> 呼ばない（[AUDIT](experiments/e004_octave_holography/AUDIT.md) 参照）。
 
 剥がす順番の全体地図は [docs/00_grand_map.md](docs/00_grand_map.md)。
 
