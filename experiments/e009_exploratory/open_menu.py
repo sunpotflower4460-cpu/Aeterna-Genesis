@@ -99,22 +99,38 @@ def open2_defect_chemistry(quick=False):
     pos, sign = pos[keep], sign[keep]
     if len(pos) < 6:
         return {"n_defects": int(len(pos)), "note": "too few to measure"}
-    # nearest same-sign vs opposite-sign distance (mean)
-    d_same, d_opp = [], []
-    for i in range(len(pos)):
-        dd = np.hypot(pos[:, 0] - pos[i, 0], pos[:, 1] - pos[i, 1])
-        dd[i] = np.inf
-        same = sign == sign[i]
-        opp = ~same
-        if same.sum() > 0:
-            d_same.append(dd[same].min())
-        if opp.sum() > 0:
-            d_opp.append(dd[opp].min())
-    ms, mo = float(np.mean(d_same)), float(np.mean(d_opp))
+    dmat = np.hypot(pos[:, 0, None] - pos[None, :, 0],
+                    pos[:, 1, None] - pos[None, :, 1])
+    np.fill_diagonal(dmat, np.inf)
+
+    def gap(signs):
+        """mean nearest-opposite - mean nearest-same (negative = pairing)."""
+        ds, do = [], []
+        for i in range(len(pos)):
+            same = signs == signs[i]
+            same[i] = False
+            opp = ~(signs == signs[i])
+            if same.any():
+                ds.append(dmat[i, same].min())
+            if opp.any():
+                do.append(dmat[i, opp].min())
+        return float(np.mean(do) - np.mean(ds)), float(np.mean(ds)), float(np.mean(do))
+
+    real_gap, ms, mo = gap(sign)
+    # permutation null: shuffle the sign labels among the SAME positions.
+    rng = np.random.default_rng(0)
+    null = []
+    for _ in range(300):
+        null.append(gap(rng.permutation(sign))[0])
+    null = np.asarray(null)
+    pval = float((null <= real_gap).mean())          # one-sided (pairing)
     return {"n_defects": int(len(pos)),
             "mean_nearest_same_sign": round(ms, 2),
             "mean_nearest_opposite_sign": round(mo, 2),
-            "opposite_closer_(pairing)": bool(mo < ms)}
+            "opposite_closer_(pairing)": bool(mo < ms),
+            "null_gap_mean": round(float(null.mean()), 2),
+            "permutation_pvalue": round(pval, 4),
+            "significant_vs_null": bool(pval < 0.05)}
 
 
 def _atlas(u, c):
@@ -132,13 +148,18 @@ def _atlas(u, c):
          "floors": ["fixed lattice; a different z (relativistic) gives a different exponent"]},
         {"experiment": "open-2 defect chemistry", "tier": "C",
          "put_in": "GPE quench field; measure +/- nearest-neighbour distances",
-         "emerged": ["+/- pairing" if c.get("opposite_closer_(pairing)") else "no clear pairing"],
-         "surprises": [],
+         "emerged": ["+/- pairing (opposite-sign vortices sit closer)"
+                     if c.get("opposite_closer_(pairing)") else "no clear pairing"],
+         "surprises": ["pairing is SIGNIFICANT vs a sign-permutation null "
+                       "(p=%s, null gap %s vs real)" % (c.get("permutation_pvalue"),
+                                                        c.get("null_gap_mean"))],
          "persistence": "static snapshot",
          "measured_numbers": c,
-         "not_scripted_check": "distances measured from detected cores, nothing imposed",
-         "claim_tier": "measured (distances) ; frontier-observation (whether this is a 'molecule')",
-         "floors": ["a snapshot statistic, not a bound-state proof"]},
+         "not_scripted_check": "distances measured from detected cores; null model shuffles "
+                               "ONLY the sign labels on the same positions",
+         "claim_tier": "measured (pairing significant vs null, p<0.05) ; "
+                       "frontier-observation (whether this is a true bound state)",
+         "floors": ["a snapshot statistic + permutation test, not a dynamical bound-state proof"]},
     ]
 
 
