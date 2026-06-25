@@ -157,15 +157,23 @@ def main(argv=None):
     print("  ordering b(z=1) > b(z=2): %s   (KZ mean-field: z=1->%.3f > z=2->%.3f)"
           % (z["ordering_b_z1_gt_z2"], z["kz_meanfield_b"]["z=1"], z["kz_meanfield_b"]["z=2"]))
     n_pass = sum(r["pass"] for r in rows)
-    ok = (n_pass == len(rows)) and z["ordering_b_z1_gt_z2"]
-    print("ROBUSTNESS: %s (%d/%d length cases PASS; z-ordering=%s)"
-          % ("GREEN" if ok else "MIXED", n_pass, len(rows), z["ordering_b_z1_gt_z2"]))
+    # The z-ordering claim is only valid when BOTH substrates are in the clean
+    # KZ regime: monotonic N(tau_Q) AND condensed (rho_min above threshold). A
+    # bare bn>bg in a ringing/under-condensed run does not count (Codex P2).
+    z_clean = bool(z["GPE_z2"]["monotonic"] and z["NLKG_z1"]["monotonic"]
+                   and z["GPE_z2"]["rho_min"] >= 0.6 and z["NLKG_z1"]["rho_min"] >= 0.6)
+    z_ok = bool(z["ordering_b_z1_gt_z2"] and z_clean)
+    ok = (n_pass == len(rows)) and z_ok
+    print("ROBUSTNESS: %s (%d/%d length cases PASS; z-ordering=%s, clean-regime=%s)"
+          % ("GREEN" if ok else "MIXED", n_pass, len(rows),
+             z["ordering_b_z1_gt_z2"], z_clean))
     if not args.no_write and not args.quick:
         out = os.path.join(os.path.dirname(__file__), "robustness.json")
         with open(out, "w") as f:
-            json.dump({"length_robustness": rows, "z_test": z}, f, indent=2)
+            json.dump({"length_robustness": rows, "z_test": z,
+                       "z_ordering_clean": z_ok}, f, indent=2)
         print("wrote robustness.json")
-    return 0
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

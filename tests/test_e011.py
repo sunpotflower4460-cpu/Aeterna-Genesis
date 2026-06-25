@@ -56,10 +56,11 @@ def test_e011_finite_T_dissociation():
 
 def test_e011_committed_results_sane():
     import json
+    import pytest
     for name, key, lo in [("pair_binding.json", "omega_d2_mean", 1.0)]:
         path = os.path.abspath(os.path.join(_DIR, "results", name))
         if not os.path.exists(path):
-            continue
+            pytest.skip("committed artifact %s missing (run the module to generate)" % name)
         with open(path) as f:
             r = json.load(f)["result"]
         assert r[key] > lo

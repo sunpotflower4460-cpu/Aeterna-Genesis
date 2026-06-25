@@ -111,9 +111,16 @@ def simulate(quick=False):
     if pos.sum() >= 2:
         dE = float(np.polyfit(1.0 / Ts[pos], np.log(life[pos]), 1)[0])
         arr = round(dE, 4)
+    drop = round(float(1.0 - life[-1] / life[0]), 3) if life[0] > 0 else 0.0
+    # the T=0 row is the COLD CONTROL: dissociation is only meaningful if the
+    # bound pair actually SURVIVES the cap at T=0 (no annihilation) -- otherwise
+    # "lifetime falls with T" is just faster annihilation of an already-decaying
+    # pair, not thermal dissociation of a bound one (Codex P2).
+    cold_survives = bool(rows[0]["T"] == 0.0 and rows[0]["n_annihilated"] == 0)
     return {"params": p, "rows": rows,
             "lifetime_vs_T_slope": round(slope, 2),
-            "lifetime_drop_frac": round(float(1.0 - life[-1] / life[0]), 3),
+            "lifetime_drop_frac": drop,
+            "cold_control_survives": cold_survives,
             "monotone_decreasing": bool(all(life[i] >= life[i + 1] - 1e-9
                                             for i in range(len(life) - 1))),
             "arrhenius_dE": arr}
@@ -121,6 +128,7 @@ def simulate(quick=False):
 
 def evaluate(result, quick=False):
     checks = {
+        "cold_control_survives(T=0 bound)": result["cold_control_survives"],
         "lifetime_falls_with_T(slope<0)": result["lifetime_vs_T_slope"] < 0,
         "clear_drop(>=12%)": result["lifetime_drop_frac"] >= 0.12,
         "monotone_decreasing": result["monotone_decreasing"],

@@ -56,9 +56,10 @@ def test_e010_z_ordering():
 
 
 def test_e010_committed_result_sane():
+    import pytest
     path = os.path.abspath(os.path.join(_DIR, "result.json"))
     if not os.path.exists(path):
-        return
+        pytest.skip("committed result.json missing (run the module to generate)")
     import json
     with open(path) as f:
         data = json.load(f)

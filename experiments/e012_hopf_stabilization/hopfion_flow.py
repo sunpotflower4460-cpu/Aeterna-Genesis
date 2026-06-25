@@ -74,24 +74,33 @@ def run_flow(p, c4):
     Q0 = hopf.hopf_charge(n, dx)
     s0 = hopf.e4_rms_size(n, dx)
     every = max(1, p["n_steps"] // p["n_check"])
-    energies, checks = [E0], []
+    checks = []
+    # Monotonicity is the GREEN sanity check for the gradient sign, so we test it
+    # EVERY step (not only at sparse trace points): a transient energy increase
+    # that later dips below a checkpoint would otherwise pass unseen (Codex P2).
+    prev_E, E = E0, E0
+    tol = 1e-6 * abs(E0)
+    mono = True
     for step in range(p["n_steps"]):
         n = hopf.flow_step(n, dx, p["c2"], c4, dt)
+        E = hopf.faddeev_energy(n, dx, p["c2"], c4)[0]
+        if E > prev_E + tol:
+            mono = False
+        prev_E = E
         if (step + 1) % every == 0:
-            E = hopf.faddeev_energy(n, dx, p["c2"], c4)[0]
-            energies.append(E)
             checks.append({"step": step + 1, "Q_H": round(hopf.hopf_charge(n, dx), 3),
                            "size": round(hopf.e4_rms_size(n, dx), 3), "E": round(E, 2)})
     Qf = checks[-1]["Q_H"] if checks else Q0
     sf = checks[-1]["size"] if checks else s0
-    mono = all(energies[i] >= energies[i + 1] - 1e-6 * abs(energies[0])
-               for i in range(len(energies) - 1))
+    # Collapse is loss of TOPOLOGICAL CHARGE, so threshold |Q_H|: an unstable run
+    # that overshoots to Q_H ~ -0.9 still carries large charge and must NOT count
+    # as collapsed-to-zero (Codex P2).
     return {"c4": c4, "dt": dt, "Q_H_initial": round(Q0, 3), "Q_H_final": Qf,
             "size_initial": round(s0, 3), "size_final": sf,
             "size_ratio": round(sf / s0, 3) if s0 > 0 else 0.0,
-            "E_initial": round(E0, 2), "E_final": round(energies[-1], 2),
+            "E_initial": round(E0, 2), "E_final": round(E, 2),
             "energy_monotone_decrease": bool(mono),
-            "collapsed": bool(Qf < 0.5), "trace": checks}
+            "collapsed": bool(abs(Qf) < 0.5), "trace": checks}
 
 
 def simulate(quick=False):

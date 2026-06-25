@@ -85,7 +85,7 @@ def track_pair(p, d, signs, total_steps):
         return None, dt
     pos = [(cc["x"], cc["y"]) for cc in cores]
     traj = [pos]
-    sub = total_steps // p["nsub"]
+    sub = max(1, total_steps // p["nsub"])     # never a zero stride (no evolution)
     for _ in range(p["nsub"]):
         psi = _step(psi, k2, g, mu, dt, sub)
         cores = vortex.track_two_vortices(psi, pos, signs, window=win)
@@ -165,6 +165,7 @@ def simulate(quick=False):
     cor_drift = np.mean([r.get("com_drift", 0) for r in cor if not r.get("lost")])
     return {
         "params": p, "dipole": dip, "corotation": cor,
+        "n_dipole_rows": len(vd), "n_corotation_rows": len(wd2),
         "v_times_d_mean": round(float(np.mean(vd)), 3) if vd else None,
         "v_times_d_cv": round(_cv(vd), 3),
         "omega_d2_mean": round(float(np.mean(wd2)), 3) if wd2 else None,
@@ -178,11 +179,14 @@ EXPECT = {"cv_max": 0.15}
 
 
 def evaluate(result, quick=False):
+    # A "constant product" law is only meaningful ACROSS separations: with a
+    # single surviving d the CV is trivially 0. Require >=2 tracked rows per law
+    # before accepting the CV gate (Codex P2).
     checks = {
         "dipole_law(v*d const)": result["v_times_d_cv"] < EXPECT["cv_max"]
-        and result["v_times_d_mean"] is not None,
+        and result["v_times_d_mean"] is not None and result["n_dipole_rows"] >= 2,
         "corotation_law(w*d^2 const)": result["omega_d2_cv"] < EXPECT["cv_max"]
-        and result["omega_d2_mean"] is not None,
+        and result["omega_d2_mean"] is not None and result["n_corotation_rows"] >= 2,
         "selective(+/- translate, ++ rotate)":
             result["dipole_rotation_small"] < 0.01
             and result["corotation_drift_small"] < 8.0,
