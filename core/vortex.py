@@ -39,9 +39,14 @@ def is_circulation_quantized(psi, tol=1e-6):
     return bool(np.all(np.abs(w - np.rint(w)) < tol))
 
 
+def _plaquette_average(a):
+    """Average a scalar field over each unit plaquette, shape (L-1, L-1)."""
+    return 0.25 * (a[:-1, :-1] + a[1:, :-1] + a[:-1, 1:] + a[1:, 1:])
+
+
 def _plaquette_potential(V):
     """Average V over each plaquette, shape (L-1, L-1)."""
-    return 0.25 * (V[:-1, :-1] + V[1:, :-1] + V[:-1, 1:] + V[1:, 1:])
+    return _plaquette_average(V)
 
 
 def _refine_core(psi, i, j, half=2):
@@ -109,8 +114,7 @@ def track_single_vortex(psi, V, mu, center, prev=None, bulk_factor=0.8):
 
 def _plaquette_density(psi):
     """Average |psi|^2 over each plaquette, shape (L-1, L-1)."""
-    rho = np.abs(psi) ** 2
-    return 0.25 * (rho[:-1, :-1] + rho[1:, :-1] + rho[:-1, 1:] + rho[1:, 1:])
+    return _plaquette_average(np.abs(psi) ** 2)
 
 
 def track_two_vortices(psi, prev_positions, signs, window=8):
@@ -118,12 +122,24 @@ def track_two_vortices(psi, prev_positions, signs, window=8):
 
     For each (prev_position, target_sign) pair, search only the +-window box of
     plaquettes around the previous position for cells whose winding has the
-    target sign, and pick the one of minimal local density (the deepest core).
-    The position is then sub-grid refined.
+    target sign, and pick -- by *continuity* -- the matching-sign core NEAREST
+    to that vortex's own previous position. The position is then sub-grid
+    refined.
 
-    Searching locally per vortex -- rather than scanning the whole grid -- is
-    what keeps the two cores separated and rejects the sound-wave false cores a
-    global scan would pick up (LAW.md audit 4/7: measured, not asserted).
+    Continuity (nearest-to-prev), rather than "deepest density in the window",
+    is what preserves vortex IDENTITY when the two search windows overlap: each
+    vortex follows its own trajectory and the labels cannot swap (a swap would
+    flip the connecting-line angle by 180 deg and corrupt the rotation). The two
+    vortices are also forbidden from selecting the same plaquette (`taken`), so a
+    pair that drifts together cannot collapse to a spurious zero separation.
+
+    Searching locally per vortex -- rather than scanning the whole grid -- also
+    rejects the sound-wave false cores a global scan would pick up
+    (LAW.md audit 4/7: measured, not asserted).
+
+    The window does NOT wrap across the periodic boundary; the experiments keep
+    both cores well away from the edges, and a core that approaches the boundary
+    simply ends the clean window (handled by the caller's separation guard).
 
     Args:
         prev_positions: iterable of (x, y) for each vortex's last known position.
@@ -135,23 +151,27 @@ def track_two_vortices(psi, prev_positions, signs, window=8):
     window / annihilated).
     """
     charges = np.rint(winding_field(psi)).astype(int)
-    rho_plaq = _plaquette_density(psi)
     n = charges.shape[0]  # L - 1
+    taken = set()
     out = []
     for (px, py), s in zip(prev_positions, signs):
         pi, pj = int(round(px)), int(round(py))
         target = 1 if s > 0 else -1
         i0, i1 = max(0, pi - window), min(n, pi + window + 1)
         j0, j1 = max(0, pj - window), min(n, pj + window + 1)
-        sub_charge = charges[i0:i1, j0:j1]
-        cand = np.argwhere(sub_charge == target)
-        if len(cand) == 0:
+        cand = np.argwhere(charges[i0:i1, j0:j1] == target)
+        best, best_d = None, np.inf
+        for a, b in cand:
+            i, j = i0 + int(a), j0 + int(b)
+            if (i, j) in taken:
+                continue  # the other vortex already owns this core
+            d = (i + 0.5 - px) ** 2 + (j + 0.5 - py) ** 2  # nearest to prev
+            if d < best_d:
+                best_d, best = d, (i, j)
+        if best is None:
             out.append(None)
             continue
-        # Among matching-sign cells, the true core is the deepest density hole.
-        rhos = np.array([rho_plaq[i0 + a, j0 + b] for a, b in cand])
-        a, b = cand[int(np.argmin(rhos))]
-        i, j = i0 + a, j0 + b
-        x, y = _refine_core(psi, int(i), int(j))
-        out.append({"x": x, "y": y, "charge": int(charges[i, j])})
+        taken.add(best)
+        x, y = _refine_core(psi, best[0], best[1])
+        out.append({"x": x, "y": y, "charge": int(charges[best])})
     return out

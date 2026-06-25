@@ -5,10 +5,18 @@ Re-runs both two-vortex cases across several initial separations:
   same-sign     d in {6, 7, 9}   -> must co-rotate (rotation grows, no drift)
   opposite-sign d in {12, 16, 20} -> must translate (centroid drifts, no rotation)
 
-The emergence is robust if the QUALITATIVE behaviour (co-rotation vs
-translation) holds for every separation. The rate changes with d -- closer
-same-sign pairs orbit faster, wider dipoles translate slower -- so the totals
-vary by design; what must hold is the character of the motion.
+Every case is run to the SAME generous step budget (N_REAL); the self-detecting
+clean-window guard in simulate_case ends each run at its own physical limit. So
+the clean window -- and hence the total rotation/translation -- is set by the
+physics per separation, not by a hand-tuned step count.
+
+Consequence (honest): wider same-sign pairs expand and degrade FASTER, so their
+clean window is SHORTER and their absolute rotation is smaller (d=6 ~ 600 deg,
+d=9 ~ 100 deg). Audit 6 therefore tests the CHARACTER of the motion (co-rotation
+vs translation, and the monotonic d-trend), not a fixed magnitude. The pass
+thresholds match the main evaluate() (opposite drift > 15), except the same-sign
+rotation floor is 60 deg rather than 180 deg -- a wider pair's clean window does
+not last long enough for half a turn, yet its co-rotation is unmistakable.
 
 Writes robustness.json and prints a table copied into AUDIT.md.
 """
@@ -17,18 +25,16 @@ import json
 import os
 import sys
 
-import numpy as np
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _THIS_DIR not in sys.path:
+    sys.path.insert(0, _THIS_DIR)
 
-_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _REPO_ROOT not in sys.path:
-    sys.path.insert(0, _REPO_ROOT)
-
-from run import simulate_case  # noqa: E402
+from run import COMMON, simulate_case  # noqa: E402
 
 SAME_D = [6.0, 7.0, 9.0]
 OPP_D = [12.0, 16.0, 20.0]
-SAME_STEPS = 3000
-OPP_STEPS = 4000
+N_REAL = 8000  # generous budget; the clean-window guard terminates each run
+COMMON_SAMPLE = COMMON["sample"]
 
 
 def _same_ok(r):
@@ -39,37 +45,41 @@ def _same_ok(r):
 
 def _opp_ok(r):
     return (abs(r["rotation_final_deg"]) < 40.0 and r["centroid_monotonic"]
-            and r["centroid_drift_final"] > 5.0 and r["charge_set"] == [-1, 1]
+            and r["centroid_drift_final"] > 15.0 and r["charge_set"] == [-1, 1]
             and r["circulation_quantized"] and r["energy_drift"] < 1e-4)
 
 
 def main():
     rows = []
     all_pass = True
-    print(f"{'case':>9} {'d':>4} | {'sep_mean':>8} {'rot_deg':>8} "
+    print(f"{'case':>9} {'d':>4} | {'window':>6} {'sep_mean':>8} {'rot_deg':>8} "
           f"{'drift':>6} | result")
-    print("-" * 52)
+    print("-" * 62)
     for d in SAME_D:
-        r = simulate_case((1, 1), d, SAME_STEPS)
+        r = simulate_case((1, 1), d, N_REAL)
         ok = _same_ok(r)
         all_pass &= ok
-        rows.append({"case": "same", "d": d, "sep_mean": r["separation_mean"],
+        window = r["n_samples"] * COMMON_SAMPLE
+        rows.append({"case": "same", "d": d, "window_steps": window,
+                     "sep_mean": r["separation_mean"],
                      "rotation_final_deg": r["rotation_final_deg"],
                      "centroid_drift_max": r["centroid_drift_max"], "pass": ok})
-        print(f"{'same':>9} {d:>4.0f} | {r['separation_mean']:>8.2f} "
+        print(f"{'same':>9} {d:>4.0f} | {window:>6d} {r['separation_mean']:>8.2f} "
               f"{r['rotation_final_deg']:>8.1f} {r['centroid_drift_max']:>6.2f} | "
               f"{'PASS' if ok else 'FAIL'}")
     for d in OPP_D:
-        r = simulate_case((1, -1), d, OPP_STEPS)
+        r = simulate_case((1, -1), d, N_REAL)
         ok = _opp_ok(r)
         all_pass &= ok
-        rows.append({"case": "opposite", "d": d, "sep_mean": r["separation_mean"],
+        window = r["n_samples"] * COMMON_SAMPLE
+        rows.append({"case": "opposite", "d": d, "window_steps": window,
+                     "sep_mean": r["separation_mean"],
                      "rotation_final_deg": r["rotation_final_deg"],
                      "centroid_drift_final": r["centroid_drift_final"], "pass": ok})
-        print(f"{'opposite':>9} {d:>4.0f} | {r['separation_mean']:>8.2f} "
+        print(f"{'opposite':>9} {d:>4.0f} | {window:>6d} {r['separation_mean']:>8.2f} "
               f"{r['rotation_final_deg']:>8.1f} {r['centroid_drift_final']:>6.2f} | "
               f"{'PASS' if ok else 'FAIL'}")
-    print("-" * 52)
+    print("-" * 62)
     print(f"OVERALL: {'PASS (audit 6 satisfied -> e002 GREEN)' if all_pass else 'FAIL'}")
 
     out = {"cases": rows, "all_pass": all_pass}
