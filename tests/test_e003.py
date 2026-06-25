@@ -51,6 +51,23 @@ def test_ring_cross_section_recovers_radius_and_axis():
     assert abs(tr["axial"] - c) < 1.5
 
 
+def test_ring_cross_section_rejects_same_side_cores():
+    # Two cross-section cores on the SAME side of the axis must be rejected
+    # (a meaningless radius), so the caller ends the clean window.
+    L, c = 48, 23.5
+
+    def _imprint2d(L, q, cx, cy):
+        x = np.arange(L)[:, None]
+        y = np.arange(L)[None, :]
+        return np.exp(1j * q * np.arctan2(y - cy, x - cx))
+
+    # +1 and -1 cores both at x = c + 8 (same side of the axis at x=c)
+    psi2d = _imprint2d(L, +1, c + 8, 20.0) * _imprint2d(L, -1, c + 8, 28.0)
+    tr = vortex.track_ring_cross_section(
+        psi2d, c, (c + 8, 20.0), (c + 8, 28.0), (2, L - 3))
+    assert tr is None
+
+
 def test_e003_quick_ring_propagates():
     run = _load_run()
     result = run.simulate(quick=True)

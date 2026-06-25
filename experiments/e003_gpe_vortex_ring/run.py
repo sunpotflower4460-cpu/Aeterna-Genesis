@@ -33,8 +33,12 @@ AUDIT (7):   see AUDIT.md.
                smaller rings move faster (v ~ 1/R), as expected.
              7 code discovers?        Yes -- ring tracked by phase winding in a
                meridional slice, not hardcoded.
-STATUS:      GREEN within the clean window (propagation + constant radius +
-             quantized circulation, robust across R). Honest floors below.
+STATUS:      GREEN -- all 7 audits pass: propagation + constant radius +
+             quantized circulation, robust across R, and self-induction is
+             VERIFIED (speed converges with box size: L=64 == L=80, so it is
+             not driven by the boundary sheet/image). Measurement is taken in a
+             self-detected clean window; the floors below are stated plainly and
+             never folded into the numbers.
 A_OR_B:      (A) faithful emergence. Hand-supplied input = the field equation
              itself ((B) -- deriving the law -- not attempted).
 =============================================================================
@@ -122,6 +126,9 @@ def simulate(params=None, quick=False, seed=0):
                 break
             if direction != 0 and (tr["axial"] - extreme) * direction < -0.5:
                 break
+            # measure (not assert) quantization: the slice winding must be
+            # integer-valued and the two tracked cores are +-1 by construction.
+            charges_ok = charges_ok and vortex.is_circulation_quantized(psi[:, jy, :])
             prev_outer, prev_inner = tr["outer"], tr["inner"]
             radii.append(tr["radius"])
             axials.append(tr["axial"])
@@ -131,8 +138,10 @@ def simulate(params=None, quick=False, seed=0):
             elif direction != 0 and (tr["axial"] - extreme) * direction > 0:
                 extreme = tr["axial"]          # advanced further
 
-    if len(axials) < 2:
-        raise RuntimeError("ring not tracked (R=%s, L=%s)" % (R, L))
+    if len(axials) < 5:
+        raise RuntimeError(
+            "ring not tracked long enough for a meaningful measurement "
+            "(samples=%d, R=%s, L=%s)" % (len(axials), R, L))
 
     radii = np.asarray(radii)
     # unwrap the periodic axial coordinate, then measure net travel + monotonicity

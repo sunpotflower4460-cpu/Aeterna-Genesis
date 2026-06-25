@@ -216,6 +216,11 @@ def track_ring_cross_section(psi_slice, axis_coord, prev_outer, prev_inner,
     inner = pick(-1, prev_inner)
     if outer is None or inner is None:
         return None
+    # the two cross-section cores must straddle the axis (one each side); if both
+    # land on the same side (e.g. a boundary-sheet core intruded) the radius would
+    # be meaningless -- reject so the caller ends the clean window.
+    if (outer[0] - axis_coord) * (inner[0] - axis_coord) >= 0:
+        return None
     radius = 0.5 * (abs(outer[0] - axis_coord) + abs(inner[0] - axis_coord))
     axial = 0.5 * (outer[1] + inner[1])
     return {"radius": float(radius), "axial": float(axial),
