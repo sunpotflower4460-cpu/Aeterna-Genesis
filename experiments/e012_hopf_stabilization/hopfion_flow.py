@@ -52,8 +52,8 @@ if _REPO_ROOT not in sys.path:
 
 from core import hopf  # noqa: E402
 
-DEFAULT = {"L": 44, "box": 6.0, "scale": 1.4, "c2": 1.0,
-           "c4_list": [0.0, 10.0, 25.0], "n_steps": 1800, "n_check": 5}
+DEFAULT = {"L": 48, "box": 6.0, "scale": 1.4, "c2": 1.0,
+           "c4_list": [0.0, 10.0, 30.0], "n_steps": 2500, "n_check": 5}
 QUICK = {"L": 36, "box": 5.5, "scale": 1.3, "c4_list": [0.0, 8.0, 12.0],
          "n_steps": 1500, "n_check": 4}
 
