@@ -104,3 +104,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | X1-C | リンクした渦輪(Hopf的)は素のGPEで形成後に縮む（安定化項なし） | **measured(サイズ)/frontier-observation** | core_volume 2368→931。素のGPEに安定化なし＝縮むのは正直な結果（**訂正**：縮小判定の baseline を一様初期密度=0 から形成後の芯体積に修正し shrinks=True に＝Codex P2） |
 | open-1 | 相対論的複素スカラー(非GPE)の白からも KZ 渦が出る＝共創発は基板非依存 | **measured / interpretive(普遍)** | `results/open_menu.json`：N∝τ_Q^{−0.50}、ρ_med≈1.0 |
 | open-2 | クエンチ後 ±渦は逆符号が同符号より近い（対形成）。符号入替え帰無に対し有意 | **measured / frontier-observation** | 最近接 同13.5 vs 逆8.6（**最小像距離**）、置換検定 p<0.003 |
+
+## e010 — Kibble-Zurek をコヒーレンス長で固める  (STATUS: GREEN, 絶対指数は protocol 依存)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | KZ 欠陥間隔は凍結コヒーレンス長 ξ の**一定倍**（間隔∝ξ＝KZ 機構） | **measured** | `result.json`：間隔/ξ=2.75、CV=0.041（16倍の τ_Q 範囲で一定） |
+| 2 | ξ∝τ_Q^σ かつ N∝τ_Q^{−2σ}（**内部整合 b=2σ**） | **measured** | σ=0.282、b=0.570、2σ=0.564（相対差 1%） |
+| 3 | 数えた芯は実在の凝縮体中の渦（γ未凝縮の罠を回避） | **measured** | ρ_median 0.94–0.99（全凝縮で締める） |
+| 4 | z 順序 b(z=1) > b(z=2)＝KZ b=(D−d)ν/(1+νz) と同じ向き（小 z→大 b） | **measured(順序)/interpretive(KZ)** | 整合プロトコルで NLKG(z=1) b≈0.5 > GPE(z=2) b≈0.24（`robustness.json`） |
+| 5 | 絶対 b は protocol 依存／間隔/ξ 値は ξ 定義依存／z 対比は減衰に敏感（床） | **（床の明示）** | AUDIT.md 床1–4 |

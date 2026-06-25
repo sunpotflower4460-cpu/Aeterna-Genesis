@@ -114,3 +114,41 @@ def correlation_length(field, dx=1.0):
         return 0.0
     kbar = float((kmag * power).sum() / total)
     return float(2.0 * np.pi / kbar) if kbar > 0 else 0.0
+
+
+def coherence_length(psi, dx=1.0):
+    """First-order coherence length: the 1/e point of g1(r), 2D or 3D.
+
+    g1(r) is the spatial autocorrelation of the fluctuation field psi - <psi>,
+    computed via the Wiener-Khinchin theorem (g1 = ifft(|fft|^2)), normalised to
+    g1(0)=1 and radially averaged. The coherence length xi is the radius where
+    g1 first falls below 1/e, found by linear interpolation between bins.
+
+    This is the Kibble-Zurek "frozen" length scale (e010): the size of the
+    independently-chosen order-parameter domains left by a quench. The mean is
+    subtracted so that the long-range order of the condensate does not swamp the
+    domain/defect-scale decorrelation we want to track (the inter-defect spacing
+    is found empirically to be a CONSTANT multiple of this xi -- the KZ
+    signature). Returns 0.0 for a flat field.
+    """
+    L = psi.shape[0]
+    f = np.asarray(psi) - np.mean(psi)
+    ac = np.fft.fftshift(np.fft.ifftn(np.abs(np.fft.fftn(f)) ** 2).real)
+    peak = ac.max()
+    if peak <= 0:
+        return 0.0
+    ac = ac / peak
+    c = L // 2
+    idx = np.indices(ac.shape)
+    r = np.rint(np.sqrt(sum((ix - c) ** 2 for ix in idx))).astype(int)
+    radial = np.bincount(r.ravel(), ac.ravel()) / np.maximum(np.bincount(r.ravel()), 1)
+    thr = 1.0 / np.e
+    below = np.where(radial < thr)[0]
+    if len(below) == 0:
+        return float(len(radial) * dx)
+    i = int(below[0])
+    if i == 0:
+        return 0.0
+    r0, r1 = radial[i - 1], radial[i]
+    frac = (r0 - thr) / (r0 - r1) if r0 != r1 else 0.0
+    return float(((i - 1) + frac) * dx)
