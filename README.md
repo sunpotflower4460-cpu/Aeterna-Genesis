@@ -40,7 +40,7 @@
 | [e001 GPE 渦の歳差](experiments/e001_gpe_vortex_precession/) | トラップ中の渦は場の方程式だけから歳差するか | **GREEN** | measured | (A) |
 | [e002 GPE 二渦の相互作用](experiments/e002_gpe_two_vortex/) | 二渦は回り合う（同符号）／対で並進する（逆符号）か | **GREEN** | measured / analogy | (A) |
 | [e004 オクターブ階層/ホログラフィー](experiments/e004_octave_holography/) | 折り畳み階層は双曲(AdS/MERA的)幾何を持つか／螺旋＝繰り返し＋微小な非対称は進むか | **YELLOW** | measured / analogy | (A↔analogy) |
-| e003 GPE 3D 渦リング | リングは伝播・リンクするか（トーラス） | 計画 | — | (A) |
+| [e003 GPE 3D 渦リング](experiments/e003_gpe_vortex_ring/) | 渦リングは場の方程式だけから自己伝播するか（トーラス） | **GREEN** | measured / analogy | (A) |
 | e00x 白→形 | 一様＋ノイズから対称が自分で破れるか | 計画 | — | (A) |
 | e00x 因果順序→次元 | 座標なしの因果集合から次元が出るか | 計画 | — | (A) |
 | e00x 物質⇄重力 | 場の構造が重力を生み幾何が返るか | 計画 | — | (A→B) |

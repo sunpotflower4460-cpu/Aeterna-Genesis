@@ -32,6 +32,25 @@ def energy(psi, V, g, dx=1.0):
     return float(kinetic + potential + interaction)
 
 
+def energy_3d(psi, V, g, dx=1.0):
+    """GPE energy functional on an L^3 grid (V may be a scalar 0 for a box).
+
+    Same form as energy() but with the kinetic part evaluated via the 3D FFT
+    (Parseval): sum_x |grad psi|^2 = (1/N) sum_k k^2 |psi_hat_k|^2.
+    """
+    from .fft import k_squared_3d
+    L = psi.shape[0]
+    k2 = k_squared_3d(L, dx)
+    psi_hat = np.fft.fftn(psi)
+    N = psi.size
+    dV = dx ** 3
+    kinetic = 0.5 * np.sum(k2 * np.abs(psi_hat) ** 2) / N * dV
+    rho = np.abs(psi) ** 2
+    potential = np.sum(V * rho) * dV
+    interaction = 0.5 * g * np.sum(rho ** 2) * dV
+    return float(kinetic + potential + interaction)
+
+
 def relative_drift(series):
     """Max fractional deviation of a series from its initial value.
 

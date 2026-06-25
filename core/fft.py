@@ -43,3 +43,14 @@ def fft2(psi):
 
 def ifft2(psi_hat):
     return np.fft.ifft2(psi_hat)
+
+
+def k_squared_3d(L, dx=1.0):
+    """Return kx^2 + ky^2 + kz^2 on an L^3 grid (the 3D kinetic multiplier).
+
+    Same wavenumber convention as the 2D case; used by the 3D split-step
+    propagators (e003 vortex ring). FFTs are np.fft.fftn over all three axes.
+    """
+    k = wavenumbers(L, dx)
+    kx, ky, kz = np.meshgrid(k, k, k, indexing="ij")
+    return kx ** 2 + ky ** 2 + kz ** 2

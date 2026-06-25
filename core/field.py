@@ -137,3 +137,57 @@ def step_imag(psi, V, k2, g, mu, dtau):
     psi = kinetic_step_imag(psi, k2, dtau)
     psi = potential_step_imag(psi, V, g, mu, dtau)
     return psi
+
+
+# --- 3D split-step (e003 vortex ring) -------------------------------------
+# The potential half-steps are element-wise, so they are reused unchanged; only
+# the kinetic step changes fft2 -> fftn over all three axes.
+
+def index_grid_3d(L):
+    """Return (X, Y, Z) index meshes on an L^3 grid, indexing='ij'."""
+    i = np.arange(L, dtype=float)
+    return np.meshgrid(i, i, i, indexing="ij")
+
+
+def vortex_ring_phase(L, R, charge=1, center=None):
+    """Phase of a vortex ring of radius R in the z=cz plane about the z-axis.
+
+    phase = charge * atan2(z - cz, rho - R), rho = sqrt((x-cx)^2+(y-cy)^2).
+    The vortex line is the circle rho=R, z=cz -- a closed loop (a torus tube).
+    NOTE (honesty): this imprint is not periodic across the z boundary, so a
+    static vortex sheet seeds at z~0; experiments track the ring in the bulk.
+    """
+    if center is None:
+        center = ((L - 1) / 2.0,) * 3
+    cx, cy, cz = center
+    X, Y, Z = index_grid_3d(L)
+    rho = np.sqrt((X - cx) ** 2 + (Y - cy) ** 2)
+    return charge * np.arctan2(Z - cz, rho - R)
+
+
+def kinetic_step_real_3d(psi, k2, dt):
+    psi_hat = np.fft.fftn(psi)
+    psi_hat *= np.exp(-1j * 0.5 * k2 * dt)
+    return np.fft.ifftn(psi_hat)
+
+
+def kinetic_step_imag_3d(psi, k2, dtau):
+    psi_hat = np.fft.fftn(psi)
+    psi_hat *= np.exp(-0.5 * k2 * dtau)
+    return np.fft.ifftn(psi_hat)
+
+
+def step_real_3d(psi, V, k2, g, mu, dt):
+    """One 3D real-time split-step (V may be a scalar 0 for a uniform box)."""
+    psi = potential_step_real(psi, V, g, mu, dt)
+    psi = kinetic_step_real_3d(psi, k2, dt)
+    psi = potential_step_real(psi, V, g, mu, dt)
+    return psi
+
+
+def step_imag_3d(psi, V, k2, g, mu, dtau):
+    """One 3D imaginary-time split-step."""
+    psi = potential_step_imag(psi, V, g, mu, dtau)
+    psi = kinetic_step_imag_3d(psi, k2, dtau)
+    psi = potential_step_imag(psi, V, g, mu, dtau)
+    return psi

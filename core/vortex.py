@@ -175,3 +175,53 @@ def track_two_vortices(psi, prev_positions, signs, window=8):
         x, y = _refine_core(psi, best[0], best[1])
         out.append({"x": x, "y": y, "charge": int(charges[best])})
     return out
+
+
+def track_ring_cross_section(psi_slice, axis_coord, prev_outer, prev_inner,
+                             axial_bounds):
+    """Track a vortex ring via its two cross-section cores in a 2D slice.
+
+    A vortex ring pierces a meridional plane (here the x-z plane through the
+    symmetry axis) as TWO opposite-winding cores: a +1 core on one side of the
+    axis and a -1 core on the other. Their distance from the axis gives the ring
+    RADIUS; their mean axial coordinate gives the ring's AXIAL POSITION. We pick
+    each core by continuity (nearest to its previous position) and restrict the
+    axial coordinate to `axial_bounds` to exclude the static boundary sheet that
+    the (non-periodic) ring imprint seeds near z~0 (see e003 AUDIT, honesty).
+
+    Args:
+        psi_slice:   2D complex array; axis 0 = radial coord, axis 1 = axial (z).
+        axis_coord:  position of the symmetry axis along axis 0 (cx).
+        prev_outer:  (coord0, coord1) previous +1 core position.
+        prev_inner:  previous -1 core position.
+        axial_bounds: (lo, hi) allowed range on axis 1 (exclude boundary).
+
+    Returns {'radius','axial','outer','inner'} or None if either core is lost.
+    """
+    charges = np.rint(winding_field(psi_slice)).astype(int)
+    lo, hi = axial_bounds
+
+    def pick(target, prev):
+        best, best_d = None, np.inf
+        for a, b in np.argwhere(charges == target):
+            zc = b + 0.5
+            if zc < lo or zc > hi:
+                continue
+            d = (a + 0.5 - prev[0]) ** 2 + (b + 0.5 - prev[1]) ** 2
+            if d < best_d:
+                best_d, best = d, (a + 0.5, b + 0.5)
+        return best
+
+    outer = pick(+1, prev_outer)
+    inner = pick(-1, prev_inner)
+    if outer is None or inner is None:
+        return None
+    # the two cross-section cores must straddle the axis (one each side); if both
+    # land on the same side (e.g. a boundary-sheet core intruded) the radius would
+    # be meaningless -- reject so the caller ends the clean window.
+    if (outer[0] - axis_coord) * (inner[0] - axis_coord) >= 0:
+        return None
+    radius = 0.5 * (abs(outer[0] - axis_coord) + abs(inner[0] - axis_coord))
+    axial = 0.5 * (outer[1] + inner[1])
+    return {"radius": float(radius), "axial": float(axial),
+            "outer": outer, "inner": inner}
