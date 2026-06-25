@@ -117,6 +117,26 @@ def _plaquette_density(psi):
     return _plaquette_average(np.abs(psi) ** 2)
 
 
+def count_defects(psi, frac=0.1):
+    """Count quantized point vortices in a condensate, by MEASUREMENT.
+
+    A plaquette is a genuine vortex core when (a) its phase winding is nonzero
+    AND (b) its minimum-corner density falls below `frac` times the mean
+    density -- the density depletion that distinguishes a real core from a
+    sound-wave phase wrinkle. Returns (n_defects, net_winding).
+
+    This is the Kibble-Zurek counter (e008): on a turbulent post-quench field a
+    bare winding count would be swamped by sound, so the density gate is what
+    makes "vortices emerged" a measured statement, not a noise artefact.
+    """
+    w = np.rint(winding_field(psi)).astype(int)
+    rho = np.abs(psi) ** 2
+    corner_min = np.minimum.reduce([rho[:-1, :-1], rho[1:, :-1],
+                                    rho[:-1, 1:], rho[1:, 1:]])
+    mask = (w != 0) & (corner_min < frac * rho.mean())
+    return int(mask.sum()), int(w[mask].sum())
+
+
 def track_two_vortices(psi, prev_positions, signs, window=8):
     """Continuity-track two vortices, each within +-window of its last position.
 

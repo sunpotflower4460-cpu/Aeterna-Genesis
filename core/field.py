@@ -139,6 +139,28 @@ def step_imag(psi, V, k2, g, mu, dtau):
     return psi
 
 
+def step_damped_2d(psi, V, k2, g, mu, dt, gamma):
+    """One step of the phenomenologically DAMPED GPE (2D split-step).
+
+        d psi/dt = -(i + gamma) (H - mu) psi,   H = -1/2 lap + V + g|psi|^2
+
+    gamma=0 recovers the conservative GPE; gamma>0 removes energy so the field
+    relaxes toward the (broken-symmetry) ground state. This is the standard
+    setting for a Kibble-Zurek quench (e008): from white noise the field
+    condenses and leaves behind well-separated quantized vortices. Norm is NOT
+    conserved for gamma>0 (it is a driven relaxation at fixed mu).
+    """
+    cf = 1j + gamma
+    rho = np.abs(psi) ** 2
+    psi = psi * np.exp(-cf * (V + g * rho - mu) * (dt * 0.5))
+    psi_hat = fft2(psi)
+    psi_hat *= np.exp(-cf * 0.5 * k2 * dt)
+    psi = ifft2(psi_hat)
+    rho = np.abs(psi) ** 2
+    psi = psi * np.exp(-cf * (V + g * rho - mu) * (dt * 0.5))
+    return psi
+
+
 # --- 3D split-step (e003 vortex ring) -------------------------------------
 # The potential half-steps are element-wise, so they are reused unchanged; only
 # the kinetic step changes fft2 -> fftn over all three axes.

@@ -77,3 +77,40 @@ def unwrap_cumulative(angles):
     diffs = (diffs + np.pi) % (2.0 * np.pi) - np.pi
     cum = np.concatenate([[0.0], np.cumsum(diffs)])
     return cum
+
+
+def gradient_energy(psi, dx=1.0):
+    """Spectral kinetic energy 1/2 integral |grad psi|^2 -- a complexity proxy.
+
+    Rises as a smooth field develops structure (the arrow of complexity in
+    e008) and falls again during coarsening. Works for 2D or 3D arrays.
+    """
+    L = psi.shape[0]
+    k = np.where(np.arange(L) <= L // 2, np.arange(L), np.arange(L) - L) \
+        * (2.0 * np.pi / (L * dx))
+    ks = np.meshgrid(*([k] * psi.ndim), indexing="ij")
+    k2 = sum(kk ** 2 for kk in ks)
+    psi_hat = np.fft.fftn(psi)
+    N = psi.size
+    return float(0.5 * np.sum(k2 * np.abs(psi_hat) ** 2) / N * dx ** psi.ndim)
+
+
+def correlation_length(field, dx=1.0):
+    """Spectral correlation length 2*pi / <|k|> of (field - mean), 2D or 3D.
+
+    <|k|> is the power-weighted first moment of the wavenumber. A growing
+    correlation length signals coarsening (domains merging); for vortex
+    coarsening it tracks the inter-defect spacing. Returns 0.0 for a flat field.
+    """
+    L = field.shape[0]
+    k = np.where(np.arange(L) <= L // 2, np.arange(L), np.arange(L) - L) \
+        * (2.0 * np.pi / (L * dx))
+    ks = np.meshgrid(*([k] * field.ndim), indexing="ij")
+    kmag = np.sqrt(sum(kk ** 2 for kk in ks))
+    f = np.asarray(field) - np.mean(field)
+    power = np.abs(np.fft.fftn(f)) ** 2
+    total = power.sum()
+    if total <= 0:
+        return 0.0
+    kbar = float((kmag * power).sum() / total)
+    return float(2.0 * np.pi / kbar) if kbar > 0 else 0.0

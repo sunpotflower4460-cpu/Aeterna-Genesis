@@ -44,6 +44,8 @@
 | e00x 白→形 | 一様＋ノイズから対称が自分で破れるか | 計画 | — | (A) |
 | e00x 因果順序→次元 | 座標なしの因果集合から次元が出るか | 計画 | — | (A) |
 | e00x 物質⇄重力 | 場の構造が重力を生み幾何が返るか | 計画 | — | (A→B) |
+| [e008 同時共創発](experiments/e008_coemergence/) | 白＋GPEだけで物質(KZ渦)・時間(矢/echo)・空間(相関)が同時に出るか | **GREEN** | measured / interpretive | (A) |
+| [e009 探索的創発](experiments/e009_exploratory/) | 持続トーラス電流・種から成長・未知の興味深いもの（探索） | A=GREEN / C=frontier-obs | measured / analogy / frontier-observation | (A) |
 | e0xx 重力の創発 | 誘導重力をエンタングルメントから | frontier | — | (B) |
 
 > e004 は **YELLOW（measured-structural／示唆）**：数値は測定だが、双曲幾何は手作り

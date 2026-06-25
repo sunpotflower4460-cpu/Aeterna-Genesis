@@ -1,0 +1,78 @@
+{
+  "result": {
+    "params": {
+      "L": 160,
+      "steps": 5000
+    },
+    "tierA_mitosis": {
+      "components": 16,
+      "active_area_snaps": [
+        64,
+        53,
+        147,
+        281,
+        437
+      ],
+      "area_grows": true
+    },
+    "tierA_coral": {
+      "components": 1,
+      "active_area_snaps": [
+        64,
+        496,
+        1058,
+        2007,
+        3190
+      ],
+      "fractal_dim": 1.554,
+      "area_grows": true
+    },
+    "tierB_gradient": {
+      "com_drift_along_gradient": -8.59,
+      "directional": true,
+      "fractal_dim": 1.641
+    }
+  },
+  "atlas": [
+    {
+      "experiment": "X2",
+      "tier": "A",
+      "put_in": "Gray-Scott reaction-diffusion + one seed patch",
+      "emerged": [
+        "self-replication (mitosis): 1 seed -> 16 components",
+        "branching growth (coral), fractal_dim=1.55"
+      ],
+      "surprises": [],
+      "persistence": "area grows: mitosis=True coral=True",
+      "measured_numbers": {
+        "mitosis_components": 16,
+        "coral_fractal_dim": 1.554
+      },
+      "not_scripted_check": "the local rule never says branch/replicate; form is measured",
+      "claim_tier": "measured (components/area/fractal dim) ; analogy (plant-like)",
+      "floors": [
+        "plant-like is analogy / a description, NOT life"
+      ]
+    },
+    {
+      "experiment": "X2",
+      "tier": "B",
+      "put_in": "Gray-Scott + a one-directional gradient in feed rate F",
+      "emerged": [
+        "directional growth"
+      ],
+      "surprises": [
+        "CoM drift along gradient = -8.59 cells"
+      ],
+      "persistence": "directional=True",
+      "measured_numbers": {
+        "com_drift": -8.59
+      },
+      "not_scripted_check": "growth direction is measured (CoM), not imposed",
+      "claim_tier": "measured (directionality) ; frontier-observation (morphology type)",
+      "floors": [
+        "fixed lattice; morphology type not predicted"
+      ]
+    }
+  ]
+}
