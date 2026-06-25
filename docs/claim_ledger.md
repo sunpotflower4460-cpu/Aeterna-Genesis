@@ -38,6 +38,22 @@ tier: `measured | observed | interpretive | analogy | frontier`
 
 ---
 
+## e003 — GPE 3D 渦リング（トーラス）の伝播  (STATUS: GREEN)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 渦リングは 3D GPE だけから軸方向に自己伝播する（煙の輪） | **measured** | `result.json`：伝播距離 14.0 cells（単調、向き −z） |
+| 2 | 伝播中もリング半径はほぼ一定 | **measured** | 半径 mean 10.43（10.0–11.0、spread 1.0） |
+| 3 | 循環は量子化（断面の渦芯＝±1） | **measured** | `core/vortex.py` 断面追尾、`result.json` |
+| 4 | エネルギー・ノルムが保存（一様背景・周期境界の保存系） | **measured** | E/N drift 1.4e-5 / 6.9e-14 |
+| 5 | 小さいリングほど速い（渦リングの v~1/R 則） | **measured** | `robustness.json`：速度 0.0156>0.0133>0.0110（R=8,10,12）、3/3 PASS |
+| 6 | 速度の R 依存の関数形は渦リング速度公式と一致 | **measured（形）/ analogy（絶対値）** | v∝(1/2R)ln(8R/ξ) の形に一致、絶対値は一定係数〜0.63（芯が粗い）AUDIT §監査5 |
+| 7 | 閉じた渦線＝トーラスが伝播する | **observed/interpretive** | リング芯は閉ループ（位相的にトーラス） |
+| 8 | imprint 非周期由来の静的境界シートは人工物（バルク/クリーン窓で測定し除外） | **（床の明示）** | AUDIT.md 床1。自己検出クリーン窓 |
+| 9 | 二リングの絡み（リンク）は未実施 | **frontier** | AUDIT.md 床4（次段） |
+
+---
+
 ## e004 — オクターブ階層 / 折り畳み / ホログラフィー  (STATUS: YELLOW)
 
 > 数値は measured だが、双曲幾何は手作り階層に内在し ε も手入れ。MERA/AdS の
