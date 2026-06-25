@@ -114,3 +114,24 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | 数えた芯は実在の凝縮体中の渦（γ未凝縮の罠を回避） | **measured** | ρ_median 0.94–0.99（全凝縮で締める） |
 | 4 | z 順序 b(z=1) > b(z=2)＝KZ b=(D−d)ν/(1+νz) と同じ向き（小 z→大 b） | **measured(順序)/interpretive(KZ)** | 整合プロトコルで NLKG(z=1) b≈0.5 > GPE(z=2) b≈0.24（`robustness.json`） |
 | 5 | 絶対 b は protocol 依存／間隔/ξ 値は ξ 定義依存／z 対比は減衰に敏感（床） | **（床の明示）** | AUDIT.md 床1–4 |
+
+## e011 — 欠陥の動的化学（±束縛 ＋ 有限温度の解離）  (STATUS: GREEN)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | ±双極子は束縛して並進、v·d=一定（ハミルトニアン双極子則 v~1/d） | **measured** | `results/pair_binding.json`：v·d=0.67、CV≈0.01（d=16–28） |
+| 2 | ++同符号は束縛して公転、ω·d²≈2（点渦 ω=2/d²） | **measured** | ω·d²=2.08、CV≈0.04 |
+| 3 | 選択的：逆符号は並進・同符号は公転（一つの場の方程式から2則） | **measured** | ±回転≈0、++重心ドリフト≈0 |
+| 4 | 有限温度で ±対は解離、寿命は T とともに単調減少（熱活性） | **measured(寿命↓)/interpretive(Arrhenius)** | `results/finite_T.json`：寿命 2500→1985(T 0→0.6)、drop 21%、slope≈−780 |
+| 5 | 「分子/化学」は analogy／v·d は小 d で崩れる／Arrhenius は cap・BKT の床 | **（床の明示）** | AUDIT.md 床1–4 |
+
+## e012 — Hopf 安定化＝「第三」（高階微分が崩壊を止める）  (STATUS: GREEN, 完全自己安定化は frontier)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | Q_H=1 ホップ粒子の Hopf 不変量は整数（滑らかな構成から ≈1） | **measured** | `results/hopfion_static.json`：Q_H=1.00（Whitehead (1/16π²)∫A·B、box/L で安定） |
+| 2 | Derrick 地形：素(c4=0)は崩壊、第三(c4>0)で有限 L*＝√(c4·E4/E2)、L*∝√c4 | **measured** | L*=0.565/1.130/1.696（c4=1/4/9＝1:2:3） |
+| 3 | 動的：素(c4=0)はホップ粒子が崩壊（Q_H→0、e009 の縮みの動的確認） | **measured** | `results/hopfion_flow.json`：Q_H 0.99→~0、エネルギー単調減 |
+| 4 | 動的：第三(c4>0)は崩壊に抵抗（最終 Q_H・整定エネルギーが c4 で単調増） | **measured** | 最終 Q_H が c4 とともに増加（単調） |
+| 5 | 完全な自己安定化（Q_H≈1 を保つ持続）は本解像度で未達 | **frontier-observation** | 四次項の剛性で陽的 dt 極小・格子カットオフが L* と競合（細格子/陰的処理が要） |
+| 6 | 絶対 E2,E4 は解像度(dx)依存／「粒子」は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |

@@ -99,6 +99,82 @@ def hopf_charge(n, dx):
     return float(AB / (16.0 * np.pi ** 2))
 
 
+def faddeev_energy(n, dx, c2, c4):
+    """Total Faddeev-Skyrme energy E = c2*E2 + c4*E4 and the pieces (E2, E4)."""
+    dn = central_diff(n, dx)
+    E2 = energy2(dn, dx)
+    E4 = energy4(skyrme_F(n, dn), dx)
+    return c2 * E2 + c4 * E4, E2, E4
+
+
+def l2_gradient(n, dx, c2, c4):
+    """Discrete Euler-Lagrange gradient G = dE/dn (before tangent projection).
+
+    Assembled from the SAME periodic central differences used by the energy, so
+    G is consistent with the discrete energy and the gradient flow decreases it
+    monotonically (the e012 sanity check). Derivation:
+      E2: G2 = -2 c2 sum_i D_i(D_i n)              (discrete Laplacian)
+      E4: G4 = P4 - sum_i D_i(Q4_i),
+          P4   =  2 c4 sum_{j<k} F_jk (D_j n x D_k n)   (explicit n in F)
+          Q4_i = -2 c4 sum_k   F_ik (n x D_k n)         (momentum in D_i n)
+    with F_ik = n . (D_i n x D_k n) antisymmetric (F_ii=0, F_ki=-F_ik).
+    """
+    dn = central_diff(n, dx)
+    G = -2.0 * c2 * sum(central_diff(dn[i], dx)[i] for i in range(3))
+    if c4 > 0:
+        F = [[None] * 3 for _ in range(3)]
+        for j in range(3):
+            for k in range(3):
+                if j < k:
+                    F[j][k] = (n * _cross(dn[j], dn[k])).sum(axis=0)
+        for j in range(3):
+            for k in range(3):
+                if j > k:
+                    F[j][k] = -F[k][j]
+        P4 = np.zeros_like(n)
+        for j in range(3):
+            for k in range(3):
+                if j < k:
+                    P4 = P4 + 2.0 * c4 * F[j][k] * _cross(dn[j], dn[k])
+        for i in range(3):
+            Q4 = np.zeros_like(n)
+            for k in range(3):
+                if k != i:
+                    Q4 = Q4 + (-2.0 * c4) * F[i][k] * _cross(n, dn[k])
+            G = G - central_diff(Q4, dx)[i]
+        G = G + P4
+    return G
+
+
+def flow_step(n, dx, c2, c4, dt):
+    """One tangent-projected gradient-flow step; keeps |n|=1 by renormalising."""
+    G = l2_gradient(n, dx, c2, c4)
+    G = G - (n * G).sum(axis=0, keepdims=True) * n      # project onto T_n S^2
+    n = n - dt * G
+    return n / np.linalg.norm(n, axis=0, keepdims=True)
+
+
+def e4_rms_size(n, dx):
+    """RMS radius of the Skyrme (E4) density -- a size that stays meaningful.
+
+    The quartic density localises on the hopfion core even as it moves, so its
+    radius of gyration tracks the soliton SIZE; it goes to ~0 only when the
+    structure unwinds (collapse). Returns 0.0 for a structureless field.
+    """
+    dn = central_diff(n, dx)
+    F = skyrme_F(n, dn)
+    w = sum(F[jk] ** 2 for jk in F)
+    tot = w.sum()
+    if tot <= 0:
+        return 0.0
+    L = n.shape[1]
+    ax = (np.arange(L) - L / 2) * dx
+    X, Y, Z = np.meshgrid(ax, ax, ax, indexing="ij")
+    cx, cy, cz = (w * X).sum() / tot, (w * Y).sum() / tot, (w * Z).sum() / tot
+    r2 = (X - cx) ** 2 + (Y - cy) ** 2 + (Z - cz) ** 2
+    return float(np.sqrt((w * r2).sum() / tot))
+
+
 def derrick_curve(E2, E4, c4, c2=1.0, lams=None):
     """Derrick energy E(L) = L*c2*E2 + c4*E4/L and the minimiser L*.
 
