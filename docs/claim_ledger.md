@@ -133,7 +133,7 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | Derrick 地形：素(c4=0)は崩壊、第三(c4>0)で有限 L*＝√(c4·E4/E2)、L*∝√c4 | **measured** | L*=0.565/1.130/1.696（c4=1/4/9＝1:2:3） |
 | 3 | 動的：素(c4=0)はホップ粒子が崩壊（Q_H→0、e009 の縮みの動的確認）。エネルギー単調減で勾配検算 | **measured** | `results/hopfion_flow.json`：Q_H 0.99→~0、ΔE/予測≈1.0 |
 | 4 | 動的(陽的勾配流)：第三(c4>0)の崩壊抵抗は脆い（細格子で抵抗、粗格子/陽的 dt で崩壊・数値不安定） | **frontier-observation** | `hopfion_flow.py`：陽的四次は剛性で不安定（Stage3 で解決） |
-| 5 | **完全PDE 自己安定化（★本丸、frontier→measured）**：安定化半陰的流で c4>0 が Q_H≈1 を保ったまま有限 L* へ収束、L* は c4 で増加（Derrick）、エネルギー単調 | **measured** | `hopfion_pde.py`/`results/hopfion_pde.json`：Q_H≈1 保持、L*≈3.3/3.7/4.1(c4=15/25/40)、勾配を 1/(1+dt·κ·|k|⁴) で濾過 |
+| 5 | **完全PDE 自己安定化（★本丸、frontier→measured）**：安定化半陰的流で c4>0 が Q_H≈1 を保ったまま有限 L* へ収束、L* は c4 で増加（Derrick）、エネルギー単調 | **measured** | `hopfion_pde.py`/`results/hopfion_pde.json`：Q_H≈1 保持、L*≈3.3/3.7/4.1(c4=15/25/40)、勾配を 1/(1+dt·κ·\|k\|⁴) で濾過 |
 | 6 | L* 周りの**有界 basin（両側、大域的でない）**：遥かに小さくも大きくも始めると巻き戻る／大 c4 は解像度ぎりぎり(L*∝√c4 が格子カットオフへ)／絶対 L* は解像度/κ 依存／「粒子」は analogy（床） | **（床の明示）** | `hopfion_pde.py` 床。Q_H≈1 保持・有限 L*・L*(c4) 増加(κ~80×非依存)が robust |
 
 ## e013 — 器＋中身（循環は内部に load-bearing）  (STATUS: GREEN)
@@ -153,7 +153,7 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 1 | 座標を捨て因果順序だけから次元を復元（Myrheim-Meyer、d=2,3,4） | **measured** | `result.json`：d_MM=1.99/2.97/3.95 |
 | 2 | 関係対割合の正しい式は分母2（r(2)=0.5）。理論側の係数誤りを捕獲＝両方を疑う | **measured/規律** | r(d)=Γ(d+1)Γ(d/2)/(2Γ(3d/2))、r(2)=0.5 ガード |
 | 3 | スペクトル次元：3D 幾何 d_s≈3、2D≈2 | **measured** | `spectral.json`：3.04 / 2.03 |
-| 4 | 因果集合 Hasse のスペクトル次元は異常になり得る（合わせ込まない） | **observed** | d_s=3.22（既知の微妙量） |
+| 4 | 因果集合 Hasse のスペクトル次元は異常になり得る（合わせ込まない） | **observed** | d_s=3.13（既知の微妙量） |
 | 5 | 運動学的（与因果順序→次元）。動的幾何の自己組織化は AJL 継承（床） | **（床の明示）** | AJL 1305.4702, 1110.6875 |
 
 ## e015 — 器の閉じ（開-閉の二重性、駆動依存）  (STATUS: GREEN)

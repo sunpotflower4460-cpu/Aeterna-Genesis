@@ -65,6 +65,9 @@ def test_e012_pde_self_stabilization():
     assert r["all_energy_monotone"]          # filtered gradient still descends
     assert r["bare_collapses"]               # c4=0 still unwinds
     assert r["third_holds_QH"]               # c4>0 holds Q_H ~ 1 (self-stabilises)
+    # the L*-grows-with-c4 claim must be non-vacuous: >=2 positive c4 stabilised
+    assert len(r["stable_sizes"]) >= 2
+    assert r["Lstar_grows_with_c4"]
 
 
 def test_e012_stabilized_step_decreases_energy():

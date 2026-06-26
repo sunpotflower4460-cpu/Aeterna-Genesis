@@ -60,7 +60,8 @@ from core import hopf  # noqa: E402
 DEFAULT = {"L": 40, "box": 7.0, "c2": 1.0, "kappa": 40.0, "dt": 8e-3,
            "n_steps": 1200, "n_check": 4, "start_scale": 2.0,
            "c4_list": [0.0, 15.0, 25.0, 40.0]}
-QUICK = {"L": 36, "box": 7.0, "start_scale": 2.4, "n_steps": 800, "c4_list": [0.0, 25.0]}
+QUICK = {"L": 36, "box": 7.0, "start_scale": 2.4, "n_steps": 800,
+         "c4_list": [0.0, 15.0, 30.0]}
 
 
 def run_flow(p, c4):
@@ -83,10 +84,11 @@ def run_flow(p, c4):
         if (step + 1) % every == 0:
             trace.append({"step": step + 1, "Q_H": round(hopf.hopf_charge(n, dx), 3),
                           "size": round(hopf.e4_rms_size(n, dx), 3)})
-    Qf = trace[-1]["Q_H"] if trace else Q0
-    sf = trace[-1]["size"] if trace else s0
-    return {"c4": c4, "Q_H_initial": round(Q0, 3), "Q_H_final": Qf,
-            "size_initial": round(s0, 3), "size_final": sf,
+    # gates from the TERMINAL field n, not the rounded last trace point (CodeRabbit)
+    Qf = float(hopf.hopf_charge(n, dx))
+    sf = float(hopf.e4_rms_size(n, dx))
+    return {"c4": c4, "Q_H_initial": round(Q0, 3), "Q_H_final": round(Qf, 3),
+            "size_initial": round(s0, 3), "size_final": round(sf, 3),
             "energy_monotone": bool(mono),
             "collapsed": bool(abs(Qf) < 0.5),
             "stabilised": bool(abs(Qf) > 0.7), "trace": trace}

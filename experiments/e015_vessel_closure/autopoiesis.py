@@ -58,8 +58,11 @@ def integrate(p, S=None, break_membrane=None, stop_metabolism=None):
         t = s * dt
         a = 0.0 if (stop_metabolism is not None and t >= stop_metabolism) else p["alpha"]
         g = 0.0 if (break_membrane is not None and t >= break_membrane) else p["gamma"]
-        M = max(M + dt * (a * A * (1 - M) - p["beta"] * M), 0.0)
-        A = max(A + dt * (g * M * (1 - A) * S - p["delta"] * A), 0.0)
+        # both derivatives from the SAME old (M, A) -> order-independent (CodeRabbit P2)
+        dM = a * A * (1 - M) - p["beta"] * M
+        dA = g * M * (1 - A) * S - p["delta"] * A
+        M = max(M + dt * dM, 0.0)
+        A = max(A + dt * dA, 0.0)
     return round(M, 4), round(A, 4)
 
 

@@ -97,9 +97,15 @@ def _hasse_laplacian(T, X):
             if not np.any(rel[i] & rel[:, j]):       # covering: no intermediate
                 A[i, j] = A[j, i] = 1.0
     deg = A.sum(1)
-    deg[deg == 0] = 1.0
-    Dm = np.diag(1.0 / np.sqrt(deg))
-    return Dm @ (np.diag(deg) - A) @ Dm
+    # Isolated vertices must keep a ZERO eigenvalue (a constant return-probability
+    # mode), not be turned into eigenvalue-1 modes by deg->1 (Codex/CodeRabbit P2):
+    nz = deg > 0
+    inv_sqrt = np.zeros_like(deg)
+    inv_sqrt[nz] = 1.0 / np.sqrt(deg[nz])
+    Lap = np.eye(N) - (inv_sqrt[:, None] * A * inv_sqrt[None, :])
+    Lap[~nz, :] = 0.0
+    Lap[:, ~nz] = 0.0
+    return Lap
 
 
 def causal_set_ds(d, N, seeds):

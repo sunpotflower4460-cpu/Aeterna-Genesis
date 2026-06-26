@@ -68,15 +68,28 @@ def convect_feed(p, Ra):
     om = np.zeros((L, L), complex)
     ET = np.exp(-(K2 + p["lam"]) * p["dt"])
     Eom = np.exp(-p["Pr"] * K2 * p["dt"])
-    ph = lambda f: np.real(np.fft.ifft2(f))
-    deal = lambda f: f * mask
+    def ph(f):
+        return np.real(np.fft.ifft2(f))
+
+    def deal(f):
+        return f * mask
+
+    def lapp(f):
+        return (np.roll(f, 1, 0) + np.roll(f, -1, 0)
+                + np.roll(f, 1, 1) + np.roll(f, -1, 1) - 4 * f)
+
+    def gx(f):
+        return (np.roll(f, -1, 0) - np.roll(f, 1, 0)) * 0.5
+
+    def gy(f):
+        return (np.roll(f, -1, 1) - np.roll(f, 1, 1)) * 0.5
+
     src = ((Y < 3) | (Y > L - 3)).astype(float)
     c = np.zeros((L, L))
-    b = 0.1 * np.ones((L, L))
-    lapp = lambda f: (np.roll(f, 1, 0) + np.roll(f, -1, 0)
-                      + np.roll(f, 1, 1) + np.roll(f, -1, 1) - 4 * f)
-    gx = lambda f: (np.roll(f, -1, 0) - np.roll(f, 1, 0)) * 0.5
-    gy = lambda f: (np.roll(f, -1, 1) - np.roll(f, 1, 1)) * 0.5
+    # small uniform biomass SEED: interior b is then set by growth-vs-decay (does
+    # nutrient reach here?), not by leftover initial biomass. Biomass does NOT
+    # advect, so a fed interior means convection carried NUTRIENT in.
+    b = 0.02 * np.ones((L, L))
     dt = p["dt"]
     uu = ww = np.zeros((L, L))
     for _ in range(p["steps"]):
@@ -87,9 +100,12 @@ def convect_feed(p, Ra):
         advO = np.fft.fft2(uu * ph(1j * KX * om) + ww * ph(1j * KY * om))
         T = ET * (T + dt * deal(-advT + p["lam"] * Ttgt_h))
         om = Eom * (om + dt * deal(-advO + Ra * p["Pr"] * (1j * KX * T)))
+        # nutrient c IS advected by the flow; biomass b is NOT (matching Stage 1):
+        # interior b must rise because convection carries NUTRIENT inward and b
+        # grows there locally -- not because biomass is swept in (CodeRabbit P1).
         c = np.clip(c + dt * (p["Dc"] * lapp(c) - (uu * gx(c) + ww * gy(c))
                               - p["k"] * b * c) + dt * 5.0 * src * (1 - c), 0.0, 1.0)
-        b = np.clip(b + dt * (p["Db"] * lapp(b) - (uu * gx(b) + ww * gy(b))
+        b = np.clip(b + dt * (p["Db"] * lapp(b)
                               + p["a"] * b * c * (1 - b) - p["m"] * b), 0.0, 1.0)
     ke = float(0.5 * np.mean(uu ** 2 + ww ** 2))
     interior = float(b[:, L // 2 - 4:L // 2 + 4].mean())
@@ -105,15 +121,23 @@ def simulate(quick=False):
     rows = [convect_feed(p, Ra) for Ra in p["Ra_list"]]
     ke = [r["KE"] for r in rows]
     inner = [r["interior_b"] for r in rows]
+    cin = [r["c_interior"] for r in rows]
     sub = rows[0]            # lowest Ra (below or near onset)
     sup = rows[-1]           # highest Ra (convecting)
+    # "feeds the interior" = delivers NUTRIENT there (biomass is NOT advected, so
+    # interior c can only rise by convective transport). c_interior is the clean,
+    # faithful signal (conduction ~0 -> convection ~0.4); interior_b is the
+    # slower downstream response and is reported as supporting evidence.
     return {
         "params": p, "rows": rows,
         "convection_self_organizes": bool(sup["KE"] > 100 * (sub["KE"] + 1e-9)
                                           and sup["KE"] > 1.0),
-        "interior_fed_by_convection": bool(sup["interior_b"] > 5 * (sub["interior_b"] + 1e-9)),
+        "interior_fed_by_convection": bool(sup["c_interior"] > 5 * (sub["c_interior"] + 1e-9)
+                                           and sup["c_interior"] > 0.1),
+        "interior_b_rises": bool(sup["interior_b"] > 2 * (sub["interior_b"] + 1e-9)),
         "KE_range": [round(min(ke), 4), round(max(ke), 4)],
         "interior_b_range": [round(min(inner), 4), round(max(inner), 4)],
+        "c_interior_range": [round(min(cin), 4), round(max(cin), 4)],
     }
 
 
@@ -130,7 +154,8 @@ def _atlas(result):
         "experiment": "e013 self-organized convection", "tier": "measured",
         "put_in": "2D Boussinesq convection + nutrient/biomass RD; 'convect'/'feed interior' not put in",
         "emerged": ["convection self-organizes above Ra_c (KE %s)" % result["KE_range"],
-                    "self-organized flow feeds the interior (interior_b %s)" % result["interior_b_range"]],
+                    "self-organized flow DELIVERS NUTRIENT to the interior (c_interior %s); biomass responds (interior_b %s)"
+                    % (result["c_interior_range"], result["interior_b_range"])],
         "surprises": ["a circulation that arose on its own (not prescribed) is load-bearing for the interior"],
         "persistence": "saturated convection; sub-critical conduction starves the interior",
         "measured_numbers": {"rows": result["rows"]},
@@ -150,8 +175,8 @@ def main(argv=None):
     print("=== e013 self-organized convection feeds the interior ===")
     for row in r["rows"]:
         tag = "CONVECTING" if row["KE"] > 1.0 else "conduction"
-        print("  Ra=%6.1f: KE=%9.4f [%s]  interior_b=%.4f  total_b=%.4f"
-              % (row["Ra"], row["KE"], tag, row["interior_b"], row["total_b"]))
+        print("  Ra=%6.1f: KE=%9.4f [%s]  c_interior=%.4f  interior_b=%.4f"
+              % (row["Ra"], row["KE"], tag, row["c_interior"], row["interior_b"]))
     print("  convection self-organizes=%s ; interior fed by self-organized flow=%s"
           % (r["convection_self_organizes"], r["interior_fed_by_convection"]))
     passed, checks = evaluate(r, quick=args.quick)

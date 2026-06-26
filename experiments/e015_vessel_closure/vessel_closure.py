@@ -117,10 +117,15 @@ def simulate(quick=False):
         "death_on_cut": bool(dead_totv < 0.05 * grown_totv),
         "self_maintains": bool(grown_totv > 10.0 and grown_area > 0.05),
         "excised_total_v": round(excised_totv, 1), "healed_total_v": round(healed_totv, 1),
-        "self_heals": bool(healed_totv > 0.7 * grown_totv),
+        "regen_fraction": round(healed_totv / grown_totv, 3) if grown_totv else 0.0,
+        # the documented result is near-complete regrowth (~98%), so gate strictly
+        "self_heals": bool(healed_totv >= 0.9 * grown_totv),
         "F_sweep": sweep,
         "survival_window": [min(alive_F), max(alive_F)] if alive_F else [],
-        "has_critical_F": bool(alive_F and (not sweep[0]["alive"] or not sweep[-1]["alive"])),
+        # a BOUNDED window: survival in the middle, death on BOTH the low-F and
+        # high-F ends (AND, not OR -- CodeRabbit P1)
+        "has_critical_F": bool(alive_F and not sweep[0]["alive"]
+                               and not sweep[-1]["alive"]),
     }
 
 
