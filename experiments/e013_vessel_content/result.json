@@ -1,0 +1,141 @@
+{
+  "result": {
+    "params": {
+      "L": 64,
+      "Dc": 1.0,
+      "Db": 0.02,
+      "k": 1.0,
+      "a": 2.0,
+      "m": 0.2,
+      "steps": 6000,
+      "dt": 0.01,
+      "nroll": 2,
+      "U_list": [
+        0.0,
+        1.0,
+        2.0,
+        4.0,
+        8.0
+      ],
+      "inner_frac": 0.25
+    },
+    "rows": [
+      {
+        "U": 0.0,
+        "Pe": 0.0,
+        "c_center": 0.0048,
+        "inner_b": 2e-05,
+        "total_b": 0.1667,
+        "survival_area": 0.341
+      },
+      {
+        "U": 1.0,
+        "Pe": 64.0,
+        "c_center": 0.0503,
+        "inner_b": 0.00011,
+        "total_b": 0.1653,
+        "survival_area": 0.317
+      },
+      {
+        "U": 2.0,
+        "Pe": 128.0,
+        "c_center": 0.0792,
+        "inner_b": 0.00098,
+        "total_b": 0.1662,
+        "survival_area": 0.32
+      },
+      {
+        "U": 4.0,
+        "Pe": 256.0,
+        "c_center": 0.0889,
+        "inner_b": 0.00571,
+        "total_b": 0.1696,
+        "survival_area": 0.335
+      },
+      {
+        "U": 8.0,
+        "Pe": 512.0,
+        "c_center": 0.0943,
+        "inner_b": 0.02889,
+        "total_b": 0.1771,
+        "survival_area": 0.368
+      }
+    ],
+    "inner_b_no_flow": 2e-05,
+    "dead_core_no_flow": true,
+    "inner_b_monotone_in_Pe": true,
+    "inner_b_rises_with_flow": true,
+    "inner_b_range": [
+      2e-05,
+      0.02889
+    ],
+    "total_b_rel_spread": 0.067
+  },
+  "atlas": [
+    {
+      "experiment": "e013 vessel+content (prescribed flow)",
+      "tier": "measured",
+      "put_in": "advection-reaction-diffusion + a prescribed incompressible convection flow; 'feed the centre' not put in",
+      "emerged": [
+        "no flow -> DEAD CORE (inner b ~ 0); flow -> interior FED",
+        "inner biomass rises monotonically with Pe: [2e-05, 0.02889]"
+      ],
+      "surprises": [
+        "total biomass barely changes (7%) -- the circulation is load-bearing only for the INTERIOR"
+      ],
+      "persistence": "steady state; the outer shell lives by diffusion with or without flow",
+      "measured_numbers": {
+        "rows": [
+          {
+            "U": 0.0,
+            "Pe": 0.0,
+            "c_center": 0.0048,
+            "inner_b": 2e-05,
+            "total_b": 0.1667,
+            "survival_area": 0.341
+          },
+          {
+            "U": 1.0,
+            "Pe": 64.0,
+            "c_center": 0.0503,
+            "inner_b": 0.00011,
+            "total_b": 0.1653,
+            "survival_area": 0.317
+          },
+          {
+            "U": 2.0,
+            "Pe": 128.0,
+            "c_center": 0.0792,
+            "inner_b": 0.00098,
+            "total_b": 0.1662,
+            "survival_area": 0.32
+          },
+          {
+            "U": 4.0,
+            "Pe": 256.0,
+            "c_center": 0.0889,
+            "inner_b": 0.00571,
+            "total_b": 0.1696,
+            "survival_area": 0.335
+          },
+          {
+            "U": 8.0,
+            "Pe": 512.0,
+            "c_center": 0.0943,
+            "inner_b": 0.02889,
+            "total_b": 0.1771,
+            "survival_area": 0.368
+          }
+        ],
+        "total_b_rel_spread": 0.067
+      },
+      "not_scripted_check": "inner biomass measured by value (no ratio div-by-zero); logistic cap prevents boundary blow-up",
+      "claim_tier": "measured (dead core, inner b vs Pe, small total diff) ; analogy (blood/streaming/'heart')",
+      "floors": [
+        "prescribed flow is analogy (the self-organized Rayleigh-Benard version is the extension)",
+        "load-bearing is for the INTERIOR (deep region); the shell survives by diffusion",
+        "fixed lattice = space is given"
+      ]
+    }
+  ]
+}

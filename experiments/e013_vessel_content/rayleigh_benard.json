@@ -1,0 +1,116 @@
+{
+  "result": {
+    "params": {
+      "L": 48,
+      "Pr": 1.0,
+      "lam": 0.5,
+      "Dc": 1.0,
+      "Db": 0.02,
+      "k": 1.0,
+      "a": 2.0,
+      "m": 0.2,
+      "steps": 12000,
+      "dt": 0.0008,
+      "Ra_list": [
+        10.0,
+        30.0,
+        100.0,
+        300.0
+      ],
+      "seed": 1
+    },
+    "rows": [
+      {
+        "Ra": 10.0,
+        "KE": 0.0,
+        "interior_b": 0.0147,
+        "total_b": 0.1632,
+        "c_interior": 0.0
+      },
+      {
+        "Ra": 30.0,
+        "KE": 0.7947,
+        "interior_b": 0.0147,
+        "total_b": 0.166,
+        "c_interior": 0.0
+      },
+      {
+        "Ra": 100.0,
+        "KE": 10.4206,
+        "interior_b": 0.4215,
+        "total_b": 0.3732,
+        "c_interior": 0.0949
+      },
+      {
+        "Ra": 300.0,
+        "KE": 15.8515,
+        "interior_b": 0.3998,
+        "total_b": 0.4548,
+        "c_interior": 0.0771
+      }
+    ],
+    "convection_self_organizes": true,
+    "interior_fed_by_convection": true,
+    "KE_range": [
+      0.0,
+      15.8515
+    ],
+    "interior_b_range": [
+      0.0147,
+      0.4215
+    ]
+  },
+  "atlas": [
+    {
+      "experiment": "e013 self-organized convection",
+      "tier": "measured",
+      "put_in": "2D Boussinesq convection + nutrient/biomass RD; 'convect'/'feed interior' not put in",
+      "emerged": [
+        "convection self-organizes above Ra_c (KE [0.0, 15.8515])",
+        "self-organized flow feeds the interior (interior_b [0.0147, 0.4215])"
+      ],
+      "surprises": [
+        "a circulation that arose on its own (not prescribed) is load-bearing for the interior"
+      ],
+      "persistence": "saturated convection; sub-critical conduction starves the interior",
+      "measured_numbers": {
+        "rows": [
+          {
+            "Ra": 10.0,
+            "KE": 0.0,
+            "interior_b": 0.0147,
+            "total_b": 0.1632,
+            "c_interior": 0.0
+          },
+          {
+            "Ra": 30.0,
+            "KE": 0.7947,
+            "interior_b": 0.0147,
+            "total_b": 0.166,
+            "c_interior": 0.0
+          },
+          {
+            "Ra": 100.0,
+            "KE": 10.4206,
+            "interior_b": 0.4215,
+            "total_b": 0.3732,
+            "c_interior": 0.0949
+          },
+          {
+            "Ra": 300.0,
+            "KE": 15.8515,
+            "interior_b": 0.3998,
+            "total_b": 0.4548,
+            "c_interior": 0.0771
+          }
+        ]
+      },
+      "not_scripted_check": "the velocity is emergent from buoyancy; only the field laws are put in",
+      "claim_tier": "measured (onset + interior feeding) ; analogy (convection/'heart')",
+      "floors": [
+        "periodic-box minimal Boussinesq (not a walled cell); Ra_c is the box's own value",
+        "'self-organized circulation = heart' is analogy; fixed lattice"
+      ]
+    }
+  ]
+}
