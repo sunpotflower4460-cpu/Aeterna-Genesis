@@ -48,7 +48,10 @@
 | [e009 探索的創発](experiments/e009_exploratory/) | 持続トーラス電流・種から成長・未知の興味深いもの（探索） | A=GREEN / C=frontier-obs | measured / analogy / frontier-observation | (A) |
 | [e010 KZ コヒーレンス長](experiments/e010_kz_coherence/) | KZ 欠陥は凍結コヒーレンス長で決まるか（間隔∝ξ, 2σ=b, b vs z） | **GREEN** | measured / interpretive | (A) |
 | [e011 欠陥の動的化学](experiments/e011_defect_chemistry/) | 束縛渦対は選択的則(v·d, ω·d²)に従い、有限温度で解離するか | **GREEN** | measured / interpretive / analogy | (A) |
-| [e012 Hopf 安定化＝「第三」](experiments/e012_hopf_stabilization/) | 高階微分('第三')はホップ粒子を Derrick 崩壊から救うか | **GREEN** / 完全自己安定化=frontier | measured / frontier-observation / analogy | (A) |
+| [e012 Hopf 安定化＝「第三」](experiments/e012_hopf_stabilization/) | 高階微分('第三')はホップ粒子を Derrick 崩壊から救うか（完全PDEで Q_H≈1 保持→L*） | **GREEN**（半陰的で frontier→measured） | measured / analogy | (A) |
+| [e013 器＋中身](experiments/e013_vessel_content/) | 循環は器の内部に load-bearing か（自己組織対流が内部を養うか） | **GREEN** | measured / analogy | (A) |
+| [e014 因果 → 次元](experiments/e014_causal_dimension/) | 座標を捨て因果順序だけから次元が出るか（Myrheim-Meyer / スペクトル） | **GREEN** | measured / interpretive | (A) |
+| [e015 器の閉じ](experiments/e015_vessel_closure/) | 器は開(駆動)＋閉(自己維持)の散逸構造で、駆動を切ると死ぬか（両腕オートポイエーシス） | **GREEN** | measured / interpretive / analogy | (A) |
 | e0xx 重力の創発 | 誘導重力をエンタングルメントから | frontier | — | (B) |
 
 > e004 は **YELLOW（measured-structural／示唆）**：数値は測定だが、双曲幾何は手作り

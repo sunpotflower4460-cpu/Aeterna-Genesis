@@ -57,6 +57,29 @@ def test_e012_static_quick():
     assert not third["collapses"] and third["L_star_formula"] > 0
 
 
+def test_e012_pde_self_stabilization():
+    # The stabilized semi-implicit flow: bare collapses, but c4>0 HOLDS Q_H~1
+    # (the complete-PDE self-stabilization), with energy monotone throughout.
+    pde = _load("hopfion_pde.py")
+    r = pde.simulate(quick=True)
+    assert r["all_energy_monotone"]          # filtered gradient still descends
+    assert r["bare_collapses"]               # c4=0 still unwinds
+    assert r["third_holds_QH"]               # c4>0 holds Q_H ~ 1 (self-stabilises)
+    # the L*-grows-with-c4 claim must be non-vacuous: >=2 positive c4 stabilised
+    assert len(r["stable_sizes"]) >= 2
+    assert r["Lstar_grows_with_c4"]
+
+
+def test_e012_stabilized_step_decreases_energy():
+    n, dx = hopf.hopfion_field(28, 2.2, 7.0)
+    K4 = hopf.k4_grid(28, dx)
+    E0 = hopf.faddeev_energy(n, dx, 1.0, 25.0)[0]
+    for _ in range(30):
+        n = hopf.stabilized_flow_step(n, dx, 1.0, 25.0, 8e-3, 40.0, K4)
+    assert hopf.faddeev_energy(n, dx, 1.0, 25.0)[0] <= E0 + 1e-9
+    assert abs(np.linalg.norm(n, axis=0) - 1.0).max() < 1e-6
+
+
 def test_e012_flow_quick_collapse_robust():
     fl = _load("hopfion_flow.py")
     r = fl.simulate(quick=True)

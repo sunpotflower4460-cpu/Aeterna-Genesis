@@ -154,12 +154,47 @@ def flow_step(n, dx, c2, c4, dt):
     return n / np.linalg.norm(n, axis=0, keepdims=True)
 
 
+def k4_grid(L, dx):
+    """The biharmonic symbol |k|^4 on an L^3 periodic grid (for the stabiliser)."""
+    kk = np.fft.fftfreq(L, d=dx) * 2 * np.pi
+    KX, KY, KZ = np.meshgrid(kk, kk, kk, indexing="ij")
+    return (KX ** 2 + KY ** 2 + KZ ** 2) ** 2
+
+
+def stabilized_flow_step(n, dx, c2, c4, dt, kappa, K4):
+    """One STABILIZED SEMI-IMPLICIT gradient-flow step (the Hopf complete-PDE fix).
+
+    The explicit Faddeev-Skyrme flow is unstable for c4>0: the quartic term acts
+    like a stiff high-order operator and a small explicit step still lets the
+    lattice unwind the hopfion (Q_H rewinds). We add a biharmonic stabiliser
+    kappa*(-lap)^2 treated IMPLICITLY (convexity splitting). The update collapses
+    to filtering the gradient by 1/(1 + dt*kappa*|k|^4) in Fourier:
+
+        n_new = n - dt * IFFT( FFT(G) / (1 + dt*kappa*|k|^4) ),  G = P_tangent dE/dn
+
+    The filter 1/(1+...) is positive-definite, so the filtered gradient is still a
+    DESCENT direction (energy stays monotone) -- it just damps the high-k modes
+    where the quartic stiffness lives, allowing a far larger stable dt. With this,
+    c4>0 holds Q_H ~ 1 while the size converges to L* (Derrick); c4=0 still
+    collapses. |n|=1 is restored by renormalisation. K4 = k4_grid(L, dx).
+    """
+    G = l2_gradient(n, dx, c2, c4)
+    G = G - (n * G).sum(axis=0, keepdims=True) * n
+    filt = 1.0 / (1.0 + dt * kappa * K4)
+    Gf = np.stack([np.real(np.fft.ifftn(np.fft.fftn(G[c]) * filt)) for c in range(3)], 0)
+    n = n - dt * Gf
+    return n / np.linalg.norm(n, axis=0, keepdims=True)
+
+
 def e4_rms_size(n, dx):
     """RMS radius of the Skyrme (E4) density -- a size that stays meaningful.
 
     The quartic density localises on the hopfion core even as it moves, so its
-    radius of gyration tracks the soliton SIZE; it goes to ~0 only when the
-    structure unwinds (collapse). Returns 0.0 for a structureless field.
+    radius of gyration tracks the soliton SIZE while the hopfion is intact. NOTE:
+    it is NOT the collapse diagnostic -- when the field UNWINDS, the size may go
+    to ~0 (point-collapse, explicit flow) OR grow (delocalisation, the stabilized
+    semi-implicit flow); use Q_H -> 0 to detect collapse, not the size. Returns
+    0.0 for a structureless field.
     """
     dn = central_diff(n, dx)
     F = skyrme_F(n, dn)
