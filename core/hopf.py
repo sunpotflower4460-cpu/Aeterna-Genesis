@@ -190,8 +190,11 @@ def e4_rms_size(n, dx):
     """RMS radius of the Skyrme (E4) density -- a size that stays meaningful.
 
     The quartic density localises on the hopfion core even as it moves, so its
-    radius of gyration tracks the soliton SIZE; it goes to ~0 only when the
-    structure unwinds (collapse). Returns 0.0 for a structureless field.
+    radius of gyration tracks the soliton SIZE while the hopfion is intact. NOTE:
+    it is NOT the collapse diagnostic -- when the field UNWINDS, the size may go
+    to ~0 (point-collapse, explicit flow) OR grow (delocalisation, the stabilized
+    semi-implicit flow); use Q_H -> 0 to detect collapse, not the size. Returns
+    0.0 for a structureless field.
     """
     dn = central_diff(n, dx)
     F = skyrme_F(n, dn)

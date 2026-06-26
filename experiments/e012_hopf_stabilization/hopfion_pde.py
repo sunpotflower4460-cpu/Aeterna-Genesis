@@ -21,13 +21,18 @@ So the "third" (a higher-derivative term) dynamically keeps a topologically
 non-trivial particle ("circulation that does not cancel") alive at a finite size
 -- frontier -> measured.
 
-Floors (honest): there is a BASIN limit -- if the hopfion is started far BELOW
-L* (under-resolved on the lattice) it still unwinds before it can grow; the flow
-HOLDS a resolved hopfion at L*, it does not rescue an already-collapsed one. The
-ABSOLUTE L* is resolution/kappa dependent; what is robust is Q_H ~ 1 preserved,
-the finite converged size, and L* increasing with c4. "Particle" is analogy; the
-literature result (Q_H=1 is a stable Faddeev-Skyrme minimiser, Faddeev-Niemi /
-Sutcliffe) is the physics backing. Fixed lattice.
+Floors (honest): there is a BOUNDED BASIN around L*, NOT a global attractor. The
+flow holds a hopfion started NEAR L*; BOTH a far-BELOW start (under-resolved on
+the lattice) AND a far-ABOVE start unwind before settling (verified: at L=40 a
+start_scale 3.2 gives Q_H -> 0.39). Relatedly, the largest-c4 cases are
+RESOLUTION-MARGINAL: L* ~ sqrt(c4) grows into the lattice cutoff, so at fixed L
+c4 cannot be pushed arbitrarily without Q_H degrading (e.g. c4=40 reaches Q_H~1
+at start_scale 2.0 but ~0.66 at start_scale 2.6). The ABSOLUTE L* is
+resolution/kappa dependent; what is robust (kappa-independent over ~80x) is that
+Q_H~1 is PRESERVED for a resolved start, the converged size is finite, and L*
+increases with c4. "Particle" is analogy; the literature result (Q_H=1 is a
+stable Faddeev-Skyrme minimiser, Faddeev-Niemi / Sutcliffe) is the physics
+backing. Fixed lattice.
 
 MODULE:   e012_hopf_stabilization (Stage 3: complete-PDE self-stabilization)
 QUESTION: Can a complete 3D PDE flow hold a hopfion at finite L* with Q_H ~ 1 (the 'third' stabilising dynamically)?
@@ -132,8 +137,9 @@ def _atlas(result):
                              "stable_sizes_L*(c4)": result["stable_sizes"]},
         "not_scripted_check": "Q_H from B=curl A; energy monotone verifies the gradient; no size imposed",
         "claim_tier": "measured (Q_H~1 held, finite L*, L*(c4) up, energy monotone) ; analogy (particle)",
-        "floors": ["BASIN limit: a hopfion started far below L* (under-resolved) still unwinds; the flow holds a resolved one",
-                   "absolute L* is resolution/kappa dependent; robust = Q_H~1 held, finite L*, L*(c4) increasing",
+        "floors": ["BOUNDED BASIN around L* (not global): both far-below (under-resolved) AND far-above starts unwind; the flow holds a resolved start near L*",
+                   "largest-c4 cases are resolution-marginal: L*~sqrt(c4) grows into the lattice cutoff (c4 can't be pushed arbitrarily at fixed L)",
+                   "absolute L* is resolution/kappa dependent; robust (kappa-independent ~80x) = Q_H~1 held, finite L*, L*(c4) increasing",
                    "fixed lattice; 'particle' is analogy, not an electron"],
     }]
 

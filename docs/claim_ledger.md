@@ -134,7 +134,7 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | 動的：素(c4=0)はホップ粒子が崩壊（Q_H→0、e009 の縮みの動的確認）。エネルギー単調減で勾配検算 | **measured** | `results/hopfion_flow.json`：Q_H 0.99→~0、ΔE/予測≈1.0 |
 | 4 | 動的(陽的勾配流)：第三(c4>0)の崩壊抵抗は脆い（細格子で抵抗、粗格子/陽的 dt で崩壊・数値不安定） | **frontier-observation** | `hopfion_flow.py`：陽的四次は剛性で不安定（Stage3 で解決） |
 | 5 | **完全PDE 自己安定化（★本丸、frontier→measured）**：安定化半陰的流で c4>0 が Q_H≈1 を保ったまま有限 L* へ収束、L* は c4 で増加（Derrick）、エネルギー単調 | **measured** | `hopfion_pde.py`/`results/hopfion_pde.json`：Q_H≈1 保持、L*≈3.3/3.7/4.1(c4=15/25/40)、勾配を 1/(1+dt·κ·|k|⁴) で濾過 |
-| 6 | basin 限界：L* より遥かに小さく始めると巻き戻る（解像済みを保つ、潰れたものは救えない）／絶対 L* は解像度/κ 依存／「粒子」は analogy（床） | **（床の明示）** | `hopfion_pde.py` 床。Q_H≈1 保持・有限 L*・L*(c4) 増加が robust |
+| 6 | L* 周りの**有界 basin（両側、大域的でない）**：遥かに小さくも大きくも始めると巻き戻る／大 c4 は解像度ぎりぎり(L*∝√c4 が格子カットオフへ)／絶対 L* は解像度/κ 依存／「粒子」は analogy（床） | **（床の明示）** | `hopfion_pde.py` 床。Q_H≈1 保持・有限 L*・L*(c4) 増加(κ~80×非依存)が robust |
 
 ## e013 — 器＋中身（循環は内部に load-bearing）  (STATUS: GREEN)
 
