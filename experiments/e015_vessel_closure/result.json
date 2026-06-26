@@ -1,0 +1,107 @@
+{
+  "result": {
+    "params": {
+      "L": 96,
+      "Du": 0.16,
+      "Dv": 0.08,
+      "F": 0.0367,
+      "k": 0.0649,
+      "grow_steps": 12000,
+      "death_steps": 8000,
+      "heal_steps": 12000,
+      "F_list": [
+        0.01,
+        0.02,
+        0.0367,
+        0.05,
+        0.06,
+        0.08
+      ],
+      "sweep_steps": 16000,
+      "seed_r": 6,
+      "seed": 1
+    },
+    "grown_total_v": 929.2,
+    "grown_area": 0.21,
+    "dead_total_v": 0.0,
+    "death_on_cut": true,
+    "self_maintains": true,
+    "excised_total_v": 462.0,
+    "healed_total_v": 915.4,
+    "self_heals": true,
+    "F_sweep": [
+      {
+        "F": 0.01,
+        "total_v": 0.0,
+        "area": 0.0,
+        "alive": false
+      },
+      {
+        "F": 0.02,
+        "total_v": 0.0,
+        "area": 0.0,
+        "alive": false
+      },
+      {
+        "F": 0.0367,
+        "total_v": 930.9,
+        "area": 0.21,
+        "alive": true
+      },
+      {
+        "F": 0.05,
+        "total_v": 593.8,
+        "area": 0.158,
+        "alive": true
+      },
+      {
+        "F": 0.06,
+        "total_v": 377.9,
+        "area": 0.098,
+        "alive": true
+      },
+      {
+        "F": 0.08,
+        "total_v": 0.0,
+        "area": 0.0,
+        "alive": false
+      }
+    ],
+    "survival_window": [
+      0.0367,
+      0.06
+    ],
+    "has_critical_F": true
+  },
+  "atlas": [
+    {
+      "experiment": "e015 vessel closure (drive-dependence)",
+      "tier": "measured",
+      "put_in": "Gray-Scott RD + throughflow F; 'die if unfed' not put in",
+      "emerged": [
+        "driven -> self-maintain/proliferate (total v 929) and SELF-HEAL (excise 462 -> regrow 915)",
+        "cut the drive (F->0) -> total v -> 0.00 (death)",
+        "a survival WINDOW in F: [0.0367, 0.06] (too little/much drive -> death)"
+      ],
+      "surprises": [
+        "the closure unbinds the moment the throughflow stops -- open AND closed at once"
+      ],
+      "persistence": "sustained only while driven; collapses without throughflow",
+      "measured_numbers": {
+        "grown_total_v": 929.2,
+        "dead_total_v": 0.0,
+        "healed_total_v": 915.4,
+        "survival_window": [
+          0.0367,
+          0.06
+        ]
+      },
+      "not_scripted_check": "death emerges from cutting F; no death rule is written in",
+      "claim_tier": "measured (persist/collapse, heal, drive-dependence) ; interpretive (open-closed) ; analogy (autopoiesis)",
+      "floors": [
+        "Gray-Scott is a known RD system; 'vessel/closure/death/life' is analogy; not a single cell",
+        "fixed lattice; we did NOT make life"
+      ]
+    }
+  ]
+}
