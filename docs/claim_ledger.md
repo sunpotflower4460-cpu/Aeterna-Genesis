@@ -132,6 +132,35 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 1 | Q_H=1 ホップ粒子の Hopf 不変量は整数（滑らかな構成から ≈1） | **measured** | `results/hopfion_static.json`：Q_H=1.00（Whitehead (1/16π²)∫A·B、box/L で安定） |
 | 2 | Derrick 地形：素(c4=0)は崩壊、第三(c4>0)で有限 L*＝√(c4·E4/E2)、L*∝√c4 | **measured** | L*=0.565/1.130/1.696（c4=1/4/9＝1:2:3） |
 | 3 | 動的：素(c4=0)はホップ粒子が崩壊（Q_H→0、e009 の縮みの動的確認）。エネルギー単調減で勾配検算 | **measured** | `results/hopfion_flow.json`：Q_H 0.99→~0、ΔE/予測≈1.0 |
-| 4 | 動的：第三(c4>0)の崩壊抵抗は脆い（細格子では最終 Q_H↑だが粗格子/陽的 dt では崩壊・数値不安定）。GREEN ゲートにしない | **frontier-observation** | 解像度依存（L=36 で抵抗、L≥44 で崩壊/負 Q_H）。安定化の確証は静的 Derrick の有限 L* |
-| 5 | 完全な自己安定化（Q_H≈1 を保つ持続）は本解像度で未達 | **frontier-observation** | 四次項の剛性で陽的 dt 極小・格子カットオフが L* と競合（細格子/陰的処理が要） |
-| 6 | 絶対 E2,E4 は解像度(dx)依存／「粒子」は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |
+| 4 | 動的(陽的勾配流)：第三(c4>0)の崩壊抵抗は脆い（細格子で抵抗、粗格子/陽的 dt で崩壊・数値不安定） | **frontier-observation** | `hopfion_flow.py`：陽的四次は剛性で不安定（Stage3 で解決） |
+| 5 | **完全PDE 自己安定化（★本丸、frontier→measured）**：安定化半陰的流で c4>0 が Q_H≈1 を保ったまま有限 L* へ収束、L* は c4 で増加（Derrick）、エネルギー単調 | **measured** | `hopfion_pde.py`/`results/hopfion_pde.json`：Q_H≈1 保持、L*≈3.3/3.7/4.1(c4=15/25/40)、勾配を 1/(1+dt·κ·|k|⁴) で濾過 |
+| 6 | basin 限界：L* より遥かに小さく始めると巻き戻る（解像済みを保つ、潰れたものは救えない）／絶対 L* は解像度/κ 依存／「粒子」は analogy（床） | **（床の明示）** | `hopfion_pde.py` 床。Q_H≈1 保持・有限 L*・L*(c4) 増加が robust |
+
+## e013 — 器＋中身（循環は内部に load-bearing）  (STATUS: GREEN)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 循環なし→内部デッドコア（b≈0）、循環あり→内部 b が Pe で単調増 | **measured** | `result.json`：内部 b 0→0.029（U=0→8）、2×2 対流セル |
+| 2 | 総 b 差は小（外殻は拡散で生存）＝load-bearing は内部に対して | **measured** | 総 b スプレッド 7% |
+| 3 | 自己組織した対流（Ra>Ra_c）が内部を養う（規定流 analogy を一段 measured へ） | **measured** | `rayleigh_benard.json`：KE 0→10（Ra_c≈20）、内部 b 0.015→0.42 |
+| 4 | 内部比のゼロ割り→値で報告／境界の指数発散→ロジスティック収容力（床/罠回避） | **（規律）** | a·b·c·(1−b) で [0,1] |
+| 5 | 規定流は analogy／周期箱の最小 Boussinesq／load-bearing は内部に（床） | **（床の明示）** | AUDIT.md 床1–4 |
+
+## e014 — 3D 因果 → 次元（運動学）  (STATUS: GREEN, 動的幾何は AJL 継承)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 座標を捨て因果順序だけから次元を復元（Myrheim-Meyer、d=2,3,4） | **measured** | `result.json`：d_MM=1.99/2.97/3.95 |
+| 2 | 関係対割合の正しい式は分母2（r(2)=0.5）。理論側の係数誤りを捕獲＝両方を疑う | **measured/規律** | r(d)=Γ(d+1)Γ(d/2)/(2Γ(3d/2))、r(2)=0.5 ガード |
+| 3 | スペクトル次元：3D 幾何 d_s≈3、2D≈2 | **measured** | `spectral.json`：3.04 / 2.03 |
+| 4 | 因果集合 Hasse のスペクトル次元は異常になり得る（合わせ込まない） | **observed** | d_s=3.22（既知の微妙量） |
+| 5 | 運動学的（与因果順序→次元）。動的幾何の自己組織化は AJL 継承（床） | **（床の明示）** | AJL 1305.4702, 1110.6875 |
+
+## e015 — 器の閉じ（開-閉の二重性、駆動依存）  (STATUS: GREEN)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 駆動下で自己維持・増殖、半分切除→ほぼ完全再生（~98%） | **measured** | `result.json`：総 v 成長、再生 ~98% |
+| 2 | 駆動を切る（F→0）→総 v→0（死）。生存の臨界 F 窓 | **measured** | 死=True、生存窓 F∈[~0.03,~0.07] |
+| 3 | 両腕オートポイエーシス：膜を壊す/代謝を止める、どちらを切っても死 | **measured** | `autopoiesis.json`：γ→0 死・α→0 死、臨界 S_c≈0.05 |
+| 4 | 開-閉の二重性は interpretive、autopoiesis/膜/代謝/生命は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |

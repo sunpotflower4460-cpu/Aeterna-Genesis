@@ -1,0 +1,228 @@
+{
+  "result": {
+    "params": {
+      "L": 40,
+      "box": 7.0,
+      "c2": 1.0,
+      "kappa": 40.0,
+      "dt": 0.008,
+      "n_steps": 1200,
+      "n_check": 4,
+      "start_scale": 2.0,
+      "c4_list": [
+        0.0,
+        15.0,
+        25.0,
+        40.0
+      ]
+    },
+    "runs": [
+      {
+        "c4": 0.0,
+        "Q_H_initial": 0.974,
+        "Q_H_final": -0.0,
+        "size_initial": 3.851,
+        "size_final": 4.731,
+        "energy_monotone": true,
+        "collapsed": true,
+        "stabilised": false,
+        "trace": [
+          {
+            "step": 300,
+            "Q_H": 0.947,
+            "size": 1.258
+          },
+          {
+            "step": 600,
+            "Q_H": -0.0,
+            "size": 3.642
+          },
+          {
+            "step": 900,
+            "Q_H": -0.0,
+            "size": 3.96
+          },
+          {
+            "step": 1200,
+            "Q_H": -0.0,
+            "size": 4.731
+          }
+        ]
+      },
+      {
+        "c4": 15.0,
+        "Q_H_initial": 0.974,
+        "Q_H_final": 1.0,
+        "size_initial": 3.851,
+        "size_final": 3.278,
+        "energy_monotone": true,
+        "collapsed": false,
+        "stabilised": true,
+        "trace": [
+          {
+            "step": 300,
+            "Q_H": 0.999,
+            "size": 3.262
+          },
+          {
+            "step": 600,
+            "Q_H": 1.0,
+            "size": 3.276
+          },
+          {
+            "step": 900,
+            "Q_H": 1.0,
+            "size": 3.277
+          },
+          {
+            "step": 1200,
+            "Q_H": 1.0,
+            "size": 3.278
+          }
+        ]
+      },
+      {
+        "c4": 25.0,
+        "Q_H_initial": 0.974,
+        "Q_H_final": 0.999,
+        "size_initial": 3.851,
+        "size_final": 3.718,
+        "energy_monotone": true,
+        "collapsed": false,
+        "stabilised": true,
+        "trace": [
+          {
+            "step": 300,
+            "Q_H": 0.999,
+            "size": 3.657
+          },
+          {
+            "step": 600,
+            "Q_H": 0.999,
+            "size": 3.704
+          },
+          {
+            "step": 900,
+            "Q_H": 0.999,
+            "size": 3.714
+          },
+          {
+            "step": 1200,
+            "Q_H": 0.999,
+            "size": 3.718
+          }
+        ]
+      },
+      {
+        "c4": 40.0,
+        "Q_H_initial": 0.974,
+        "Q_H_final": 0.999,
+        "size_initial": 3.851,
+        "size_final": 4.087,
+        "energy_monotone": true,
+        "collapsed": false,
+        "stabilised": true,
+        "trace": [
+          {
+            "step": 300,
+            "Q_H": 0.998,
+            "size": 4.023
+          },
+          {
+            "step": 600,
+            "Q_H": 0.999,
+            "size": 4.074
+          },
+          {
+            "step": 900,
+            "Q_H": 0.999,
+            "size": 4.084
+          },
+          {
+            "step": 1200,
+            "Q_H": 0.999,
+            "size": 4.087
+          }
+        ]
+      }
+    ],
+    "bare_collapses": true,
+    "third_holds_QH": true,
+    "all_energy_monotone": true,
+    "Lstar_grows_with_c4": true,
+    "stable_sizes": [
+      [
+        15.0,
+        3.278
+      ],
+      [
+        25.0,
+        3.718
+      ],
+      [
+        40.0,
+        4.087
+      ]
+    ]
+  },
+  "atlas": [
+    {
+      "experiment": "e012 hopfion complete-PDE self-stabilization",
+      "tier": "measured",
+      "put_in": "Q_H=1 hopfion + Faddeev-Skyrme energy + stabilized semi-implicit flow; no target size",
+      "emerged": [
+        "c4>0 HOLDS Q_H~1 and converges to a finite L* (self-stabilization): [(15.0, 3.278), (25.0, 3.718), (40.0, 4.087)]",
+        "L* grows with c4 (Derrick); bare c4=0 still collapses (Q_H->0)"
+      ],
+      "surprises": [
+        "the complete 3D PDE keeps a topological particle alive at finite size -- frontier -> measured"
+      ],
+      "persistence": "c4>0 hopfion persists at L* (energy monotone); c4=0 unwinds",
+      "measured_numbers": {
+        "runs": [
+          {
+            "c4": 0.0,
+            "Q_H_final": -0.0,
+            "size_final": 4.731
+          },
+          {
+            "c4": 15.0,
+            "Q_H_final": 1.0,
+            "size_final": 3.278
+          },
+          {
+            "c4": 25.0,
+            "Q_H_final": 0.999,
+            "size_final": 3.718
+          },
+          {
+            "c4": 40.0,
+            "Q_H_final": 0.999,
+            "size_final": 4.087
+          }
+        ],
+        "stable_sizes_L*(c4)": [
+          [
+            15.0,
+            3.278
+          ],
+          [
+            25.0,
+            3.718
+          ],
+          [
+            40.0,
+            4.087
+          ]
+        ]
+      },
+      "not_scripted_check": "Q_H from B=curl A; energy monotone verifies the gradient; no size imposed",
+      "claim_tier": "measured (Q_H~1 held, finite L*, L*(c4) up, energy monotone) ; analogy (particle)",
+      "floors": [
+        "BASIN limit: a hopfion started far below L* (under-resolved) still unwinds; the flow holds a resolved one",
+        "absolute L* is resolution/kappa dependent; robust = Q_H~1 held, finite L*, L*(c4) increasing",
+        "fixed lattice; 'particle' is analogy, not an electron"
+      ]
+    }
+  ]
+}
