@@ -1,6 +1,6 @@
 # H003 — 三体フル結合（代謝＋自己組織した流れ＋粒子を一場に双方向結合）
 
-- **状態**: testing
+- **状態**: resolved (**promoted**)
 - **起票者**: Claude Code / 2026-07-01
 - **狙う Type**: B/C（床つき measured の結合＋解釈）
 - **依拠する既知事実**: e016（粒子＝ Q_H 保持の有限 L* ホップ粒子）、e017/e013（自己組織した
@@ -20,14 +20,18 @@
 測る：駆動あり→(b,U) が準定常で粒子保持（Q_H≈1）＝自己制限か；駆動オフ→U→0 で輸送停止（死）。
 背反応 drag=0（一方向）との対比で「双方向でしか出ない」を確認。
 
-## 結果
-（e019 Stage2 を回して追記。自己制限の有無・駆動オフでの停止・一方向との差をここに。）
+## 結果（`three_body.py` → `results/three_body.json`）
+- **双方向（drag>0）**：背反応が流れを**自己制限**（U=3.6）し粒子保持（Q_H=0.97）。
+- **一方向（drag=0）**：背反応なし→同じ代謝が U=8.3 まで過駆動→**粒子破壊（Q_H=−0.36）**。
+  ＝**背反応が粒子を救う**創発的な負のフィードバック（backreaction_matters=True）。
+- **駆動オフ（s=0）**：b→0→U→0→流れ停止・輸送停止＝三体が一蓮托生。
+- `not_scripted_check`：Q_H は B=curl A、U/b は ODE、自己制限は入れていない。
+- 床：流れは振幅還元（完全 NS でない）、roll 形は規定、「ホメオスタシス/一蓮托生」は interpretive。
 
 ## verdict
-- [ ] promising → 実装（e019 Stage2 として本実装）
-- [ ] dead-end → _archive/
-- [ ] promoted → Type 昇格、claim_ledger
-- [x] **testing**（e019 Stage2 で検証中）
+- [ ] promising
+- [ ] dead-end
+- [x] **promoted** → Type B/C に昇格、`claim_ledger`（e019 §）に追記。GREEN。
 
 ## メモ
 最重要の本丸。ただし床：流れは**振幅還元モデル**（完全 Navier-Stokes でない）、roll 形は規定、

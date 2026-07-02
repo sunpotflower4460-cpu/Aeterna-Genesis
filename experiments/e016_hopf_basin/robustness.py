@@ -32,9 +32,12 @@ def _case(kappa, L, c4_list, n_steps):
         k, r2, cv, _ = e016._fit_sqrt([c for c, _ in keep], [s for _, s in keep])
     else:
         k, r2, cv = 0.0, 0.0, 1.0
+    # the size law's tightness is CV(k)=CV(size/sqrt(c4)); a small CV that is
+    # STABLE across kappa is the kappa-independence claim (R^2 is oversensitive to
+    # the small dynamic range, so it is reported but not gated).
     return {"kappa": kappa, "L": L, "n_held": sum(held), "fit_k": round(k, 3),
             "R2": round(r2, 3), "CV": round(cv, 3),
-            "pass": bool(sum(held) >= 2 and r2 > 0.90 and cv < 0.12)}
+            "pass": bool(sum(held) >= 2 and cv < 0.05)}
 
 
 def run_sweep(quick=False):

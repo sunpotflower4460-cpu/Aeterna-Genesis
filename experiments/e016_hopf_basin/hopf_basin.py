@@ -53,12 +53,11 @@ from core import hopf  # noqa: E402
 # keeps the initial soliton both RESOLVED (>~6 grid points across the core) and
 # INSIDE the basin for every c4. c4 range avoids the under-resolved small-c4 end
 # and the lattice-cutoff large-c4 end (which is reported as a floor).
-# L/kappa are CALIBRATED together: the biharmonic filter 1/(1+dt*kappa*|k|^4)
-# damps modes with |k|^4 > 1/(dt*kappa); since |k_max| = pi/dx grows as the grid is
-# refined, a FIXED kappa over-damps large solitons at higher L (kappa should scale
-# ~ dx^4 for resolution-independent physical damping). L=44 with kappa=40 is the
-# calibrated point; a naive L=56 run with the same kappa over-damps and gives a
-# sub-sqrt(c4) size (this is reported as a floor, and motivates H001).
+# L=44 with kappa=40 is the default; the size law is tight here AND at L=52 (CV~3.5%).
+# At L=56 the fit degrades (CV~6.6%, sub-sqrt(c4)); we HYPOTHESISED a kappa~dx^4
+# over-damping and TESTED it (arrested_newton.py / H001) -- it did NOT help
+# (calibrated CV ~= fixed CV at L=52), so the high-L degradation is an OPEN floor,
+# not explained by simple kappa scaling. The measured law stands at L=44/52.
 DEFAULT = {"L": 44, "box": 8.4, "c2": 1.0, "kappa": 40.0, "dt": 8e-3,
            "n_steps": 450, "n_check": 4, "start_frac": 0.62,
            "c4_list": [12.0, 16.0, 20.0, 25.0, 30.0],
@@ -208,7 +207,7 @@ def _atlas(result):
         "not_scripted_check": "Q_H from B=curl A; size from E4 density; energy monotone verifies gradient; no size imposed",
         "claim_tier": "measured (size~sqrt(c4), Q_H~1, Q_H=2 held, energy monotone) ; observed (bounded basin) ; analogy (particle)",
         "floors": ["absolute k and basin edges are resolution/kappa dependent (fixed lattice)",
-                   "L/kappa are CALIBRATED (L=44, kappa=40): a naive higher-L run with fixed kappa OVER-DAMPS large solitons (|k_max|=pi/dx grows, so the biharmonic filter over-acts) and gives a sub-sqrt(c4) size -- kappa should scale ~dx^4; this motivates H001",
+                   "the size law is tight at L=44 and L=52 (CV~3.5%) but degrades at L=56 (CV~6.6%); a kappa~dx^4 over-damping fix was TESTED (arrested_newton/H001) and did NOT help -- the high-L degradation is an open floor, not simple kappa scaling",
                    "largest c4 is resolution-marginal: L*~sqrt(c4) grows into the lattice cutoff (reported: marginal_c4=%s)" % result["marginal_c4"],
                    "the basin is BOUNDED, not global (arrested-Newton / kappa-scaled higher res to widen = Stage 2 / H001)",
                    "'particle' is analogy (Faddeev-Niemi backing), not an electron"],

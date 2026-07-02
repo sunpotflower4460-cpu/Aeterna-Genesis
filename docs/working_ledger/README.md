@@ -37,7 +37,7 @@ e016 basin は有界・絶対 L* は解像度依存。e018 は analogy（protoce
 |---|---|---|---|---|
 | [H001](H001_hopf_global_newton.md) | Hopf の真の大域化（κ∝dx⁴ 較正） | B（→D 部分） | **resolved: dead-end**（κ 仮説否定、負の結果を記録） | e016 Stage2 |
 | [H002](H002_membrane_vesicle.md) | 膜小胞化（phase-field で境界をもつ小胞） | B | **promoted** | e018 Stage2 |
-| [H003](H003_three_body_coupling.md) | 三体フル結合（自己組織流＋粒子＋器を一場に双方向結合） | B/C | **testing** | e019 Stage2 |
+| [H003](H003_three_body_coupling.md) | 三体フル結合（自己組織流＋粒子＋器を一場に双方向結合） | B/C | **promoted** | e019 Stage2 |
 | [H004](H004_action_entropy.md) | 作用＝エントロピー（Jacobson/Verlinde；第三の役割が熱力学から出るか） | D | **proposed** | 未実装（仮説） |
 
 死んだ筋・却下した設計は `_archive/`（理由つき）。
