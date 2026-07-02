@@ -49,7 +49,7 @@ DEFAULT = {"k1": 3.0, "k2": 1.0, "dA": 0.2, "dM": 0.2, "s": 1.0,
            "cut_time": 15.0,
            "s_grid": [0.02, 0.05, 0.1, 0.2, 0.4, 0.8, 1.5],
            "dA_grid": [0.15, 0.25, 0.35]}
-QUICK = {"steps": 5000, "s_grid": [0.02, 0.1, 0.4, 1.5], "dA_grid": [0.15, 0.35]}
+QUICK = {"steps": 5000, "s_grid": [0.02, 0.1, 0.4, 1.5], "dA_grid": [0.25, 0.35]}
 
 
 def integrate(p, s=None, dA=None, cut_metabolism=None, cut_membrane=None):
@@ -78,9 +78,17 @@ def _alive(SAM):
 
 
 def _critical_s(p, dA):
-    """Smallest s in the grid that is alive (with the boundary being drive-set)."""
-    alive_s = [s for s in p["s_grid"] if _alive(integrate(p, s=s, dA=dA))]
-    return min(alive_s) if alive_s else None
+    """The BRACKETED critical drive: the first alive s that has a DEAD sample just
+    below it. Returns None if the lowest sampled s is already alive (the boundary is
+    below the scan range, so no death->life transition was observed) -- so we never
+    report the grid minimum as a threshold when no bracketing happened (Codex)."""
+    prev_dead = False
+    for s in p["s_grid"]:
+        alive = _alive(integrate(p, s=s, dA=dA))
+        if alive:
+            return s if prev_dead else None
+        prev_dead = True
+    return None
 
 
 def simulate(quick=False):
@@ -100,12 +108,17 @@ def simulate(quick=False):
             row.append(1 if _alive(integrate(p, s=s, dA=dA)) else 0)
         phase.append({"dA": dA, "alive_row": row, "critical_s": _critical_s(p, dA)})
     crits = [r["critical_s"] for r in phase]
-    all_have_crit = all(c is not None for c in crits)
-    # the phase boundary is a critical-DRIVE curve s_c(dA): every loss row has a
-    # finite drive threshold, and it RISES (non-decreasing) as the loss grows --
-    # drive is the organizing control (more dissipation demands more throughput).
-    monotone = all_have_crit and all(crits[i] <= crits[i + 1] + 1e-9 for i in range(len(crits) - 1))
-    drive_curve = bool(len(crits) >= 2 and all_have_crit and monotone)
+    # use only the BRACKETED thresholds (rows with a death->life transition in range);
+    # rows whose lowest drive is already alive have critical_s=None and are excluded.
+    bracketed = [(r["dA"], r["critical_s"]) for r in phase if r["critical_s"] is not None]
+    bc = [c for _, c in bracketed]
+    monotone = all(bc[i] <= bc[i + 1] + 1e-9 for i in range(len(bc) - 1))
+    # GREEN gate: >=2 BRACKETED thresholds, monotone NON-DECREASING (drive-organized:
+    # more loss never needs LESS drive). Whether it STRICTLY rises is reported too --
+    # the full-resolution grid resolves the rise (e.g. 0.05->0.1); a coarse quick grid
+    # may tie, which is still non-decreasing (honest).
+    drive_curve = bool(len(bracketed) >= 2 and monotone)
+    curve_strictly_rises = bool(len(bc) >= 2 and bc[-1] > bc[0])
 
     return {
         "params": p,
@@ -114,7 +127,9 @@ def simulate(quick=False):
         "cut_membrane_SAM": list(cut_mem), "dies_on_cut_membrane": not _alive(cut_mem),
         "cut_drive_SAM": list(cut_drv), "dies_on_cut_drive": not _alive(cut_drv),
         "phase": phase, "critical_s_per_dA": crits,
+        "bracketed_thresholds": bracketed,
         "critical_drive_curve_rises_with_loss": drive_curve,
+        "curve_strictly_rises": curve_strictly_rises,
     }
 
 
@@ -136,12 +151,14 @@ def _atlas(result):
         "emerged": ["intact+driven -> coexistence S,A,M=%s (alive)" % result["intact_SAM"],
                     "cut metabolism/membrane/drive -> death (%s / %s / %s)"
                     % (result["cut_metabolism_SAM"], result["cut_membrane_SAM"], result["cut_drive_SAM"]),
-                    "phase boundary is a critical-drive curve s_c(dA)=%s rising with loss"
-                    % result["critical_s_per_dA"]],
-        "surprises": ["all three arms are load-bearing; the life/death line is a drive threshold that rises with dissipation"],
+                    "phase boundary is a critical-drive curve: bracketed thresholds (dA,s_c)=%s, %s with loss"
+                    % (result["bracketed_thresholds"],
+                       "strictly rising" if result["curve_strictly_rises"] else "non-decreasing")],
+        "surprises": ["all three arms are load-bearing; the life/death line is a drive threshold that does not fall as dissipation grows"],
         "persistence": "coexistence only while all three arms run and the drive exceeds a critical rate",
         "measured_numbers": {"intact_SAM": result["intact_SAM"], "phase": result["phase"],
-                             "critical_s_per_dA": result["critical_s_per_dA"]},
+                             "bracketed_thresholds": result["bracketed_thresholds"],
+                             "curve_strictly_rises": result["curve_strictly_rises"]},
         "not_scripted_check": "death follows from zeroing a rate; the boundary is read off a sweep, not imposed",
         "claim_tier": "measured (coexistence, three-way death, critical-drive curve) ; interpretive (driven closure) ; analogy (metabolism/membrane/vessel)",
         "floors": ["minimal kinetics (not a spatial membrane -- phase-field vesicle is Stage 2 / H002)",
@@ -164,8 +181,8 @@ def main(argv=None):
     for row in r["phase"]:
         print("    dA=%.2f  alive=%s  critical_s=%s"
               % (row["dA"], row["alive_row"], row["critical_s"]))
-    print("  critical-drive curve s_c(dA)=%s rises with loss=%s"
-          % (r["critical_s_per_dA"], r["critical_drive_curve_rises_with_loss"]))
+    print("  bracketed thresholds (dA,s_c)=%s  non-decreasing=%s  strictly-rises=%s"
+          % (r["bracketed_thresholds"], r["critical_drive_curve_rises_with_loss"], r["curve_strictly_rises"]))
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))

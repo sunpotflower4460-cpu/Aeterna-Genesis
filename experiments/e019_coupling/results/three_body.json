@@ -14,110 +14,111 @@
       "roll_x0": -4.0,
       "s": 1.0,
       "kU": 0.5,
-      "gU": 34.0,
+      "gU": 48.0,
       "dampU": 0.8,
-      "drag": 11.0,
+      "drag": 15.0,
+      "mu_b": 0.5,
       "b0": 1.0,
       "U0": 0.0,
       "kin_dt": 0.02
     },
     "two_way": {
-      "b_final": 0.354,
-      "U_final": 3.622,
-      "Q_H_final": 0.966,
-      "size_final": 4.187,
-      "centroid_disp": 1.891,
+      "b_final": 0.314,
+      "U_final": 3.347,
+      "Q_H_final": 0.974,
+      "size_final": 4.177,
+      "centroid_disp": 1.814,
       "particle_held": true,
       "trace": [
         {
           "step": 80,
-          "b": 0.338,
-          "U": 3.49,
+          "b": 0.315,
+          "U": 2.99,
           "Q_H": 0.982
         },
         {
           "step": 160,
-          "b": 0.35,
-          "U": 3.761,
+          "b": 0.309,
+          "U": 3.494,
           "Q_H": 0.991
         },
         {
           "step": 240,
-          "b": 0.349,
-          "U": 3.715,
-          "Q_H": 0.986
+          "b": 0.31,
+          "U": 3.444,
+          "Q_H": 0.988
         },
         {
           "step": 320,
-          "b": 0.354,
-          "U": 3.622,
-          "Q_H": 0.966
+          "b": 0.314,
+          "U": 3.347,
+          "Q_H": 0.974
         }
       ]
     },
     "one_way": {
-      "b_final": 0.195,
-      "U_final": 8.274,
-      "Q_H_final": -0.365,
-      "size_final": 4.479,
-      "centroid_disp": 3.279,
+      "b_final": 0.159,
+      "U_final": 9.557,
+      "Q_H_final": -0.211,
+      "size_final": 4.393,
+      "centroid_disp": 3.685,
       "particle_held": false,
       "trace": [
         {
           "step": 80,
-          "b": 0.185,
-          "U": 8.665,
-          "Q_H": 0.977
+          "b": 0.153,
+          "U": 9.932,
+          "Q_H": 0.974
         },
         {
           "step": 160,
-          "b": 0.194,
-          "U": 8.297,
-          "Q_H": 0.93
+          "b": 0.159,
+          "U": 9.585,
+          "Q_H": 0.851
         },
         {
           "step": 240,
-          "b": 0.195,
-          "U": 8.275,
-          "Q_H": 0.346
+          "b": 0.159,
+          "U": 9.559,
+          "Q_H": -0.163
         },
         {
           "step": 320,
-          "b": 0.195,
-          "U": 8.274,
-          "Q_H": -0.365
+          "b": 0.159,
+          "U": 9.557,
+          "Q_H": -0.211
         }
       ]
     },
     "no_drive": {
-      "b_final": 0.095,
+      "b_final": 0.005,
       "U_final": 0.0,
       "Q_H_final": 0.999,
       "size_final": 4.12,
-      "centroid_disp": 0.433,
+      "centroid_disp": 0.386,
       "particle_held": true,
       "trace": [
         {
           "step": 80,
-          "b": 0.095,
+          "b": 0.054,
           "U": 0.0,
           "Q_H": 0.983
         },
         {
           "step": 160,
-          "b": 0.095,
+          "b": 0.024,
           "U": 0.0,
           "Q_H": 0.996
         },
         {
           "step": 240,
-          "b": 0.095,
+          "b": 0.011,
           "U": 0.0,
           "Q_H": 0.998
         },
         {
           "step": 320,
-          "b": 0.095,
+          "b": 0.005,
           "U": 0.0,
           "Q_H": 0.999
         }
@@ -125,7 +126,7 @@
     },
     "two_way_self_limits": true,
     "one_way_overdrives": true,
-    "backreaction_matters": true,
+    "backreaction_saves_particle": true,
     "drive_off_stalls": true
   },
   "atlas": [
@@ -134,112 +135,112 @@
       "tier": "measured",
       "put_in": "b<->U kinetics + a roll of amplitude U(t) advecting a stabilized hopfion + back-reaction drag*P(n); outcome not put in",
       "emerged": [
-        "two-way: self-limited, particle held (b,U,Q_H)=(0.354,3.622,0.966)",
-        "one-way (drag=0): over-driven, U=8.274 Q_H=-0.365",
-        "cut drive: U->0.0, transport stalls (disp 0.433 vs 1.891)"
+        "two-way: self-limited, particle HELD (b,U,Q_H)=(0.314,3.347,0.974)",
+        "one-way (drag=0): over-driven to U=9.557, particle TORN (Q_H=-0.211)",
+        "cut drive: b->0.005, U->0.0, transport stalls (disp 0.386 vs 1.814)"
       ],
       "surprises": [
-        "the particle's back-reaction CAPS the self-organized flow so it survives -- an emergent negative feedback (homeostasis) that a one-way coupling cannot show"
+        "the particle's back-reaction CAPS the self-organized flow so it SURVIVES the shear that destroys the one-way (no back-reaction) particle -- an emergent negative feedback (homeostasis) that a one-way coupling cannot show"
       ],
       "persistence": "the coupled state persists only while driven; the three bodies live and die together",
       "measured_numbers": {
         "two_way": {
-          "b_final": 0.354,
-          "U_final": 3.622,
-          "Q_H_final": 0.966,
-          "size_final": 4.187,
-          "centroid_disp": 1.891,
+          "b_final": 0.314,
+          "U_final": 3.347,
+          "Q_H_final": 0.974,
+          "size_final": 4.177,
+          "centroid_disp": 1.814,
           "particle_held": true,
           "trace": [
             {
               "step": 80,
-              "b": 0.338,
-              "U": 3.49,
+              "b": 0.315,
+              "U": 2.99,
               "Q_H": 0.982
             },
             {
               "step": 160,
-              "b": 0.35,
-              "U": 3.761,
+              "b": 0.309,
+              "U": 3.494,
               "Q_H": 0.991
             },
             {
               "step": 240,
-              "b": 0.349,
-              "U": 3.715,
-              "Q_H": 0.986
+              "b": 0.31,
+              "U": 3.444,
+              "Q_H": 0.988
             },
             {
               "step": 320,
-              "b": 0.354,
-              "U": 3.622,
-              "Q_H": 0.966
+              "b": 0.314,
+              "U": 3.347,
+              "Q_H": 0.974
             }
           ]
         },
         "one_way": {
-          "b_final": 0.195,
-          "U_final": 8.274,
-          "Q_H_final": -0.365,
-          "size_final": 4.479,
-          "centroid_disp": 3.279,
+          "b_final": 0.159,
+          "U_final": 9.557,
+          "Q_H_final": -0.211,
+          "size_final": 4.393,
+          "centroid_disp": 3.685,
           "particle_held": false,
           "trace": [
             {
               "step": 80,
-              "b": 0.185,
-              "U": 8.665,
-              "Q_H": 0.977
+              "b": 0.153,
+              "U": 9.932,
+              "Q_H": 0.974
             },
             {
               "step": 160,
-              "b": 0.194,
-              "U": 8.297,
-              "Q_H": 0.93
+              "b": 0.159,
+              "U": 9.585,
+              "Q_H": 0.851
             },
             {
               "step": 240,
-              "b": 0.195,
-              "U": 8.275,
-              "Q_H": 0.346
+              "b": 0.159,
+              "U": 9.559,
+              "Q_H": -0.163
             },
             {
               "step": 320,
-              "b": 0.195,
-              "U": 8.274,
-              "Q_H": -0.365
+              "b": 0.159,
+              "U": 9.557,
+              "Q_H": -0.211
             }
           ]
         },
         "no_drive": {
-          "b_final": 0.095,
+          "b_final": 0.005,
           "U_final": 0.0,
           "Q_H_final": 0.999,
           "size_final": 4.12,
-          "centroid_disp": 0.433,
+          "centroid_disp": 0.386,
           "particle_held": true,
           "trace": [
             {
               "step": 80,
-              "b": 0.095,
+              "b": 0.054,
               "U": 0.0,
               "Q_H": 0.983
             },
             {
               "step": 160,
-              "b": 0.095,
+              "b": 0.024,
               "U": 0.0,
               "Q_H": 0.996
             },
             {
               "step": 240,
-              "b": 0.095,
+              "b": 0.011,
               "U": 0.0,
               "Q_H": 0.998
             },
             {
               "step": 320,
-              "b": 0.095,
+              "b": 0.005,
               "U": 0.0,
               "Q_H": 0.999
             }

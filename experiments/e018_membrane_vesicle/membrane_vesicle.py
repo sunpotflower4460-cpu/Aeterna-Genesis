@@ -94,10 +94,13 @@ def simulate(quick=False):
         p.update(QUICK)
     driven = evolve(p, s=p["s"], leak=0.0)
     no_drive = evolve(p, s=0.0, leak=0.0)
-    # leak -> drive survival threshold (spatial echo of Stage-1 critical-drive curve)
+    # leak -> drive survival threshold (spatial echo of Stage-1 critical-drive curve).
+    # "survives" uses the SAME bounded_single_vesicle criterion as the headline claim
+    # (a bounded single droplet with a membrane), NOT just inside.mean()>0.02 -- so the
+    # threshold supports vesicle PERSISTENCE, not a space-filling / multi-blob state (Codex).
     thresholds = []
     for leak in p["leak_grid"]:
-        surv = [s for s in p["s_grid"] if evolve(p, s=s, leak=leak)["alive"]]
+        surv = [s for s in p["s_grid"] if evolve(p, s=s, leak=leak)["bounded_single_vesicle"]]
         thresholds.append({"leak": leak, "min_surviving_s": min(surv) if surv else None})
     crit = [t["min_surviving_s"] for t in thresholds if t["min_surviving_s"] is not None]
     rises = bool(len(crit) >= 2 and all(crit[i] <= crit[i + 1] + 1e-9 for i in range(len(crit) - 1))

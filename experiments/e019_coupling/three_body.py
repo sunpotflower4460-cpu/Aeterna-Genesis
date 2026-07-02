@@ -55,7 +55,7 @@ DEFAULT = {"L": 44, "box": 8.4, "c2": 1.0, "c4": 20.0, "kappa": 40.0, "dt": 6e-3
            "roll_R": 5.0, "roll_x0": -4.0,
            # coupling kinetics (strong-drive regime: without back-reaction the
            # metabolism over-drives U past the particle's tearing point)
-           "s": 1.0, "kU": 0.5, "gU": 34.0, "dampU": 0.8, "drag": 11.0,
+           "s": 1.0, "kU": 0.5, "gU": 48.0, "dampU": 0.8, "drag": 15.0, "mu_b": 0.5,
            "b0": 1.0, "U0": 0.0, "kin_dt": 0.02}
 QUICK = {"L": 40, "settle_steps": 100, "n_steps": 220}
 
@@ -90,9 +90,11 @@ def run(p, drive_on=True, two_way=True):
         adv = ux[None, ...] * hopf.central_diff(n, dx)[0] + uz[None, ...] * hopf.central_diff(n, dx)[2]
         n = n - dt * adv
         n = n / np.linalg.norm(n, axis=0, keepdims=True)
-        # coupled kinetics (metabolism b, flow amplitude U); P is the back-reaction
+        # coupled kinetics (metabolism b, flow amplitude U); P is the back-reaction.
+        # b has a drive-independent basal turnover mu_b*b, so cutting the drive (s=0)
+        # actually drains the store to zero (b->0), not just stops it (Codex).
         P = _coherence(n, dx) / (P0 + 1e-12)        # in ~[0,1], 1 = fully intact
-        db = s * (1.0 - b) - p["kU"] * U * b
+        db = s * (1.0 - b) - p["kU"] * U * b - p["mu_b"] * b
         dU = p["gU"] * b - p["dampU"] * U - drag * P
         b = max(b + kdt * db, 0.0)
         U = max(U + kdt * dU, 0.0)
@@ -117,20 +119,23 @@ def simulate(quick=False):
     return {
         "params": p,
         "two_way": two_way, "one_way": one_way, "no_drive": no_drive,
-        # the back-reaction self-limits: two-way holds the particle, one-way tears it
+        # the back-reaction self-limits AND saves the particle: two-way holds it while
+        # one-way (no back-reaction) over-drives U past the tearing point and DESTROYS it.
         "two_way_self_limits": bool(two_way["particle_held"] and two_way["U_final"] < one_way["U_final"]),
-        "one_way_overdrives": bool(not one_way["particle_held"] or one_way["U_final"] > two_way["U_final"] + 1e-6),
-        "backreaction_matters": bool(two_way["particle_held"] and not one_way["particle_held"]),
-        # cutting the drive stalls the flow (transport ceases)
-        "drive_off_stalls": bool(no_drive["U_final"] < 0.2 and no_drive["centroid_disp"] < two_way["centroid_disp"]),
+        "one_way_overdrives": bool(one_way["U_final"] > two_way["U_final"] + 1e-6),
+        # the KEY contrast (the GREEN gate): two-way held AND one-way torn (Codex)
+        "backreaction_saves_particle": bool(two_way["particle_held"] and not one_way["particle_held"]),
+        # cutting the drive drains the store (b->0) AND stalls the flow (U->0, transport ceases)
+        "drive_off_stalls": bool(no_drive["U_final"] < 0.2 and no_drive["b_final"] < 0.1
+                                 and no_drive["centroid_disp"] < two_way["centroid_disp"]),
     }
 
 
 def evaluate(result, quick=False):
     checks = {
         "two-way self-limits (particle held, U capped)": result["two_way_self_limits"],
-        "one-way over-drives (U higher / particle torn)": result["one_way_overdrives"],
-        "cut drive -> flow ceases, transport stalls": result["drive_off_stalls"],
+        "back-reaction SAVES the particle (two-way held, one-way torn)": result["backreaction_saves_particle"],
+        "cut drive -> b->0, flow ceases, transport stalls": result["drive_off_stalls"],
     }
     return all(checks.values()), checks
 
@@ -139,14 +144,16 @@ def _atlas(result):
     return [{
         "experiment": "e019 three-body coupling (metabolism+flow+particle)", "tier": "measured",
         "put_in": "b<->U kinetics + a roll of amplitude U(t) advecting a stabilized hopfion + back-reaction drag*P(n); outcome not put in",
-        "emerged": ["two-way: self-limited, particle held (b,U,Q_H)=(%s,%s,%s)"
+        "emerged": ["two-way: self-limited, particle HELD (b,U,Q_H)=(%s,%s,%s)"
                     % (result["two_way"]["b_final"], result["two_way"]["U_final"], result["two_way"]["Q_H_final"]),
-                    "one-way (drag=0): over-driven, U=%s Q_H=%s"
-                    % (result["one_way"]["U_final"], result["one_way"]["Q_H_final"]),
-                    "cut drive: U->%s, transport stalls (disp %s vs %s)"
-                    % (result["no_drive"]["U_final"], result["no_drive"]["centroid_disp"],
-                       result["two_way"]["centroid_disp"])],
-        "surprises": ["the particle's back-reaction CAPS the self-organized flow so it survives -- an emergent negative feedback (homeostasis) that a one-way coupling cannot show"],
+                    "one-way (drag=0): over-driven to U=%s, particle %s (Q_H=%s)"
+                    % (result["one_way"]["U_final"],
+                       "TORN" if not result["one_way"]["particle_held"] else "held",
+                       result["one_way"]["Q_H_final"]),
+                    "cut drive: b->%s, U->%s, transport stalls (disp %s vs %s)"
+                    % (result["no_drive"]["b_final"], result["no_drive"]["U_final"],
+                       result["no_drive"]["centroid_disp"], result["two_way"]["centroid_disp"])],
+        "surprises": ["the particle's back-reaction CAPS the self-organized flow so it SURVIVES the shear that destroys the one-way (no back-reaction) particle -- an emergent negative feedback (homeostasis) that a one-way coupling cannot show"],
         "persistence": "the coupled state persists only while driven; the three bodies live and die together",
         "measured_numbers": {"two_way": result["two_way"], "one_way": result["one_way"],
                              "no_drive": result["no_drive"]},
@@ -169,8 +176,8 @@ def main(argv=None):
         print("  %-9s: b=%.3f U=%.3f Q_H=%.2f size=%.2f disp=%.2f held=%s"
               % (name, d["b_final"], d["U_final"], d["Q_H_final"], d["size_final"],
                  d["centroid_disp"], d["particle_held"]))
-    print("  two-way self-limits=%s ; one-way over-drives=%s ; back-reaction matters=%s ; drive-off stalls=%s"
-          % (r["two_way_self_limits"], r["one_way_overdrives"], r["backreaction_matters"], r["drive_off_stalls"]))
+    print("  two-way self-limits=%s ; one-way over-drives=%s ; back-reaction SAVES particle=%s ; drive-off stalls(b->0)=%s"
+          % (r["two_way_self_limits"], r["one_way_overdrives"], r["backreaction_saves_particle"], r["drive_off_stalls"]))
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))

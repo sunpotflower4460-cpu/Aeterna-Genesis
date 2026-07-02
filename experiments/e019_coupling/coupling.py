@@ -145,7 +145,8 @@ def _atlas(result):
         "put_in": "stabilized Q_H=1 hopfion + Faddeev-Skyrme flow + advection by a prescribed roll; motion/tearing not put in",
         "emerged": ["centroid moves with U (transport): %s"
                     % [(r["U"], r["centroid_disp"]) for r in result["rows"]],
-                    "Q_H held ~1 up to U_c=%s, then torn (Q_H->0, size diverges)" % result["U_c"]],
+                    "Q_H held ~1 up to U_c=%s, then torn (Q_H->0)%s"
+                    % (result["U_c"], " and size diverges" if result["size_diverges_when_torn"] else " (size grows)")],
         "surprises": ["the third holds the particle's identity against shear up to a finite circulation strength, then it tears"],
         "persistence": "identity (Q_H) persists for U < U_c; above U_c the particle is destroyed",
         "measured_numbers": {"rows": result["rows"], "U_c": result["U_c"]},

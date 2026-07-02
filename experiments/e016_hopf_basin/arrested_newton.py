@@ -83,19 +83,32 @@ def evaluate(result, quick=False):
 
 
 def _atlas(result):
+    recovered = result["law_recovered_by_calibration"]
+    fixed_cv = 100 * result["fixed_kappa"]["CV"]
+    cal_cv = 100 * result["calibrated_kappa"]["CV"]
+    if recovered:
+        emerged = ["fixed kappa at finer grid: CV=%.1f%% (degraded)" % fixed_cv,
+                   "calibrated kappa~dx^4: CV=%.1f%% (law recovered)" % cal_cv]
+        surprise = "the size-law degradation was the STABILISER (fixed kappa over-damps), not the physics -- calibration fixes it"
+        tier = "measured (calibrated CV < fixed CV, law recovered) ; interpretive (kappa~dx^4) ; analogy (particle)"
+    else:
+        emerged = ["fixed kappa: CV=%.1f%% ; calibrated kappa~dx^4: CV=%.1f%%" % (fixed_cv, cal_cv),
+                   "NEGATIVE RESULT: the kappa~dx^4 calibration did NOT improve the fit (calibrated CV >= fixed CV) -- the high-L degradation is NOT explained by simple kappa scaling (H001 dead-end)"]
+        surprise = "the kappa~dx^4 hypothesis was TESTED and REFUTED: calibration did not recover a tighter law -- an honest dead-end, recorded"
+        tier = "measured (calibration did NOT help = negative result) ; interpretive (kappa scaling insufficient) ; analogy (particle)"
     return [{
         "experiment": "e016 kappa-calibrated size law (H001)", "tier": "measured",
         "put_in": "the stabilized flow at a finer grid with fixed vs calibrated kappa (~dx^4); the law is not put in",
-        "emerged": ["fixed kappa at finer grid: CV=%.1f%% (degraded)" % (100 * result["fixed_kappa"]["CV"]),
-                    "calibrated kappa~dx^4: CV=%.1f%% (law recovered)" % (100 * result["calibrated_kappa"]["CV"])],
-        "surprises": ["the size-law degradation at higher resolution was the STABILISER (fixed kappa over-damps), not the physics -- calibration fixes it"],
-        "persistence": "the sqrt(c4) law holds at higher resolution once kappa is calibrated",
+        "emerged": emerged,
+        "surprises": [surprise],
+        "persistence": "size law is tight (CV~3.5%) at L=44/52; the kappa calibration does not change that",
         "measured_numbers": {"fixed": result["fixed_kappa"], "calibrated": result["calibrated_kappa"],
-                             "kappa_calibrated": result["kappa_calibrated"]},
+                             "kappa_calibrated": result["kappa_calibrated"],
+                             "law_recovered_by_calibration": recovered},
         "not_scripted_check": "sizes from the flow; CV from size/sqrt(c4); only a kappa scaling rule is put in",
-        "claim_tier": "measured (calibrated CV < fixed CV, law recovered) ; interpretive (kappa~dx^4) ; analogy (particle)",
-        "floors": ["this recovers the size LAW at higher resolution; it does NOT make the basin global (still bounded on a fixed lattice)",
-                   "true any-start->L* globalization remains open (H001); absolute k stays resolution-dependent"],
+        "claim_tier": tier,
+        "floors": ["the size LAW is tight at L=44/52 (CV~3.5%); the kappa~dx^4 fix did NOT recover it at higher L (tested, negative)",
+                   "true any-start->L* globalization remains open (H001); absolute k stays resolution-dependent; fixed lattice"],
     }]
 
 

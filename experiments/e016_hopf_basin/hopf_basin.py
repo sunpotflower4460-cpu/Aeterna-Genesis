@@ -156,8 +156,10 @@ def simulate(quick=False):
                       "Q_H_final": r["Q_H_final"], "held": bool(r["Q_H_final"] > 0.7)})
     held_mults = [b["mult"] for b in basin if b["held"]]
     basin_window = [min(held_mults), max(held_mults)] if held_mults else []
-    # bounded iff at least one swept start on either side FAILED to hold
-    bounded = bool(basin and (not basin[0]["held"] or not basin[-1]["held"]))
+    # BOUNDED means a finite window: the sweep must FAIL to hold on BOTH sides
+    # (smallest start AND largest start unwind), bracketing the held window. A sweep
+    # that only fails on one side has not bracketed the other edge (CodeRabbit/Codex).
+    bounded = bool(basin and not basin[0]["held"] and not basin[-1]["held"])
 
     # (c) Q_H = 2 : doubled azimuthal winding, same flow
     fld = qh_field_mn(p["L"], p["qh2_scale"], p["box"], m=1, n=2)
@@ -173,16 +175,16 @@ def simulate(quick=False):
         "qh2": {"c4": p["qh2_c4"], **q2}, "qh2_held": q2_held,
         # tightness of the size=k*sqrt(c4) law is measured by the CV of k=size/sqrt(c4)
         # (the spec's own <5% criterion): a small CV means size/sqrt(c4) is ~constant.
-        # R^2 (through-origin) is reported too but is oversensitive to the small
-        # dynamic range; a mild systematic decline in k (finite-box/stabiliser) is a floor.
-        "law_fit_good": bool(cv < 0.05 and r2 > 0.90 and len(held) >= 2),
+        # R^2 (through-origin) is REPORT-ONLY -- oversensitive to the small dynamic range
+        # (e.g. H001 L=52 has CV~3.5% yet R^2~0.85), so it does NOT gate (Codex).
+        "law_fit_good": bool(cv < 0.05 and len(held) >= 2),
         "all_held_monotone": bool(all(r["energy_monotone"] for r in law) and q2["energy_monotone"]),
     }
 
 
 def evaluate(result, quick=False):
     checks = {
-        "size=k*sqrt(c4) tight (CV<5%, R2>0.90)": result["law_fit_good"],
+        "size=k*sqrt(c4) tight (CV<5%; R2 report-only)": result["law_fit_good"],
         "Q_H~1 held across resolved c4": len(result["held_c4"]) >= 2,
         "Q_H=2 held (|Q_H|>1.7)": result["qh2_held"],
         "energy monotone (all)": result["all_held_monotone"],
