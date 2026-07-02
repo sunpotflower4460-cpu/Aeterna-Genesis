@@ -1,0 +1,194 @@
+{
+  "result": {
+    "params": {
+      "k1": 3.0,
+      "k2": 1.0,
+      "dA": 0.2,
+      "dM": 0.2,
+      "s": 1.0,
+      "steps": 8000,
+      "dt": 0.01,
+      "S0": 0.5,
+      "A0": 0.5,
+      "M0": 0.5,
+      "cut_time": 15.0,
+      "s_grid": [
+        0.02,
+        0.05,
+        0.1,
+        0.2,
+        0.4,
+        0.8,
+        1.5
+      ],
+      "dA_grid": [
+        0.15,
+        0.25,
+        0.35
+      ]
+    },
+    "intact_SAM": [
+      0.3553,
+      0.7632,
+      0.7924
+    ],
+    "alive_when_intact": true,
+    "cut_metabolism_SAM": [
+      1.0,
+      0.0,
+      0.0001
+    ],
+    "dies_on_cut_metabolism": true,
+    "cut_membrane_SAM": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "dies_on_cut_membrane": true,
+    "cut_drive_SAM": [
+      0.0008,
+      0.0,
+      0.0
+    ],
+    "dies_on_cut_drive": true,
+    "phase": [
+      {
+        "dA": 0.15,
+        "alive_row": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "critical_s": null
+      },
+      {
+        "dA": 0.25,
+        "alive_row": [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "critical_s": 0.05
+      },
+      {
+        "dA": 0.35,
+        "alive_row": [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "critical_s": 0.1
+      }
+    ],
+    "critical_s_per_dA": [
+      null,
+      0.05,
+      0.1
+    ],
+    "bracketed_thresholds": [
+      [
+        0.25,
+        0.05
+      ],
+      [
+        0.35,
+        0.1
+      ]
+    ],
+    "critical_drive_curve_rises_with_loss": true,
+    "curve_strictly_rises": true
+  },
+  "atlas": [
+    {
+      "experiment": "e018 three-arm driven vessel + phase diagram",
+      "tier": "measured",
+      "put_in": "substrate->metabolism->membrane driven loop (3 laws + drive s); 'die if cut' not put in",
+      "emerged": [
+        "intact+driven -> coexistence S,A,M=[0.3553, 0.7632, 0.7924] (alive)",
+        "cut metabolism/membrane/drive -> death ([1.0, 0.0, 0.0001] / [1.0, 0.0, 0.0] / [0.0008, 0.0, 0.0])",
+        "phase boundary is a critical-drive curve: bracketed thresholds (dA,s_c)=[(0.25, 0.05), (0.35, 0.1)], strictly rising with loss"
+      ],
+      "surprises": [
+        "all three arms are load-bearing; the life/death line is a drive threshold that does not fall as dissipation grows"
+      ],
+      "persistence": "coexistence only while all three arms run and the drive exceeds a critical rate",
+      "measured_numbers": {
+        "intact_SAM": [
+          0.3553,
+          0.7632,
+          0.7924
+        ],
+        "phase": [
+          {
+            "dA": 0.15,
+            "alive_row": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "critical_s": null
+          },
+          {
+            "dA": 0.25,
+            "alive_row": [
+              0,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "critical_s": 0.05
+          },
+          {
+            "dA": 0.35,
+            "alive_row": [
+              0,
+              0,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "critical_s": 0.1
+          }
+        ],
+        "bracketed_thresholds": [
+          [
+            0.25,
+            0.05
+          ],
+          [
+            0.35,
+            0.1
+          ]
+        ],
+        "curve_strictly_rises": true
+      },
+      "not_scripted_check": "death follows from zeroing a rate; the boundary is read off a sweep, not imposed",
+      "claim_tier": "measured (coexistence, three-way death, critical-drive curve) ; interpretive (driven closure) ; analogy (metabolism/membrane/vessel)",
+      "floors": [
+        "minimal kinetics (not a spatial membrane -- phase-field vesicle is Stage 2 / H002)",
+        "'metabolism/membrane/vessel/death' is analogy; not a protocell; we did NOT make life"
+      ]
+    }
+  ]
+}

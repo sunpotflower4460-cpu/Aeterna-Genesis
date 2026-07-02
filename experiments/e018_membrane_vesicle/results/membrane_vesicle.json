@@ -1,0 +1,120 @@
+{
+  "result": {
+    "params": {
+      "L": 128,
+      "steps": 6000,
+      "eps2": 2.0,
+      "target": -0.4,
+      "dt": 0.05,
+      "s": 1.0,
+      "seed": 0,
+      "leak_grid": [
+        0.0,
+        0.4,
+        0.8
+      ],
+      "s_grid": [
+        0.1,
+        0.2,
+        0.3,
+        0.6,
+        1.0
+      ]
+    },
+    "driven": {
+      "s": 1.0,
+      "leak": 0.0,
+      "inside_frac": 0.287,
+      "interface_band": 0.04,
+      "n_components": 1,
+      "border_touch": 0,
+      "alive": true,
+      "bounded_single_vesicle": true
+    },
+    "no_drive": {
+      "s": 0.0,
+      "leak": 0.0,
+      "inside_frac": 0.0,
+      "interface_band": 0.0,
+      "n_components": 0,
+      "border_touch": 0,
+      "alive": false,
+      "bounded_single_vesicle": false
+    },
+    "vesicle_forms_when_driven": true,
+    "dissolves_without_drive": true,
+    "thresholds": [
+      {
+        "leak": 0.0,
+        "min_surviving_s": 0.1
+      },
+      {
+        "leak": 0.4,
+        "min_surviving_s": 0.2
+      },
+      {
+        "leak": 0.8,
+        "min_surviving_s": 0.2
+      }
+    ],
+    "drive_threshold_rises_with_leak": true
+  },
+  "atlas": [
+    {
+      "experiment": "e018 phase-field membrane vesicle",
+      "tier": "measured",
+      "put_in": "Allen-Cahn double-well + driven mass control (drive s, leak); 'droplet'/'dissolve' not put in",
+      "emerged": [
+        "a single compact bounded droplet with a thin interface (membrane) persists when driven: {'s': 1.0, 'leak': 0.0, 'inside_frac': 0.287, 'interface_band': 0.04, 'n_components': 1, 'border_touch': 0, 'alive': True, 'bounded_single_vesicle': True}",
+        "cut the drive (s=0) -> it dissolves ({'s': 0.0, 'leak': 0.0, 'inside_frac': 0.0, 'interface_band': 0.0, 'n_components': 0, 'border_touch': 0, 'alive': False, 'bounded_single_vesicle': False}) = death",
+        "leak up -> drive up to survive: [(0.0, 0.1), (0.4, 0.2), (0.8, 0.2)]"
+      ],
+      "surprises": [
+        "a spatial vesicle with a membrane (not just kinetics) lives and dies by the same drive rule"
+      ],
+      "persistence": "the vesicle persists only while driven above a leak-dependent threshold",
+      "measured_numbers": {
+        "driven": {
+          "s": 1.0,
+          "leak": 0.0,
+          "inside_frac": 0.287,
+          "interface_band": 0.04,
+          "n_components": 1,
+          "border_touch": 0,
+          "alive": true,
+          "bounded_single_vesicle": true
+        },
+        "no_drive": {
+          "s": 0.0,
+          "leak": 0.0,
+          "inside_frac": 0.0,
+          "interface_band": 0.0,
+          "n_components": 0,
+          "border_touch": 0,
+          "alive": false,
+          "bounded_single_vesicle": false
+        },
+        "thresholds": [
+          {
+            "leak": 0.0,
+            "min_surviving_s": 0.1
+          },
+          {
+            "leak": 0.4,
+            "min_surviving_s": 0.2
+          },
+          {
+            "leak": 0.8,
+            "min_surviving_s": 0.2
+          }
+        ]
+      },
+      "not_scripted_check": "the droplet + interface + dissolution emerge from the field dynamics; no shape/death imposed",
+      "claim_tier": "measured (bounded single-droplet, driven persistence, dissolution, leak->drive) ; analogy (membrane/vesicle/protocell)",
+      "floors": [
+        "coarse-grained continuum phase field (not a lipid bilayer); fixed periodic lattice",
+        "'membrane/vesicle/protocell/death' is analogy; not a cell; we did NOT make life"
+      ]
+    }
+  ]
+}

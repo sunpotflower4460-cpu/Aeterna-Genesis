@@ -164,3 +164,42 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | 駆動を切る（F→0）→総 v→0（死）。生存の臨界 F 窓 | **measured** | 死=True、生存窓 F∈[~0.03,~0.07] |
 | 3 | 両腕オートポイエーシス：膜を壊す/代謝を止める、どちらを切っても死 | **measured** | `autopoiesis.json`：γ→0 死・α→0 死、臨界 S_c≈0.05 |
 | 4 | 開-閉の二重性は interpretive、autopoiesis/膜/代謝/生命は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |
+
+## e016 — Hopf basin（size 則・有界 basin・Q_H=2）  (STATUS: GREEN, Type A/一部 D)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 安定化流の収束 size が √c4 則に従う：size=k√c4（k=0.901・CV=3.5%＝size/√c4 が~一定・R²=0.941）、各 c4 で Q_H≈1 | **measured** | `results/hopf_basin.json`（Type A、k は c4 で ~8% 緩く低下＝軽い sub-√c4 は床） |
+| 2 | **Q_H=2**（方位角巻き×2）も同じ流れで保持（|Q_H|≈2）、エネルギー単調 | **measured** | qh2_held=True、\|Q_H\| ~1.95→~2.0（Type A） |
+| 3 | 保持する start は**有界な窓**（両側）＝ basin は有界（大域でない） | **observed** | basin_window_mult（下は未解像、上は解離）（Type B/D） |
+| 4 | 絶対 k・basin 端は解像度/κ 依存／大 c4 は解像度ぎりぎり／「粒子」は analogy（床） | **（床の明示）** | robustness.json（κ~独立）、marginal_c4 |
+
+## e017 — 壁つき Rayleigh-Bénard（教科書 Ra_c）  (STATUS: GREEN, Type A)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 壁つき線形安定性で臨界 Rayleigh 数を教科書と<0.4%で復元：no-slip 1713.9@a_c3.12、free-slip 657.3@2.22 | **measured** | `results/rb_linear_stability.json`（教科書 1707.76/657.5、Type A） |
+| 2 | no-slip > free-slip（剛体壁の方が対流が立ちにくい） | **measured** | Ra_c 順序（Type A） |
+| 3 | 周期箱の Ra_c≈20（e013）は箱固有値＝artifact | **interpretive** | 壁つきが物理値 |
+| 4 | 壁つき DNS：Ra>Ra_c で Nu>1（対流輸送）、内部 delivery が Ra で増 | **measured** | `rb_dns.py`（Nu(Ra)、c_interior） |
+| 5 | 線形 onset のみ・固定 1D 格子・接線 BC は one-sided 必須（床/罠回避） | **（床の明示）** | AUDIT.md 床1–4 |
+
+## e018 — 器の膜（三腕＋相図／空間膜小胞）  (STATUS: GREEN, Type B)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 三腕（基質→代謝→膜）：どの腕を切っても・駆動を切っても死 | **measured** | `results/vessel_membrane.json`（四様の死） |
+| 2 | 相図は臨界駆動曲線 s_c(dA)＝漏れとともに上昇（駆動閾値が支配、下限が bracket された行のみ） | **measured** | bracketed (dA,s_c)=[(0.25,0.05),(0.35,0.1)]、strictly rises（dA=0.15 は最小駆動でも生＝閾値が走査域外→報告のみ） |
+| 3 | phase-field で境界をもつ有界単一小胞（薄い膜）が駆動で持続・切ると溶ける | **measured** | `results/membrane_vesicle.json`：inside_frac≈0.28、界面帯≈0.05、連結1 |
+| 4 | 漏れ↑→生存に必要な駆動↑（空間版の臨界駆動曲線、生存判定は bounded_single_vesicle） | **measured** | leak 0→0.4→0.8 で min s 0.1→0.2→0.2 |
+| 5 | 最小動力学/連続 phase-field（脂質膜でない）、膜/小胞/protocell/生命は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |
+
+## e019 — 循環×粒子の結合（輸送・U_c・三体）  (STATUS: GREEN, Type B/C)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 規定 roll が粒子を運び centroid が U とともに単調移動（輸送） | **measured** | `results/coupling.json`：centroid_disp 単調増 |
+| 2 | 第三が同一性（Q_H）を U_c まで保持、超えると引き裂かれ Q_H→0・size 発散 | **measured** | held→torn crossover U_c≈7（U=6 保持/U=11 崩壊） |
+| 3 | 重心は成分場の**空間**軸で（4D 軸を使わない）＝罠回避 | **measured/規律** | `_centroid` 空間軸のみ、test で確認 |
+| 4 | 三体結合：背反応が流れを自己制限し粒子保持（U=3.35,Q_H=0.97）／背反応なし=一方向は過駆動で破壊（U=9.56,Q_H=−0.21）／駆動オフで b→0.005・流れ停止＝背反応が粒子を救う負のフィードバック | **measured** | `results/three_body.json`（two-way vs one-way vs no-drive、backreaction_saves_particle=True） |
+| 5 | 規定 roll・振幅還元流（完全 NS でない）・U_c は crossover・「粒子/同一性/ホメオスタシス」は analogy/interpretive（床） | **（床の明示）** | AUDIT.md 床 |

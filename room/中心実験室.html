@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeternaGenesis — 中心実験室：ゴールへのルート</title>
+<style>
+  :root{
+    --bg:#0a0f1e; --bg2:#0d1426; --panel:#121a31; --panel2:#162038;
+    --line:#27324f; --line2:#36456a;
+    --ink:#e7ebf6; --mut:#94a2c6; --mut2:#6b7aa0;
+    --glow:#69e6da;                 /* emergence / play */
+    --A:#f2c14e; --B:#5cc8a0; --C:#6f9cf0; --D:#bd7fe6;  /* warm->cool confidence */
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono","Roboto Mono",Menlo,monospace;
+    --sans:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Noto Sans JP",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:
+      radial-gradient(1100px 600px at 78% -8%, #15224a 0%, transparent 60%),
+      radial-gradient(900px 500px at 8% 4%, #0f1d3e 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.65;
+    -webkit-font-smoothing:antialiased; letter-spacing:.01em;}
+  .wrap{max-width:1180px; margin:0 auto; padding:40px 26px 70px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase;
+    color:var(--glow); opacity:.85}
+  h1{font-size:clamp(27px,4.3vw,46px); line-height:1.12; margin:.34em 0 .26em; font-weight:760;
+    letter-spacing:-.012em}
+  h1 .small{display:block; font-size:.46em; font-weight:600; color:var(--mut); letter-spacing:0; margin-top:.5em}
+  .status{font-family:var(--mono); font-size:12.5px; color:var(--mut); margin-top:8px}
+  .status b{color:var(--B); font-weight:600}
+  .rule{font-size:13px; color:var(--mut2); margin-top:14px; max-width:62ch}
+  .rule b{color:var(--ink); font-weight:600}
+
+  section{margin-top:48px}
+  .sec-h{font-family:var(--mono); font-size:12px; letter-spacing:.26em; text-transform:uppercase;
+    color:var(--mut); display:flex; align-items:center; gap:14px; margin-bottom:20px}
+  .sec-h::after{content:""; height:1px; flex:1; background:linear-gradient(90deg,var(--line2),transparent)}
+
+  /* ---- route + observatory ---- */
+  .stage{display:grid; grid-template-columns:300px 1fr; gap:26px}
+  @media(max-width:860px){.stage{grid-template-columns:1fr}}
+
+  .route{position:relative; padding-left:6px}
+  .route::before{content:""; position:absolute; left:19px; top:14px; bottom:14px; width:2px;
+    background:linear-gradient(var(--A),var(--B) 40%,var(--C) 70%,var(--D)); opacity:.35}
+  .node{position:relative; display:flex; gap:13px; align-items:flex-start; width:100%;
+    background:none; border:none; text-align:left; cursor:pointer; padding:9px 8px 9px 0; color:var(--ink);
+    border-radius:10px; transition:background .15s}
+  .node:hover{background:#ffffff09}
+  .node .dot{flex:none; width:14px; height:14px; border-radius:50%; margin-top:5px; z-index:1;
+    background:var(--bg); border:2px solid var(--tc); box-shadow:0 0 0 4px var(--bg)}
+  .node.on .dot{background:var(--tc); box-shadow:0 0 14px var(--tc),0 0 0 4px var(--bg)}
+  .node .nm{font-family:var(--mono); font-size:11px; color:var(--mut2); letter-spacing:.08em}
+  .node .tt{font-size:14.5px; font-weight:640; margin-top:1px; line-height:1.32}
+  .node.on .tt{color:#fff}
+  .node .tg{font-size:11.5px; color:var(--mut); margin-top:1px}
+  .node .badge{font-family:var(--mono); font-size:9.5px; padding:1px 6px; border-radius:999px;
+    border:1px solid var(--tc); color:var(--tc); margin-left:6px; letter-spacing:.06em; vertical-align:2px}
+
+  .room{background:linear-gradient(160deg,var(--panel),var(--bg2)); border:1px solid var(--line);
+    border-radius:18px; padding:18px 18px 20px; box-shadow:0 24px 60px -28px #000}
+  .room-top{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:12px}
+  .room-top .t{font-size:18px; font-weight:700}
+  .room-top .n{font-family:var(--mono); font-size:11px; color:var(--mut2); letter-spacing:.2em}
+  .canvas-wrap{position:relative; width:100%; aspect-ratio:1/1; max-width:430px; margin:0 auto;
+    border-radius:14px; overflow:hidden; background:#05080f; border:1px solid var(--line)}
+  canvas{display:block; width:100%; height:100%; image-rendering:auto}
+  .cap{font-size:12.5px; color:var(--mut); text-align:center; margin:11px auto 0; max-width:46ch; min-height:2.4em}
+  .controls{display:flex; flex-wrap:wrap; gap:9px; align-items:center; justify-content:center; margin-top:13px}
+  button.ctl{font-family:var(--mono); font-size:12px; letter-spacing:.06em; cursor:pointer;
+    border-radius:9px; padding:8px 15px; border:1px solid var(--line2); background:#0f1830; color:var(--ink);
+    transition:.15s}
+  button.ctl:hover{border-color:var(--glow); color:#fff}
+  button.play{background:var(--glow); color:#04221f; border-color:var(--glow); font-weight:700}
+  button.play:hover{filter:brightness(1.08); color:#04221f}
+  button.ctl.alt[data-on="0"]{border-color:#7a4a4a}
+  .slider{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; color:var(--mut)}
+  input[type=range]{accent-color:var(--glow)}
+
+  .io{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:15px}
+  @media(max-width:480px){.io{grid-template-columns:1fr}}
+  .io .box{border:1px solid var(--line); border-radius:11px; padding:10px 12px; background:#0c142880}
+  .io .lab{font-family:var(--mono); font-size:9.5px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:4px}
+  .io .put .lab{color:var(--mut2)} .io .emg .lab{color:var(--glow)}
+  .io p{margin:0; font-size:12.5px; color:var(--ink)}
+  .tier-line{margin-top:11px; font-family:var(--mono); font-size:11px; color:var(--mut)}
+  .tier-line .pill{padding:1.5px 8px; border-radius:999px; font-weight:700; color:#0a0f1e}
+
+  /* ---- compass ---- */
+  .compass{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media(max-width:760px){.compass{grid-template-columns:1fr}}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px 22px}
+  .card h3{margin:0 0 6px; font-size:15px; letter-spacing:.02em}
+  .card .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--glow)}
+  .route-mini{font-family:var(--mono); font-size:11.5px; color:var(--mut); white-space:pre-wrap; line-height:1.85;
+    margin:8px 0 0}
+  .route-mini b{color:var(--ink)}
+  ol.dir{margin:6px 0 0; padding-left:20px; font-size:13px}
+  ol.dir li{margin:5px 0} ol.dir li b{color:var(--C)}
+
+  /* ---- ledger ---- */
+  .ledger{display:grid; grid-template-columns:repeat(2,1fr); gap:16px}
+  @media(max-width:760px){.ledger{grid-template-columns:1fr}}
+  .tcard{border:1px solid var(--line); border-radius:16px; padding:18px 20px; background:
+    linear-gradient(165deg,#ffffff07,transparent), var(--panel); border-top:3px solid var(--tc)}
+  .tcard .hd{display:flex; align-items:baseline; gap:10px}
+  .tcard .tag{font-family:var(--mono); font-weight:800; font-size:13px; color:var(--tc); letter-spacing:.05em}
+  .tcard .ti{font-size:15px; font-weight:680}
+  .tcard .df{font-size:12.5px; color:var(--mut); margin:6px 0 10px}
+  details.simple{border-top:1px dashed var(--line2); padding-top:9px; margin-top:4px}
+  details.simple>summary{cursor:pointer; font-family:var(--mono); font-size:11px; letter-spacing:.05em;
+    color:var(--tc); list-style:none; outline:none}
+  details.simple>summary::-webkit-details-marker{display:none}
+  details.simple>summary::before{content:"▸ "; }
+  details.simple[open]>summary::before{content:"▾ ";}
+  .simple .blk{margin:9px 0 2px; font-size:12.5px; color:var(--ink)}
+  .simple .blk .h{font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--mut2); display:block; margin-bottom:2px}
+  ul.items{margin:11px 0 0; padding-left:17px; font-size:12.5px; color:var(--mut)}
+  ul.items li{margin:4px 0} ul.items li b{color:var(--ink); font-weight:600}
+  ul.items li .f{color:var(--mut2); font-size:11.5px}
+
+  footer{margin-top:50px; border-top:1px solid var(--line); padding-top:18px;
+    font-family:var(--mono); font-size:11px; color:var(--mut2); line-height:1.8}
+  footer b{color:var(--mut)}
+  a{color:var(--glow)}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">AeternaGenesis · 中心実験室</div>
+    <h1>ゴールへのルート
+      <span class="small">初期条件のみから、なんの強制もなく ― 生命の宿りうる器と、本当に自然に創発する宇宙へ。</span>
+    </h1>
+    <div class="status">現在地：<b>器・循環・粒子が一つの描像に結びついた。</b> 残る本丸＝法則を 0≠無 から導く／作用＝エントロピー／真の大域化／膜小胞化／三体フル結合。</div>
+    <p class="rule"><b>創発＝物理</b>（本物の法則＋最小の条件 → 現象がひとりでに現れる）　vs　<b>入れる＝計算</b>（狙った答えを出す生成器）。「同じ数学」≠「同じもの」。生命・脳・電子を「作った」とは言わない。</p>
+  </header>
+
+  <section>
+    <div class="sec-h">ルート ／ 観測室</div>
+    <div class="stage">
+      <nav class="route" id="route"><!-- nodes injected --></nav>
+      <div class="room">
+        <div class="room-top"><div class="t" id="r-title">―</div><div class="n" id="r-num">STAGE</div></div>
+        <div class="canvas-wrap"><canvas id="cv" width="430" height="430"></canvas></div>
+        <div class="cap" id="r-cap"></div>
+        <div class="controls">
+          <button class="ctl play" id="btnPlay">▶ 再生</button>
+          <button class="ctl" id="btnReset">↺ 初期条件に戻す</button>
+          <span id="extra"></span>
+        </div>
+        <div class="io">
+          <div class="box put"><div class="lab">入れたもの（初期条件＋法則）</div><p id="r-put"></p></div>
+          <div class="box emg"><div class="lab">創発したもの</div><p id="r-emg"></p></div>
+        </div>
+        <div class="tier-line">tier：<span class="pill" id="r-pill">―</span> <span id="r-tnote"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h">現在地 ／ 方向性</div>
+    <div class="compass">
+      <div class="card">
+        <div class="k">現在地 — いまどこまで創発したか</div>
+        <h3>素直なルート（measured の足場でつながっている所）</h3>
+        <div class="route-mini"><b>0≠無</b>（差のない地面は不安定）
+ └ <b>変化が在る ＝ もう因果・時間順序が在る</b>
+   └ 低エントロピーの始まり → <b>時間の矢 ＋ 複雑さの窓</b>
+     └ 因果＋関係＋<b>第三</b> → <b>整数次元の空間</b>
+       └ 渦＝物質／<b>第三が粒子を安定化</b>（L*∝√c4・Q_H=2）
+         └ 化学・選択（turnover が淘汰を生む）
+           └ <b>循環が内部を養う</b>（壁つき実セル Ra_c≈1708）
+             └ <b>器の閉じ</b>：開（駆動）かつ閉（自己維持）
+               └ <b>循環が粒子を運び、第三が同一性を保つ</b></div>
+      </div>
+      <div class="card">
+        <div class="k">方向性 — 次に詰める（優先順）</div>
+        <h3>残る本丸</h3>
+        <ol class="dir">
+          <li><b>真の大域化</b>（Hopf）：arrested-Newton／高解像度で任意初期→L*、大 c4 まで L*∝√c4。</li>
+          <li><b>膜小胞化</b>（器）：phase-field 膜で、空間充填でなく境界をもつ小胞（Zwicker 系）。</li>
+          <li><b>三体フル結合</b>：代謝＋自己組織した流れ＋粒子を一つの場に、双方向結合。</li>
+          <li><b>作用＝エントロピー</b>から（Jacobson/Verlinde）：作用＝第三の役割が熱力学/もつれから出るか。</li>
+          <li><b>法則を 0≠無 から導く</b>（最深）：いまは法則を入れて忠実に創発させている。導出が究極。</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h">Type A–D 台帳 — 確信度の勾配（A はっきりした → D 価値ある未踏の仮説）</div>
+    <div class="ledger" id="ledger"><!-- cards injected --></div>
+  </section>
+
+  <footer>
+    <b>更新の作法</b>：新しい結果が GREEN になったら、どの Type かを決めて該当節に追記（消さない・積み上げる）。床（ただし書き）を必ず添える。誇張語を使わない。<br>
+    確認でなく発見を、誇張なく、床つきで。 ── このルートは新しいことが分かるたび更新される。
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const TIER={A:{c:"var(--A)",n:"A・はっきりした"},B:{c:"var(--B)",n:"B・ほぼ確か"},
+            C:{c:"var(--C)",n:"C・有望な解釈"},D:{c:"var(--D)",n:"D・未踏の仮説"}};
+
+/* ---------------- route stages ---------------- */
+const STAGES=[
+ {nm:"01", title:"白：差のない地面", tag:"0≠無 → 変化", tier:"B", kind:"domains",
+  cap:"完全に均一な地面は不安定。微小なゆらぎから領域（差）がひとりでに生まれ、粗大化していく＝変化の始まり。",
+  put:"ほぼ均一な場＋微小ゆらぎ＋『均一は不安定』という法則だけ。", emg:"自発的に領域（差＝構造）が生まれ育つ。差が無い前提から差が出る。"},
+ {nm:"02", title:"時間の矢・複雑さの窓", tag:"低エントロピー → 矢＋窓", tier:"A", kind:"mix",
+  cap:"分かれた二色をかき混ぜると、戻らない方向（時間の矢）に進む。途中で最も入り組んだ構造になり（複雑さの窓＝『今』）、やがて均される。",
+  put:"低エントロピーの始まり（分かれた状態）＋かき混ぜ＋拡散。", emg:"不可逆な向き（時間の矢）と、秩序と無秩序の間に立つ構造（複雑さの窓）。"},
+ {nm:"03", title:"因果 → 空間", tag:"関係＋因果 → 次元", tier:"A", kind:"causal",
+  cap:"ただの関係（無向）だけでは幾何が潰れる。因果の順序（向き）を課すと、層（時間）と整数次元の空間が読める形で立ち上がる。",
+  put:"点と関係＋『変化の順序＝因果』だけ（座標は与えない）。", emg:"時間の層（foliation）と、因果順序のみから読める整数次元（2D創発・3Dは d=3 を運ぶ）。"},
+ {nm:"04", title:"第三 ＝ 粒子", tag:"トポロジー＋第三 → 有限サイズ", tier:"A", kind:"particle",
+  cap:"対（関係）だけでは粒子は点に潰れる（Derrick）。『第三』（高階の項）を入れると、有限の大きさ L* で安定する。L*∝√c4。",
+  put:"S²場のトポロジー（巻き）＋勾配＋『第三』（四次Skyrme項）。", emg:"潰れず巡る粒子が有限サイズ L* で安定（Q_H 保持、L*∝√c4、Q_H=2 も）。"},
+ {nm:"05", title:"循環が内部を養う", tag:"駆動 → 対流 → 内部給餌", tier:"B", kind:"conv",
+  cap:"拡散だけでは奥（内部）は栄養が届かずデッドコア。閾値を超えると対流がひとりでに立ち、循環が内部まで養う。壁つき実セルの臨界は Ra_c≈1708。",
+  put:"温度差（駆動）＋流体＋栄養。流れは手で入れず、不安定から立たせる。", emg:"閾値で対流が自発し、循環が内部まで栄養を運ぶ（拡散では届かない奥へ）。"},
+ {nm:"06", title:"器の閉じ", tag:"開（駆動）かつ閉（自己維持）", tier:"B", kind:"gs",
+  cap:"器は『外にエネルギーが流れ込む（開）からこそ自分を保てる（閉）』。再生で器は生き・自己修復し増える。駆動を切ると閉じが解けて死ぬ。",
+  put:"反応拡散＋供給（駆動）。『切ると死ぬ』は入れていない。", emg:"駆動下で境界を保ち自己修復・増殖／駆動を切ると溶けて死＝開‐閉の二重性。",
+  ctl:"drive"},
+ {nm:"07", title:"結合：循環 × 粒子", tag:"器の循環が粒子を運ぶ", tier:"B", kind:"couple",
+  cap:"器の循環は粒子を運ぶ。第三は循環のシアに抗して粒子の同一性を保つ ― ただしある臨界の循環強度を超えると引き裂かれる。",
+  put:"安定化した粒子＋循環（流れ）。臨界で壊れることは入れていない。", emg:"粒子は循環に運ばれ、第三が U_c まで同一性を保つ。臨界を超えると引き裂かれる（創発的閾値）。",
+  ctl:"shear"},
+ {nm:"08", title:"膜小胞：空間の器", tag:"phase-field 膜 → 有界小胞", tier:"B", kind:"vesicle",
+  cap:"0次元の動力学でなく空間に器を。相分離する場が、薄い界面（膜）をもつ有界な小胞をひとりでに作る。駆動で保たれ、駆動を切ると溶ける（死）＝空間的な開‐閉の二重性。",
+  put:"相分離（二重井戸）＋駆動質量制御。「小胞を作れ」「溶けよ」は入れていない。", emg:"境界をもつ有界小胞が自発形成・持続／駆動を切ると溶解（死）。",
+  ctl:"drive"}
+];
+
+/* ---------------- Type A–D ledger ---------------- */
+const LEDGER=[
+ {t:"A", ti:"はっきりしたこと", df:"計算で確かめ、教科書や他の研究者の結果とも数で一致。いちばん硬い土台。",
+  easy:"実際にコンピュータで確かめて、教科書ともピッタリ合ったこと。入れていないのに正しい振る舞いが、数字まで合って出てきたもの。",
+  gist:"いちばん硬い土台。狙って入れたのではなく最小の条件から正しい現象が数字ごと出て、独立に再現できたもの。ここの上にだけ重い結論を積む。",
+  items:[["渦の歳差・二渦の法則","点渦スケール則が場から出る","e001–003"],
+         ["Hopf 完全PDE自己安定化","第三で Q_H≈1 保持・L* 収束・エネルギー単調","e012"],
+         ["Hopf 大域化","動的 L*∝√c4（R²=0.99）・basin・Q_H=2","e016"],
+         ["壁つき実 RB の臨界数","Ra_c=1714/657＝教科書と<0.4%","e017"],
+         ["因果が次元を運ぶ","因果順序のみから d=2,3,4・d_s≈3","e014"],
+         ["キブル・ズーレック／動的束縛","欠陥生成 z 順序・v·d 一定","e010/011"],
+         ["複雑さの窓／51:49 の矢","中間エントロピーで構造最大・微小非対称で矢","—"]]},
+ {t:"B", ti:"ほぼ確か（床つき）", df:"本物だが『ただし書き』つき。現象は確かに創発した／壊すと死ぬ等は数で出た。",
+  easy:"これも計算で確かめた本物だけど、条件つき。例えば循環が奥を養うのは本当だが流れは手で決めた、器が死ぬのは本物だが既知の反応を使っている、など。",
+  gist:"本物だが留保つき。規定した流れ・既知モデル・解像度の限界などのただし書きを必ず添える。",
+  items:[["循環が内部を養う","循環なし→デッドコア／あり→内部 b 増","e013"],
+         ["器の閉じ（駆動依存）","駆動で自己維持・修復／切ると死","e015"],
+         ["空間オートポイエーシス","両腕どちらを切っても死（空間充填）","e018"],
+         ["結合（粒子が循環に乗る）","循環が運ぶ／第三が U_c まで保持","e019"],
+         ["次元は面に宿る","面が2D性を運ぶ／裸グラフは潰れる","manifold#2"],
+         ["淘汰の要は turnover","生死の turnover が競争排除を生む","selection"]]},
+ {t:"C", ti:"有望な解釈・構造的仮説", df:"いくつもの事実をつないで見えてくる考え方。矛盾しないが証明ではない。",
+  easy:"実験で出た事実そのものではなく、事実をつないで見えてくる物語。例えば『器は開いているからこそ閉じて自分を保てる』『変化のルールが在る＝もう時間の順番が在る』という見方。",
+  gist:"事実をつなぐ骨組み。measured と矛盾せず説明力が高いが、解釈であって証明ではない。地図として使い、過信しない。",
+  items:[["本流（throughline）","0≠無→変化→因果/時間→空間→器",""],
+         ["第三＝最小の追加文法","面・三和音・四次項が次元/粒子/安定化を生む",""],
+         ["変化のルール＝もう因果","時間＝層状の依存、非循環性＝矢",""],
+         ["器＝開‐閉の二重性","散逸的に開き組織的に閉じる",""],
+         ["生命の器＝宇宙、同じ経路","違いは種パターンと閉じたループだけ",""]]},
+ {t:"D", ti:"深い未踏の仮説", df:"まだ誰も解いていない最奥の問い。当たれば大きく、外れても情報。",
+  easy:"まだ誰も解いていない、いちばん奥の問い。例えば『物理法則そのものが、差の無い地面は不安定だ、という一点から導けるか？』。当たるかは分からないが、ここに進むことが一番大事。",
+  gist:"最深のフロンティア。示せていないが追う価値のある問い。間違いも未科学も恐れず進むのが研究の本義。",
+  items:[["法則を 0≠無 から導く","(B) 最深。いまは法則を入れている",""],
+         ["作用＝エントロピーから","作用＝第三の役割が熱力学/もつれから出るか",""],
+         ["真の大域 basin","固定格子の有界 basin を超える",""],
+         ["膜小胞化（Zwicker 系）","境界をもつ能動ドロップレット",""],
+         ["三体フル結合／開かれた進化","代謝＋流れ＋粒子／突然変異→新規性",""]]}
+];
+
+/* ---------------- build DOM ---------------- */
+const route=$("route");
+STAGES.forEach((s,i)=>{
+  const b=document.createElement("button"); b.className="node"; b.dataset.i=i;
+  b.style.setProperty("--tc",TIER[s.tier].c);
+  b.innerHTML=`<span class="dot"></span><span><span class="nm">${s.nm}</span>
+    <span class="tt">${s.title}<span class="badge">${s.tier}</span></span>
+    <span class="tg">${s.tag}</span></span>`;
+  b.onclick=()=>select(i); route.appendChild(b);
+});
+const ledger=$("ledger");
+LEDGER.forEach(L=>{
+  const d=document.createElement("div"); d.className="tcard"; d.style.setProperty("--tc",TIER[L.t].c);
+  d.innerHTML=`<div class="hd"><span class="tag">TYPE ${L.t}</span><span class="ti">${L.ti}</span></div>
+    <div class="df">${L.df}</div>
+    <details class="simple"><summary>かんたんな説明 ／ 要するに</summary>
+      <div class="blk"><span class="h">用語を知らなくても分かる説明</span>${L.easy}</div>
+      <div class="blk"><span class="h">要するにどういうこと</span>${L.gist}</div>
+    </details>
+    <ul class="items">${L.items.map(it=>`<li><b>${it[0]}</b> — ${it[1]} ${it[2]?`<span class="f">(${it[2]})</span>`:""}</li>`).join("")}</ul>`;
+  ledger.appendChild(d);
+});
+
+/* ---------------- sim engine ---------------- */
+const cv=$("cv"), ctx=cv.getContext("2d");
+const N=128; const off=document.createElement("canvas"); off.width=N; off.height=N;
+const octx=off.getContext("2d"); const img=octx.createImageData(N,N);
+let cur=null, raf=0, playing=false;
+
+function lerpC(stops,t){t=Math.max(0,Math.min(1,t));
+  for(let i=0;i<stops.length-1;i++){const a=stops[i],b=stops[i+1];
+    if(t<=b[0]){const u=(t-a[0])/(b[0]-a[0]||1);
+      return [a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u,a[3]+(b[3]-a[3])*u];}}
+  const l=stops[stops.length-1]; return [l[1],l[2],l[3]];}
+const CM={
+  magma:[[0,2,3,18],[.25,55,11,84],[.5,139,28,99],[.75,222,73,104],[1,252,253,191]],
+  teal:[[0,6,12,26],[.4,16,70,90],[.7,40,150,150],[1,170,245,235]],
+  div:[[0,70,120,235],[.5,236,238,244],[1,224,90,80]],
+  ember:[[0,8,12,28],[.45,90,40,120],[.7,210,120,70],[1,250,220,150]]
+};
+function paint(field,cmap,lo,hi){const d=img.data, cm=CM[cmap];
+  for(let k=0;k<N*N;k++){let t=(field[k]-lo)/(hi-lo); const c=lerpC(cm,t);
+    d[k*4]=c[0]; d[k*4+1]=c[1]; d[k*4+2]=c[2]; d[k*4+3]=255;}
+  octx.putImageData(img,0,0); ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(off,0,0,cv.width,cv.height);}
+
+const IDX=(i,j)=>((i+N)%N)*N+((j+N)%N);
+
+/* generic tracer advection (semi-Lagrangian) for mix/conv/couple */
+function advect(src,dst,vx,vy,dt){
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    let x=i-dt*vx[i*N+j], y=j-dt*vy[i*N+j];
+    x=((x%N)+N)%N; y=((y%N)+N)%N;
+    const i0=Math.floor(x), j0=Math.floor(y), fi=x-i0, fj=y-j0;
+    const a=src[IDX(i0,j0)],b=src[IDX(i0,j0+1)],c=src[IDX(i0+1,j0)],e=src[IDX(i0+1,j0+1)];
+    dst[i*N+j]=a*(1-fi)*(1-fj)+b*(1-fi)*fj+c*fi*(1-fj)+e*fi*fj;
+  }}
+
+/* ---- stage implementations ---- */
+function makeSim(s){
+  const A=new Float32Array(N*N),B=new Float32Array(N*N),C=new Float32Array(N*N);
+  const vx=new Float32Array(N*N),vy=new Float32Array(N*N);
+  const sim={kind:s.kind,drive:true,shear:3.0,t:0};
+
+  sim.reset=()=>{ sim.t=0;
+    if(s.kind==="domains"){for(let k=0;k<N*N;k++)A[k]=(Math.random()-0.5)*0.1;}
+    else if(s.kind==="mix"){for(let i=0;i<N;i++)for(let j=0;j<N;j++)A[i*N+j]=(i<N/2)?1:0;
+      // two counter-rotating stirring vortices
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const x=(i/N-0.5),y=(j/N-0.5);
+        const c1=Math.exp(-(( (x+0.18)**2+y*y))*22), c2=Math.exp(-(((x-0.18)**2+y*y))*22);
+        vx[i*N+j]= (-y)*c1*30 + (-y)*c2*-30; vy[i*N+j]= (x+0.18)*c1*30 + (x-0.18)*c2*-30;}}
+    else if(s.kind==="conv"){for(let k=0;k<N*N;k++)A[k]=0;
+      for(let j=0;j<N;j++){A[0*N+j]=1;A[1*N+j]=1;}              // nutrient on the boundary edge
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const X=Math.PI*i/N,Y=Math.PI*j/N;  // a roll
+        vx[i*N+j]=22*Math.sin(2*X)*Math.cos(Y); vy[i*N+j]=-22*Math.cos(2*X)*Math.sin(Y)*2;}}
+    else if(s.kind==="gs"){for(let k=0;k<N*N;k++){A[k]=1;B[k]=0;}
+      const c=N>>1; for(let i=c-7;i<c+7;i++)for(let j=c-7;j<c+7;j++){A[IDX(i,j)]=0.5;B[IDX(i,j)]=0.25;}
+      for(let k=0;k<N*N;k++){A[k]+=(Math.random()-0.5)*0.02;B[k]+=(Math.random()-0.5)*0.02;}
+      sim.drive=true; syncDrive();}
+    else if(s.kind==="couple"){ // a coherent particle blob to be carried by a roll
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const x=i-N*0.32,y=j-N*0.5;
+        A[i*N+j]=Math.exp(-(x*x+y*y)/120);}
+      buildRoll(); }
+    else if(s.kind==="particle"){ sim.r=44; sim.col=true; }   // schematic: blob radius
+    else if(s.kind==="causal"){ sim.layer=0; }
+    else if(s.kind==="vesicle"){ const c=N>>1, R=N*0.16;      // phase-field active droplet
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const x=i-c,y=j-c;
+        A[i*N+j]=(x*x+y*y<R*R?0.8:-0.8)+(Math.random()-0.5)*0.04;}
+      sim.drive=true; }
+    drawNow();
+  };
+  function buildRoll(){const k=sim.shear;
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){const X=Math.PI*i/N,Y=Math.PI*j/N;
+      vx[i*N+j]=k*Math.sin(X)*Math.cos(Y); vy[i*N+j]=-k*Math.cos(X)*Math.sin(Y);}}
+  sim.setShear=v=>{sim.shear=v; buildRoll();};
+  function syncDrive(){}
+
+  sim.step=()=>{ sim.t++;
+    if(s.kind==="domains"){ const e2=0.8;
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const k=i*N+j;
+        const l=A[IDX(i-1,j)]+A[IDX(i+1,j)]+A[IDX(i,j-1)]+A[IDX(i,j+1)]-4*A[k];
+        C[k]=A[k]+0.18*(e2*l + A[k]-A[k]*A[k]*A[k]);}
+      A.set(C); }
+    else if(s.kind==="mix"||s.kind==="conv"||s.kind==="couple"){
+      const dt=(s.kind==="couple")?0.45:0.5; advect(A,C,vx,vy,dt);
+      // tiny diffusion
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const k=i*N+j;
+        const l=C[IDX(i-1,j)]+C[IDX(i+1,j)]+C[IDX(i,j-1)]+C[IDX(i,j+1)]-4*C[k];
+        A[k]=C[k]+0.06*l;}
+      if(s.kind==="conv"){for(let j=0;j<N;j++){A[0*N+j]=1;A[1*N+j]=1;}} }
+    else if(s.kind==="gs"){const F=sim.drive?0.037:0.0,k2=0.060,Du=0.16,Dv=0.08;
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const k=i*N+j;
+        const lu=A[IDX(i-1,j)]+A[IDX(i+1,j)]+A[IDX(i,j-1)]+A[IDX(i,j+1)]-4*A[k];
+        const lv=B[IDX(i-1,j)]+B[IDX(i+1,j)]+B[IDX(i,j-1)]+B[IDX(i,j+1)]-4*B[k];
+        const uvv=A[k]*B[k]*B[k];
+        C[k]=A[k]+(Du*lu-uvv+F*(1-A[k]));
+        vy[k]=B[k]+(Dv*lv+uvv-(F+k2)*B[k]); }
+      A.set(C); B.set(vy); }
+    else if(s.kind==="particle"){ const target=sim.col?6:42;   // no-third collapses to ~point; third holds L*
+      sim.r+=(target-sim.r)*0.05; }
+    else if(s.kind==="causal"){ sim.layer=Math.min(N, sim.layer+1.4); }
+    else if(s.kind==="vesicle"){ const eps2=2.0,dt=0.06,target=-0.4,leak=0.0;
+      let m=0; for(let k=0;k<N*N;k++)m+=A[k]; m/=N*N;
+      const s0=sim.drive?1.0:0.0, mu=s0*(target-m)-leak*(m+1)*0.5;   // driven mass control
+      for(let i=0;i<N;i++)for(let j=0;j<N;j++){const k=i*N+j;
+        const l=A[IDX(i-1,j)]+A[IDX(i+1,j)]+A[IDX(i,j-1)]+A[IDX(i,j+1)]-4*A[k];
+        C[k]=A[k]+dt*(eps2*l-(A[k]*A[k]*A[k]-A[k])+mu);}
+      A.set(C); }
+  };
+
+  sim.draw=()=>{
+    if(s.kind==="domains") paint(A,"ember",-1,1);
+    else if(s.kind==="mix") paint(A,"div",0,1);
+    else if(s.kind==="conv") paint(A,"teal",0,1);
+    else if(s.kind==="couple") paint(A,"teal",0,1);
+    else if(s.kind==="gs") paint(B,"magma",0,0.34);
+    else if(s.kind==="particle") drawParticle();
+    else if(s.kind==="vesicle") paint(A,"teal",-1,1);
+    else if(s.kind==="causal") drawCausal();
+  };
+  function drawParticle(){const W=cv.width;ctx.fillStyle="#05080f";ctx.fillRect(0,0,W,W);
+    const cx=W/2,cy=W/2,R=sim.r/64*W*0.5;
+    const g=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(R,2));
+    g.addColorStop(0,sim.col?"#69e6da":"#c98");g.addColorStop(1,"#05080f00");
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,Math.max(R,2),0,7);ctx.fill();
+    ctx.strokeStyle=sim.col?"#69e6da":"#a55";ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,Math.max(R,2),0,7);ctx.stroke();
+    ctx.font="12px monospace";ctx.fillStyle="#94a2c6";ctx.textAlign="center";
+    ctx.fillText(sim.col?"第三あり：有限サイズ L* で安定":"第三なし：点へ潰れる（Derrick）",cx,W-16);}
+  function drawCausal(){const W=cv.width;ctx.fillStyle="#05080f";ctx.fillRect(0,0,W,W);
+    const rows=14,cols=14,pad=W*0.1,sx=(W-2*pad)/(cols-1),sy=(W-2*pad)/(rows-1);
+    const lit=sim.layer/N*rows;
+    ctx.strokeStyle="#27324f";ctx.lineWidth=1;
+    for(let r=0;r<rows-1;r++)for(let c=0;c<cols;c++){ if(r>lit)continue;
+      const x=pad+c*sx,y=pad+r*sy;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(pad+c*sx,pad+(r+1)*sy);ctx.stroke();
+      if(c<cols-1){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(pad+(c+1)*sx,pad+(r+1)*sy);ctx.stroke();}
+      if(c>0){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(pad+(c-1)*sx,pad+(r+1)*sy);ctx.stroke();}}
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const x=pad+c*sx,y=pad+r*sy;
+      const on=r<=lit; ctx.fillStyle=on?"#69e6da":"#1b2440";
+      ctx.beginPath();ctx.arc(x,y,on?3.4:2.2,0,7);ctx.fill();}
+    ctx.font="12px monospace";ctx.fillStyle="#94a2c6";ctx.textAlign="center";
+    ctx.fillText("因果の層（時間）が広がり、整数次元の空間が読める",W/2,W-14);}
+  function drawNow(){sim.draw();}
+  return sim;
+}
+
+/* ---------------- controller ---------------- */
+function select(i){
+  cancelAnimationFrame(raf); playing=false; $("btnPlay").textContent="▶ 再生";
+  document.querySelectorAll(".node").forEach((n,k)=>n.classList.toggle("on",k===i));
+  const s=STAGES[i];
+  $("r-title").textContent=s.title; $("r-num").textContent="STAGE "+s.nm;
+  $("r-cap").textContent=s.cap; $("r-put").textContent=s.put; $("r-emg").textContent=s.emg;
+  const tp=$("r-pill"); tp.textContent=TIER[s.tier].n; tp.style.background=TIER[s.tier].c;
+  $("r-tnote").textContent = s.tier==="A"?"検証済み・既知物理と数で一致":
+    s.tier==="B"?"床つき measured（ただし書きあり）":"解釈・地図として";
+  // extra controls
+  const ex=$("extra"); ex.innerHTML="";
+  if(s.ctl==="drive"){const b=document.createElement("button");b.className="ctl alt";b.dataset.on="1";
+    b.textContent="⚡ 駆動を切る";
+    b.onclick=()=>{cur.drive=!cur.drive;b.dataset.on=cur.drive?"1":"0";
+      b.textContent=cur.drive?"⚡ 駆動を切る":"✓ 駆動オフ（死へ）";};ex.appendChild(b);}
+  if(s.ctl==="shear"){const w=document.createElement("span");w.className="slider";
+    w.innerHTML=`循環の強さ <input type="range" min="0.5" max="16" step="0.5" value="3">`;
+    const inp=w.querySelector("input");
+    inp.oninput=()=>{cur.setShear(parseFloat(inp.value));
+      w.childNodes[0].nodeValue=`循環 U=${inp.value} `+(parseFloat(inp.value)>6.5?"（臨界超：引き裂かれる）":"（粒子は同一性を保つ）");};
+    ex.appendChild(w);}
+  cur=makeSim(s); cur.reset();
+}
+function loop(){ if(!playing)return;
+  const sub = cur.kind==="gs"?6 : (cur.kind==="domains"?2:(cur.kind==="causal"||cur.kind==="particle"?1:2));
+  for(let s=0;s<sub;s++)cur.step(); cur.draw(); raf=requestAnimationFrame(loop);}
+$("btnPlay").onclick=()=>{playing=!playing;
+  $("btnPlay").textContent=playing?"⏸ 一時停止":"▶ 再生";
+  if(playing)loop();else cancelAnimationFrame(raf);};
+$("btnReset").onclick=()=>{cur.reset();
+  if(playing){playing=false;$("btnPlay").textContent="▶ 再生";cancelAnimationFrame(raf);}};
+
+select(5); // open on the vessel (器の閉じ) — the heart
+</script>
+</body>
+</html>
