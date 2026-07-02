@@ -1,0 +1,93 @@
+{
+  "result": {
+    "params": {
+      "Nx": 32,
+      "Nz": 41,
+      "Pr": 1.0,
+      "Lx": 2.0,
+      "dt": 8e-05,
+      "steps": 12000,
+      "kc": 30.0,
+      "seed": 1,
+      "Ra_list": [
+        1000.0,
+        2500.0,
+        5000.0
+      ]
+    },
+    "rows": [
+      {
+        "Ra": 1000.0,
+        "KE": 0.0,
+        "Nu": 1.0,
+        "c_interior": 0.0175
+      },
+      {
+        "Ra": 2500.0,
+        "KE": 0.331,
+        "Nu": 1.012,
+        "c_interior": 0.0177
+      },
+      {
+        "Ra": 5000.0,
+        "KE": 69.486,
+        "Nu": 2.097,
+        "c_interior": 0.0548
+      }
+    ],
+    "Nu_rises_with_Ra": true,
+    "convection_above_onset": true,
+    "interior_delivered_by_convection": true,
+    "Nu_range": [
+      1.0,
+      2.097
+    ],
+    "c_interior_range": [
+      0.0175,
+      0.0548
+    ]
+  },
+  "atlas": [
+    {
+      "experiment": "e017 walled RB DNS (Nu + interior delivery)",
+      "tier": "measured",
+      "put_in": "nonlinear walled Boussinesq (no-slip) + bottom scalar source with bulk consumption; Nu/onset/delivery not put in",
+      "emerged": [
+        "Nu ~ 1 below onset, Nu>1 rising with Ra: [1.0, 2.097]",
+        "conduction starves the interior; convection delivers the scalar there: c_interior [0.0175, 0.0548]"
+      ],
+      "surprises": [
+        "the walled saturated convection both transports heat (Nu>1) and feeds the starved interior -- e013's feeding in a real walled cell"
+      ],
+      "persistence": "saturated convection above onset; sub-critical conduction starves the interior",
+      "measured_numbers": {
+        "rows": [
+          {
+            "Ra": 1000.0,
+            "KE": 0.0,
+            "Nu": 1.0,
+            "c_interior": 0.0175
+          },
+          {
+            "Ra": 2500.0,
+            "KE": 0.331,
+            "Nu": 1.012,
+            "c_interior": 0.0177
+          },
+          {
+            "Ra": 5000.0,
+            "KE": 69.486,
+            "Nu": 2.097,
+            "c_interior": 0.0548
+          }
+        ]
+      },
+      "not_scripted_check": "Nu and c_interior are read from the saturated flow; only the equations + a source are put in",
+      "claim_tier": "measured (Nu(Ra)>1, interior delivery by convection) ; analogy (feeding/circulation)",
+      "floors": [
+        "coarse 2D DNS (small grid), mildly supercritical Ra (not turbulent); fixed grid",
+        "'delivery/feeding' is the same advective transport as e013; 'heart/circulation' is analogy"
+      ]
+    }
+  ]
+}

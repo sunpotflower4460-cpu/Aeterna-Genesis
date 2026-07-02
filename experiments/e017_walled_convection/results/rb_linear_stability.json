@@ -1,0 +1,185 @@
+{
+  "result": {
+    "N": 64,
+    "rows": [
+      {
+        "bc": "noslip",
+        "Ra_c": 1713.11,
+        "a_c": 3.117,
+        "textbook_Ra": 1707.76,
+        "textbook_a": 3.117,
+        "err_pct": 0.314,
+        "within_0p4pct": true
+      },
+      {
+        "bc": "freeslip",
+        "Ra_c": 657.29,
+        "a_c": 2.221,
+        "textbook_Ra": 657.51,
+        "textbook_a": 2.221,
+        "err_pct": 0.034,
+        "within_0p4pct": true
+      }
+    ],
+    "dispersion_noslip": [
+      {
+        "a": 1.8,
+        "Ra": 2450.0
+      },
+      {
+        "a": 2.0,
+        "Ra": 2184.2
+      },
+      {
+        "a": 2.2,
+        "Ra": 2000.4
+      },
+      {
+        "a": 2.4,
+        "Ra": 1874.4
+      },
+      {
+        "a": 2.6,
+        "Ra": 1791.1
+      },
+      {
+        "a": 2.8,
+        "Ra": 1740.6
+      },
+      {
+        "a": 3.0,
+        "Ra": 1716.7
+      },
+      {
+        "a": 3.2,
+        "Ra": 1714.8
+      },
+      {
+        "a": 3.4,
+        "Ra": 1732.3
+      },
+      {
+        "a": 3.6,
+        "Ra": 1767.3
+      },
+      {
+        "a": 3.8,
+        "Ra": 1818.3
+      },
+      {
+        "a": 4.0,
+        "Ra": 1884.9
+      },
+      {
+        "a": 4.2,
+        "Ra": 1966.6
+      },
+      {
+        "a": 4.4,
+        "Ra": 2063.3
+      }
+    ],
+    "both_within_0p4pct": true
+  },
+  "atlas": [
+    {
+      "experiment": "e017 walled Rayleigh-Benard linear onset",
+      "tier": "measured",
+      "put_in": "linearized marginal Boussinesq operator + wall BCs (no-slip / free-slip); Ra_c not put in",
+      "emerged": [
+        "no-slip Ra_c=1713.1 @ a_c=3.117 (textbook 1707.76, err 0.31%)",
+        "free-slip Ra_c=657.3 @ a_c=2.221 (textbook 657.5, err 0.03%)"
+      ],
+      "surprises": [
+        "the periodic-box Ra_c~20 (e013) is exposed as an artifact; walls give the textbook 1708/657.5"
+      ],
+      "persistence": "linear onset -- a threshold, not a persistent state (nonlinear saturation is Stage 2)",
+      "measured_numbers": {
+        "rows": [
+          {
+            "bc": "noslip",
+            "Ra_c": 1713.11,
+            "a_c": 3.117,
+            "textbook_Ra": 1707.76,
+            "textbook_a": 3.117,
+            "err_pct": 0.314,
+            "within_0p4pct": true
+          },
+          {
+            "bc": "freeslip",
+            "Ra_c": 657.29,
+            "a_c": 2.221,
+            "textbook_Ra": 657.51,
+            "textbook_a": 2.221,
+            "err_pct": 0.034,
+            "within_0p4pct": true
+          }
+        ],
+        "dispersion_noslip": [
+          {
+            "a": 1.8,
+            "Ra": 2450.0
+          },
+          {
+            "a": 2.0,
+            "Ra": 2184.2
+          },
+          {
+            "a": 2.2,
+            "Ra": 2000.4
+          },
+          {
+            "a": 2.4,
+            "Ra": 1874.4
+          },
+          {
+            "a": 2.6,
+            "Ra": 1791.1
+          },
+          {
+            "a": 2.8,
+            "Ra": 1740.6
+          },
+          {
+            "a": 3.0,
+            "Ra": 1716.7
+          },
+          {
+            "a": 3.2,
+            "Ra": 1714.8
+          },
+          {
+            "a": 3.4,
+            "Ra": 1732.3
+          },
+          {
+            "a": 3.6,
+            "Ra": 1767.3
+          },
+          {
+            "a": 3.8,
+            "Ra": 1818.3
+          },
+          {
+            "a": 4.0,
+            "Ra": 1884.9
+          },
+          {
+            "a": 4.2,
+            "Ra": 1966.6
+          },
+          {
+            "a": 4.4,
+            "Ra": 2063.3
+          }
+        ]
+      },
+      "not_scripted_check": "Ra_c and a_c are eigenvalue readouts; only the operator and BCs are put in",
+      "claim_tier": "measured (Ra_c, a_c both BCs vs textbook) ; interpretive (periodic-box onset is an artifact)",
+      "floors": [
+        "linear onset only (no amplitude); fixed 1D grid in z",
+        "the tangential BC MUST use a one-sided stencil (free-slip D^2W=0, no-slip DW=0) or the eigenproblem diverges"
+      ]
+    }
+  ]
+}
