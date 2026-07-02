@@ -63,3 +63,26 @@ jobs:
         run: python experiments/e015_vessel_closure/vessel_closure.py --quick --no-write
       - name: "e015 two-arm autopoiesis quick (cut either arm -> death)"
         run: python experiments/e015_vessel_closure/autopoiesis.py --quick --no-write
+      - name: "e016 hopf basin quick (size=k*sqrt(c4), Q_H=2 held)"
+        run: python experiments/e016_hopf_basin/hopf_basin.py --quick --no-write
+      - name: "e017 walled RB linear stability quick (Ra_c 1708/657.5 to <0.4%)"
+        run: python experiments/e017_walled_convection/rb_linear_stability.py --quick --no-write
+      - name: "e017 walled DNS quick (Nu(Ra)>1; interior delivery)"
+        run: python experiments/e017_walled_convection/rb_dns.py --quick --no-write
+      - name: "e018 three-arm vessel quick (cut any arm/drive -> death)"
+        run: python experiments/e018_membrane_vesicle/vessel_membrane.py --quick --no-write
+      - name: "e018 phase-field vesicle quick (bounded droplet; cut drive dissolves)"
+        run: python experiments/e018_membrane_vesicle/membrane_vesicle.py --quick --no-write
+      - name: "e019 coupling quick (circulation carries a particle; U_c)"
+        run: python experiments/e019_coupling/coupling.py --quick --no-write
+      - name: "e019 three-body coupling quick (metabolism+flow+particle; drive off -> stop)"
+        run: python experiments/e019_coupling/three_body.py --quick --no-write
+      - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
+        run: |
+          test -f "room/中心実験室.html"
+          test -f "docs/現在地と方向性_TypeABCD.md"
+          test -f docs/working_ledger/README.md
+          test -f docs/working_ledger/H001_hopf_global_newton.md
+          test -f docs/working_ledger/H002_membrane_vesicle.md
+          test -f docs/working_ledger/H003_three_body_coupling.md
+          test -f docs/working_ledger/H004_action_entropy.md
