@@ -1,0 +1,155 @@
+{
+  "result": {
+    "params": {
+      "L": 48,
+      "box": 8.4,
+      "c2": 1.0,
+      "c4": 20.0,
+      "kappa": 40.0,
+      "dt": 0.006,
+      "start_scale": 2.9,
+      "settle_steps": 150,
+      "n_steps": 260,
+      "roll_R": 5.0,
+      "roll_x0": -4.0,
+      "U_list": [
+        0.0,
+        2.0,
+        4.0,
+        6.0,
+        8.0,
+        11.0
+      ]
+    },
+    "rows": [
+      {
+        "U": 0.0,
+        "Q_H_initial": 0.978,
+        "Q_H_final": 0.978,
+        "centroid_disp": 0.0,
+        "size_final": 4.235,
+        "held": true
+      },
+      {
+        "U": 2.0,
+        "Q_H_initial": 0.978,
+        "Q_H_final": 0.973,
+        "centroid_disp": 0.874,
+        "size_final": 4.38,
+        "held": true
+      },
+      {
+        "U": 4.0,
+        "Q_H_initial": 0.978,
+        "Q_H_final": 0.948,
+        "centroid_disp": 1.373,
+        "size_final": 4.624,
+        "held": true
+      },
+      {
+        "U": 6.0,
+        "Q_H_initial": 0.978,
+        "Q_H_final": 0.753,
+        "centroid_disp": 1.698,
+        "size_final": 4.898,
+        "held": true
+      },
+      {
+        "U": 8.0,
+        "Q_H_initial": 0.978,
+        "Q_H_final": 0.21,
+        "centroid_disp": 1.989,
+        "size_final": 5.225,
+        "held": false
+      },
+      {
+        "U": 11.0,
+        "Q_H_initial": 0.978,
+        "Q_H_final": 0.085,
+        "centroid_disp": 2.614,
+        "size_final": 5.474,
+        "held": false
+      }
+    ],
+    "centroid_moves_with_U": true,
+    "low_U_holds_QH": true,
+    "high_U_torn": true,
+    "U_c": 7.0,
+    "size_diverges_when_torn": false
+  },
+  "atlas": [
+    {
+      "experiment": "e019 circulation carries a particle (transport + U_c)",
+      "tier": "measured",
+      "put_in": "stabilized Q_H=1 hopfion + Faddeev-Skyrme flow + advection by a prescribed roll; motion/tearing not put in",
+      "emerged": [
+        "centroid moves with U (transport): [(0.0, 0.0), (2.0, 0.874), (4.0, 1.373), (6.0, 1.698), (8.0, 1.989), (11.0, 2.614)]",
+        "Q_H held ~1 up to U_c=7.0, then torn (Q_H->0, size diverges)"
+      ],
+      "surprises": [
+        "the third holds the particle's identity against shear up to a finite circulation strength, then it tears"
+      ],
+      "persistence": "identity (Q_H) persists for U < U_c; above U_c the particle is destroyed",
+      "measured_numbers": {
+        "rows": [
+          {
+            "U": 0.0,
+            "Q_H_initial": 0.978,
+            "Q_H_final": 0.978,
+            "centroid_disp": 0.0,
+            "size_final": 4.235,
+            "held": true
+          },
+          {
+            "U": 2.0,
+            "Q_H_initial": 0.978,
+            "Q_H_final": 0.973,
+            "centroid_disp": 0.874,
+            "size_final": 4.38,
+            "held": true
+          },
+          {
+            "U": 4.0,
+            "Q_H_initial": 0.978,
+            "Q_H_final": 0.948,
+            "centroid_disp": 1.373,
+            "size_final": 4.624,
+            "held": true
+          },
+          {
+            "U": 6.0,
+            "Q_H_initial": 0.978,
+            "Q_H_final": 0.753,
+            "centroid_disp": 1.698,
+            "size_final": 4.898,
+            "held": true
+          },
+          {
+            "U": 8.0,
+            "Q_H_initial": 0.978,
+            "Q_H_final": 0.21,
+            "centroid_disp": 1.989,
+            "size_final": 5.225,
+            "held": false
+          },
+          {
+            "U": 11.0,
+            "Q_H_initial": 0.978,
+            "Q_H_final": 0.085,
+            "centroid_disp": 2.614,
+            "size_final": 5.474,
+            "held": false
+          }
+        ],
+        "U_c": 7.0
+      },
+      "not_scripted_check": "Q_H from B=curl A; centroid from gradient-energy density over spatial axes; motion emerges from advection",
+      "claim_tier": "measured (centroid(U), Q_H(U), U_c) ; interpretive (third resists shear) ; analogy (particle/identity)",
+      "floors": [
+        "the roll is PRESCRIBED, not self-organized (self-organized flow = Stage 2, three-body coupling)",
+        "U_c is a crossover of a fixed-lattice/kappa flow, not a sharp universal threshold",
+        "'particle/identity' is analogy; fixed lattice"
+      ]
+    }
+  ]
+}
