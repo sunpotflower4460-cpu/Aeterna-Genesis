@@ -173,6 +173,8 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | **Q_H=2**（方位角巻き×2）も同じ流れで保持（|Q_H|≈2）、エネルギー単調 | **measured** | qh2_held=True、\|Q_H\| ~1.95→~2.0（Type A） |
 | 3 | 保持する start は**有界な窓**（両側）＝ basin は有界（大域でない） | **observed** | basin_window_mult（下は未解像、上は解離）（Type B/D） |
 | 4 | 絶対 k・basin 端は解像度/κ 依存／大 c4 は解像度ぎりぎり／「粒子」は analogy（床） | **（床の明示）** | robustness.json（κ~独立）、marginal_c4 |
+| 5 | L=56「破局的劣化」(v1 CV6.6%)は matched protocol では**再現しない**（c4=12 含む range 差で水増し）。size 則は L=44/52/56/64 で **CV<5%** | **measured** | `results/arrested_newton_v2.json`（原因特定＝promoted、H001 v2） |
+| 6 | ただし CV は L で単調上昇(2.2→4.2%)・sub-√c4 decline が細格子で steepen＝**有限箱圧縮**が第一候補の mild な床。arrested-Newton は basin を広げない(有界は固定格子で本質) | **observed/床** | `arrested_newton_v2.json`（L-series・basin plain=accel=[0.7,1.5]） |
 
 ## e017 — 壁つき Rayleigh-Bénard（教科書 Ra_c）  (STATUS: GREEN, Type A)
 
