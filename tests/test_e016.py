@@ -54,17 +54,32 @@ def test_e016_committed_result_sane():
     assert r["all_held_monotone"]
 
 
+def test_e016_arrested_newton_v2_smoke():
+    """Exercise the v2 code paths (import + accel flow + _law_at_L + _basin) on a
+    tiny fast config, so a broken arrested_newton_v2.py fails CI even though the
+    heavy full run is not in CI (Codex: check the code path, not just the JSON)."""
+    an = _load("arrested_newton_v2.py")
+    p = {"box": 6.0, "c2": 1.0, "kappa": 40.0, "dt": 8e-3, "start_frac": 0.9,
+         "n_steps": 3, "c4_list": [9.0, 12.0], "momentum": 0.85,
+         "basin_L": 20, "basin_c4": 9.0, "basin_mults": [1.0, 1.5]}
+    Q, s, mono = an.accel_converge(20, p["box"], 9.0, 2.0, 3, p["kappa"], p["dt"], p["momentum"])
+    assert np.isfinite(Q) and s >= 0.0 and isinstance(mono, bool)
+    row = an._law_at_L(p, 20)
+    assert set(["L", "n_held", "all_c4_held", "CV", "energy_monotone"]).issubset(row)
+    b = an._basin(p, accel=True)
+    assert "all_held_energy_monotone" in b and "width" in b
+
+
 def test_e016_arrested_newton_v2_committed_sane():
     """H001 v2: matched-protocol L-series shows the catastrophic L=56 does not
     reproduce (all L CV<5%); the residual is a mild monotone trend, honestly flagged."""
     path = os.path.abspath(os.path.join(
         os.path.dirname(__file__), "..", "experiments", "e016_hopf_basin",
         "results", "arrested_newton_v2.json"))
-    if not os.path.exists(path):
-        pytest.skip("committed arrested_newton_v2.json missing")
+    assert os.path.exists(path), "committed arrested_newton_v2.json missing"   # hard fail (Codex/CodeRabbit)
     with open(path) as f:
         r = json.load(f)["result"]
-    assert r["all_L_tight(CV<5%)"]                 # size law holds at every L
-    assert r["catastrophic_L56_not_reproduced"]    # v1 CV=6.6% was protocol-inflated
-    # every L-series CV is genuinely < 5%
-    assert all(row["CV"] < 0.05 for row in r["l_series"])
+    assert r["all_L_tight(CV<5%)"]                 # size law holds at every L (all c4 held)
+    assert r["L56_sampled"] and r["catastrophic_L56_not_reproduced"]   # from the L=56 row itself
+    # every L-series CV is genuinely < 5% AND every matched c4 held
+    assert all(row["CV"] < 0.05 and row["all_c4_held"] for row in r["l_series"])

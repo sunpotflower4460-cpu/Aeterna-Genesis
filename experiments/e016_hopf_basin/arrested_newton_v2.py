@@ -98,7 +98,9 @@ def _law_at_L(p, L, accel=False):
         k, r2, cv, ks = e016._fit_sqrt([c for c, _ in keep], [s for _, s in keep])
     else:
         k, r2, cv, ks = 0.0, 0.0, 1.0, []
-    return {"L": L, "n_held": sum(held), "fit_k": round(k, 3), "R2": round(r2, 3),
+    return {"L": L, "n_held": sum(held), "n_c4": len(p["c4_list"]),
+            "all_c4_held": bool(sum(held) == len(p["c4_list"])),
+            "fit_k": round(k, 3), "R2": round(r2, 3),
             "CV": round(cv, 4), "k_per_c4": [round(v, 3) for v in ks],
             "sizes": sizes, "energy_monotone": bool(all(monos))}
 
@@ -109,16 +111,22 @@ def _basin(p, accel=False):
     rows = []
     for m in p["basin_mults"]:
         ss = m * ref
-        if accel:
-            Q, _, _ = accel_converge(L, p["box"], c4, ss, p["n_steps"], p["kappa"], p["dt"], p["momentum"])
+        if accel:                                  # momentum can overshoot -> record mono
+            Q, _, mono = accel_converge(L, p["box"], c4, ss, p["n_steps"], p["kappa"], p["dt"], p["momentum"])
         else:
             r = e016.flow_converge({"L": L, "box": p["box"], "c2": 1.0, "kappa": p["kappa"],
                                     "dt": p["dt"], "n_steps": p["n_steps"]}, c4, ss)
-            Q = r["Q_H_final"]
-        rows.append({"mult": m, "held": bool(abs(Q) > 0.7), "Q_H": round(float(Q), 3)})
+            Q, mono = r["Q_H_final"], r["energy_monotone"]
+        rows.append({"mult": m, "held": bool(abs(Q) > 0.7), "Q_H": round(float(Q), 3),
+                     "energy_monotone": bool(mono)})
     held_m = [r["mult"] for r in rows if r["held"]]
+    # a held start that only settled after energy-increasing transients is a
+    # qualitative difference the H001 DoD asks us to record (Codex).
+    held_nonmono = [r["mult"] for r in rows if r["held"] and not r["energy_monotone"]]
     return {"rows": rows, "window": [min(held_m), max(held_m)] if held_m else [],
-            "width": (max(held_m) - min(held_m)) if held_m else 0.0}
+            "width": (max(held_m) - min(held_m)) if held_m else 0.0,
+            "all_held_energy_monotone": bool(not held_nonmono),
+            "held_nonmonotone_mults": held_nonmono}
 
 
 def simulate(quick=False):
@@ -129,14 +137,15 @@ def simulate(quick=False):
     basin_plain = _basin(p, accel=False)
     basin_accel = _basin(p, accel=True)
     cvs = [r["CV"] for r in l_series]
-    Ls = [r["L"] for r in l_series]
-    all_tight = all(r["CV"] < 0.05 and r["n_held"] >= 2 for r in l_series)
-    # HONEST shape: the catastrophic v1 L=56 number (CV 6.6%) does NOT reproduce
-    # under a matched protocol -- all L stay CV<5%. But a MILD MONOTONE resolution
-    # trend remains: CV rises with L, and the sub-sqrt(c4) k-decline steepens at
-    # finer grid (larger solitons deviate more below sqrt(c4)). We report both, and
-    # do NOT call it a flat 'artifact'.
-    catastrophic_not_reproduced = bool(all_tight)                 # no CV>5% anywhere
+    # 'tight' requires ALL matched c4 to hold (not just >=2): a row that silently
+    # drops failed high-c4 runs must NOT be reported as tight (Codex).
+    all_tight = all(r["CV"] < 0.05 and r["all_c4_held"] for r in l_series)
+    # The L=56 verdict is derived from the L=56 ROW EXPLICITLY (present + all c4 held
+    # + CV<5%), NOT from a whole-series aggregate -- a series that omits L=56 (e.g.
+    # --quick) must NOT be able to set this flag (Codex + CodeRabbit).
+    l56 = next((r for r in l_series if r["L"] == 56), None)
+    catastrophic_not_reproduced = bool(l56 is not None and l56["all_c4_held"] and l56["CV"] < 0.05)
+    l56_sampled = bool(l56 is not None)
     cv_rises_with_L = bool(len(cvs) >= 2 and all(cvs[i] <= cvs[i + 1] + 1e-9 for i in range(len(cvs) - 1)))
     # last-c4 k (the most-deviating soliton) drops as L grows -> decline steepens
     last_k = [r["k_per_c4"][-1] for r in l_series if r["k_per_c4"]]
@@ -145,7 +154,7 @@ def simulate(quick=False):
     return {
         "params": p, "l_series": l_series,
         "CV_by_L": {r["L"]: r["CV"] for r in l_series},
-        "all_L_tight(CV<5%)": all_tight,
+        "all_L_tight(CV<5%)": all_tight, "L56_sampled": l56_sampled,
         "catastrophic_L56_not_reproduced": catastrophic_not_reproduced,
         "cv_rises_monotonically_with_L": cv_rises_with_L,
         "residual_decline_steepens_with_L": decline_steepens_with_L,
@@ -157,8 +166,9 @@ def simulate(quick=False):
 
 def evaluate(result, quick=False):
     checks = {
-        "size law tight (CV<5%) at ALL L (44..64) with matched protocol": result["all_L_tight(CV<5%)"],
-        "catastrophic v1 L=56 degradation (CV6.6%) NOT reproduced under matched protocol":
+        "size law tight (CV<5%, all c4 held) at ALL L with matched protocol": result["all_L_tight(CV<5%)"],
+        "L=56 actually sampled": result["L56_sampled"],
+        "catastrophic v1 L=56 degradation (CV6.6%) NOT reproduced (from the L=56 row)":
             result["catastrophic_L56_not_reproduced"],
     }
     return all(checks.values()), checks
@@ -174,7 +184,10 @@ def _atlas(result):
                     "overall k is L-independent (0.893->0.888); the deviation concentrates in the larger-c4 solitons",
                     "arrested-Newton (momentum) basin width=%.2f vs plain=%.2f -- does NOT widen (widens=%s): the basin is lattice-bounded"
                     % (result["basin_accel"]["width"], result["basin_plain"]["width"],
-                       result["arrested_newton_widens_basin"])],
+                       result["arrested_newton_widens_basin"]),
+                    "basin energy-monotonicity: plain all-monotone=%s, arrested-Newton all-monotone=%s (momentum can overshoot -- recorded per DoD)"
+                    % (result["basin_plain"]["all_held_energy_monotone"],
+                       result["basin_accel"]["all_held_energy_monotone"])],
         "surprises": ["the catastrophic L=56 failure was protocol-inflated (it does not reproduce), but a REAL mild monotone finite-box-consistent trend remains -- honest, not a clean win"],
         "persistence": "the sqrt(c4) law holds (CV<5%) at L=44/52/56/64; deviation from pure sqrt(c4) grows mildly and monotonically with resolution",
         "measured_numbers": {"l_series": result["l_series"], "basin_plain": result["basin_plain"],
@@ -200,9 +213,10 @@ def main(argv=None):
     print("  all tight(CV<5%%)=%s ; catastrophic L=56 NOT reproduced=%s ; CV rises with L=%s ; decline steepens with L=%s"
           % (r["all_L_tight(CV<5%)"], r["catastrophic_L56_not_reproduced"],
              r["cv_rises_monotonically_with_L"], r["residual_decline_steepens_with_L"]))
-    print("  basin width: plain=%.2f %s ; arrested-Newton=%.2f %s ; widens=%s"
-          % (r["basin_plain"]["width"], r["basin_plain"]["window"],
-             r["basin_accel"]["width"], r["basin_accel"]["window"], r["arrested_newton_widens_basin"]))
+    print("  basin width: plain=%.2f %s (all-mono=%s) ; arrested-Newton=%.2f %s (all-mono=%s) ; widens=%s"
+          % (r["basin_plain"]["width"], r["basin_plain"]["window"], r["basin_plain"]["all_held_energy_monotone"],
+             r["basin_accel"]["width"], r["basin_accel"]["window"], r["basin_accel"]["all_held_energy_monotone"],
+             r["arrested_newton_widens_basin"]))
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))

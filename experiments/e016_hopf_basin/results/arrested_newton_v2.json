@@ -50,7 +50,9 @@
           4.404,
           4.836
         ],
-        "energy_monotone": true
+        "energy_monotone": true,
+        "n_c4": 4,
+        "all_c4_held": true
       },
       {
         "L": 52,
@@ -70,7 +72,9 @@
           4.347,
           4.767
         ],
-        "energy_monotone": true
+        "energy_monotone": true,
+        "n_c4": 4,
+        "all_c4_held": true
       },
       {
         "L": 56,
@@ -90,7 +94,9 @@
           4.336,
           4.744
         ],
-        "energy_monotone": true
+        "energy_monotone": true,
+        "n_c4": 4,
+        "all_c4_held": true
       },
       {
         "L": 64,
@@ -110,7 +116,9 @@
           4.326,
           4.709
         ],
-        "energy_monotone": true
+        "energy_monotone": true,
+        "n_c4": 4,
+        "all_c4_held": true
       }
     ],
     "CV_by_L": {
@@ -125,78 +133,94 @@
         {
           "mult": 0.5,
           "held": false,
-          "Q_H": 0.0
+          "Q_H": 0.0,
+          "energy_monotone": true
         },
         {
           "mult": 0.7,
           "held": true,
-          "Q_H": 1.0
+          "Q_H": 1.0,
+          "energy_monotone": true
         },
         {
           "mult": 0.9,
           "held": true,
-          "Q_H": 1.0
+          "Q_H": 1.0,
+          "energy_monotone": true
         },
         {
           "mult": 1.2,
           "held": true,
-          "Q_H": 0.962
+          "Q_H": 0.962,
+          "energy_monotone": true
         },
         {
           "mult": 1.5,
           "held": true,
-          "Q_H": 0.792
+          "Q_H": 0.792,
+          "energy_monotone": true
         },
         {
           "mult": 2.0,
           "held": false,
-          "Q_H": 0.514
+          "Q_H": 0.514,
+          "energy_monotone": true
         }
       ],
       "window": [
         0.7,
         1.5
       ],
-      "width": 0.8
+      "width": 0.8,
+      "all_held_energy_monotone": true,
+      "held_nonmonotone_mults": []
     },
     "basin_accel": {
       "rows": [
         {
           "mult": 0.5,
           "held": false,
-          "Q_H": 0.0
+          "Q_H": 0.0,
+          "energy_monotone": true
         },
         {
           "mult": 0.7,
           "held": true,
-          "Q_H": 1.0
+          "Q_H": 1.0,
+          "energy_monotone": true
         },
         {
           "mult": 0.9,
           "held": true,
-          "Q_H": 1.0
+          "Q_H": 1.0,
+          "energy_monotone": true
         },
         {
           "mult": 1.2,
           "held": true,
-          "Q_H": 1.0
+          "Q_H": 1.0,
+          "energy_monotone": true
         },
         {
           "mult": 1.5,
           "held": true,
-          "Q_H": 0.894
+          "Q_H": 0.894,
+          "energy_monotone": true
         },
         {
           "mult": 2.0,
           "held": false,
-          "Q_H": 0.602
+          "Q_H": 0.602,
+          "energy_monotone": true
         }
       ],
       "window": [
         0.7,
         1.5
       ],
-      "width": 0.8
+      "width": 0.8,
+      "all_held_energy_monotone": true,
+      "held_nonmonotone_mults": []
     },
     "arrested_newton_widens_basin": false,
     "residual_subsqrt_decline": {
@@ -227,7 +251,8 @@
     },
     "catastrophic_L56_not_reproduced": true,
     "cv_rises_monotonically_with_L": true,
-    "residual_decline_steepens_with_L": true
+    "residual_decline_steepens_with_L": true,
+    "L56_sampled": true
   },
   "atlas": [
     {
@@ -238,7 +263,8 @@
         "CV(L) matched protocol: {'44': 0.0219, '52': 0.0334, '56': 0.0368, '64': 0.0415} -- all CV<5% (the catastrophic v1 L=56 CV=6.6% does NOT reproduce; it was c4-range/steps inflated)",
         "BUT a mild MONOTONE resolution trend remains: CV rises with L (True) and the sub-sqrt(c4) k-decline STEEPENS at finer grid: {'44': [0.93, 0.896, 0.881, 0.883], '52': [0.943, 0.902, 0.869, 0.87], '56': [0.947, 0.905, 0.867, 0.866], '64': [0.952, 0.908, 0.865, 0.86]}",
         "overall k is L-independent (0.893->0.888); the deviation concentrates in the larger-c4 solitons",
-        "arrested-Newton (momentum) basin width=0.80 vs plain=0.80 -- does NOT widen (widens=False): the basin is lattice-bounded"
+        "arrested-Newton (momentum) basin width=0.80 vs plain=0.80 -- does NOT widen (widens=False): the basin is lattice-bounded",
+        "basin energy-monotonicity: plain all-monotone=True, arrested-Newton all-monotone=True (momentum can overshoot -- recorded per DoD)"
       ],
       "surprises": [
         "the catastrophic L=56 failure was protocol-inflated (it does not reproduce), but a REAL mild monotone finite-box-consistent trend remains -- honest, not a clean win"
@@ -264,7 +290,9 @@
               4.404,
               4.836
             ],
-            "energy_monotone": true
+            "energy_monotone": true,
+            "n_c4": 4,
+            "all_c4_held": true
           },
           {
             "L": 52,
@@ -284,7 +312,9 @@
               4.347,
               4.767
             ],
-            "energy_monotone": true
+            "energy_monotone": true,
+            "n_c4": 4,
+            "all_c4_held": true
           },
           {
             "L": 56,
@@ -304,7 +334,9 @@
               4.336,
               4.744
             ],
-            "energy_monotone": true
+            "energy_monotone": true,
+            "n_c4": 4,
+            "all_c4_held": true
           },
           {
             "L": 64,
@@ -324,7 +356,9 @@
               4.326,
               4.709
             ],
-            "energy_monotone": true
+            "energy_monotone": true,
+            "n_c4": 4,
+            "all_c4_held": true
           }
         ],
         "basin_plain": {
@@ -332,78 +366,94 @@
             {
               "mult": 0.5,
               "held": false,
-              "Q_H": 0.0
+              "Q_H": 0.0,
+              "energy_monotone": true
             },
             {
               "mult": 0.7,
               "held": true,
-              "Q_H": 1.0
+              "Q_H": 1.0,
+              "energy_monotone": true
             },
             {
               "mult": 0.9,
               "held": true,
-              "Q_H": 1.0
+              "Q_H": 1.0,
+              "energy_monotone": true
             },
             {
               "mult": 1.2,
               "held": true,
-              "Q_H": 0.962
+              "Q_H": 0.962,
+              "energy_monotone": true
             },
             {
               "mult": 1.5,
               "held": true,
-              "Q_H": 0.792
+              "Q_H": 0.792,
+              "energy_monotone": true
             },
             {
               "mult": 2.0,
               "held": false,
-              "Q_H": 0.514
+              "Q_H": 0.514,
+              "energy_monotone": true
             }
           ],
           "window": [
             0.7,
             1.5
           ],
-          "width": 0.8
+          "width": 0.8,
+          "all_held_energy_monotone": true,
+          "held_nonmonotone_mults": []
         },
         "basin_accel": {
           "rows": [
             {
               "mult": 0.5,
               "held": false,
-              "Q_H": 0.0
+              "Q_H": 0.0,
+              "energy_monotone": true
             },
             {
               "mult": 0.7,
               "held": true,
-              "Q_H": 1.0
+              "Q_H": 1.0,
+              "energy_monotone": true
             },
             {
               "mult": 0.9,
               "held": true,
-              "Q_H": 1.0
+              "Q_H": 1.0,
+              "energy_monotone": true
             },
             {
               "mult": 1.2,
               "held": true,
-              "Q_H": 1.0
+              "Q_H": 1.0,
+              "energy_monotone": true
             },
             {
               "mult": 1.5,
               "held": true,
-              "Q_H": 0.894
+              "Q_H": 0.894,
+              "energy_monotone": true
             },
             {
               "mult": 2.0,
               "held": false,
-              "Q_H": 0.602
+              "Q_H": 0.602,
+              "energy_monotone": true
             }
           ],
           "window": [
             0.7,
             1.5
           ],
-          "width": 0.8
+          "width": 0.8,
+          "all_held_energy_monotone": true,
+          "held_nonmonotone_mults": []
         }
       },
       "not_scripted_check": "sizes from the flow; CV from size/sqrt(c4); Q_H from B=curl A; only flow+momentum+protocol are put in",

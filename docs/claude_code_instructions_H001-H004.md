@@ -17,6 +17,12 @@
 - L=56ではCV=6.6%・R²≈0.57に劣化。「κ∝dx⁴較正」仮説を試したが否定済み（較正κ=20.5でも固定κ=40より改善せず）
 - basinは有界（保持window mult ≈[0.7, 1.5]）。原因未特定の開いた床のまま
 
+> **※ フェーズ1 実施結果（2026-07-08, `arrested_newton_v2.py`）**：上記 v1 の「L=56 破局（CV6.6%）」は
+> **matched protocol（同じ c4=[16,20,25,30]・同じ step 数）では再現しない**＝c4=12 を含む range＋step 差で水増しと特定。
+> matched sweep では L=44/52/56/64 の全ケースが **CV<5%**（2.2/3.3/3.7/4.2%）。残るのは mild・単調な finite-box trend
+> と basin 幅（arrested-Newton でも広がらず＝固定格子で有界）。→ **H001 は promoted（原因特定）**。詳細は
+> `docs/working_ledger/H001_hopf_global_newton.md`。フェーズ2以降はこの結果を前提にすること。
+
 Task 1: 既存コードの現状確認 — `arrested_newton.py`と`hopf_basin.py`を読み、L=56劣化がどう測定されているかを`results/`のJSONで確認。κ較正以外に何が未試験かをリストアップ。
 Task 2: 真のarrested-Newton実装 — Newton的加速（line-search／過緩和）＋高波数kのbiharmonic抑制の変種を新関数で実装。「勾配流のみ」vs「arrested-Newton」のbasin幅を比較。
 Task 3: 高解像度でのL=56原因特定 — L=64で同じsize則。L=44/52/56/64のCV・R²を並べ、劣化がLに対して単調か閾値的か。dxとκの効果分離も検討。
