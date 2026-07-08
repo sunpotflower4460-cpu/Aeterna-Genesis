@@ -20,9 +20,11 @@ def test_e020_passive_no_spontaneous_division():
     div = _load("division.py")
     r = div.simulate(quick=True)
     assert r["all_finite"]
-    assert not r["any_spontaneous_division"]        # honest negative
-    assert r["all_relax_to_single_droplet"]
+    assert not r["any_spontaneous_division"]                 # never split (transients tracked)
+    assert r["max_components_over_all_runs"] == 1            # max component count ever == 1
+    assert r["all_end_single_component"]                     # single connected region
     assert r["measured_no_division_passive"]
+    assert len(r["allen_cahn"]) == 2 and len(r["cahn_hilliard"]) == 1   # quick coverage locked
 
 
 def test_e020_committed_result_sane():
@@ -33,4 +35,6 @@ def test_e020_committed_result_sane():
     with open(path) as f:
         r = json.load(f)["result"]
     assert r["measured_no_division_passive"]
+    assert r["max_components_over_all_runs"] == 1
     assert all(run["final_components"] == 1 for run in r["allen_cahn"] + r["cahn_hilliard"])
+    assert len(r["allen_cahn"]) == 4 and len(r["cahn_hilliard"]) == 3   # full coverage locked

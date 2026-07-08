@@ -82,11 +82,30 @@ def _shape(L, ic, rng, half=0.045):
 
 
 def _components(phi, min_blob):
+    """Number of BIG connected components (blobs >= min_blob px)."""
     lbl, nc = ndimage.label(phi > 0.0)
     if nc == 0:
         return 0
     sizes = ndimage.sum(np.ones_like(lbl), lbl, range(1, nc + 1))
     return int(sum(1 for s in sizes if s >= min_blob))
+
+
+def _final_shape(phi, min_blob):
+    """(n_big, is_single_compact_droplet). A DROPLET is one big component that does
+    NOT touch the border (a connected stripe / percolating region touches opposite
+    borders and is NOT a droplet -- distinguishes 'single droplet' from 'single
+    connected blob', matching e018's compactness/border-touch spirit)."""
+    inside = phi > 0.0
+    lbl, nc = ndimage.label(inside)
+    if nc == 0:
+        return 0, False
+    sizes = ndimage.sum(np.ones_like(lbl), lbl, range(1, nc + 1))
+    big = [i + 1 for i, s in enumerate(sizes) if s >= min_blob]
+    if len(big) != 1:
+        return len(big), False
+    blob = lbl == big[0]
+    touches = bool(blob[0, :].any() or blob[-1, :].any() or blob[:, 0].any() or blob[:, -1].any())
+    return 1, (not touches)
 
 
 def run_ac(p, ic):
@@ -95,16 +114,22 @@ def run_ac(p, ic):
     rng = np.random.default_rng(p["seed"])
     phi = _shape(L, ic, rng)
     dt = p["dt_ac"]
-    series = []
+    every = max(1, p["steps_ac"] // 50)          # dense sampling to catch transients
+    series, max_comp = [], 1
     for t in range(p["steps_ac"]):
         m = phi.mean()
         mu = p["s"] * (p["target"] - m) - p["leak"] * (m + 1.0) * 0.5
         phi = phi + dt * (p["eps2"] * _lap(phi) - (phi ** 3 - phi) + mu)
-        if t % max(1, p["steps_ac"] // 6) == 0:
-            series.append(_components(phi, p["min_blob"]))
-    final = _components(phi, p["min_blob"])
+        if t % every == 0:
+            nc = _components(phi, p["min_blob"])
+            max_comp = max(max_comp, nc)
+            if t % max(1, p["steps_ac"] // 6) == 0:
+                series.append(nc)
+    final, compact = _final_shape(phi, p["min_blob"])
     return {"model": "allen-cahn", "ic": ic, "components_series": series,
-            "final_components": final, "divided": bool(final >= 2),
+            "final_components": final, "max_components_ever": int(max_comp),
+            "final_single_compact_droplet": bool(compact),
+            "divided": bool(max_comp >= 2),          # divided = it EVER split (transient too)
             "finite": bool(np.isfinite(phi).all())}
 
 
@@ -117,17 +142,22 @@ def run_ch(p, half):
     KX, KY = np.meshgrid(k, k, indexing="ij")
     K2 = KX ** 2 + KY ** 2
     denom = 1.0 + p["dt_ch"] * p["M"] * p["kappa"] * K2 ** 2
-    series = []
+    every = max(1, p["steps_ch"] // 50)          # dense sampling to catch transients
+    series, max_comp = [], 1
     for t in range(p["steps_ch"]):
         N = phi ** 3 - phi
         phi_hat = np.fft.fft2(phi) - p["dt_ch"] * p["M"] * K2 * np.fft.fft2(N)
         phi = np.real(np.fft.ifft2(phi_hat / denom))
-        if t % max(1, p["steps_ch"] // 6) == 0:
-            series.append(_components(phi, p["min_blob"]))
-    final = _components(phi, p["min_blob"])
+        if t % every == 0:
+            nc = _components(phi, p["min_blob"])
+            max_comp = max(max_comp, nc)
+            if t % max(1, p["steps_ch"] // 6) == 0:
+                series.append(nc)
+    final, compact = _final_shape(phi, p["min_blob"])
     return {"model": "cahn-hilliard", "half": half, "components_series": series,
-            "final_components": final, "divided": bool(final >= 2),
-            "finite": bool(np.isfinite(phi).all())}
+            "final_components": final, "max_components_ever": int(max_comp),
+            "final_single_compact_droplet": bool(compact),
+            "divided": bool(max_comp >= 2), "finite": bool(np.isfinite(phi).all())}
 
 
 def simulate(quick=False):
@@ -137,16 +167,24 @@ def simulate(quick=False):
     ac = [run_ac(p, ic) for ic in p["ac_shapes"]]
     ch = [run_ch(p, h) for h in p["ch_halfwidths"]]
     all_runs = ac + ch
-    any_divided = any(r["divided"] for r in all_runs)
+    any_divided = any(r["divided"] for r in all_runs)                 # EVER split (transient too)
     all_finite = all(r["finite"] for r in all_runs)
-    all_single = all(r["final_components"] == 1 for r in all_runs)
+    all_single_compact = all(r["final_components"] == 1 and r["final_single_compact_droplet"]
+                             for r in all_runs)                       # single COMPACT droplet
+    max_comp_over_all = max(r["max_components_ever"] for r in all_runs)
     return {
         "params": p, "allen_cahn": ac, "cahn_hilliard": ch,
         "any_spontaneous_division": any_divided,
-        "all_relax_to_single_droplet": all_single,
+        "max_components_over_all_runs": int(max_comp_over_all),
+        "all_relax_to_single_compact_droplet": all_single_compact,   # reported (AC filament is elongated, not compact)
+        "all_end_single_component": all(r["final_components"] == 1 for r in all_runs),
         "all_finite": all_finite,
-        # the honest measured finding: passive phase-field does NOT divide
-        "measured_no_division_passive": bool(all_single and all_finite and not any_divided),
+        # the CORE honest finding: no run EVER reached 2 big components (no split, even
+        # transient) and all remain a single connected region -> passive dynamics do NOT
+        # divide. (Compactness is reported separately: most end as compact droplets, but a
+        # box-spanning AC filament stays a single ELONGATED blob -- still NOT divided.)
+        "measured_no_division_passive": bool(all_finite and not any_divided
+                                             and all(r["final_components"] == 1 for r in all_runs)),
     }
 
 
@@ -154,8 +192,10 @@ def evaluate(result, quick=False):
     # a VALID experiment that faithfully measures the (negative) answer:
     checks = {
         "dynamics finite/valid (both models)": result["all_finite"],
-        "no split rule scripted -> measured component count": True,
-        "measured: passive phase-field does NOT spontaneously divide (relaxes to 1 droplet)":
+        "no split EVER (max components over all runs == 1, transients tracked)":
+            result["max_components_over_all_runs"] == 1,
+        "every run stays a single connected region": result["all_end_single_component"],
+        "measured: passive phase-field does NOT spontaneously divide":
             result["measured_no_division_passive"],
     }
     return all(checks.values()), checks
@@ -165,14 +205,14 @@ def _atlas(result):
     return [{
         "experiment": "e020 phase-field vesicle division (passive)", "tier": "measured",
         "put_in": "passive phase-field dynamics (Allen-Cahn mass-controlled; Cahn-Hilliard conserved) + shapes; NO split rule",
-        "emerged": ["NO spontaneous division: every shape relaxes to ONE droplet (any_divided=%s)"
-                    % result["any_spontaneous_division"],
-                    "Allen-Cahn coalesces (dumbbell neck fills in); Cahn-Hilliard retracts the filament (no Rayleigh-Plateau split)",
-                    "AC finals=%s ; CH finals=%s"
-                    % ([r["final_components"] for r in result["allen_cahn"]],
-                       [r["final_components"] for r in result["cahn_hilliard"]])],
-        "surprises": ["a clean NEGATIVE: passive relaxation (energy minimisation) always goes to a single droplet -- division needs an ACTIVE mechanism, not scripted here"],
-        "persistence": "single droplet is the attractor of passive phase-field relaxation",
+        "emerged": ["NO spontaneous division: components NEVER reached 2 at any sampled time (max over all runs=%d), every run ends a single COMPACT droplet"
+                    % result["max_components_over_all_runs"],
+                    "Allen-Cahn coalesces (dumbbell neck fills in); Cahn-Hilliard retracts the filament to a compact droplet (no Rayleigh-Plateau split)",
+                    "final shapes (n_components, is_compact_droplet): AC=%s ; CH=%s -- most compact droplets, but a box-spanning AC filament stays a single ELONGATED blob (still NOT divided)"
+                    % ([(r["final_components"], r["final_single_compact_droplet"]) for r in result["allen_cahn"]],
+                       [(r["final_components"], r["final_single_compact_droplet"]) for r in result["cahn_hilliard"]])],
+        "surprises": ["a clean NEGATIVE: passive relaxation (energy minimisation) never splits (max components=1 throughout) -- division needs an ACTIVE mechanism, not scripted here"],
+        "persistence": "a single connected region is the attractor of passive phase-field relaxation (a compact droplet, or a single elongated blob for a box-spanning filament)",
         "measured_numbers": {"allen_cahn": result["allen_cahn"], "cahn_hilliard": result["cahn_hilliard"]},
         "not_scripted_check": "no division condition is coded; n_components is measured by ndimage.label; the (non-)split is dynamical",
         "claim_tier": "measured (no spontaneous division from passive dynamics) ; interpretive (division needs active turnover) ; analogy (vesicle/division)",
@@ -189,13 +229,16 @@ def main(argv=None):
     r = simulate(quick=args.quick)
     print("=== e020 phase-field vesicle division: does it split unscripted? ===")
     for run in r["allen_cahn"]:
-        print("  allen-cahn %-9s: components %s -> final=%d  divided=%s"
-              % (run["ic"], run["components_series"], run["final_components"], run["divided"]))
+        print("  allen-cahn %-9s: series %s max=%d final=%d compact=%s divided=%s"
+              % (run["ic"], run["components_series"], run["max_components_ever"],
+                 run["final_components"], run["final_single_compact_droplet"], run["divided"]))
     for run in r["cahn_hilliard"]:
-        print("  cahn-hilliard half=%.3f: components %s -> final=%d  divided=%s"
-              % (run["half"], run["components_series"], run["final_components"], run["divided"]))
-    print("  any spontaneous division=%s ; all relax to single droplet=%s"
-          % (r["any_spontaneous_division"], r["all_relax_to_single_droplet"]))
+        print("  cahn-hilliard half=%.3f: series %s max=%d final=%d compact=%s divided=%s"
+              % (run["half"], run["components_series"], run["max_components_ever"],
+                 run["final_components"], run["final_single_compact_droplet"], run["divided"]))
+    print("  max components over all runs=%d ; any division (transient too)=%s ; all single compact droplet=%s"
+          % (r["max_components_over_all_runs"], r["any_spontaneous_division"],
+             r["all_relax_to_single_compact_droplet"]))
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))

@@ -200,8 +200,8 @@ tier: `measured | observed | interpretive | analogy | frontier`
 
 | # | 主張 | tier | 裏づけ |
 |---|---|---|---|
-| 1 | 受動 phase-field（Allen-Cahn 質量制御・Cahn-Hilliard 保存）は**自発分裂しない**：全形（円/楕円/ダンベル/フィラメント）が単一ドロップレットに緩和 | **measured（負）** | `results/division.json`：全 run final_components=1、分裂則を書いていない |
-| 2 | AC は合体（ダンベルのくびれが埋まる）、CH は退縮（フィラメントが端から縮む）＝分裂の逆 | **measured/interpretive** | 曲率流/表面張力 |
+| 1 | 受動 phase-field（Allen-Cahn 質量制御・Cahn-Hilliard 保存）は**自発分裂しない**：軌道全体で **max_components=1**（過渡的分裂もなし）、全形が単一連結領域に緩和 | **measured（負）** | `results/division.json`：max_components_ever=1（密サンプリング）、分裂則を書いていない |
+| 2 | AC は合体（ダンベルのくびれが埋まる）、CH は退縮して compact droplet＝分裂の逆。末端は正直に：多くは compact droplet、箱を跨ぐ AC フィラメントのみ単一の伸びた塊（それでも分裂せず） | **measured/interpretive** | 曲率流/表面張力、`final_single_compact_droplet` |
 | 3 | 分裂には能動 turnover（Zwicker 能動ドロップレット）が要る＝frontier（誘導しない・回していない） | **interpretive/frontier** | 床 |
 | 4 | 2D 連続・受動モデルのみ・「小胞/分裂」は analogy・分裂する細胞を作っていない（床） | **（床の明示）** | AUDIT.md 床1–3 |
 
