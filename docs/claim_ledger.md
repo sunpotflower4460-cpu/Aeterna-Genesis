@@ -196,6 +196,15 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 4 | 漏れ↑→生存に必要な駆動↑（空間版の臨界駆動曲線、生存判定は bounded_single_vesicle） | **measured** | leak 0→0.4→0.8 で min s 0.1→0.2→0.2 |
 | 5 | 最小動力学/連続 phase-field（脂質膜でない）、膜/小胞/protocell/生命は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |
 
+## e020 — 小胞の分裂は場の力学から出るか（H002+, 負の結果）  (STATUS: GREEN=誠実な負, Type B)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 受動 phase-field（Allen-Cahn 質量制御・Cahn-Hilliard 保存）は**自発分裂しない**：全形（円/楕円/ダンベル/フィラメント）が単一ドロップレットに緩和 | **measured（負）** | `results/division.json`：全 run final_components=1、分裂則を書いていない |
+| 2 | AC は合体（ダンベルのくびれが埋まる）、CH は退縮（フィラメントが端から縮む）＝分裂の逆 | **measured/interpretive** | 曲率流/表面張力 |
+| 3 | 分裂には能動 turnover（Zwicker 能動ドロップレット）が要る＝frontier（誘導しない・回していない） | **interpretive/frontier** | 床 |
+| 4 | 2D 連続・受動モデルのみ・「小胞/分裂」は analogy・分裂する細胞を作っていない（床） | **（床の明示）** | AUDIT.md 床1–3 |
+
 ## e019 — 循環×粒子の結合（輸送・U_c・三体）  (STATUS: GREEN, Type B/C)
 
 | # | 主張 | tier | 裏づけ |
