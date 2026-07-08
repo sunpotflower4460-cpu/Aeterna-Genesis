@@ -52,3 +52,19 @@ def test_e016_committed_result_sane():
     assert r["size_cv"] < 0.05 and r["fit_R2"] > 0.90   # CV<5% is the tightness measure
     assert r["qh2_held"]
     assert r["all_held_monotone"]
+
+
+def test_e016_arrested_newton_v2_committed_sane():
+    """H001 v2: matched-protocol L-series shows the catastrophic L=56 does not
+    reproduce (all L CV<5%); the residual is a mild monotone trend, honestly flagged."""
+    path = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), "..", "experiments", "e016_hopf_basin",
+        "results", "arrested_newton_v2.json"))
+    if not os.path.exists(path):
+        pytest.skip("committed arrested_newton_v2.json missing")
+    with open(path) as f:
+        r = json.load(f)["result"]
+    assert r["all_L_tight(CV<5%)"]                 # size law holds at every L
+    assert r["catastrophic_L56_not_reproduced"]    # v1 CV=6.6% was protocol-inflated
+    # every L-series CV is genuinely < 5%
+    assert all(row["CV"] < 0.05 for row in r["l_series"])
