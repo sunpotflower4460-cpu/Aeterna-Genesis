@@ -32,7 +32,7 @@ def _ab_case(seed):
 
 def _led_case(seed0):
     p = dict(LED.DEFAULT)
-    p.update({"seed0": seed0, "betas": [1.0, 16.0], "beta_seeds": 200, "dens_seeds": 1200,
+    p.update({"seed0": seed0, "betas": [1.0, 16.0], "beta_seeds": 300, "dens_seeds": 1200,
               "ledger_seeds": 500})
     saved = LED.DEFAULT
     try:

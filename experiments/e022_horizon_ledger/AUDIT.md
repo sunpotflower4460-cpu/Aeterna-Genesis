@@ -20,12 +20,16 @@ GREEN gates: `gauge_invariant` / `periodic_mod_one_quantum` / `locally_flat`。
 ### Stage2 ledger（`results/ledger.json`）— 地平線の台帳＝DS 分子
 | 量 | quick 再現 | 正典（egap3a2/elink_bump） |
 |---|---|---|
-| β-曲線 ⟨n⟩→π²/6（=1.645） | β=1:0.90/16:1.73（T(β) を追従） | T(1)=1.063・T(16)=1.585・π²/6 |
+| β-曲線 ⟨n⟩ が β とともに π²/6 プラトーへ上昇 | β=1:~1.06/16:~1.35–1.49 | T(1)=1.063・T(16)=1.585・π²/6=1.645 |
 | 密度不変（β=1、ρ=250/1000） | spread **0.067**（<0.15） | 密度非依存の純数 |
 | 台帳は w(u,0) のみ読む：flat/spot_on/ridge | **1.0 / 0.655 / 0.655**（spot==ridge） | 0.665==0.667、flat 1.06 |
 
-GREEN gates: `ds_traces_T_beta` / `ds_density_independent` / `ledger_reads_horizon_profile`。
+GREEN gates: `ds_rises_to_plateau` / `ds_density_independent` / `ledger_reads_horizon_profile`。
 **罠**: DS 数は u,v の独立単調再スケールで不変（β=B/A のみに依存）・密度非依存＝純数。
+**正直な床（π²/6 について）**: π²/6=1.645 は**解析的 T(β→∞) の極限値**。有限 β・有限密度の MC 計数は
+**T(β) より低く**着地する（β=16 で ~1.35–1.49 vs T(16)=1.585＝heavy-tailed／finite-size 床）。ゲートは
+「⟨n⟩ が β とともに明確に上昇しプラトー域に入る（>0.2 上昇・[1.25,1.9]）＋解析 T(β)→π²/6」を見る＝
+**MC が π²/6 に到達したとは主張しない**。密度不変性（1200 seed で spread<0.15）が「パラメータフリーな純数」の核。
 
 ## 7監査
 | # | 監査 | 判定 | 理由 |

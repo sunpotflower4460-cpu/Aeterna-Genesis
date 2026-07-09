@@ -108,7 +108,7 @@ def simulate(quick=False):
 
 def evaluate(result, quick=False):
     checks = {
-        "winding_self_maintained_under_drive (|w|>0.5, core is a hole)":
+        "winding_maintained_under_drive (|w|>0.5, core is a hole)":
             bool(abs(result["winding_under_drive"]) > 0.5 and result["core_amp_under_drive"] < 0.5),
         "winding_annihilated_by_near_anti (|w|<0.5, core heals >0.5)":
             result["near_annihilates"],

@@ -36,19 +36,31 @@ def _mem_case(seed):
             "big=sum": r["big_loop_winding"] == r["sum_bits"], "ok": bool(ok)}
 
 
-def _ring_case(seed):
+def _ring_case(M, steps):
+    # the GL ring relaxation is deterministic (pinned initial windings), so the meaningful robustness
+    # axes are the ring RESOLUTION M and the number of relaxation steps -- not the RNG seed.
     p = dict(RING.DEFAULT)
-    p.update({"seed": seed, "M": 192, "steps": 1500, "n_phi": 16})
+    p.update({"M": M, "steps": steps, "n_phi": 16})
     k = np.fft.fftfreq(p["M"], d=1.0 / p["M"])
     phis = list(np.linspace(0, p["phi_max"], p["n_phi"]))
-    ok = all(abs(RING._ground(P, p, k)[2] - P) <= 0.5 + 1e-6 for P in phis)
-    return {"seed": seed, "quantized_ok": bool(ok), "ok": bool(ok)}
+    quantized = all(abs(RING._ground(P, p, k)[2] - P) <= 0.5 + 1e-6 for P in phis)
+    F_slip = RING._relax(0.5, p, k, pin_n=0)[0]
+    th = np.arange(p["M"]) / p["M"] * 2 * np.pi
+    psi_node = np.tanh(np.minimum(th, 2 * np.pi - th) / 0.3).astype(complex)
+    c = np.fft.fft(psi_node)
+    Dn = np.fft.ifft(1j * (k - 0.5) * c)
+    F_node = float(np.sum(0.5 * np.abs(Dn) ** 2 + p["beta"] * (np.abs(psi_node) ** 2 - 1) ** 2)
+                   * (2 * np.pi / p["M"]))
+    barrier_ok = F_node > 2 * F_slip
+    return {"M": M, "steps": steps, "quantized_ok": bool(quantized),
+            "barrier_ok": bool(barrier_ok), "ok": bool(quantized and barrier_ok)}
 
 
 def simulate(quick=False):
     seeds = [0, 1] if quick else [0, 1, 2, 3]
     mem = [_mem_case(s) for s in seeds]
-    ring = [_ring_case(s) for s in ([0] if quick else [0, 1, 2])]
+    ring_axes = [(192, 1500)] if quick else [(192, 1500), (256, 2500), (320, 2000)]
+    ring = [_ring_case(M, st) for (M, st) in ring_axes]
     return {
         "memory": mem, "ring": ring,
         "memory_all_ok": all(c["ok"] for c in mem),
