@@ -1,0 +1,84 @@
+{
+  "result": {
+    "params": {
+      "N": 160,
+      "Rdrop": 48.0,
+      "read_R": 18,
+      "steps": 2500,
+      "dt": 0.02,
+      "drive": 1.0,
+      "dissip": 1.0,
+      "nu": 1.0,
+      "dists": [
+        7,
+        14,
+        30
+      ],
+      "seed": 0
+    },
+    "winding_under_drive": 1.0,
+    "core_amp_under_drive": 0.0,
+    "anti": [
+      {
+        "d": 7,
+        "winding": -0.0,
+        "core_amp": 0.999
+      },
+      {
+        "d": 14,
+        "winding": -0.0,
+        "core_amp": 0.98
+      },
+      {
+        "d": 30,
+        "winding": 1.0,
+        "core_amp": 0.413
+      }
+    ],
+    "near_annihilates": true,
+    "far_survives": true
+  },
+  "atlas": [
+    {
+      "experiment": "e021 self receiver Stage 2 (vessel_alive)",
+      "tier": "measured",
+      "put_in": "a driven-dissipative droplet with a +1 core, and (in kill runs) a -1 anti at distance d",
+      "emerged": [
+        "under drive: winding=1.0, core amp=0.0 (a held hole)",
+        "anti at distance d (winding, core amp): [(7, -0.0, 0.999), (14, -0.0, 0.98), (30, 1.0, 0.413)]"
+      ],
+      "surprises": [
+        "a far anti leaves the winding intact; a near anti annihilates the core (|psi| heals, winding->0)"
+      ],
+      "persistence": "the winding is held under drive; it dies only to a close-enough anti (a critical distance)",
+      "measured_numbers": {
+        "winding_under_drive": 1.0,
+        "core_amp_under_drive": 0.0,
+        "anti": [
+          {
+            "d": 7,
+            "winding": -0.0,
+            "core_amp": 0.999
+          },
+          {
+            "d": 14,
+            "winding": -0.0,
+            "core_amp": 0.98
+          },
+          {
+            "d": 30,
+            "winding": 1.0,
+            "core_amp": 0.413
+          }
+        ]
+      },
+      "not_scripted_check": "winding read on a CCW ring around the core; annihilation is signalled by the core amplitude healing to ~1, all measured",
+      "claim_tier": "measured (maintenance, near vs far anti, critical distance) ; interpretive (identity held by drive, dies only to its own anti) ; analogy (self / identity death, KNOWN MATCH only)",
+      "floors": [
+        "2D driven-dissipative toy; the critical distance depends on (drive, dissip, Rdrop)",
+        "the gated facts are winding-held vs winding-annihilated + core healing, not absolute distances",
+        "'identity / identity death / self' is analogy for winding held vs annihilated; no self dies"
+      ]
+    }
+  ]
+}

@@ -263,3 +263,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **容量 > 受信機の dof**：固定 h=6 受信機（境界 dof≈48）が **M=121 保護ビットを 100% 回復**＝storage-in-loop（MC≤N）反証＝ビットは受信機でなく穴に受信される | **measured** | `capacity_exceeds_dof`（M>dof、edecisive と一致） |
 | 4 | **動的 GL リング（スペクトル ETD）**：受信巻き n＝round(Φ)（\|n−Φ\|≤0.5）、ゲージ不変（dE≈2e-6＝囲む磁束のみ読む）、位相スリップ障壁で保持 | **measured** | `results/ring.json`：`autonomous_quantized`/`gauge_invariant`（erecv_dyn2 と一致）。**罠**：スペクトル ETD |
 | 5 | **interpretive**：ビットは非観測の穴に**受信**される（貯蔵でない）。KNOWN MATCH＝Aharonov-Bohm/フラックス量子化/トポロジカル電荷。**床**：位相スリップ障壁は強制ノード proxy＝floor（GREEN 閾値でない）。1D/固定格子・容量は finite-size。「記憶/受信」は analogy——記憶を作っていない | **interpretive/analogy/床** | AUDIT §claim tier・床1–3 |
+
+## e021 — 自己受信（芯が自分の巻きを読む・駆動液滴の同一性）  (STATUS: GREEN, Type B, H014)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **外場ゼロでリングが自分の芯の巻きを読む**：リング巻き＝芯巻き（w=−2..+2）、持続電流の符号も追従＝自律的自己受信 | **measured** | `results/self_receiver.json`：`ring_reads_core_winding`（erecv_sc.py と一致） |
+| 2 | **読みは芯位置・受信半径に不変**：芯ジッタで巻き 1.00 不変、芯の外の全 R で巻き量子化＝位置でなく巻きを読む | **measured** | `reading_invariant_to_core_position` / `reading_quantized_across_radii` |
+| 3 | **駆動液滴の巻きは駆動下で保持**（+1、芯＝穴）、**近い反渦 d=7 で対消滅**（巻き→0・芯が ~1 に癒える）、**遠い反渦 d=30 は生存**（+1）＝臨界距離 | **measured** | `results/vessel_alive.json`：3ゲート（evessel4.py と一致）。署名＝芯振幅が癒える |
+| 4 | **interpretive**：自己同一性＝自分の源の窓を読むループ（外場不要）；同一性は駆動で保持され身体損傷でなく自分の反対物にのみ死ぬ。KNOWN MATCH＝フラックス量子化/渦反渦対消滅/駆動散逸液滴 | **interpretive/analogy** | AUDIT §claim tier；「自己/同一性/死」は**ゲート名に入れない** |
+| 5 | 2D GL トイ・境界巻きクランプ・臨界半径/距離は finite-size・受信機は芯の癒し halo の外に要る（床）。seed 掃引で頑健。自己を作った・殺したのではない | **（床の明示）** | AUDIT 床1–3・`robustness.json` |
