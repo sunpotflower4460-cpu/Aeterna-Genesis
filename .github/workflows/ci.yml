@@ -115,6 +115,10 @@ jobs:
         run: python experiments/e023_causal_action/order_time.py --quick --no-write
       - name: "e023 directed-vs-undirected quick (orientation makes spacetime; undirected small-world)"
         run: python experiments/e023_causal_action/directed_vs_undirected.py --quick --no-write
+      - name: "e029 coevolution quick [frontier] (endogenous demand removes the complexity plateau)"
+        run: python experiments/e029_openended_frontier/coevolution.py --quick --no-write
+      - name: "e029 major-transition quick [frontier] (group reproduction rescues cooperation)"
+        run: python experiments/e029_openended_frontier/major_transition.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -144,3 +148,6 @@ jobs:
           test -f experiments/e022_horizon_ledger/results/ledger.json
           test -f experiments/e023_causal_action/results/order_time.json
           test -f experiments/e023_causal_action/results/directed_vs_undirected.json
+          test -f experiments/e029_openended_frontier/results/coevolution.json
+          test -f experiments/e029_openended_frontier/results/major_transition.json
+          test -f docs/working_ledger/H017_openended_frontier.md

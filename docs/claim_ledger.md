@@ -293,3 +293,12 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **向き（orientation）が時空を作る**：有向は有限次元＋時間、同じ因果対を対称化するとスモールワールド mush（~全 N に 2 hop 到達＝次元発散）＋サイクル（非巡回順序が壊れ時間なし） | **measured** | `results/directed_vs_undirected.json`：3ゲート（ball 成長 [1,316,700]、三角形 7.7M） |
 | 4 | **interpretive**：時間と有限次元空間は順序だけから読める；因果の矢が時空を作る。KNOWN MATCH＝因果集合理論(BLMS)/Myrheim-Meyer/無向ランダムグラフのスモールワールド崩壊 | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **frontier（GREEN にしない・正直に保留）**：曲率治癒＝BD 作用降下(H007)／実重み経路積分は多様体を選べない(H008)——サンドボックス参照が本セッションで未検証、検証済み数値なしのため昇格しない。**床**：固定次元 sprinkling（多様体を入れて順序を生成）＝時間/次元を回復、無から多様体を導いたのでない。「時間/時空/因果の矢」は analogy | **frontier/床** | AUDIT 床1–3・`docs/working_ledger/H005_*` |
+
+## e029 — 深いフロンティア（内生的需要／完全な大転移）  (STATUS: GREEN=機構実証, Type D/frontier, H017)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **内生的需要で複雑性の頭打ちが外れる**：宿主寄生者の敵対的共進化（非有界形質）で、需要（寄生者の広がり）が外部ノブなしに内側から上昇（0.5→~2.4）し、宿主複雑性が STATIC の頭打ち（中央値 ~12・平坦）を超えて上昇し続ける（中央値 ~26・最大 ~31・スロープ +0.028） | **measured（frontier, ensemble）** | `results/coevolution.json`：3ゲート。full で 4/6 escalate（残り collapse＝正直な床） |
+| 2 | **完全な大転移＝群れが再生産する高次個体**：個体選択は協力崩壊（0.05–0.06）、群れ再生産＋創設者ボトルネック k=1 は協力を救済（0.92–0.96）、狭いボトルネックほど協力↑（k=1: 0.92 > k=20: 0.81） | **measured（frontier）** | `results/major_transition.json`：3ゲート（Wilson 多層選択/Hamilton 則/生殖ボトルネック） |
+| 3 | **interpretive**：欠けていた材料＝**内生的に上がる需要**（軍拡競争）＋**群れ再生産（ボトルネックが対立抑制）**。KNOWN MATCH＝Red Queen/宿主寄生者共進化/多層選択/Hamilton 則/Grosberg-Strathmann | **interpretive/analogy** | AUDIT §claim tier |
+| 4 | **FRONTIER（未解決・正直に）**：真の無限オープンエンド性と、分業・生殖体細胞分化を含む完全な大転移は未解決——ここで示したのは**機構**であって解でない。軍拡競争は run ごとに escalate/collapse で変動（ensemble 中央値でゲート・cherry-pick しない）。協力の安定化は必要条件のみ。「生命/心/社会/多細胞性/オープンエンド性」は analogy——measured は物理量（ゲノム長・広がり・協力率）のみ | **frontier/床** | AUDIT 床1–4・`robustness.json`（seed batch/格子で頑健） |

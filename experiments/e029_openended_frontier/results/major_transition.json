@@ -1,0 +1,101 @@
+{
+  "result": {
+    "params": {
+      "G": 60,
+      "n": 20,
+      "c": 0.5,
+      "T": 300,
+      "mut": 0.02,
+      "bs": [
+        1.5,
+        3.0
+      ],
+      "ks": [
+        1,
+        20
+      ],
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "b_main": 3.0
+    },
+    "sweep": [
+      {
+        "b": 1.5,
+        "individual": 0.049,
+        "group_bottleneck": 0.961
+      },
+      {
+        "b": 3.0,
+        "individual": 0.069,
+        "group_bottleneck": 0.961
+      }
+    ],
+    "coop_vs_k": [
+      {
+        "k": 1,
+        "coop": 0.961
+      },
+      {
+        "k": 20,
+        "coop": 0.867
+      }
+    ],
+    "b_main": 3.0,
+    "individual_main": 0.069,
+    "group_main": 0.961,
+    "coop_tight_bottleneck": 0.961,
+    "coop_loose_bottleneck": 0.867,
+    "individual_collapses_all_b": true,
+    "group_rescues_all_b": true
+  },
+  "atlas": [
+    {
+      "experiment": "e029 openended frontier Stage 2 (major_transition)",
+      "tier": "measured/frontier",
+      "put_in": "G groups of n agents + public-good payoff; reproduction of INDIVIDUALS vs GROUPS (mean fitness) with a founder bottleneck k",
+      "emerged": [
+        "cooperator fraction vs temptation b: [(1.5, 0.049, 0.961), (3.0, 0.069, 0.961)]",
+        "bottleneck strength at b=3.0: [(1, 0.961), (20, 0.867)] (tighter k -> more cooperation)"
+      ],
+      "surprises": [
+        "shifting the UNIT of reproduction to the group turns doomed cooperation into a stable high fraction -- a higher-level individual"
+      ],
+      "persistence": "group-reproduced cooperation is stable across the temptation range; individual collapses",
+      "measured_numbers": {
+        "sweep": [
+          {
+            "b": 1.5,
+            "individual": 0.049,
+            "group_bottleneck": 0.961
+          },
+          {
+            "b": 3.0,
+            "individual": 0.069,
+            "group_bottleneck": 0.961
+          }
+        ],
+        "coop_vs_k": [
+          {
+            "k": 1,
+            "coop": 0.961
+          },
+          {
+            "k": 20,
+            "coop": 0.867
+          }
+        ],
+        "individual_main": 0.069,
+        "group_main": 0.961
+      },
+      "not_scripted_check": "individual and group runs share the payoff; only the unit of reproduction differs; the collapse/rescue/bottleneck dependence are measured",
+      "claim_tier": "measured (collapse, rescue, bottleneck) ; interpretive (the group becomes the reproducing individual; the bottleneck suppresses conflict) ; analogy (multicellularity) ; FRONTIER",
+      "floors": [
+        "FRONTIER: cooperation stability under group reproduction is a NECESSARY ingredient, not the whole major transition (no division of labor / germ-soma here; policing is marginal in this regime)",
+        "'major transition / higher individual / multicellularity' is analogy for the cooperator fraction"
+      ]
+    }
+  ]
+}

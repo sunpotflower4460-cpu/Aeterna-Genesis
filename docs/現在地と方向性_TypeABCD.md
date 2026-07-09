@@ -122,6 +122,8 @@
 - **作用＝エントロピーから**（第三の役割が熱力学/もつれから出るか、[H004](working_ledger/H004_action_entropy.md)）— frontier。
 - **真の大域 basin**（固定格子の有界 basin を超える、[H001](working_ledger/H001_hopf_global_newton.md)）— frontier。
 - **三体フル結合／開かれた進化**（代謝＋流れ＋粒子／突然変異→新規性、[H003](working_ledger/H003_three_body_coupling.md)）— frontier。
+- **内生的需要でオープンエンド性**（宿主寄生者の敵対的共進化が需要を内側から上げ複雑性の頭打ちを外す、[H017](working_ledger/H017_openended_frontier.md)）— **frontier（機構を GREEN で実証）／e029**。軍拡競争は escalate/collapse で変動＝ensemble 中央値でゲート。真の無限オープンエンド性は未解決。
+- **完全な大転移＝群れが再生産する高次個体**（選択の単位を群れに移す＋創設者ボトルネックで協力が高次個体に、[H017](working_ledger/H017_openended_frontier.md)）— **frontier（機構を GREEN で実証）／e029**。協力の安定化は必要条件、分業・生殖体細胞分化は未実装。
 
 ---
 
