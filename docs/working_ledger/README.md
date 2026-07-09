@@ -39,5 +39,15 @@ e016 basin は有界・絶対 L* は解像度依存。e018 は analogy（protoce
 | [H002](H002_membrane_vesicle.md) | 膜小胞化（phase-field で境界をもつ小胞） | B | **promoted** | e018 Stage2 |
 | [H003](H003_three_body_coupling.md) | 三体フル結合（自己組織流＋粒子＋器を一場に双方向結合） | B/C | **promoted** | e019 Stage2 |
 | [H004](H004_action_entropy.md) | 作用＝エントロピー（Jacobson/Verlinde；第三の役割が熱力学から出るか） | D | **proposed** | 未実装（仮説） |
+| [H005–H008](H005_order_to_spacetime.md) | 順序から時空へ（因果作用が多様体を選ぶ） | B | **proposed** | e023_causal_action（予定） |
+| [H009–H010](H009_horizon_ledger.md) | 地平線の台帳（受信ループ・DS 面積則、2D SOLID/3D floor） | B | **proposed** | e022_horizon_ledger（予定） |
+| [H012–H013](H012_topological_memory.md) | トポロジカル記憶（巻き保護された受信・記憶） | B | **proposed** | e020_topological_memory（予定、番号衝突要確認） |
+| [H014](H014_self_receiver.md) | 自己受信（芯が自分の巻きを読む・生きた器の同一性） | B | **proposed** | e021_self_receiver（予定） |
+| [H016](H016_vessel_engine_society.md) | 生きた器のエンジンと社会（ボルト→モーター→…→大転移） | B | **in progress**（e024 GREEN） | e024–e027 |
+
+**H011 / H015 について（正直に）**：H011（ブラックホール＝源の窓の渦）・創世（E-genesis）は
+サンドボックス extras_context に属し **interpretive/analogy が濃い**（「愛/至福/BH/源」）。repo 化するなら
+GREEN は物理量（巻き/エントロピー/欠陥数）のみとし、analogy は docstring に限る＝別扱い。
+H015 相当も同枠。現時点で **GREEN 実験として repo 化していない**（誇張しないための保留）。
 
 死んだ筋・却下した設計は `_archive/`（理由つき）。

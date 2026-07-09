@@ -196,6 +196,15 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 4 | 漏れ↑→生存に必要な駆動↑（空間版の臨界駆動曲線、生存判定は bounded_single_vesicle） | **measured** | leak 0→0.4→0.8 で min s 0.1→0.2→0.2 |
 | 5 | 最小動力学/連続 phase-field（脂質膜でない）、膜/小胞/protocell/生命は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |
 
+## e020 — 小胞の分裂は場の力学から出るか（H002+, 負の結果）  (STATUS: GREEN=誠実な負, Type B)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 受動 phase-field（Allen-Cahn 質量制御・Cahn-Hilliard 保存）は**自発分裂しない**：軌道全体で **max_components=1**（過渡的分裂もなし）、全形が単一連結領域に緩和 | **measured（負）** | `results/division.json`：max_components_ever=1（密サンプリング）、分裂則を書いていない |
+| 2 | AC は合体（ダンベルのくびれが埋まる）、CH は退縮して compact droplet＝分裂の逆。末端は正直に：多くは compact droplet、箱を跨ぐ AC フィラメントのみ単一の伸びた塊（それでも分裂せず） | **measured/interpretive** | 曲率流/表面張力、`final_single_compact_droplet` |
+| 3 | 分裂には能動 turnover（Zwicker 能動ドロップレット）が要る＝frontier（誘導しない・回していない） | **interpretive/frontier** | 床 |
+| 4 | 2D 連続・受動モデルのみ・「小胞/分裂」は analogy・分裂する細胞を作っていない（床） | **（床の明示）** | AUDIT.md 床1–3 |
+
 ## e019 — 循環×粒子の結合（輸送・U_c・三体）  (STATUS: GREEN, Type B/C)
 
 | # | 主張 | tier | 裏づけ |
@@ -205,3 +214,42 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | 重心は成分場の**空間**軸で（4D 軸を使わない）＝罠回避 | **measured/規律** | `_centroid` 空間軸のみ、test で確認 |
 | 4 | 三体結合：背反応が流れを自己制限し粒子保持（U=3.35,Q_H=0.97）／背反応なし=一方向は過駆動で破壊（U=9.56,Q_H=−0.21）／駆動オフで b→0.005・流れ停止＝背反応が粒子を救う負のフィードバック | **measured** | `results/three_body.json`（two-way vs one-way vs no-drive、backreaction_saves_particle=True） |
 | 5 | 規定 roll・振幅還元流（完全 NS でない）・U_c は crossover・「粒子/同一性/ホメオスタシス」は analogy/interpretive（床） | **（床の明示）** | AUDIT.md 床 |
+
+## e024 — 器のエンジン（ラチェット→モーター→器のモーター）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **非対称周期ポテンシャルは対称ノイズを整流**：整流 (v(+A)+v(−A))/2 が asym=1,A=4.5 で **+0.60**（対称 asym=0 は ~0）、A 1.5→6 で **0.02→0.96**（単調増）、asym=0.1（51/49）でも **+0.08**（閾値なし） | **measured** | `results/ratchet.json`（サンドボックス eratchet2.py と一致）；罠＝静的傾き別測平均 |
+| 2 | **回転の最小は三**：等間隔 N 位相の場は N≥3 で回転（ripple<0.05）・N≤2 は脈動；三相電流和 max\|Σ\|=0；トリプレン零相＝[3,6,9]；三相ロータ自己回転 **+19rev**（単相はぐらつき、単相+ラチェットで回る） | **measured** | `results/motor.json`（emotor.py と一致） |
+| 3 | **器の心臓**：燃料勾配 Δμ が三回対称ロータを回し（閾値→上昇）、負荷に停動（load≈3）、器 **Ψ=0.93** 維持、燃料切断で **Ψ→0**（死）、方向は燃料の符号で反転（±0.56）＝5ゲート GREEN | **measured** | `results/vessel_motor.json`（evessel_motor2.py と一致）；罠＝平滑化正味回転 `max(om_s−0.05,0)` |
+| 4 | **interpretive**：器の心臓＝勾配→回転→仕事→自己維持。整流の非対称起源＝運動方向の源。KNOWN MATCH＝ブラウン・ラチェット/三相回転磁場/ATP合成酵素 | **interpretive/analogy** | AUDIT §claim tier；**「生命」はゲート名に入れない** |
+| 5 | 1D 過減衰・スカラー Ψ ODE・絶対電流/回転数/Ψ 準位は (D,T,dt,asym,feed) 依存＝床。ゲートは符号・閾値・崩壊（頑健、`robustness.json` で seed/Np/dt 掃引）。「ボルト/生/死」は analogy——ATP合成酵素を作っていない | **（床の明示）** | AUDIT.md 床1–3 |
+
+## e025 — 生きた器（三器官・二つの死 → オートポイエーシス閉環）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 一つの 2D CGL 場に**三器官が共存**：燃料下で bulk\|ψ\|²≈1.96・巻き +1（同一性芯＋代謝モーター＋境界液滴が維持） | **measured** | `results/complete.json`：`bulk_and_winding_sustained`。ゲート名は物理量のみ |
+| 2 | **二つの崩壊は独立**：燃料切断→bulk→0.01（巻きは崩壊まで保持）；反渦注入→巻き→0 だが bulk≈1.98（高いまま）＝**代謝 ≠ 同一性** | **measured/interpretive** | `bulk_collapses_on_fuel_cut` ／ `winding_lost_while_bulk_high`（サンドボックス evessel_complete.py と一致） |
+| 3 | 塊切除（芯無傷）→巻き +1 保持・bulk 再生（`winding_survives_body_excision`） | **measured** | `results/complete.json` |
+| 4 | **閉環（芯が自分の巻きを読み gain を gate）が二つの死を結ぶ**：反渦後、閉環なし bulk≈1.97（身体は生存）／閉環あり bulk→0.04（巻き喪失が bulk 崩壊を引く）＝**決定的対比** | **measured** | `results/autopoietic.json`：`winding_loss_collapses_bulk_iff_closed`（evessel_auto.py と一致） |
+| 5 | **interpretive**：操作的閉包＝自己と自己維持が不可分（Maturana-Varela）。KNOWN MATCH＝CGL 駆動液滴/トポロジカル電荷/オートポイエーシス。「自己/生/死/同一性」は analogy——**ゲート名に入れない**、細胞・死・自己を作っていない（床） | **interpretive/analogy/床** | AUDIT §claim tier・床1–3 |
+
+## e026 — トポロジカル分裂会計（巻きはコピーできない、創るしかない）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 一つの +1 を分けると娘は **(+1, 0)**：一つは巻いた娘、もう一つは空（内側全体は +1）。**+1 を (+1,+1)=+2 にできない** | **measured** | `results/division.json`：`split_gives_one_wound_one_empty`。CCW ループで巻きを読む |
+| 2 | 二つの巻いた娘には**新しい +1/−1 対の核生成＋−1 排出**が要る：娘 (+1,+1)、両娘ループ +2、全体（−1 込み）ループ +1＝**保存** | **measured** | `two_wound_daughters_need_shed_anti`（サンドボックス evessel_div2.py と一致） |
+| 3 | **interpretive**：再生産＝**創る≠コピー**；電荷保存ゆえ新しい巻きは必ず反対物を伴い捨てる；子の同一性はその子自身。KNOWN MATCH＝トポロジカル電荷保存/ノークローニング/対核生成 | **interpretive/analogy** | AUDIT §claim tier；「同一性/自己/再生産」は**ゲート名に入れない** |
+| 4 | 純**静的トポロジー会計**（時間発展なし・代謝コスト未払い）＝床。**動的くびれ（渦を娘へ運ぶ）は frontier**。会計は娘半径/分離/囲みループ半径に不変（`robustness.json`）。生物を再生産していない | **（床の明示）** | AUDIT 床1–3 |
+
+## e027 — 進化と大転移（ダーウィン的ループ・複雑性の上昇・協力の高次個体）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **ダーウィン的ループが突然変異で閉じる**：適応（変異 ON→平均形質 1.51／OFF→0.00）、負の頻度依存で多様化（std→7.7、~20帯）、移動最適をレッドクイーン追跡（遅れ 0.07） | **measured** | `results/evolution.json`（eevolution.py と一致）。ゲート＝測定統計量 |
+| 2 | **複雑性は拡張ゲノム＋需要で上昇**：単純環境 頭打ち（ゲノム長 1.4）、豊か 6.0、需要増 6.5（解ける課題 0.9→9.4）＝材料＝遺伝子重複＋需要 | **measured** | `results/openended.json`（eopenended.py と一致） |
+| 3 | **協力＝高次個体は空間構造で生存**：よく混ぜると崩壊（協力率 0.00）、空間で生存（0.73）、assortment +0.13；誘惑 b は生存域（b≥1.7 で崩壊） | **measured** | `results/transition.json`（emajor.py と一致）。**罠**：b は生存域 |
+| 4 | **interpretive**：ダーウィン的ループ閉／複雑性の材料＝拡張ゲノム＋需要／高次個体＝空間 assortment で束ねた協力。KNOWN MATCH＝Wright-Fisher/頻度依存/遺伝子重複/Nowak-May/多層選択/Hamilton 則 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **エージェントモデル（場でない）・固定 1D 形質（Stage1）・外部需要（Stage2）・協力安定化のみ（Stage3）＝床**。真のオープンエンド性（内生需要）と完全な大転移（群れ再生産・分業・対立抑制）は frontier。seed 掃引で頑健。生物・社会を作っていない | **（床の明示）** | AUDIT 床1–4・`robustness.json` |

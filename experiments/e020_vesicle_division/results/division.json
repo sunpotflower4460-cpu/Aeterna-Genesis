@@ -1,0 +1,243 @@
+{
+  "result": {
+    "params": {
+      "L_ac": 128,
+      "steps_ac": 5000,
+      "eps2": 2.0,
+      "target": -0.2,
+      "s": 1.0,
+      "leak": 0.0,
+      "dt_ac": 0.04,
+      "L_ch": 160,
+      "steps_ch": 6000,
+      "kappa": 1.5,
+      "M": 1.0,
+      "dt_ch": 0.5,
+      "ac_shapes": [
+        "round",
+        "ellipse",
+        "dumbbell",
+        "filament"
+      ],
+      "ch_halfwidths": [
+        0.028,
+        0.04,
+        0.055
+      ],
+      "seed": 0,
+      "min_blob": 30
+    },
+    "allen_cahn": [
+      {
+        "model": "allen-cahn",
+        "ic": "round",
+        "components_series": [
+          1
+        ],
+        "final_components": 1,
+        "max_components_ever": 1,
+        "final_single_compact_droplet": true,
+        "divided": false,
+        "finite": true
+      },
+      {
+        "model": "allen-cahn",
+        "ic": "ellipse",
+        "components_series": [
+          1
+        ],
+        "final_components": 1,
+        "max_components_ever": 1,
+        "final_single_compact_droplet": true,
+        "divided": false,
+        "finite": true
+      },
+      {
+        "model": "allen-cahn",
+        "ic": "dumbbell",
+        "components_series": [
+          1
+        ],
+        "final_components": 1,
+        "max_components_ever": 1,
+        "final_single_compact_droplet": true,
+        "divided": false,
+        "finite": true
+      },
+      {
+        "model": "allen-cahn",
+        "ic": "filament",
+        "components_series": [
+          1
+        ],
+        "final_components": 1,
+        "max_components_ever": 1,
+        "final_single_compact_droplet": false,
+        "divided": false,
+        "finite": true
+      }
+    ],
+    "cahn_hilliard": [
+      {
+        "model": "cahn-hilliard",
+        "half": 0.028,
+        "components_series": [
+          1,
+          1
+        ],
+        "final_components": 1,
+        "max_components_ever": 1,
+        "final_single_compact_droplet": true,
+        "divided": false,
+        "finite": true
+      },
+      {
+        "model": "cahn-hilliard",
+        "half": 0.04,
+        "components_series": [
+          1,
+          1
+        ],
+        "final_components": 1,
+        "max_components_ever": 1,
+        "final_single_compact_droplet": true,
+        "divided": false,
+        "finite": true
+      },
+      {
+        "model": "cahn-hilliard",
+        "half": 0.055,
+        "components_series": [
+          1,
+          1
+        ],
+        "final_components": 1,
+        "max_components_ever": 1,
+        "final_single_compact_droplet": true,
+        "divided": false,
+        "finite": true
+      }
+    ],
+    "any_spontaneous_division": false,
+    "max_components_over_all_runs": 1,
+    "all_relax_to_single_compact_droplet": false,
+    "all_end_single_component": true,
+    "all_finite": true,
+    "measured_no_division_passive": true
+  },
+  "atlas": [
+    {
+      "experiment": "e020 phase-field vesicle division (passive)",
+      "tier": "measured",
+      "put_in": "passive phase-field dynamics (Allen-Cahn mass-controlled; Cahn-Hilliard conserved) + shapes; NO split rule",
+      "emerged": [
+        "NO spontaneous division: components NEVER reached 2 at any sampled time (max over all runs=1), every run ends a single COMPACT droplet",
+        "Allen-Cahn coalesces (dumbbell neck fills in); Cahn-Hilliard retracts the filament to a compact droplet (no Rayleigh-Plateau split)",
+        "final shapes (n_components, is_compact_droplet): AC=[(1, True), (1, True), (1, True), (1, False)] ; CH=[(1, True), (1, True), (1, True)] -- most compact droplets, but a box-spanning AC filament stays a single ELONGATED blob (still NOT divided)"
+      ],
+      "surprises": [
+        "a clean NEGATIVE: passive relaxation (energy minimisation) never splits (max components=1 throughout) -- division needs an ACTIVE mechanism, not scripted here"
+      ],
+      "persistence": "a single connected region is the attractor of passive phase-field relaxation (a compact droplet, or a single elongated blob for a box-spanning filament)",
+      "measured_numbers": {
+        "allen_cahn": [
+          {
+            "model": "allen-cahn",
+            "ic": "round",
+            "components_series": [
+              1
+            ],
+            "final_components": 1,
+            "max_components_ever": 1,
+            "final_single_compact_droplet": true,
+            "divided": false,
+            "finite": true
+          },
+          {
+            "model": "allen-cahn",
+            "ic": "ellipse",
+            "components_series": [
+              1
+            ],
+            "final_components": 1,
+            "max_components_ever": 1,
+            "final_single_compact_droplet": true,
+            "divided": false,
+            "finite": true
+          },
+          {
+            "model": "allen-cahn",
+            "ic": "dumbbell",
+            "components_series": [
+              1
+            ],
+            "final_components": 1,
+            "max_components_ever": 1,
+            "final_single_compact_droplet": true,
+            "divided": false,
+            "finite": true
+          },
+          {
+            "model": "allen-cahn",
+            "ic": "filament",
+            "components_series": [
+              1
+            ],
+            "final_components": 1,
+            "max_components_ever": 1,
+            "final_single_compact_droplet": false,
+            "divided": false,
+            "finite": true
+          }
+        ],
+        "cahn_hilliard": [
+          {
+            "model": "cahn-hilliard",
+            "half": 0.028,
+            "components_series": [
+              1,
+              1
+            ],
+            "final_components": 1,
+            "max_components_ever": 1,
+            "final_single_compact_droplet": true,
+            "divided": false,
+            "finite": true
+          },
+          {
+            "model": "cahn-hilliard",
+            "half": 0.04,
+            "components_series": [
+              1,
+              1
+            ],
+            "final_components": 1,
+            "max_components_ever": 1,
+            "final_single_compact_droplet": true,
+            "divided": false,
+            "finite": true
+          },
+          {
+            "model": "cahn-hilliard",
+            "half": 0.055,
+            "components_series": [
+              1,
+              1
+            ],
+            "final_components": 1,
+            "max_components_ever": 1,
+            "final_single_compact_droplet": true,
+            "divided": false,
+            "finite": true
+          }
+        ]
+      },
+      "not_scripted_check": "no division condition is coded; n_components is measured by ndimage.label; the (non-)split is dynamical",
+      "claim_tier": "measured (no spontaneous division from passive dynamics) ; interpretive (division needs active turnover) ; analogy (vesicle/division)",
+      "floors": [
+        "2D coarse-grained continuum; passive models only -- ACTIVE (Zwicker) division is a stated FRONTIER, not run (we do not induce the split)",
+        "'vesicle/division' is analogy; fixed periodic lattice; we did NOT make a dividing cell"
+      ]
+    }
+  ]
+}
