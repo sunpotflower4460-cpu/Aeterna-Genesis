@@ -99,6 +99,22 @@ jobs:
         run: python experiments/e027_evolution_transition/openended.py --quick --no-write
       - name: "e027 transition quick (spatial cooperation survives; well-mixed collapses)"
         run: python experiments/e027_evolution_transition/transition.py --quick --no-write
+      - name: "e028 memory quick (non-local winding, protected, capacity>dof)"
+        run: python experiments/e028_topological_memory/memory.py --quick --no-write
+      - name: "e028 ring quick (spectral-ETD GL ring: n~round(Phi), gauge-invariant)"
+        run: python experiments/e028_topological_memory/ring.py --quick --no-write
+      - name: "e021 self-receiver quick (ring reads its own core winding, no external field)"
+        run: python experiments/e021_self_receiver/self_receiver.py --quick --no-write
+      - name: "e021 vessel-alive quick (winding held under drive; dies to a near anti)"
+        run: python experiments/e021_self_receiver/vessel_alive.py --quick --no-write
+      - name: "e022 ab-gap quick (AB ring passes only the enclosed flux, gauge-invariant)"
+        run: python experiments/e022_horizon_ledger/ab_gap.py --quick --no-write
+      - name: "e022 ledger quick (DS molecules: density-independent, horizon-profile only)"
+        run: python experiments/e022_horizon_ledger/ledger.py --quick --no-write
+      - name: "e023 order-time quick (rank recovers time; finite interval dimension)"
+        run: python experiments/e023_causal_action/order_time.py --quick --no-write
+      - name: "e023 directed-vs-undirected quick (orientation makes spacetime; undirected small-world)"
+        run: python experiments/e023_causal_action/directed_vs_undirected.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -120,3 +136,11 @@ jobs:
           test -f experiments/e026_vessel_division/results/division.json
           test -f experiments/e027_evolution_transition/results/evolution.json
           test -f experiments/e027_evolution_transition/results/transition.json
+          test -f experiments/e028_topological_memory/results/memory.json
+          test -f experiments/e028_topological_memory/results/ring.json
+          test -f experiments/e021_self_receiver/results/self_receiver.json
+          test -f experiments/e021_self_receiver/results/vessel_alive.json
+          test -f experiments/e022_horizon_ledger/results/ab_gap.json
+          test -f experiments/e022_horizon_ledger/results/ledger.json
+          test -f experiments/e023_causal_action/results/order_time.json
+          test -f experiments/e023_causal_action/results/directed_vs_undirected.json

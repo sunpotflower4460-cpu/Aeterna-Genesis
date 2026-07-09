@@ -1,6 +1,6 @@
 # H012–H013 — トポロジカル記憶（巻きが保護された受信・記憶）
 
-- **状態**: proposed（サンドボックス検証済み・**repo 実装予定** `experiments/e020_topological_memory/`）
+- **状態**: **resolved (promoted)**（`experiments/e028_topological_memory/` 実装済み・全 GREEN）
 - **起票者**: Claude / 2026-07-09（指示書 §3 より）
 - **狙う Type**: B（床つき measured）。
 - **依拠する既知事実**: 巻き数（トポロジカル電荷）保護、GL リング、Aharonov-Bohm 位相、スペクトル ETD。
@@ -18,10 +18,16 @@ winding_around[CCW]）を使用。
 リング Laplacian は**スペクトル ETD** `exp(−(k−Φ)²dt)`（陽解法は overflow→NaN）。
 GREEN ゲート名は物理量のみ（winding / energy / current）。「記憶」は analogy（docstring/AUDIT）。
 
-## 番号メモ（衝突・要確認）
-現 repo には別セッションの `experiments/e020_vesicle_division/`（H002+ の分裂・負の結果、PR #10）が既存。
-指示書 §8.8 は e020 を空きと想定していたため**番号衝突**。実装時に再採番（この記憶弧を空き番号へ）
-または vesicle_division の扱いと合わせて調整する。**この判断は e020 系実装の着手時に確定する**。
+## 番号衝突の解決（確定）
+e020 は `e020_vesicle_division`（H002+ 負の結果、PR #10 でマージ済み）が占めるため、
+この記憶弧は**空き番号 `e028` へ再採番**して実装した（合意どおり）。
+
+## 結果（GREEN・物理量ゲートのみ、`experiments/e028_topological_memory/`）
+**Stage1 memory**（静的）：固定 h=6 受信機（dof≈48）が M=121 保護ビットを **100%** 回復（容量>dof＝
+storage-in-loop 反証）／巻きは局所ノイズ下で不変（動的バンプは劣化）／穴を囲まぬループ=0・全穴の箱ループ=Σビット。
+**Stage2 ring**（動的 GL リング・**スペクトル ETD**）：受信巻き n＝round(Φ)（\|n−Φ\|≤0.5）／ゲージ不変 dE≈2e-6／
+位相スリップ障壁（**床**：基底 0.79 vs 強制ノード 3.81）。
+ゲート名は物理量（winding/capacity/energy/gauge）。「記憶・受信」は analogy（docstring/AUDIT）。
 
 ## verdict
-- [ ] proposed → e020 実装で判定（番号衝突を先に解決）。
+- [x] **promoted**（e028 実装・全 GREEN、`claim_ledger` e028 §）。

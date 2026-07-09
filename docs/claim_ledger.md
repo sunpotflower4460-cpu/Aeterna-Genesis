@@ -253,3 +253,43 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **協力＝高次個体は空間構造で生存**：よく混ぜると崩壊（協力率 0.00）、空間で生存（0.73）、assortment +0.13；誘惑 b は生存域（b≥1.7 で崩壊） | **measured** | `results/transition.json`（emajor.py と一致）。**罠**：b は生存域 |
 | 4 | **interpretive**：ダーウィン的ループ閉／複雑性の材料＝拡張ゲノム＋需要／高次個体＝空間 assortment で束ねた協力。KNOWN MATCH＝Wright-Fisher/頻度依存/遺伝子重複/Nowak-May/多層選択/Hamilton 則 | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **エージェントモデル（場でない）・固定 1D 形質（Stage1）・外部需要（Stage2）・協力安定化のみ（Stage3）＝床**。真のオープンエンド性（内生需要）と完全な大転移（群れ再生産・分業・対立抑制）は frontier。seed 掃引で頑健。生物・社会を作っていない | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
+
+## e028 — トポロジカル記憶（穴の巻き＝受信されるビット）  (STATUS: GREEN, Type B, H012+H013)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **記憶は穴（非観測領域）を囲むループの巻き＝非局所**：穴を囲まぬループ=0、全穴を囲む箱ループ=Σビット。局所パッチに宿らない | **measured** | `results/memory.json`：`nonlocal_winding`。CCW/箱ループで読む |
+| 2 | **局所擾乱で消えない（保護）**：巻きビットは全ノイズ準位で 100%、対照の動的バンプは劣化（90%） | **measured** | `protected_under_local_perturbation` ／ `dynamical_baseline_erodes`（ereceiver/edecisive と一致） |
+| 3 | **容量 > 受信機の dof**：固定 h=6 受信機（境界 dof≈48）が **M=121 保護ビットを 100% 回復**＝storage-in-loop（MC≤N）反証＝ビットは受信機でなく穴に受信される | **measured** | `capacity_exceeds_dof`（M>dof、edecisive と一致） |
+| 4 | **動的 GL リング（スペクトル ETD）**：受信巻き n＝round(Φ)（\|n−Φ\|≤0.5）、ゲージ不変（dE≈2e-6＝囲む磁束のみ読む）、位相スリップ障壁で保持 | **measured** | `results/ring.json`：`autonomous_quantized`/`gauge_invariant`（erecv_dyn2 と一致）。**罠**：スペクトル ETD |
+| 5 | **interpretive**：ビットは非観測の穴に**受信**される（貯蔵でない）。KNOWN MATCH＝Aharonov-Bohm/フラックス量子化/トポロジカル電荷。**床**：位相スリップ障壁は強制ノード proxy＝floor（GREEN 閾値でない）。1D/固定格子・容量は finite-size。「記憶/受信」は analogy——記憶を作っていない | **interpretive/analogy/床** | AUDIT §claim tier・床1–3 |
+
+## e021 — 自己受信（芯が自分の巻きを読む・駆動液滴の同一性）  (STATUS: GREEN, Type B, H014)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **外場ゼロでリングが自分の芯の巻きを読む**：リング巻き＝芯巻き（w=−2..+2）、持続電流の符号も追従＝自律的自己受信 | **measured** | `results/self_receiver.json`：`ring_reads_core_winding`（erecv_sc.py と一致） |
+| 2 | **読みは芯位置・受信半径に不変**：芯ジッタで巻き 1.00 不変、芯の外の全 R で巻き量子化＝位置でなく巻きを読む | **measured** | `reading_invariant_to_core_position` / `reading_quantized_across_radii` |
+| 3 | **駆動液滴の巻きは駆動下で保持**（+1、芯＝穴）、**近い反渦 d=7 で対消滅**（巻き→0・芯が ~1 に癒える）、**遠い反渦 d=30 は生存**（+1）＝臨界距離 | **measured** | `results/vessel_alive.json`：3ゲート（evessel4.py と一致）。署名＝芯振幅が癒える |
+| 4 | **interpretive**：自己同一性＝自分の源の窓を読むループ（外場不要）；同一性は駆動で保持され身体損傷でなく自分の反対物にのみ死ぬ。KNOWN MATCH＝フラックス量子化/渦反渦対消滅/駆動散逸液滴 | **interpretive/analogy** | AUDIT §claim tier；「自己/同一性/死」は**ゲート名に入れない** |
+| 5 | 2D GL トイ・境界巻きクランプ・臨界半径/距離は finite-size・受信機は芯の癒し halo の外に要る（床）。seed 掃引で頑健。自己を作った・殺したのではない | **（床の明示）** | AUDIT 床1–3・`robustness.json` |
+
+## e022 — 地平線の台帳（受信としてのループ・DS 分子）  (STATUS: GREEN, Type B, H009+H010)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **ギャップ（非観測領域）は観測側に一つの量子化数のみ渡す**（Aharonov-Bohm リング）：同一 loop-sum の局所位相はスペクトル不変（dE≈9e-16）、Φ は mod 1 量子で周期、局所密度は平坦 | **measured** | `results/ab_gap.json`：3ゲート（egap0.py と一致、機械精度） |
+| 2 | **地平線の台帳＝Dou-Sorkin 分子はパラメータフリーな数**：⟨n⟩ が β とともに π²/6（=1.645）プラトーへ近づき導出 T(β) を追従／β=1 で密度不変（spread<0.15、1200 seed） | **measured** | `results/ledger.json`：`ds_rises_to_pi2_plateau`/`ds_density_independent`（egap3a2.py と一致） |
+| 3 | **台帳は地平線ライン上のプロファイル w(u,0) のみ読む**：地平線上スポットと v 非依存リッジ（同じ w(u,0)）が同一台帳（spot==ridge）、flat と異なる | **measured** | `ledger_reads_horizon_profile`（elink_bump.py と一致） |
+| 4 | **interpretive**：ギャップ/地平線は一つの受信数を渡す；地平線のエントロピー台帳は地平線プロファイルのみ読む。KNOWN MATCH＝Aharonov-Bohm/Byers-Yang/DS エントロピー分子/π²/6 係数/面積則 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **3D（2+1）DS 係数は DS d>2 IR 病理で FLOOR（box 依存・GREEN に入れない、Barton 系が cured 版＝frontier）**。DS 数は Monte-Carlo で高分散（多 seed で収束）。2D のみ SOLID。「エントロピー/受信/地平線/BH」は analogy——BH を作っていない | **frontier/床** | AUDIT 床1–3・`robustness.json` |
+
+## e023 — 因果作用（順序から時空へ：時間・空間・向き）  (STATUS: GREEN, Type B, H005–H008；曲率治癒は frontier)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **純粋な因果順序から時間が創発**：rank（最長鎖）が隠れ時刻を回復（Spearman 0.99）、中間 rank の反鎖（空間スライス）が空間を充填 | **measured** | `results/order_time.json`：`rank_recovers_hidden_time` / `spatial_slice_fills_space` |
+| 2 | **順序だけから有限次元**：interval 次元（Myrheim-Meyer、diamond 2D）≈2＝有限。座標を捨て順序のみで測定 | **measured** | `interval_dimension_finite`（core/causet、e014 隣接） |
+| 3 | **向き（orientation）が時空を作る**：有向は有限次元＋時間、同じ因果対を対称化するとスモールワールド mush（~全 N に 2 hop 到達＝次元発散）＋サイクル（非巡回順序が壊れ時間なし） | **measured** | `results/directed_vs_undirected.json`：3ゲート（ball 成長 [1,316,700]、三角形 7.7M） |
+| 4 | **interpretive**：時間と有限次元空間は順序だけから読める；因果の矢が時空を作る。KNOWN MATCH＝因果集合理論(BLMS)/Myrheim-Meyer/無向ランダムグラフのスモールワールド崩壊 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **frontier（GREEN にしない・正直に保留）**：曲率治癒＝BD 作用降下(H007)／実重み経路積分は多様体を選べない(H008)——サンドボックス参照が本セッションで未検証、検証済み数値なしのため昇格しない。**床**：固定次元 sprinkling（多様体を入れて順序を生成）＝時間/次元を回復、無から多様体を導いたのでない。「時間/時空/因果の矢」は analogy | **frontier/床** | AUDIT 床1–3・`docs/working_ledger/H005_*` |
