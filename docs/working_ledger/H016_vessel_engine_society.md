@@ -17,7 +17,7 @@
 |---|---|---|
 | **e024_vessel_engine** | E-ratchet ＋ E-motor ＋ E-vessel-motor | **実装済み・GREEN** |
 | **e025_vessel_life** | E-vessel-complete ＋ E-vessel-autopoietic | **実装済み・GREEN** |
-| e026_vessel_division | E-vessel-division（トポロジー会計） | 予定 |
+| **e026_vessel_division** | E-vessel-division（トポロジー会計） | **実装済み・GREEN** |
 | e027_evolution_transition | E-evolution ＋ E-openended ＋ E-major-transition | 予定 |
 
 ## e024 の結果（GREEN・物理量ゲートのみ）

@@ -234,3 +234,12 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | 塊切除（芯無傷）→巻き +1 保持・bulk 再生（`winding_survives_body_excision`） | **measured** | `results/complete.json` |
 | 4 | **閉環（芯が自分の巻きを読み gain を gate）が二つの死を結ぶ**：反渦後、閉環なし bulk≈1.97（身体は生存）／閉環あり bulk→0.04（巻き喪失が bulk 崩壊を引く）＝**決定的対比** | **measured** | `results/autopoietic.json`：`winding_loss_collapses_bulk_iff_closed`（evessel_auto.py と一致） |
 | 5 | **interpretive**：操作的閉包＝自己と自己維持が不可分（Maturana-Varela）。KNOWN MATCH＝CGL 駆動液滴/トポロジカル電荷/オートポイエーシス。「自己/生/死/同一性」は analogy——**ゲート名に入れない**、細胞・死・自己を作っていない（床） | **interpretive/analogy/床** | AUDIT §claim tier・床1–3 |
+
+## e026 — トポロジカル分裂会計（巻きはコピーできない、創るしかない）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 一つの +1 を分けると娘は **(+1, 0)**：一つは巻いた娘、もう一つは空（内側全体は +1）。**+1 を (+1,+1)=+2 にできない** | **measured** | `results/division.json`：`split_gives_one_wound_one_empty`。CCW ループで巻きを読む |
+| 2 | 二つの巻いた娘には**新しい +1/−1 対の核生成＋−1 排出**が要る：娘 (+1,+1)、両娘ループ +2、全体（−1 込み）ループ +1＝**保存** | **measured** | `two_wound_daughters_need_shed_anti`（サンドボックス evessel_div2.py と一致） |
+| 3 | **interpretive**：再生産＝**創る≠コピー**；電荷保存ゆえ新しい巻きは必ず反対物を伴い捨てる；子の同一性はその子自身。KNOWN MATCH＝トポロジカル電荷保存/ノークローニング/対核生成 | **interpretive/analogy** | AUDIT §claim tier；「同一性/自己/再生産」は**ゲート名に入れない** |
+| 4 | 純**静的トポロジー会計**（時間発展なし・代謝コスト未払い）＝床。**動的くびれ（渦を娘へ運ぶ）は frontier**。会計は娘半径/分離/囲みループ半径に不変（`robustness.json`）。生物を再生産していない | **（床の明示）** | AUDIT 床1–3 |
