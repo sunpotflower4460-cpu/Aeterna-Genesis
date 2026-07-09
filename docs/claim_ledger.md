@@ -273,3 +273,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **駆動液滴の巻きは駆動下で保持**（+1、芯＝穴）、**近い反渦 d=7 で対消滅**（巻き→0・芯が ~1 に癒える）、**遠い反渦 d=30 は生存**（+1）＝臨界距離 | **measured** | `results/vessel_alive.json`：3ゲート（evessel4.py と一致）。署名＝芯振幅が癒える |
 | 4 | **interpretive**：自己同一性＝自分の源の窓を読むループ（外場不要）；同一性は駆動で保持され身体損傷でなく自分の反対物にのみ死ぬ。KNOWN MATCH＝フラックス量子化/渦反渦対消滅/駆動散逸液滴 | **interpretive/analogy** | AUDIT §claim tier；「自己/同一性/死」は**ゲート名に入れない** |
 | 5 | 2D GL トイ・境界巻きクランプ・臨界半径/距離は finite-size・受信機は芯の癒し halo の外に要る（床）。seed 掃引で頑健。自己を作った・殺したのではない | **（床の明示）** | AUDIT 床1–3・`robustness.json` |
+
+## e022 — 地平線の台帳（受信としてのループ・DS 分子）  (STATUS: GREEN, Type B, H009+H010)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **ギャップ（非観測領域）は観測側に一つの量子化数のみ渡す**（Aharonov-Bohm リング）：同一 loop-sum の局所位相はスペクトル不変（dE≈9e-16）、Φ は mod 1 量子で周期、局所密度は平坦 | **measured** | `results/ab_gap.json`：3ゲート（egap0.py と一致、機械精度） |
+| 2 | **地平線の台帳＝Dou-Sorkin 分子はパラメータフリーな数**：⟨n⟩ が β とともに π²/6（=1.645）プラトーへ近づき導出 T(β) を追従／β=1 で密度不変（spread<0.15、1200 seed） | **measured** | `results/ledger.json`：`ds_rises_to_pi2_plateau`/`ds_density_independent`（egap3a2.py と一致） |
+| 3 | **台帳は地平線ライン上のプロファイル w(u,0) のみ読む**：地平線上スポットと v 非依存リッジ（同じ w(u,0)）が同一台帳（spot==ridge）、flat と異なる | **measured** | `ledger_reads_horizon_profile`（elink_bump.py と一致） |
+| 4 | **interpretive**：ギャップ/地平線は一つの受信数を渡す；地平線のエントロピー台帳は地平線プロファイルのみ読む。KNOWN MATCH＝Aharonov-Bohm/Byers-Yang/DS エントロピー分子/π²/6 係数/面積則 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **3D（2+1）DS 係数は DS d>2 IR 病理で FLOOR（box 依存・GREEN に入れない、Barton 系が cured 版＝frontier）**。DS 数は Monte-Carlo で高分散（多 seed で収束）。2D のみ SOLID。「エントロピー/受信/地平線/BH」は analogy——BH を作っていない | **frontier/床** | AUDIT 床1–3・`robustness.json` |

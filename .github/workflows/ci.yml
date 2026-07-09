@@ -107,6 +107,10 @@ jobs:
         run: python experiments/e021_self_receiver/self_receiver.py --quick --no-write
       - name: "e021 vessel-alive quick (winding held under drive; dies to a near anti)"
         run: python experiments/e021_self_receiver/vessel_alive.py --quick --no-write
+      - name: "e022 ab-gap quick (AB ring passes only the enclosed flux, gauge-invariant)"
+        run: python experiments/e022_horizon_ledger/ab_gap.py --quick --no-write
+      - name: "e022 ledger quick (DS molecules: density-independent, horizon-profile only)"
+        run: python experiments/e022_horizon_ledger/ledger.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -132,3 +136,5 @@ jobs:
           test -f experiments/e028_topological_memory/results/ring.json
           test -f experiments/e021_self_receiver/results/self_receiver.json
           test -f experiments/e021_self_receiver/results/vessel_alive.json
+          test -f experiments/e022_horizon_ledger/results/ab_gap.json
+          test -f experiments/e022_horizon_ledger/results/ledger.json
