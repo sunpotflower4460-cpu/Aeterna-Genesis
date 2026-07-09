@@ -224,3 +224,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **器の心臓**：燃料勾配 Δμ が三回対称ロータを回し（閾値→上昇）、負荷に停動（load≈3）、器 **Ψ=0.93** 維持、燃料切断で **Ψ→0**（死）、方向は燃料の符号で反転（±0.56）＝5ゲート GREEN | **measured** | `results/vessel_motor.json`（evessel_motor2.py と一致）；罠＝平滑化正味回転 `max(om_s−0.05,0)` |
 | 4 | **interpretive**：器の心臓＝勾配→回転→仕事→自己維持。整流の非対称起源＝運動方向の源。KNOWN MATCH＝ブラウン・ラチェット/三相回転磁場/ATP合成酵素 | **interpretive/analogy** | AUDIT §claim tier；**「生命」はゲート名に入れない** |
 | 5 | 1D 過減衰・スカラー Ψ ODE・絶対電流/回転数/Ψ 準位は (D,T,dt,asym,feed) 依存＝床。ゲートは符号・閾値・崩壊（頑健、`robustness.json` で seed/Np/dt 掃引）。「ボルト/生/死」は analogy——ATP合成酵素を作っていない | **（床の明示）** | AUDIT.md 床1–3 |
+
+## e025 — 生きた器（三器官・二つの死 → オートポイエーシス閉環）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | 一つの 2D CGL 場に**三器官が共存**：燃料下で bulk\|ψ\|²≈1.96・巻き +1（同一性芯＋代謝モーター＋境界液滴が維持） | **measured** | `results/complete.json`：`bulk_and_winding_sustained`。ゲート名は物理量のみ |
+| 2 | **二つの崩壊は独立**：燃料切断→bulk→0.01（巻きは崩壊まで保持）；反渦注入→巻き→0 だが bulk≈1.98（高いまま）＝**代謝 ≠ 同一性** | **measured/interpretive** | `bulk_collapses_on_fuel_cut` ／ `winding_lost_while_bulk_high`（サンドボックス evessel_complete.py と一致） |
+| 3 | 塊切除（芯無傷）→巻き +1 保持・bulk 再生（`winding_survives_body_excision`） | **measured** | `results/complete.json` |
+| 4 | **閉環（芯が自分の巻きを読み gain を gate）が二つの死を結ぶ**：反渦後、閉環なし bulk≈1.97（身体は生存）／閉環あり bulk→0.04（巻き喪失が bulk 崩壊を引く）＝**決定的対比** | **measured** | `results/autopoietic.json`：`winding_loss_collapses_bulk_iff_closed`（evessel_auto.py と一致） |
+| 5 | **interpretive**：操作的閉包＝自己と自己維持が不可分（Maturana-Varela）。KNOWN MATCH＝CGL 駆動液滴/トポロジカル電荷/オートポイエーシス。「自己/生/死/同一性」は analogy——**ゲート名に入れない**、細胞・死・自己を作っていない（床） | **interpretive/analogy/床** | AUDIT §claim tier・床1–3 |

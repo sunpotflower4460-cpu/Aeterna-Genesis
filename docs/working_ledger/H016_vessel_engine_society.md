@@ -16,7 +16,7 @@
 | 実験 | 中身（H016 の測定） | 状態 |
 |---|---|---|
 | **e024_vessel_engine** | E-ratchet ＋ E-motor ＋ E-vessel-motor | **実装済み・GREEN** |
-| e025_vessel_life | E-vessel-complete ＋ E-vessel-autopoietic | 予定 |
+| **e025_vessel_life** | E-vessel-complete ＋ E-vessel-autopoietic | **実装済み・GREEN** |
 | e026_vessel_division | E-vessel-division（トポロジー会計） | 予定 |
 | e027_evolution_transition | E-evolution ＋ E-openended ＋ E-major-transition | 予定 |
 
@@ -32,6 +32,14 @@ asym=0.1（51/49）で **+0.08**（閾値なし）。罠＝静的傾きを別々
 
 **GREEN ゲート名は物理量のみ**（rectification / rotation / ripple / Psi / rate）。
 「生命・ATP合成酵素・心臓」は KNOWN MATCH / analogy として docstring・AUDIT に置き、**ゲート名に入れない**。
+
+## e025 の結果（GREEN・物理量ゲートのみ）
+**Stage1 complete**（`complete.py`）：一つの 2D CGL 場に三器官。燃料下 bulk≈1.96・巻き+1；
+燃料切断→bulk→0.01（巻きは保持）；塊切除→再生（巻き+1）；反渦→巻き→0 だが bulk≈1.98。
+**二つの崩壊は独立＝代謝≠同一性**。
+**Stage2 autopoietic**（`autopoietic.py`）：芯が自分の巻きを読み gain を gate（閉環）。
+**決定的対比**：反渦後、閉環なし bulk≈1.97（身体生存）／閉環あり bulk→0.04（巻き喪失が bulk 崩壊を引く）。
+ゲート名は物理量（bulk / winding）。「自己・生・死・同一性・オートポイエーシス」は analogy（docstring/AUDIT）。
 
 ## この弧の throughline（interpretive）
 > 51/49（わずかな非対称）がノイズを方向に整流する（ラチェット）。三（向きある循環の最小）が回転＝仕事を作る。

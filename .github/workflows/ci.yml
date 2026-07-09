@@ -87,6 +87,10 @@ jobs:
         run: python experiments/e024_vessel_engine/vessel_motor.py --quick --no-write
       - name: "e024 robustness quick (gate signs vs seed/Np/dt)"
         run: python experiments/e024_vessel_engine/robustness.py --quick --no-write
+      - name: "e025 complete quick (three organs; fuel cut collapses bulk; anti zeroes winding)"
+        run: python experiments/e025_vessel_life/complete.py --quick --no-write
+      - name: "e025 autopoietic quick (closure couples winding loss to bulk collapse)"
+        run: python experiments/e025_vessel_life/autopoietic.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -103,3 +107,5 @@ jobs:
           test -f docs/working_ledger/H016_vessel_engine_society.md
           test -f core/holonomy.py
           test -f core/causet.py
+          test -f experiments/e025_vessel_life/results/complete.json
+          test -f experiments/e025_vessel_life/results/autopoietic.json
