@@ -1,0 +1,311 @@
+{
+  "result": {
+    "params": {
+      "asym": 0.6,
+      "D": 0.2,
+      "T": 160.0,
+      "dt": 0.004,
+      "Np": 900,
+      "loads": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "fuel_cut": 80.0,
+      "seed": 0
+    },
+    "rate_fuel5": 0.5577,
+    "rate_fuel0": 0.0,
+    "load_rates": [
+      [
+        0,
+        0.5582
+      ],
+      [
+        1,
+        0.3322
+      ],
+      [
+        2,
+        0.1226
+      ],
+      [
+        3,
+        0.0197
+      ],
+      [
+        4,
+        0.0013
+      ],
+      [
+        5,
+        -0.0
+      ]
+    ],
+    "stall_load": 3,
+    "psi_fueled": 0.9253,
+    "psi_cut": 0.0,
+    "psi_cut_traj": [
+      [
+        0.0,
+        0.599
+      ],
+      [
+        3.33,
+        0.909
+      ],
+      [
+        6.66,
+        0.924
+      ],
+      [
+        10.0,
+        0.925
+      ],
+      [
+        13.33,
+        0.925
+      ],
+      [
+        16.66,
+        0.926
+      ],
+      [
+        19.99,
+        0.926
+      ],
+      [
+        23.32,
+        0.926
+      ],
+      [
+        26.66,
+        0.926
+      ],
+      [
+        29.99,
+        0.926
+      ],
+      [
+        33.32,
+        0.925
+      ],
+      [
+        36.65,
+        0.925
+      ],
+      [
+        39.98,
+        0.925
+      ],
+      [
+        43.32,
+        0.926
+      ],
+      [
+        46.65,
+        0.926
+      ],
+      [
+        49.98,
+        0.925
+      ],
+      [
+        53.31,
+        0.926
+      ],
+      [
+        56.64,
+        0.926
+      ],
+      [
+        59.98,
+        0.925
+      ],
+      [
+        63.31,
+        0.925
+      ],
+      [
+        66.64,
+        0.925
+      ],
+      [
+        69.97,
+        0.925
+      ],
+      [
+        73.3,
+        0.926
+      ],
+      [
+        76.64,
+        0.926
+      ],
+      [
+        79.97,
+        0.926
+      ],
+      [
+        83.3,
+        0.742
+      ],
+      [
+        86.63,
+        0.384
+      ],
+      [
+        89.96,
+        0.131
+      ],
+      [
+        93.3,
+        0.034
+      ],
+      [
+        96.63,
+        0.008
+      ],
+      [
+        99.96,
+        0.002
+      ],
+      [
+        103.29,
+        0.0
+      ],
+      [
+        106.62,
+        0.0
+      ],
+      [
+        109.96,
+        0.0
+      ],
+      [
+        113.29,
+        0.0
+      ],
+      [
+        116.62,
+        0.0
+      ],
+      [
+        119.95,
+        0.0
+      ],
+      [
+        123.28,
+        0.0
+      ],
+      [
+        126.62,
+        0.0
+      ],
+      [
+        129.95,
+        0.0
+      ],
+      [
+        133.28,
+        0.0
+      ],
+      [
+        136.61,
+        0.0
+      ],
+      [
+        139.94,
+        0.0
+      ],
+      [
+        143.28,
+        0.0
+      ],
+      [
+        146.61,
+        0.0
+      ],
+      [
+        149.94,
+        0.0
+      ],
+      [
+        153.27,
+        0.0
+      ],
+      [
+        156.6,
+        0.0
+      ],
+      [
+        159.94,
+        0.0
+      ]
+    ],
+    "rate_plus5": 0.5572,
+    "rate_minus5": -0.5578
+  },
+  "atlas": [
+    {
+      "experiment": "e024 vessel engine Stage 3 (vessel_motor)",
+      "tier": "measured",
+      "put_in": "3-fold ratchet rotor + fuel gradient dmu + load + a vessel Psi ODE fed by rotor product",
+      "emerged": [
+        "rotation vs fuel: rate(dmu=5)=0.5577, rate(0)=0.0 (threshold then grows)",
+        "work vs load: [(0, 0.5582), (1, 0.3322), (2, 0.1226), (3, 0.0197), (4, 0.0013), (5, -0.0)] -> stalls near load~3",
+        "vessel Psi: fueled=0.9253, fuel-cut=0.0 (self-maintenance then collapse)",
+        "reversible: rate(+5)=0.5572, rate(-5)=-0.5578"
+      ],
+      "surprises": [
+        "a scalar 'vessel' amplitude is sustained ONLY while the rotor turns; cut the fuel and it dies"
+      ],
+      "persistence": "Psi holds above 0.5 while fueled; falls below 0.2 within the run after fuel cut",
+      "measured_numbers": {
+        "rate_fuel5": 0.5577,
+        "rate_fuel0": 0.0,
+        "load_rates": [
+          [
+            0,
+            0.5582
+          ],
+          [
+            1,
+            0.3322
+          ],
+          [
+            2,
+            0.1226
+          ],
+          [
+            3,
+            0.0197
+          ],
+          [
+            4,
+            0.0013
+          ],
+          [
+            5,
+            -0.0
+          ]
+        ],
+        "stall_load": 3,
+        "psi_fueled": 0.9253,
+        "psi_cut": 0.0,
+        "rate_plus5": 0.5572,
+        "rate_minus5": -0.5578
+      },
+      "not_scripted_check": "no rotation/work/death is put in; product uses the smoothed NET rotation (max(om_s-0.05,0)); the direction is only the fuel's sign",
+      "claim_tier": "measured (five gates) ; interpretive (the vessel's heart: gradient->rotation->work->self-maintenance) ; analogy (life / ATP synthase, in KNOWN MATCH only)",
+      "floors": [
+        "overdamped rotor + scalar Psi ODE; threshold/stall/Psi levels depend on (D,T,dt,asym,feed)",
+        "the gates test SIGN/threshold/collapse (robust), not absolute magnitudes",
+        "'lives / dies' is analogy for Psi above/below a level, NOT biological life"
+      ]
+    }
+  ]
+}

@@ -214,3 +214,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | 重心は成分場の**空間**軸で（4D 軸を使わない）＝罠回避 | **measured/規律** | `_centroid` 空間軸のみ、test で確認 |
 | 4 | 三体結合：背反応が流れを自己制限し粒子保持（U=3.35,Q_H=0.97）／背反応なし=一方向は過駆動で破壊（U=9.56,Q_H=−0.21）／駆動オフで b→0.005・流れ停止＝背反応が粒子を救う負のフィードバック | **measured** | `results/three_body.json`（two-way vs one-way vs no-drive、backreaction_saves_particle=True） |
 | 5 | 規定 roll・振幅還元流（完全 NS でない）・U_c は crossover・「粒子/同一性/ホメオスタシス」は analogy/interpretive（床） | **（床の明示）** | AUDIT.md 床 |
+
+## e024 — 器のエンジン（ラチェット→モーター→器のモーター）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **非対称周期ポテンシャルは対称ノイズを整流**：整流 (v(+A)+v(−A))/2 が asym=1,A=4.5 で **+0.60**（対称 asym=0 は ~0）、A 1.5→6 で **0.02→0.96**（単調増）、asym=0.1（51/49）でも **+0.08**（閾値なし） | **measured** | `results/ratchet.json`（サンドボックス eratchet2.py と一致）；罠＝静的傾き別測平均 |
+| 2 | **回転の最小は三**：等間隔 N 位相の場は N≥3 で回転（ripple<0.05）・N≤2 は脈動；三相電流和 max\|Σ\|=0；トリプレン零相＝[3,6,9]；三相ロータ自己回転 **+19rev**（単相はぐらつき、単相+ラチェットで回る） | **measured** | `results/motor.json`（emotor.py と一致） |
+| 3 | **器の心臓**：燃料勾配 Δμ が三回対称ロータを回し（閾値→上昇）、負荷に停動（load≈3）、器 **Ψ=0.93** 維持、燃料切断で **Ψ→0**（死）、方向は燃料の符号で反転（±0.56）＝5ゲート GREEN | **measured** | `results/vessel_motor.json`（evessel_motor2.py と一致）；罠＝平滑化正味回転 `max(om_s−0.05,0)` |
+| 4 | **interpretive**：器の心臓＝勾配→回転→仕事→自己維持。整流の非対称起源＝運動方向の源。KNOWN MATCH＝ブラウン・ラチェット/三相回転磁場/ATP合成酵素 | **interpretive/analogy** | AUDIT §claim tier；**「生命」はゲート名に入れない** |
+| 5 | 1D 過減衰・スカラー Ψ ODE・絶対電流/回転数/Ψ 準位は (D,T,dt,asym,feed) 依存＝床。ゲートは符号・閾値・崩壊（頑健、`robustness.json` で seed/Np/dt 掃引）。「ボルト/生/死」は analogy——ATP合成酵素を作っていない | **（床の明示）** | AUDIT.md 床1–3 |

@@ -1,0 +1,115 @@
+{
+  "result": {
+    "params": {
+      "Ns": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "K": 3.0,
+      "w": 1.0,
+      "D": 0.05,
+      "T": 120.0,
+      "dt": 0.005,
+      "Np": 400,
+      "bias": 0.8,
+      "seed": 0
+    },
+    "ripple": {
+      "1": 0.9992,
+      "2": 0.9992,
+      "3": 0.0,
+      "4": 0.0,
+      "6": 0.0
+    },
+    "rotates": {
+      "1": false,
+      "2": false,
+      "3": true,
+      "4": true,
+      "6": true
+    },
+    "balance": {
+      "1": 1.0,
+      "2": 0.0,
+      "3": 0.0,
+      "4": 0.0
+    },
+    "triplen_zero_harmonics": [
+      3,
+      6,
+      9
+    ],
+    "triplen_offsets": {
+      "1": 120,
+      "2": 240,
+      "3": 0,
+      "4": 120,
+      "5": 240,
+      "6": 0,
+      "7": 120,
+      "8": 240,
+      "9": 0
+    },
+    "rev_three_phase": 19.008,
+    "rev_single_phase": 0.044,
+    "rev_single_plus_ratchet": 19.054,
+    "three_is_min": true,
+    "n3_balanced": true,
+    "triplen_are_369": true
+  },
+  "atlas": [
+    {
+      "experiment": "e024 vessel engine Stage 2 (motor)",
+      "tier": "measured",
+      "put_in": "N phase-offset sinusoids + an overdamped rotor torque (rotating / pulsing + ratchet bias)",
+      "emerged": [
+        "field ripple by N: {1: 0.9992, 2: 0.9992, 3: 0.0, 4: 0.0, 6: 0.0} -> rotates iff N>=3",
+        "three-phase current sum max|.| = 0.0 (balanced); triplen zero-seq harmonics = [3, 6, 9]",
+        "rotor net revolutions: three-phase 19.008, single-phase 0.044, single+ratchet 19.054"
+      ],
+      "surprises": [
+        "three is the MINIMUM equally-spaced phase set whose field rotates; a single-phase field needs the ratchet's broken symmetry to pick a direction"
+      ],
+      "persistence": "the rotating field self-starts a fixed direction; the pulsing field only wobbles",
+      "measured_numbers": {
+        "ripple": {
+          "1": 0.9992,
+          "2": 0.9992,
+          "3": 0.0,
+          "4": 0.0,
+          "6": 0.0
+        },
+        "balance": {
+          "1": 1.0,
+          "2": 0.0,
+          "3": 0.0,
+          "4": 0.0
+        },
+        "triplen_offsets": {
+          "1": 120,
+          "2": 240,
+          "3": 0,
+          "4": 120,
+          "5": 240,
+          "6": 0,
+          "7": 120,
+          "8": 240,
+          "9": 0
+        },
+        "rev_three_phase": 19.008,
+        "rev_single_phase": 0.044,
+        "rev_single_plus_ratchet": 19.054
+      },
+      "not_scripted_check": "no spin direction is put in; the rotor's net revolutions are measured",
+      "claim_tier": "measured (rotation, balance, triplen, rev) ; interpretive (rotation built from three balanced phases) ; analogy (three-phase heart / ATP synthase)",
+      "floors": [
+        "idealized sinusoids + overdamped rotor; absolute revolutions depend on (K, T, dt, D)",
+        "the ripple<0.05-iff-N>=3, zero balance, triplen offset, and rev sign/size are gated, not the magnitude",
+        "'heart / ATP synthase' is a KNOWN MATCH analogy, not a biological claim"
+      ]
+    }
+  ]
+}

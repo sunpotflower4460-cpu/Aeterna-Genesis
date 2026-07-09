@@ -79,6 +79,14 @@ jobs:
         run: python experiments/e019_coupling/three_body.py --quick --no-write
       - name: "e020 vesicle division quick (passive phase-field does NOT divide)"
         run: python experiments/e020_vesicle_division/division.py --quick --no-write
+      - name: "e024 ratchet quick (asymmetric potential rectifies symmetric noise)"
+        run: python experiments/e024_vessel_engine/ratchet.py --quick --no-write
+      - name: "e024 motor quick (three is min rotation; rotor self-spins)"
+        run: python experiments/e024_vessel_engine/motor.py --quick --no-write
+      - name: "e024 vessel motor quick (fuel -> rotation -> work -> vessel; cutoff -> death)"
+        run: python experiments/e024_vessel_engine/vessel_motor.py --quick --no-write
+      - name: "e024 robustness quick (gate signs vs seed/Np/dt)"
+        run: python experiments/e024_vessel_engine/robustness.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -88,3 +96,10 @@ jobs:
           test -f docs/working_ledger/H002_membrane_vesicle.md
           test -f docs/working_ledger/H003_three_body_coupling.md
           test -f docs/working_ledger/H004_action_entropy.md
+          test -f docs/working_ledger/H005_order_to_spacetime.md
+          test -f docs/working_ledger/H009_horizon_ledger.md
+          test -f docs/working_ledger/H012_topological_memory.md
+          test -f docs/working_ledger/H014_self_receiver.md
+          test -f docs/working_ledger/H016_vessel_engine_society.md
+          test -f core/holonomy.py
+          test -f core/causet.py
