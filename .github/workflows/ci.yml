@@ -93,6 +93,12 @@ jobs:
         run: python experiments/e025_vessel_life/autopoietic.py --quick --no-write
       - name: "e026 division quick (winding not copyable; +1 -> (+1,0); needs shed anti)"
         run: python experiments/e026_vessel_division/division.py --quick --no-write
+      - name: "e027 evolution quick (mutation adapts; freq-dep diversifies; red queen tracks)"
+        run: python experiments/e027_evolution_transition/evolution.py --quick --no-write
+      - name: "e027 openended quick (expandable genome + demand raises complexity)"
+        run: python experiments/e027_evolution_transition/openended.py --quick --no-write
+      - name: "e027 transition quick (spatial cooperation survives; well-mixed collapses)"
+        run: python experiments/e027_evolution_transition/transition.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -112,3 +118,5 @@ jobs:
           test -f experiments/e025_vessel_life/results/complete.json
           test -f experiments/e025_vessel_life/results/autopoietic.json
           test -f experiments/e026_vessel_division/results/division.json
+          test -f experiments/e027_evolution_transition/results/evolution.json
+          test -f experiments/e027_evolution_transition/results/transition.json

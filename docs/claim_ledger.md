@@ -243,3 +243,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | 二つの巻いた娘には**新しい +1/−1 対の核生成＋−1 排出**が要る：娘 (+1,+1)、両娘ループ +2、全体（−1 込み）ループ +1＝**保存** | **measured** | `two_wound_daughters_need_shed_anti`（サンドボックス evessel_div2.py と一致） |
 | 3 | **interpretive**：再生産＝**創る≠コピー**；電荷保存ゆえ新しい巻きは必ず反対物を伴い捨てる；子の同一性はその子自身。KNOWN MATCH＝トポロジカル電荷保存/ノークローニング/対核生成 | **interpretive/analogy** | AUDIT §claim tier；「同一性/自己/再生産」は**ゲート名に入れない** |
 | 4 | 純**静的トポロジー会計**（時間発展なし・代謝コスト未払い）＝床。**動的くびれ（渦を娘へ運ぶ）は frontier**。会計は娘半径/分離/囲みループ半径に不変（`robustness.json`）。生物を再生産していない | **（床の明示）** | AUDIT 床1–3 |
+
+## e027 — 進化と大転移（ダーウィン的ループ・複雑性の上昇・協力の高次個体）  (STATUS: GREEN, Type B, H016)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **ダーウィン的ループが突然変異で閉じる**：適応（変異 ON→平均形質 1.51／OFF→0.00）、負の頻度依存で多様化（std→7.7、~20帯）、移動最適をレッドクイーン追跡（遅れ 0.07） | **measured** | `results/evolution.json`（eevolution.py と一致）。ゲート＝測定統計量 |
+| 2 | **複雑性は拡張ゲノム＋需要で上昇**：単純環境 頭打ち（ゲノム長 1.4）、豊か 6.0、需要増 6.5（解ける課題 0.9→9.4）＝材料＝遺伝子重複＋需要 | **measured** | `results/openended.json`（eopenended.py と一致） |
+| 3 | **協力＝高次個体は空間構造で生存**：よく混ぜると崩壊（協力率 0.00）、空間で生存（0.73）、assortment +0.13；誘惑 b は生存域（b≥1.7 で崩壊） | **measured** | `results/transition.json`（emajor.py と一致）。**罠**：b は生存域 |
+| 4 | **interpretive**：ダーウィン的ループ閉／複雑性の材料＝拡張ゲノム＋需要／高次個体＝空間 assortment で束ねた協力。KNOWN MATCH＝Wright-Fisher/頻度依存/遺伝子重複/Nowak-May/多層選択/Hamilton 則 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **エージェントモデル（場でない）・固定 1D 形質（Stage1）・外部需要（Stage2）・協力安定化のみ（Stage3）＝床**。真のオープンエンド性（内生需要）と完全な大転移（群れ再生産・分業・対立抑制）は frontier。seed 掃引で頑健。生物・社会を作っていない | **（床の明示）** | AUDIT 床1–4・`robustness.json` |

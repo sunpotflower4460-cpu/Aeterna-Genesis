@@ -1,6 +1,6 @@
 # H016 — 生きた器のエンジンと社会（ボルト→モーター→完全な器→閉環→再生産→進化→大転移）
 
-- **状態**: in progress（**e024 実装済み・GREEN**；e025–e027 実装予定）
+- **状態**: **resolved (promoted)**（e024–e027 実装済み・全 GREEN。器の弧が通った）
 - **起票者**: Claude（サンドボックス実験・監査）→ Claude Code（repo 実装）/ 2026-07-09
 - **狙う Type**: B（床つき measured・頑健な創発観測）＋ established の統合
 - **依拠する既知事実**: H005–H015（受信・自己・器・創世）。二つのヒント＝逆ネジボルト（振動で締まる＝ラチェット）／
@@ -18,7 +18,7 @@
 | **e024_vessel_engine** | E-ratchet ＋ E-motor ＋ E-vessel-motor | **実装済み・GREEN** |
 | **e025_vessel_life** | E-vessel-complete ＋ E-vessel-autopoietic | **実装済み・GREEN** |
 | **e026_vessel_division** | E-vessel-division（トポロジー会計） | **実装済み・GREEN** |
-| e027_evolution_transition | E-evolution ＋ E-openended ＋ E-major-transition | 予定 |
+| **e027_evolution_transition** | E-evolution ＋ E-openended ＋ E-major-transition | **実装済み・GREEN** |
 
 ## e024 の結果（GREEN・物理量ゲートのみ）
 **Stage1 ratchet**（`ratchet.py`）：非対称周期ポテンシャルが対称ノイズを整流。
@@ -53,9 +53,16 @@ asym=0.1（51/49）で **+0.08**（閾値なし）。罠＝静的傾きを別々
 - オープンエンド進化（複雑性の内生的無限上昇）と完全な大転移（群れの再生産・分業）は frontier。
 - 絶対電流／回転数／Ψ 準位は (D,T,dt,asym,feed) 依存＝床。ゲートは符号・閾値・崩壊（頑健）を見る。
 
+## e026/e027 の結果（GREEN・物理量ゲートのみ）
+**e026 division**：同一性＝巻き（保存）。(A) 一つの +1→娘 (+1,0)（コピー不能）；
+(B) 新 +1/−1 核生成＋−1 排出→娘 (+1,+1)、全体 +1（保存）。**再生産＝創る≠コピー**（静的会計、動的くびれは床）。
+**e027 evolution/openended/transition**：ダーウィン的ループが変異で閉じる（適応 1.51・多様化 std7.7・追跡 0.07）；
+複雑性は拡張ゲノム＋需要で上昇（1.4/6.0/6.5）；協力＝高次個体は空間で生存（混合 0.00／空間 0.73／assortment +0.13、b≥1.7 崩壊）。
+エージェントモデル＝床、内生需要・完全な大転移は frontier。ゲート名は測定量（形質・ゲノム長・協力率・assortment）。
+
 ## verdict
-- [x] **e024 promoted**（器の心臓＝三段 GREEN、`claim_ledger` e024 §）。
-- [ ] e025–e027 実装予定（同じ H016 の弧）。
+- [x] **promoted**（器の弧 e024–e027 全 GREEN、`claim_ledger` e024–e027 §）。
+- 受信弧（e020–e023）は Phase2–4 として並行実装予定（別採番で e020 衝突を解決）。
 
 ## メモ
 「ATP合成酵素を作った」でなく「非対称がノイズを整流し、三相が回転を作り、勾配がそれを駆動して
