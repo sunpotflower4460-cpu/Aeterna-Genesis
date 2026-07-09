@@ -41,7 +41,7 @@ e016 basin は有界・絶対 L* は解像度依存。e018 は analogy（protoce
 | [H004](H004_action_entropy.md) | 作用＝エントロピー（Jacobson/Verlinde；第三の役割が熱力学から出るか） | D | **proposed** | 未実装（仮説） |
 | [H005–H008](H005_order_to_spacetime.md) | 順序から時空へ（因果作用が多様体を選ぶ） | B | **proposed** | e023_causal_action（予定） |
 | [H009–H010](H009_horizon_ledger.md) | 地平線の台帳（受信ループ・DS 面積則、2D SOLID/3D floor） | B | **proposed** | e022_horizon_ledger（予定） |
-| [H012–H013](H012_topological_memory.md) | トポロジカル記憶（巻き保護された受信・記憶） | B | **proposed** | e020_topological_memory（予定、番号衝突要確認） |
+| [H012–H013](H012_topological_memory.md) | トポロジカル記憶（巻き保護された受信・記憶） | B | **promoted**（e028 GREEN） | e028_topological_memory（e020 衝突を再採番で解決） |
 | [H014](H014_self_receiver.md) | 自己受信（芯が自分の巻きを読む・生きた器の同一性） | B | **proposed** | e021_self_receiver（予定） |
 | [H016](H016_vessel_engine_society.md) | 生きた器のエンジンと社会（ボルト→モーター→…→大転移） | B | **in progress**（e024 GREEN） | e024–e027 |
 

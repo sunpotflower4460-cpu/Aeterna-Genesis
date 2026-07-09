@@ -253,3 +253,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **協力＝高次個体は空間構造で生存**：よく混ぜると崩壊（協力率 0.00）、空間で生存（0.73）、assortment +0.13；誘惑 b は生存域（b≥1.7 で崩壊） | **measured** | `results/transition.json`（emajor.py と一致）。**罠**：b は生存域 |
 | 4 | **interpretive**：ダーウィン的ループ閉／複雑性の材料＝拡張ゲノム＋需要／高次個体＝空間 assortment で束ねた協力。KNOWN MATCH＝Wright-Fisher/頻度依存/遺伝子重複/Nowak-May/多層選択/Hamilton 則 | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **エージェントモデル（場でない）・固定 1D 形質（Stage1）・外部需要（Stage2）・協力安定化のみ（Stage3）＝床**。真のオープンエンド性（内生需要）と完全な大転移（群れ再生産・分業・対立抑制）は frontier。seed 掃引で頑健。生物・社会を作っていない | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
+
+## e028 — トポロジカル記憶（穴の巻き＝受信されるビット）  (STATUS: GREEN, Type B, H012+H013)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **記憶は穴（非観測領域）を囲むループの巻き＝非局所**：穴を囲まぬループ=0、全穴を囲む箱ループ=Σビット。局所パッチに宿らない | **measured** | `results/memory.json`：`nonlocal_winding`。CCW/箱ループで読む |
+| 2 | **局所擾乱で消えない（保護）**：巻きビットは全ノイズ準位で 100%、対照の動的バンプは劣化（90%） | **measured** | `protected_under_local_perturbation` ／ `dynamical_baseline_erodes`（ereceiver/edecisive と一致） |
+| 3 | **容量 > 受信機の dof**：固定 h=6 受信機（境界 dof≈48）が **M=121 保護ビットを 100% 回復**＝storage-in-loop（MC≤N）反証＝ビットは受信機でなく穴に受信される | **measured** | `capacity_exceeds_dof`（M>dof、edecisive と一致） |
+| 4 | **動的 GL リング（スペクトル ETD）**：受信巻き n＝round(Φ)（\|n−Φ\|≤0.5）、ゲージ不変（dE≈2e-6＝囲む磁束のみ読む）、位相スリップ障壁で保持 | **measured** | `results/ring.json`：`autonomous_quantized`/`gauge_invariant`（erecv_dyn2 と一致）。**罠**：スペクトル ETD |
+| 5 | **interpretive**：ビットは非観測の穴に**受信**される（貯蔵でない）。KNOWN MATCH＝Aharonov-Bohm/フラックス量子化/トポロジカル電荷。**床**：位相スリップ障壁は強制ノード proxy＝floor（GREEN 閾値でない）。1D/固定格子・容量は finite-size。「記憶/受信」は analogy——記憶を作っていない | **interpretive/analogy/床** | AUDIT §claim tier・床1–3 |

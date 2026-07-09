@@ -1,0 +1,203 @@
+{
+  "result": {
+    "params": {
+      "N": 240,
+      "read_h": 6,
+      "ks": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        11
+      ],
+      "noises": [
+        0.0,
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      "noise_k": 7,
+      "seed": 0
+    },
+    "dof": 48,
+    "capacity": [
+      {
+        "M": 4,
+        "spacing": 80,
+        "acc": 1.0,
+        "exceeds_dof": false
+      },
+      {
+        "M": 9,
+        "spacing": 60,
+        "acc": 1.0,
+        "exceeds_dof": false
+      },
+      {
+        "M": 16,
+        "spacing": 48,
+        "acc": 1.0,
+        "exceeds_dof": false
+      },
+      {
+        "M": 25,
+        "spacing": 40,
+        "acc": 1.0,
+        "exceeds_dof": false
+      },
+      {
+        "M": 49,
+        "spacing": 30,
+        "acc": 1.0,
+        "exceeds_dof": true
+      },
+      {
+        "M": 81,
+        "spacing": 24,
+        "acc": 1.0,
+        "exceeds_dof": true
+      },
+      {
+        "M": 121,
+        "spacing": 20,
+        "acc": 1.0,
+        "exceeds_dof": true
+      }
+    ],
+    "protection": [
+      {
+        "noise": 0.0,
+        "topo_ok": 1.0,
+        "dyn_ok": 1.0
+      },
+      {
+        "noise": 0.5,
+        "topo_ok": 1.0,
+        "dyn_ok": 1.0
+      },
+      {
+        "noise": 1.0,
+        "topo_ok": 1.0,
+        "dyn_ok": 1.0
+      },
+      {
+        "noise": 2.0,
+        "topo_ok": 1.0,
+        "dyn_ok": 0.939
+      },
+      {
+        "noise": 4.0,
+        "topo_ok": 1.0,
+        "dyn_ok": 0.857
+      }
+    ],
+    "between_holes_winding": 0.0,
+    "big_loop_winding": -1,
+    "sum_bits": -1,
+    "max_perfect_capacity": 121,
+    "topo_all_perfect": true,
+    "dyn_erodes": true
+  },
+  "atlas": [
+    {
+      "experiment": "e028 topological memory Stage 1 (static)",
+      "tier": "measured",
+      "put_in": "phase fields with M point holes (each a +/-1 winding) + CCW reading loops",
+      "emerged": [
+        "capacity (fixed h=6 reader, dof=48): [(4, 1.0), (9, 1.0), (16, 1.0), (25, 1.0), (49, 1.0), (81, 1.0), (121, 1.0)]",
+        "protection vs noise (topo_ok, dyn_ok): [(0.0, 1.0, 1.0), (0.5, 1.0, 1.0), (1.0, 1.0, 1.0), (2.0, 1.0, 0.939), (4.0, 1.0, 0.857)]",
+        "non-locality: between-holes winding=0.0, big loop=-1 = sum bits=-1"
+      ],
+      "surprises": [
+        "a fixed ~48-dof reader recovers up to 121 bits at 100%: capacity >> reader dof"
+      ],
+      "persistence": "the winding bits are exactly invariant under smooth local perturbation",
+      "measured_numbers": {
+        "capacity": [
+          {
+            "M": 4,
+            "spacing": 80,
+            "acc": 1.0,
+            "exceeds_dof": false
+          },
+          {
+            "M": 9,
+            "spacing": 60,
+            "acc": 1.0,
+            "exceeds_dof": false
+          },
+          {
+            "M": 16,
+            "spacing": 48,
+            "acc": 1.0,
+            "exceeds_dof": false
+          },
+          {
+            "M": 25,
+            "spacing": 40,
+            "acc": 1.0,
+            "exceeds_dof": false
+          },
+          {
+            "M": 49,
+            "spacing": 30,
+            "acc": 1.0,
+            "exceeds_dof": true
+          },
+          {
+            "M": 81,
+            "spacing": 24,
+            "acc": 1.0,
+            "exceeds_dof": true
+          },
+          {
+            "M": 121,
+            "spacing": 20,
+            "acc": 1.0,
+            "exceeds_dof": true
+          }
+        ],
+        "protection": [
+          {
+            "noise": 0.0,
+            "topo_ok": 1.0,
+            "dyn_ok": 1.0
+          },
+          {
+            "noise": 0.5,
+            "topo_ok": 1.0,
+            "dyn_ok": 1.0
+          },
+          {
+            "noise": 1.0,
+            "topo_ok": 1.0,
+            "dyn_ok": 1.0
+          },
+          {
+            "noise": 2.0,
+            "topo_ok": 1.0,
+            "dyn_ok": 0.939
+          },
+          {
+            "noise": 4.0,
+            "topo_ok": 1.0,
+            "dyn_ok": 0.857
+          }
+        ],
+        "between_holes_winding": 0.0,
+        "big_loop_winding": -1,
+        "sum_bits": -1
+      },
+      "not_scripted_check": "bits are read as windings on CCW loops; non-locality/protection/capacity are measured",
+      "claim_tier": "measured (non-locality, protection, capacity>dof) ; interpretive (the bit is RECEIVED in the hole, not stored in the reader) ; analogy (memory, KNOWN MATCH only)",
+      "floors": [
+        "static coarse-grained field on a fixed lattice; the capacity number is finite-size",
+        "the gated facts are the winding invariance and the capacity>dof scaling, not absolute counts",
+        "'memory / received / source-window' is analogy for a winding invariant; no memory is created"
+      ]
+    }
+  ]
+}

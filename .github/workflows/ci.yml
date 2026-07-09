@@ -99,6 +99,10 @@ jobs:
         run: python experiments/e027_evolution_transition/openended.py --quick --no-write
       - name: "e027 transition quick (spatial cooperation survives; well-mixed collapses)"
         run: python experiments/e027_evolution_transition/transition.py --quick --no-write
+      - name: "e028 memory quick (non-local winding, protected, capacity>dof)"
+        run: python experiments/e028_topological_memory/memory.py --quick --no-write
+      - name: "e028 ring quick (spectral-ETD GL ring: n~round(Phi), gauge-invariant)"
+        run: python experiments/e028_topological_memory/ring.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -120,3 +124,5 @@ jobs:
           test -f experiments/e026_vessel_division/results/division.json
           test -f experiments/e027_evolution_transition/results/evolution.json
           test -f experiments/e027_evolution_transition/results/transition.json
+          test -f experiments/e028_topological_memory/results/memory.json
+          test -f experiments/e028_topological_memory/results/ring.json
