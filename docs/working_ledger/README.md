@@ -39,7 +39,7 @@ e016 basin は有界・絶対 L* は解像度依存。e018 は analogy（protoce
 | [H002](H002_membrane_vesicle.md) | 膜小胞化（phase-field で境界をもつ小胞） | B | **promoted** | e018 Stage2 |
 | [H003](H003_three_body_coupling.md) | 三体フル結合（自己組織流＋粒子＋器を一場に双方向結合） | B/C | **promoted** | e019 Stage2 |
 | [H004](H004_action_entropy.md) | 作用＝エントロピー（Jacobson/Verlinde；第三の役割が熱力学から出るか） | D | **proposed** | 未実装（仮説） |
-| [H005–H008](H005_order_to_spacetime.md) | 順序から時空へ（因果作用が多様体を選ぶ） | B | **proposed** | e023_causal_action（予定） |
+| [H005–H008](H005_order_to_spacetime.md) | 順序から時空へ（因果作用が多様体を選ぶ） | B | **部分 promoted**（e023 順序→時空 GREEN／曲率治癒は frontier） | e023_causal_action |
 | [H009–H010](H009_horizon_ledger.md) | 地平線の台帳（受信ループ・DS 面積則、2D SOLID/3D floor） | B | **promoted**（e022 GREEN） | e022_horizon_ledger |
 | [H012–H013](H012_topological_memory.md) | トポロジカル記憶（巻き保護された受信・記憶） | B | **promoted**（e028 GREEN） | e028_topological_memory（e020 衝突を再採番で解決） |
 | [H014](H014_self_receiver.md) | 自己受信（芯が自分の巻きを読む・生きた器の同一性） | B | **promoted**（e021 GREEN） | e021_self_receiver |

@@ -111,6 +111,10 @@ jobs:
         run: python experiments/e022_horizon_ledger/ab_gap.py --quick --no-write
       - name: "e022 ledger quick (DS molecules: density-independent, horizon-profile only)"
         run: python experiments/e022_horizon_ledger/ledger.py --quick --no-write
+      - name: "e023 order-time quick (rank recovers time; finite interval dimension)"
+        run: python experiments/e023_causal_action/order_time.py --quick --no-write
+      - name: "e023 directed-vs-undirected quick (orientation makes spacetime; undirected small-world)"
+        run: python experiments/e023_causal_action/directed_vs_undirected.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -138,3 +142,5 @@ jobs:
           test -f experiments/e021_self_receiver/results/vessel_alive.json
           test -f experiments/e022_horizon_ledger/results/ab_gap.json
           test -f experiments/e022_horizon_ledger/results/ledger.json
+          test -f experiments/e023_causal_action/results/order_time.json
+          test -f experiments/e023_causal_action/results/directed_vs_undirected.json

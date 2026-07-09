@@ -283,3 +283,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **台帳は地平線ライン上のプロファイル w(u,0) のみ読む**：地平線上スポットと v 非依存リッジ（同じ w(u,0)）が同一台帳（spot==ridge）、flat と異なる | **measured** | `ledger_reads_horizon_profile`（elink_bump.py と一致） |
 | 4 | **interpretive**：ギャップ/地平線は一つの受信数を渡す；地平線のエントロピー台帳は地平線プロファイルのみ読む。KNOWN MATCH＝Aharonov-Bohm/Byers-Yang/DS エントロピー分子/π²/6 係数/面積則 | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **3D（2+1）DS 係数は DS d>2 IR 病理で FLOOR（box 依存・GREEN に入れない、Barton 系が cured 版＝frontier）**。DS 数は Monte-Carlo で高分散（多 seed で収束）。2D のみ SOLID。「エントロピー/受信/地平線/BH」は analogy——BH を作っていない | **frontier/床** | AUDIT 床1–3・`robustness.json` |
+
+## e023 — 因果作用（順序から時空へ：時間・空間・向き）  (STATUS: GREEN, Type B, H005–H008；曲率治癒は frontier)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **純粋な因果順序から時間が創発**：rank（最長鎖）が隠れ時刻を回復（Spearman 0.99）、中間 rank の反鎖（空間スライス）が空間を充填 | **measured** | `results/order_time.json`：`rank_recovers_hidden_time` / `spatial_slice_fills_space` |
+| 2 | **順序だけから有限次元**：interval 次元（Myrheim-Meyer、diamond 2D）≈2＝有限。座標を捨て順序のみで測定 | **measured** | `interval_dimension_finite`（core/causet、e014 隣接） |
+| 3 | **向き（orientation）が時空を作る**：有向は有限次元＋時間、同じ因果対を対称化するとスモールワールド mush（~全 N に 2 hop 到達＝次元発散）＋サイクル（非巡回順序が壊れ時間なし） | **measured** | `results/directed_vs_undirected.json`：3ゲート（ball 成長 [1,316,700]、三角形 7.7M） |
+| 4 | **interpretive**：時間と有限次元空間は順序だけから読める；因果の矢が時空を作る。KNOWN MATCH＝因果集合理論(BLMS)/Myrheim-Meyer/無向ランダムグラフのスモールワールド崩壊 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **frontier（GREEN にしない・正直に保留）**：曲率治癒＝BD 作用降下(H007)／実重み経路積分は多様体を選べない(H008)——サンドボックス参照が本セッションで未検証、検証済み数値なしのため昇格しない。**床**：固定次元 sprinkling（多様体を入れて順序を生成）＝時間/次元を回復、無から多様体を導いたのでない。「時間/時空/因果の矢」は analogy | **frontier/床** | AUDIT 床1–3・`docs/working_ledger/H005_*` |
