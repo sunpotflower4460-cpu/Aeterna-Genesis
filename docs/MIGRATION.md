@@ -27,8 +27,8 @@
 |---|---|---|
 | **PR1** | 思想と用語を固定（本 docs 群＋AGENTS.md＋LAW 多軸案内＋旧地図保存＋legacy 明示） | **完了 (#21)** |
 | **PR2** | Schema と Registry（`schemas/`・`genesis/registry/`＋CI-B 検証） | **完了 (#22)** |
-| **PR3** | 既存 e001–e045 へ `experiment.yaml` metadata（41件・schema 検証・8監査整合） | **本 PR** |
-| PR4 | 共通 Runner と Manifest（manifest/checkpoint/summary/checksum/no-write 正実装） | 予定 |
+| **PR3** | 既存 e001–e045 へ `experiment.yaml` metadata（41件・schema 検証・8監査整合） | **完了 (#23)** |
+| **PR4** | 共通 Runner と Manifest（gl2d/gl3d 参照モデル・manifest/summary/checksum/emergence・no-write 正実装） | **本 PR** |
 | PR5 | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・局所 3D・低解像度全体 3D） | 予定 |
 | PR6 | 最初の正式 3D Genesis Room（G001 or G002） | 予定 |
 | PR7 | AI Genesis Lab 最小版（許可パラメータのみ探索・既存 Room 非破壊） | 予定 |
@@ -103,3 +103,27 @@ sidebranch_analogy=e004/e009/e027。
 
 **まだやらない**：room/run/emergence の実体は正式 Room（PR6）から。experiment.yaml は metadata であり、
 既存の `AUDIT.md`/YAML ヘッダ/TRUST_MAP を置換しない（並存する集約ビュー）。
+
+---
+
+## PR4 で「何を残し・何を追加し・何を変更しなかったか」
+
+**残した（変更なし）**：`experiments/`・既存 `tools/`・全 docs 本文・`schemas/`・`genesis/registry/`。既存物理コード不変更。
+
+**追加した**：
+- `genesis/models/ginzburg_landau.py`：次元非依存の複素 TDGL クエンチ参照モデル（2D/3D 同一コード）。
+  一様に近い無秩序＋微小ノイズから出発し、対称性破れ（Level 1）と位相巻き欠陥（2D 点渦/3D 渦線, Level 2）が
+  **入れずに**創発（Kibble-Zurek）。**欠陥・パターン・波長は一切 seeded していない**。
+- `genesis/diagnostics/measures.py`：測定量で Level 判定（秩序変数の成長・構造因子ピーク・巻き欠陥数。
+  欠陥は**無秩序ノイズを除外**して秩序バルクのみ計数）。
+- `genesis/runners/runner.py`：共通 Runner。genesis 条件を t=0 から**途中介入なし**で発展させ、
+  `manifest.json`/`summary.json`/`emergence.json`/`checksum.json` を `runs/seed-XXXX/` に生成。
+  **`--no-write` は完全計算して書き込まないだけ**（no-write が実計算することを CI で検証）。
+  **field checksum で再現性**（同 genesis+seed+mode → 同一 checksum）。mode は物理でなく格子/step のみ変える。
+- `tests/test_genesis_runner.py`：2D で Level≥1・再現 checksum・run/emergence が schema 準拠・3D smoke。
+
+**軽微な追加のみ**：`.github/workflows/ci.yml` に Runner の 2D/3D smoke（--no-write が実計算する検証）。
+
+**まだやらない**：正式 3D Room 登録（`rooms/`）は **PR6**。次元移行監査は **PR5**。
+PR4 の Runner は「2D は探索・3D 正式」の枠を実装するが、**正式 Room の到達 Level 判定は full-3d から**
+（DIMENSION_POLICY.md）。`_demo_run` は成果物でなく Runner の動作確認用（コミットしない）。
