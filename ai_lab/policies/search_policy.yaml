@@ -1,0 +1,29 @@
+# ai_lab/policies/search_policy.yaml — AI Genesis Lab の探索方針（機械可読）
+policy_version: 1
+parent_room: room-g001-a
+# Lab が変更してよい始原側 knob（値は固定グリッド＝決定的）。範囲は genesis/registry/param_ranges.yaml で強制。
+knobs:
+  - name: noise_amplitude
+    mutation_type: initial_state_change
+    grid: [1.0e-4, 3.0e-4, 1.0e-3, 3.0e-3, 1.0e-2]
+  - name: quench_duration
+    mutation_type: parameter_change
+    grid: [4.0, 6.0, 8.0, 12.0, 16.0]
+one_change_per_proposal: true
+screen_mode: 2d-screen        # 2D は探索（候補発見）。full-3D 昇格は別段階
+self_promotion_allowed: false # Lab は 2d_screened まで。full-3D 判定・Room 登録は昇格コマンド/人
+no_touch:
+  - rooms/official/
+  - genesis/registry/          # 成功判定/保存則/監査閾値
+  - success_criteria_code
+promotion_stages:
+  - IDEA
+  - 2D_SCREENED
+  - 2D_REPRODUCIBLE
+  - DIMENSION_AUDIT_PASSED
+  - LOCAL_3D_PASSED
+  - COARSE_GLOBAL_3D_PASSED
+  - FULL_3D_REPRODUCIBLE
+  - PHYSICS_AUDIT_PASSED
+  - TEMPLATE_CANDIDATE
+  - OFFICIAL_ROOM
