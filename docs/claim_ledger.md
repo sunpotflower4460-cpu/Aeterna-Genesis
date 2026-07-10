@@ -362,3 +362,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **発生点＝解析 Hopf 点**：測定発生点 K_c=0.706 が Jacobian trace=0 の解析 Hopf 点 K_c=0.7 と一致（誤差 0.006）。宿主・寄生者は位相ずれ振動（追いかけっこ） | **measured** | `oscillation_onset_matches_analytic_hopf`（誤差<0.1） |
 | 4 | **interpretive**：内生的持続変化＝Hopf 分岐で生まれるリミットサイクル；静的系は頭打ちに緩和。KNOWN MATCH＝Rosenzweig-MacArthur/富栄養化のパラドクス（Hopf 不安定化）/捕食者被食者リミットサイクル | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **床**：「Red Queen/共進化/軍拡競争」は analogy。**同じ数学≠同じもの**——共進化＝Hopf とは主張せず、同じ事実がエージェントなしの場から出る、に限定。場が与えるのは内生**振動**で、文字通りの無限複雑性上昇ではない（frontier）。(A) 忠実＝個体群則は手入力。m・H0 で Hopf 点が動いても発生点が追従（0.7→0.62→0.82） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
+
+## e036 — 適応を「場」から（エージェントなし・レプリケーター突然変異方程式）  (STATUS: GREEN, Type A/faithful, H019)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **突然変異選択平衡＝閉形式**：replicator-mutator（Crow-Kimura）場で平衡分散が σ²=√(2D/k) と一致（D=0.05/0.1/0.2 で誤差<0.001） | **measured** | `results/adaptation.json`：`mutation_selection_balance_matches_theory` |
+| 2 | **適応**：ピーク外初期分布（平均 3.0）が適応度ピーク（平均 0）へ登る＝場の適応（選択＝勾配上への移流） | **measured** | `population_climbs_to_fitness_peak` |
+| 3 | **移動最適点の lag load**：共動座標系で追跡遅れ L=v/(kσ²)、速度に線形（lag/v 一定=2.236、誤差<0.003）＝e027 の追跡ラグを閉形式で | **measured** | `moving_optimum_lag_linear_and_matches_load` |
+| 4 | **interpretive**：選択＝適応度勾配上への移流、突然変異＝拡散；適応・突然変異選択平衡・lag load は場の現象。KNOWN MATCH＝replicator-mutator/Crow-Kimura/平衡分散 √(2D/k)/lag load v/(kσ²) | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **床**：「進化/適応/ニッチ」は analogy。**同じ数学≠同じもの**——進化＝RM 方程式とは主張せず、同じ事実がエージェントなしの場から出る、に限定。主張は小速度の線形 lag 領域のみ（臨界速度超で発散＝個体群喪失）。(A) 忠実＝場の法則は手入力。k・D で分散・遅れが理論曲線上（頑健） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |

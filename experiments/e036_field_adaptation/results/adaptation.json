@@ -1,0 +1,131 @@
+{
+  "result": {
+    "params": {
+      "L": 12.0,
+      "N": 481,
+      "k": 1.0,
+      "cfl": 0.3,
+      "Ds": [
+        0.05,
+        0.1,
+        0.2
+      ],
+      "D_track": 0.1,
+      "vs": [
+        0.05,
+        0.1,
+        0.15
+      ],
+      "x0": 3.0,
+      "steps": 30000
+    },
+    "dt": 0.000938,
+    "var_rows": [
+      {
+        "D": 0.05,
+        "variance": 0.3162,
+        "theory": 0.3162
+      },
+      {
+        "D": 0.1,
+        "variance": 0.4472,
+        "theory": 0.4472
+      },
+      {
+        "D": 0.2,
+        "variance": 0.6324,
+        "theory": 0.6325
+      }
+    ],
+    "lag_rows": [
+      {
+        "v": 0.05,
+        "lag": 0.1118,
+        "theory": 0.1118,
+        "lag_over_v": 2.2359
+      },
+      {
+        "v": 0.1,
+        "lag": 0.2236,
+        "theory": 0.2236,
+        "lag_over_v": 2.2359
+      },
+      {
+        "v": 0.15,
+        "lag": 0.3354,
+        "theory": 0.3354,
+        "lag_over_v": 2.236
+      }
+    ],
+    "variance_err": 0.0001,
+    "adapt_start": 2.999,
+    "adapt_end": 0.0,
+    "lag_linear_spread": 0.0,
+    "lag_theory_err": 0.0
+  },
+  "atlas": [
+    {
+      "experiment": "e036 field adaptation (replicator-mutator / Crow-Kimura, no agents)",
+      "tier": "measured",
+      "put_in": "replicator-mutator field dp/dt = D d2p/dx2 + (f-<f>)p for a population density over a trait axis; mutation D; a quadratic (or moving) fitness peak. NO agents / sampling",
+      "emerged": [
+        "mutation-selection balance variance vs theory sqrt(2D/k): [(0.05, 0.3162, 0.3162), (0.1, 0.4472, 0.4472), (0.2, 0.6324, 0.6325)]",
+        "adaptation: off-peak mean 2.999 -> 0.0 (climbs to the peak)",
+        "moving-optimum lag vs speed (theory v/(k sigma^2)): [(0.05, 0.1118, 0.1118), (0.1, 0.2236, 0.2236), (0.15, 0.3354, 0.3354)]"
+      ],
+      "surprises": [
+        "the equilibrium spread and the tracking lag come out at their Crow-Kimura closed forms with no variance and no lag put in; the lag is linear in the speed (the lag load)"
+      ],
+      "persistence": "the balance distribution is the stationary state; the moving-frame lag is steady",
+      "measured_numbers": {
+        "var_rows": [
+          {
+            "D": 0.05,
+            "variance": 0.3162,
+            "theory": 0.3162
+          },
+          {
+            "D": 0.1,
+            "variance": 0.4472,
+            "theory": 0.4472
+          },
+          {
+            "D": 0.2,
+            "variance": 0.6324,
+            "theory": 0.6325
+          }
+        ],
+        "lag_rows": [
+          {
+            "v": 0.05,
+            "lag": 0.1118,
+            "theory": 0.1118,
+            "lag_over_v": 2.2359
+          },
+          {
+            "v": 0.1,
+            "lag": 0.2236,
+            "theory": 0.2236,
+            "lag_over_v": 2.2359
+          },
+          {
+            "v": 0.15,
+            "lag": 0.3354,
+            "theory": 0.3354,
+            "lag_over_v": 2.236
+          }
+        ],
+        "variance_err": 0.0001,
+        "lag_theory_err": 0.0
+      },
+      "not_scripted_check": "only D and the fitness landscape are set; the variance, the climb and the lag are measured from the density field",
+      "claim_tier": "measured (balance variance = sqrt(2D/k); adaptation; lag linear in speed = v/(k sigma^2)) ; interpretive (selection = advection up the gradient, mutation = diffusion) ; analogy (evolution / adaptation)",
+      "floors": [
+        "'evolution / adaptation / niche' is analogy for a density field on a trait axis",
+        "\u540c\u3058\u6570\u5b66\u2260\u540c\u3058\u3082\u306e: this does NOT claim evolution IS the replicator-mutator PDE; the SAME facts (adaptation, mutation-selection balance, lag load) emerge in a field with no agents",
+        "only the small-speed LINEAR lag regime is claimed; above a critical speed the lag runs away (the population is lost)",
+        "(A) faithful: the field law is put in by hand, not derived"
+      ]
+    }
+  ]
+}
