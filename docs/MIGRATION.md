@@ -28,8 +28,8 @@
 | **PR1** | 思想と用語を固定（本 docs 群＋AGENTS.md＋LAW 多軸案内＋旧地図保存＋legacy 明示） | **完了 (#21)** |
 | **PR2** | Schema と Registry（`schemas/`・`genesis/registry/`＋CI-B 検証） | **完了 (#22)** |
 | **PR3** | 既存 e001–e045 へ `experiment.yaml` metadata（41件・schema 検証・8監査整合） | **完了 (#23)** |
-| **PR4** | 共通 Runner と Manifest（gl2d/gl3d 参照モデル・manifest/summary/checksum/emergence・no-write 正実装） | **本 PR** |
-| PR5 | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・局所 3D・低解像度全体 3D） | 予定 |
+| **PR4** | 共通 Runner と Manifest（gl2d/gl3d 参照モデル・manifest/summary/checksum/emergence・no-write 正実装） | **完了 (#24)** |
+| **PR5** | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・渦線安定性・リスク報告） | **本 PR** |
 | PR6 | 最初の正式 3D Genesis Room（G001 or G002） | 予定 |
 | PR7 | AI Genesis Lab 最小版（許可パラメータのみ探索・既存 Room 非破壊） | 予定 |
 | PR8 | Observatory App（catalog 駆動・Physics Integrity Panel） | 予定 |
@@ -127,3 +127,25 @@ sidebranch_analogy=e004/e009/e027。
 **まだやらない**：正式 3D Room 登録（`rooms/`）は **PR6**。次元移行監査は **PR5**。
 PR4 の Runner は「2D は探索・3D 正式」の枠を実装するが、**正式 Room の到達 Level 判定は full-3d から**
 （DIMENSION_POLICY.md）。`_demo_run` は成果物でなく Runner の動作確認用（コミットしない）。
+
+---
+
+## PR5 で「何を残し・何を追加し・何を変更しなかったか」
+
+**残した（変更なし）**：`experiments/`・`genesis/models/`・`genesis/runners/`・`genesis/diagnostics/`・
+`schemas/`・全 docs 本文。既存物理コード不変更。
+
+**追加した**：
+- `genesis/dimension/harness.py`：**次元移行監査**（DIMENSION_POLICY.md §2）。2D 成功を 3D へ自動外挿しない。
+  - **薄い 3D スラブ試験**：2D で秩序化した渦場（残存渦あり・edge≥48）を nz 層の薄いスラブに積み、**面外摂動**を
+    加えて 3D 発展させ、渦が**面外へ逃げるか（z 分散成長）／渦線が切れるか／新モードが育つか／構造が保たれるか**を測定。
+  - a-priori 次元リスク（2D 点渦→3D 渦線＝**トポロジー余次元変化 high**・reconnection high）＋線形代理（面外モード成長率）。
+  - `dimension-transfer.yaml`（`schemas/dimension-transfer.schema.json` 準拠）を出力する**リスク報告**（合否ゲートでない）。
+- `tests/test_dimension_harness.py`：報告が schema 準拠・スラブ試験が非退化（残存渦>0）・面外成長を数で測る・リスク報告である。
+
+**測定結果（ローカル）**：edge=64 スラブで 8 本の渦線・面外摂動は減衰（z 分散成長 0・log-rate<0）→ この規模では
+渦線は面外に**安定**（escaped=False）。ただし a-priori 余次元変化リスクは残るので **full-3D（PR6）が必須**という規律的結論。
+
+**軽微な追加のみ**：`.github/workflows/ci.yml` に harness smoke。`.gitignore` に `_demo_transfer.yaml`。
+
+**まだやらない**：正式 3D Room（`rooms/room-g001-a/`）と full-3d 実行は **PR6**。
