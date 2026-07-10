@@ -24,6 +24,17 @@ def test_field_division_of_labor_emerges():
     assert r["binodal_err"] < 0.05        # coexistence matches the Flory-Huggins binodal
 
 
+def test_cahn_hilliard_conserves_mass():
+    """Cahn-Hilliard is a CONSERVED gradient flow: the clip to (0,1) must not leak mass. The field starts
+    at uniform 0.5 + zero-mean noise, so the conserved mean must stay at ~0.5 through demixing -- else the
+    clip (not the physics) would be moving the field (LAW.md audit 7: code must not silently drive it)."""
+    FD = _load("field_division.py")
+    p = dict(FD.DEFAULT)
+    p.update({"L": 96, "steps": 3000})
+    phi = FD._evolve(3.0, p, 0)                     # chi=3.0: strong demixing regime
+    assert abs(float(phi.mean()) - 0.5) < 1e-3     # conserved mean stays at its 0.5 start
+
+
 def test_flory_huggins_critical_point_and_binodal():
     """The critical point is chi_c=2 (theory binodal is a point below it, split above) -- never put in."""
     FD = _load("field_division.py")

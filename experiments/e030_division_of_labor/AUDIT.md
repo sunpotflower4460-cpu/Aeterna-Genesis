@@ -8,11 +8,17 @@
 ## 測定（`--quick`／`results/division_of_labor.json`）
 | リターン凸性 a | specialist 率（x<0.2 or >0.8） | 両役を持つ群（純 germ かつ 純 soma） |
 |---|---|---|
-| 0.5（凹） | 0.29 | 0.87 |
-| 1.0（線形） | 0.42 | 0.91 |
-| 2.0（凸） | 0.72 | 1.00 |
-| 3.0 | 0.82 | 1.00 |
-| 4.0（強凸） | **0.85** | **1.00** |
+| 0.5（凹） | 0.255 | 0.818 |
+| 1.0（線形） | 0.453 | 0.99 |
+| 2.0（凸） | 0.761 | 1.00 |
+| 3.0 | 0.805 | 1.00 |
+| 4.0（強凸） | **0.853** | **1.00** |
+
+> **注（第1層で訂正）**：旧表は前バージョンの run 値（0.29/0.87…）で `results/division_of_labor.json`
+> と不一致だった。上表は committed JSON に一致させた。
+> **注（第8監査で要対応）**：`両役 both_roles` は **線形(a=1.0)で 0.99・凹(a=0.5)でも 0.818** と高く、
+> 凸性を**区別できていない**（弱いゲート）。**判別力は specialist 率**（0.255→0.853 で単調）にある。
+> `germ_soma_differentiation` ゲートは §2/§4 で「凸 vs 凹の CONTRAST」へ強化する（`target_encoded` 予防）。
 
 GREEN gates: `convex_returns_drive_specialization`（凸で specialist>0.6）／
 `specialization_rises_with_convexity`（凸 > 1.5×凹・単調）／`germ_soma_differentiation`（凸で両役群>0.9）。
