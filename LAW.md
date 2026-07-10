@@ -12,6 +12,14 @@
 > 符号化していないか）は、§0〜§5 と同格に全モジュールへ適用される。
 > 詳細は §6〜§9。旧文中の「GREEN」は「E か V」と読み替える。
 
+> **【2026-07 三層移行 — 位置づけ】** LAW.md は**削除しない**。本掟（役割 E/V/S/N/F/Q・7＋8監査・
+> 三大原則）は、三層移行後の共通規則 [`AGENTS.md`](AGENTS.md) と誠実さの憲法
+> [`docs/PHYSICS_INTEGRITY.md`](docs/PHYSICS_INTEGRITY.md) に引き継がれ、両者と**同一の規律**である。
+> 加えて移行では次の軸が導入される：創発深度（[`docs/EMERGENCE_LEVELS.md`](docs/EMERGENCE_LEVELS.md)
+> Level 0–8・**測定量で判定**）、次元検証状態（[`docs/DIMENSION_POLICY.md`](docs/DIMENSION_POLICY.md)
+> 2D 探索/3D 正式/次元移行監査）、AI の変更可能範囲（[`docs/AI_EXPERIMENT_POLICY.md`](docs/AI_EXPERIMENT_POLICY.md)）。
+> 現在地は [`docs/GENESIS_MAP.md`](docs/GENESIS_MAP.md)、移行記録は [`docs/MIGRATION.md`](docs/MIGRATION.md)。
+
 ---
 
 ## 0. 「本物の物理」の二つの意味（混ぜると擬似に転ぶ）

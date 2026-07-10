@@ -2,6 +2,13 @@
 
 **本物の場から、最小条件で、構造が勝手に出るのを、掟つきで一個ずつ積む。**
 
+> **【三層移行 進行中】** 個別実験の研究庫から、**0 から立ち上がる 3D 物理・Genesis Room・
+> AI 始原条件探索**の三層研究環境へ段階移行している。
+> **AI が最初に読むもの → [`AGENTS.md`](AGENTS.md)**。現在地は [`docs/GENESIS_MAP.md`](docs/GENESIS_MAP.md)、
+> 誠実さの憲法は [`docs/PHYSICS_INTEGRITY.md`](docs/PHYSICS_INTEGRITY.md)、創発の深さは
+> [`docs/EMERGENCE_LEVELS.md`](docs/EMERGENCE_LEVELS.md)、移行記録は [`docs/MIGRATION.md`](docs/MIGRATION.md)。
+> 既存 `experiments/e001–e045` は**削除せず** Evidence Library（物理辞書）として保存する。
+
 宇宙が始まるとき、おそらく最小条件しかない。その条件から、意図せずに——石が
 水に作る波紋、雨が降り雷が鳴るのと同じように——構造が "勝手に" 生まれた。
 それを、この場で、本物としてやる。観測されている要素（幾何・物質・渦・トーラス・
