@@ -46,6 +46,7 @@ e016 basin は有界・絶対 L* は解像度依存。e018 は analogy（protoce
 | [H016](H016_vessel_engine_society.md) | 生きた器のエンジンと社会（ボルト→モーター→…→大転移） | B | **promoted**（e024–e027 GREEN） | e024–e027 |
 | [H017](H017_openended_frontier.md) | 深いフロンティア（内生的需要／完全な大転移） | D（frontier） | **frontier（機構実証・GREEN）** | e029_openended_frontier |
 | [H018](H018_frontier_solid.md) | フロンティアを SOLID に（分業／離散作用の平滑化／3D DS 病理） | D（frontier） | **frontier（機構・障害を GREEN で定量化）** | e030_division_of_labor・e031_causal_action_smearing・e032_ds_horizon_3d |
+| [H019](H019_agents_to_fields.md) | エージェントを場へ（規則に従う個体を本物の場の方程式の創発に） | A（faithful） | **進行中（e033 GREEN；e034/e035 予定）** | e033_field_division_of_labor（e034/e035 予定） |
 
 **H011 / H015 について（正直に）**：H011（ブラックホール＝源の窓の渦）・創世（E-genesis）は
 サンドボックス extras_context に属し **interpretive/analogy が濃い**（「愛/至福/BH/源」）。repo 化するなら

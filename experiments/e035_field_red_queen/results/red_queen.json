@@ -1,0 +1,149 @@
+{
+  "result": {
+    "params": {
+      "r": 1.0,
+      "c": 1.0,
+      "H0": 0.3,
+      "e": 1.0,
+      "m": 0.4,
+      "Ks": [
+        0.45,
+        0.55,
+        0.65,
+        0.75,
+        0.85,
+        1.0,
+        1.15
+      ],
+      "K_plateau": 0.55,
+      "K_cycle": 1.15,
+      "T": 8000,
+      "dt": 0.005,
+      "burn": 0.5,
+      "amp_threshold": 0.1
+    },
+    "rows": [
+      {
+        "K": 0.45,
+        "trace": -0.222,
+        "amplitude": 0.005,
+        "hp_corr": -0.15
+      },
+      {
+        "K": 0.55,
+        "trace": -0.109,
+        "amplitude": 0.02,
+        "hp_corr": -0.02
+      },
+      {
+        "K": 0.65,
+        "trace": -0.031,
+        "amplitude": 0.053,
+        "hp_corr": -0.07
+      },
+      {
+        "K": 0.75,
+        "trace": 0.027,
+        "amplitude": 0.137,
+        "hp_corr": -0.05
+      },
+      {
+        "K": 0.85,
+        "trace": 0.071,
+        "amplitude": 0.276,
+        "hp_corr": -0.02
+      },
+      {
+        "K": 1.0,
+        "trace": 0.12,
+        "amplitude": 0.518,
+        "hp_corr": -0.04
+      },
+      {
+        "K": 1.15,
+        "trace": 0.157,
+        "amplitude": 0.757,
+        "hp_corr": -0.08
+      }
+    ],
+    "analytic_hopf": 0.7,
+    "measured_onset": 0.706,
+    "onset_err": 0.006,
+    "amp_plateau": 0.02,
+    "amp_cycle": 0.757,
+    "corr_cycle": -0.08
+  },
+  "atlas": [
+    {
+      "experiment": "e035 field Red Queen (predator-prey Hopf bifurcation, no agents)",
+      "tier": "measured",
+      "put_in": "Rosenzweig-MacArthur predator-prey field (Holling type II) for continuous host/parasite densities; one enrichment K. NO agents / genomes / selection sampling",
+      "emerged": [
+        "oscillation amplitude vs enrichment K (plateau below Hopf, limit cycle above): [(0.45, 0.005, -0.222), (0.55, 0.02, -0.109), (0.65, 0.053, -0.031), (0.75, 0.137, 0.027), (0.85, 0.276, 0.071), (1.0, 0.518, 0.12), (1.15, 0.757, 0.157)]",
+        "measured onset K_c=0.706 vs analytic Hopf (Jacobian trace=0) K_c=0.7",
+        "host-parasite zero-lag correlation ~0 at K=cycle (quarter-period chase): -0.08"
+      ],
+      "surprises": [
+        "a single enrichment number K turns a static plateau into a self-sustained oscillation at exactly the Hopf point -- endogenous perpetual change with no external forcing, threshold never put in"
+      ],
+      "persistence": "above K_c the limit cycle is the attractor -- the oscillation persists forever with no drive",
+      "measured_numbers": {
+        "rows": [
+          {
+            "K": 0.45,
+            "trace": -0.222,
+            "amplitude": 0.005,
+            "hp_corr": -0.15
+          },
+          {
+            "K": 0.55,
+            "trace": -0.109,
+            "amplitude": 0.02,
+            "hp_corr": -0.02
+          },
+          {
+            "K": 0.65,
+            "trace": -0.031,
+            "amplitude": 0.053,
+            "hp_corr": -0.07
+          },
+          {
+            "K": 0.75,
+            "trace": 0.027,
+            "amplitude": 0.137,
+            "hp_corr": -0.05
+          },
+          {
+            "K": 0.85,
+            "trace": 0.071,
+            "amplitude": 0.276,
+            "hp_corr": -0.02
+          },
+          {
+            "K": 1.0,
+            "trace": 0.12,
+            "amplitude": 0.518,
+            "hp_corr": -0.04
+          },
+          {
+            "K": 1.15,
+            "trace": 0.157,
+            "amplitude": 0.757,
+            "hp_corr": -0.08
+          }
+        ],
+        "analytic_hopf": 0.7,
+        "measured_onset": 0.706,
+        "onset_err": 0.006
+      },
+      "not_scripted_check": "only K and the population law are set; the plateau, the limit cycle, the Hopf onset and the phase lag are measured",
+      "claim_tier": "measured (plateau below K_c; sustained oscillation above; onset matches analytic Hopf) ; interpretive (endogenous perpetual change = a limit cycle born at a Hopf bifurcation) ; analogy (the Red Queen / coevolution / arms race)",
+      "floors": [
+        "'Red Queen / coevolution / arms race' is analogy for a predator-prey limit cycle",
+        "\u540c\u3058\u6570\u5b66\u2260\u540c\u3058\u3082\u306e: this does NOT claim coevolution IS a Hopf bifurcation; the SAME fact (static plateaus / interacting sustains endogenous change) emerges in a field with no agents",
+        "the field gives endogenous OSCILLATION, NOT literal unbounded complexity growth (frontier)",
+        "(A) faithful: the population law is put in by hand, not derived"
+      ]
+    }
+  ]
+}

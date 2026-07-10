@@ -1,0 +1,122 @@
+{
+  "result": {
+    "params": {
+      "as": [
+        0.3,
+        0.4,
+        0.45,
+        0.5,
+        0.55,
+        0.6
+      ],
+      "D": 1.0,
+      "N": 400,
+      "dx": 1.0,
+      "dt": 0.05,
+      "steps": 3000,
+      "a_below": 0.4,
+      "a_above": 0.6,
+      "wm_seed": 0.2,
+      "wm_dt": 0.01,
+      "wm_steps": 5000
+    },
+    "rows": [
+      {
+        "a": 0.3,
+        "front_velocity": 0.273,
+        "nagumo_speed": 0.283
+      },
+      {
+        "a": 0.4,
+        "front_velocity": 0.14,
+        "nagumo_speed": 0.141
+      },
+      {
+        "a": 0.45,
+        "front_velocity": 0.067,
+        "nagumo_speed": 0.071
+      },
+      {
+        "a": 0.5,
+        "front_velocity": 0.0,
+        "nagumo_speed": 0.0
+      },
+      {
+        "a": 0.55,
+        "front_velocity": -0.067,
+        "nagumo_speed": -0.071
+      },
+      {
+        "a": 0.6,
+        "front_velocity": -0.14,
+        "nagumo_speed": -0.141
+      }
+    ],
+    "maxwell_point": 0.5,
+    "nagumo_speed_err": 0.01,
+    "wellmixed_below_final": 0.0,
+    "front_below_maxwell": 0.14,
+    "front_above_maxwell": -0.14
+  },
+  "atlas": [
+    {
+      "experiment": "e034 field cooperation front (bistable reaction-diffusion, no agents)",
+      "tier": "measured",
+      "put_in": "bistable Nagumo/Schlogl reaction-diffusion u_t = D lap u + u(1-u)(u-a) for a cooperator density field; one reaction parameter a; well-mixed = same reaction with the Laplacian removed. NO agents / imitation / payoff bookkeeping",
+      "emerged": [
+        "front velocity vs temptation a (with the Nagumo speed): [(0.3, 0.273, 0.283), (0.4, 0.14, 0.141), (0.45, 0.067, 0.071), (0.5, 0.0, 0.0), (0.55, -0.067, -0.071), (0.6, -0.14, -0.141)]",
+        "emergent Maxwell point (zero-velocity threshold, never put in): a_c=0.5",
+        "well-mixed sub-threshold seed -> 0.0 (defect)"
+      ],
+      "surprises": [
+        "a single reaction parameter a gives a traveling front whose direction flips at exactly a=1/2 (the Maxwell point) with a speed matching Nagumo theory -- the threshold is never put in"
+      ],
+      "persistence": "the invading state fills the domain; the stall at a=1/2 is the equal-area (Maxwell) balance",
+      "measured_numbers": {
+        "rows": [
+          {
+            "a": 0.3,
+            "front_velocity": 0.273,
+            "nagumo_speed": 0.283
+          },
+          {
+            "a": 0.4,
+            "front_velocity": 0.14,
+            "nagumo_speed": 0.141
+          },
+          {
+            "a": 0.45,
+            "front_velocity": 0.067,
+            "nagumo_speed": 0.071
+          },
+          {
+            "a": 0.5,
+            "front_velocity": 0.0,
+            "nagumo_speed": 0.0
+          },
+          {
+            "a": 0.55,
+            "front_velocity": -0.067,
+            "nagumo_speed": -0.071
+          },
+          {
+            "a": 0.6,
+            "front_velocity": -0.14,
+            "nagumo_speed": -0.141
+          }
+        ],
+        "maxwell_point": 0.5,
+        "nagumo_speed_err": 0.01,
+        "wellmixed_below_final": 0.0
+      },
+      "not_scripted_check": "only a and the RD law are set; the collapse, the invasion, the threshold a=1/2 and the front speed are measured from the field",
+      "claim_tier": "measured (well-mixed decay; front velocity; sign change at Maxwell; Nagumo-speed match) ; interpretive (spatial structure lets the favored state invade; survival is conditional on the temptation) ; analogy (cooperation / major transition)",
+      "floors": [
+        "'cooperation / defection / major transition' is analogy for the two bistable field states",
+        "\u540c\u3058\u6570\u5b66\u2260\u540c\u3058\u3082\u306e: this does NOT claim the evolution of cooperation IS a bistable front; the SAME three facts (collapse / invasion / threshold) emerge in a field with no agents",
+        "this is cooperation STABILITY as a front, NOT a full major transition (group reproduction / division of labor are elsewhere)",
+        "(A) faithful: the reaction-diffusion law is put in by hand, not derived"
+      ]
+    }
+  ]
+}

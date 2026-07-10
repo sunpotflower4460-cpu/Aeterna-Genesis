@@ -331,3 +331,34 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | **係数は密度依存でドリフト**：係数（数/w）が密度とともに増大（99→200→400、比 4.02×／密度比 9.0）＝2D の純数（~1 で不変）と違い普遍性を失う＝d>2 IR 病理 | **measured（frontier）** | `coefficient_density_dependent`（係数比>1.3） |
 | 3 | **interpretive**：DS エントロピー数は 3D でも面積スケーリングを保つが係数の普遍性を失う（d>2 IR 病理）＝2D（e022）が SOLID・3D が床、の理由を定量化。KNOWN MATCH＝Dou-Sorkin 分子/面積則/d>2 病理 | **interpretive/analogy** | AUDIT §claim tier |
 | 4 | **FRONTIER（床）**：d>2 病理を**定量化**したが**治療していない**——Barton 系 cured 分子は未再現。3D 係数は普遍数でない、3D は床・2D は SOLID。「エントロピー/地平線/BH」は analogy——measured は分子数の統計量のみ。seed batch・box 高さで頑健 | **frontier/床** | AUDIT 床1–3・`robustness.json` |
+
+## e033 — 分業を「場」から（エージェントなし・Cahn-Hilliard スピノーダル分解）  (STATUS: GREEN, Type A/faithful, H019)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **臨界点 χ_c=2 が創発**：Flory-Huggins 相互作用 χ を上げると秩序変数（場の std）が χ_c=2 で跳ぶ＝対称混合の Flory-Huggins 臨界値と一致（入れていない）。χ<2 は一様（generalist）、χ>2 は二相 | **measured** | `results/field_division.json`：`homogeneous_below_critical`（χ=1.5 で秩序変数<0.05） |
+| 2 | **二相の共存＝場ネイティブな分業**：χ>2 でスピノーダル分解、φ_low（体細胞 proxy）と φ_high（生殖系列 proxy）が共存（both_phases=1.0、専門家率 0.75–0.89） | **measured** | `phase_separation_above_critical`（χ=3.0 で両相共存＆専門家率>0.6） |
+| 3 | **共存組成が理論 binodal と定量一致**：χ=2.5 で 0.150/0.850（理論 0.145/0.855）、χ=3.0 で 0.070/0.930（理論 0.071/0.929）＝Flory-Huggins binodal とほぼ完全一致 | **measured** | `coexistence_matches_binodal`（相組成が binodal と 0.05 以内） |
+| 4 | **入れていない随伴現象**：ドメイン波長（長さスケールを入れていない）が出る＝スピノーダル分解の特徴 | **measured** | `domain_wavelength`（χ>2 で ~11–18 grid） |
+| 5 | **interpretive**：分業（専門化＋役割共存）は**場ネイティブな実現**＝スピノーダル分解を持つ。e030 のエージェントは一つの基層、場はもう一つ。KNOWN MATCH＝Cahn-Hilliard(1958)/Flory-Huggins(1942) 臨界点・binodal・粗大化 | **interpretive/analogy** | AUDIT §claim tier |
+| 6 | **床**：「生殖体細胞/分業/多細胞性」は analogy。**同じ数学≠同じもの**——進化＝相分離とは主張せず、同じ定性事実がエージェントなしの場から出る、に限定。大 χ の near-pure binodal は grid/clip 分解能の床。(A) 忠実＝CH 法則は手入力。seed batch・κ で頑健 | **（床の明示）** | AUDIT 床1–4・`robustness.json`（κ=0.5/1/2 で binodal_err≤0.025） |
+
+## e034 — 空間協力を「場」から（エージェントなし・双安定反応拡散フロント）  (STATUS: GREEN, Type A/faithful, H019)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **平均場（混合）は協力崩壊**：∇²を除いた双安定反応の ODE で、閾値下シード（u₀=0.2<a=0.40）が u→0（裏切り）に崩壊 | **measured** | `results/cooperation_front.json`：`wellmixed_seed_decays_below_threshold` |
+| 2 | **空間フロントが侵入し、閾値で反転**：協力ドメインが a<1/2 でフロント侵入（c>0＝クラスタで生存）、a>1/2 で裏切りが侵入（c<0）＝誘惑が閾値超で構造でも失敗 | **measured** | `spatial_front_invades_below_maxwell_reverses_above` |
+| 3 | **創発閾値 a_c=1/2（Maxwell 点）＋ Nagumo 速度一致**：フロント速度が a=0.5 で符号反転（入れていない）、速度が √(D/2)(1−2a) と定量一致（誤差<0.01） | **measured** | `front_speed_matches_nagumo_and_maxwell_at_half` |
+| 4 | **interpretive**：空間構造が「有利な状態」の侵入を許し、生存は誘惑に依存（速度の符号反転）。e027 のエージェント三事実（混合崩壊/空間生存/条件閾値）が場から出る。KNOWN MATCH＝Nagumo/Schlögl 双安定フロント/Maxwell 点 a=1/2/速度 √(D/2)(1−2a) | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **床**：「協力/裏切り/大転移」は analogy。**同じ数学≠同じもの**——協力の進化＝双安定フロントとは主張せず、同じ三事実がエージェントなしの場から出る、に限定。協力の**安定性**であって完全な大転移でない。(A) 忠実＝RD 法則は手入力。D=0.5/1/2 で頑健（Maxwell 点 0.5 不変） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
+
+## e035 — Red Queen を「場」から（エージェントなし・捕食者被食者 Hopf 分岐）  (STATUS: GREEN, Type A/faithful, H019)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **臨界富栄養化 K_c 未満で頭打ち**：Rosenzweig-MacArthur 場で K<K_c なら共存固定点が安定＝摂動が減衰し静的に頭打ち（e029 の静的寄生者プラトーの類似） | **measured** | `results/red_queen.json`：`enrichment_below_hopf_plateaus`（振幅<0.05） |
+| 2 | **K_c 超で内生持続振動**：K>K_c で安定リミットサイクルが誕生（Hopf 分岐）＝外部強制なしの内生持続振動（場の Red Queen、振幅 0.14→0.76） | **measured** | `enrichment_above_hopf_sustains_oscillation`（振幅>0.3） |
+| 3 | **発生点＝解析 Hopf 点**：測定発生点 K_c=0.706 が Jacobian trace=0 の解析 Hopf 点 K_c=0.7 と一致（誤差 0.006）。宿主・寄生者は位相ずれ振動（追いかけっこ） | **measured** | `oscillation_onset_matches_analytic_hopf`（誤差<0.1） |
+| 4 | **interpretive**：内生的持続変化＝Hopf 分岐で生まれるリミットサイクル；静的系は頭打ちに緩和。KNOWN MATCH＝Rosenzweig-MacArthur/富栄養化のパラドクス（Hopf 不安定化）/捕食者被食者リミットサイクル | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **床**：「Red Queen/共進化/軍拡競争」は analogy。**同じ数学≠同じもの**——共進化＝Hopf とは主張せず、同じ事実がエージェントなしの場から出る、に限定。場が与えるのは内生**振動**で、文字通りの無限複雑性上昇ではない（frontier）。(A) 忠実＝個体群則は手入力。m・H0 で Hopf 点が動いても発生点が追従（0.7→0.62→0.82） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |

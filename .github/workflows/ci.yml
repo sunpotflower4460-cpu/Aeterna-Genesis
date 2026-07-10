@@ -125,6 +125,12 @@ jobs:
         run: python experiments/e031_causal_action_smearing/smearing.py --quick --no-write
       - name: "e032 3D DS horizon quick [frontier] (2+1 area law holds; coefficient loses universality)"
         run: python experiments/e032_ds_horizon_3d/horizon_3d.py --quick --no-write
+      - name: "e033 field division-of-labor quick (Cahn-Hilliard spinodal decomposition, no agents)"
+        run: python experiments/e033_field_division_of_labor/field_division.py --quick --no-write
+      - name: "e034 field cooperation-front quick (bistable reaction-diffusion Nagumo front, no agents)"
+        run: python experiments/e034_field_cooperation_front/cooperation_front.py --quick --no-write
+      - name: "e035 field Red Queen quick (predator-prey Hopf bifurcation, no agents)"
+        run: python experiments/e035_field_red_queen/red_queen.py --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -159,5 +165,9 @@ jobs:
           test -f experiments/e030_division_of_labor/results/division_of_labor.json
           test -f experiments/e031_causal_action_smearing/results/smearing.json
           test -f experiments/e032_ds_horizon_3d/results/horizon_3d.json
+          test -f experiments/e033_field_division_of_labor/results/field_division.json
+          test -f experiments/e034_field_cooperation_front/results/cooperation_front.json
+          test -f experiments/e035_field_red_queen/results/red_queen.json
           test -f docs/working_ledger/H017_openended_frontier.md
           test -f docs/working_ledger/H018_frontier_solid.md
+          test -f docs/working_ledger/H019_agents_to_fields.md
