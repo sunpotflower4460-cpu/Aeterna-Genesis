@@ -143,6 +143,12 @@ jobs:
         run: python experiments/e040_field_rps_cooperation/rps_cooperation.py --quick --no-write
       - name: "e041 field bottleneck quick (neck geometry -> clonality, role S)"
         run: python experiments/e041_field_bottleneck/bottleneck.py --quick --no-write
+      - name: "e043 field universe quick (division+inheritance+mutation+selection+adaptation+differentiation, role E)"
+        run: python experiments/e043_field_universe/universe.py --quick --no-write
+      - name: "e044 field unification quick (cooperation joins via a local public good + control, role E)"
+        run: python experiments/e044_field_unification/unification.py --quick --no-write
+      - name: "e045 field endogenous quick (NEGATIVE: endogenous niche construction does not beat neutral, role N)"
+        run: python experiments/e045_field_endogenous/endogenous.py --quick --no-write
       - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
         run: python tools/audit_roles.py
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
@@ -189,6 +195,9 @@ jobs:
           test -f experiments/e039_field_differentiation/results/differentiation.json
           test -f experiments/e040_field_rps_cooperation/results/rps_cooperation.json
           test -f experiments/e041_field_bottleneck/results/bottleneck.json
+          test -f experiments/e043_field_universe/results/universe.json
+          test -f experiments/e044_field_unification/results/unification.json
+          test -f experiments/e045_field_endogenous/results/endogenous.json
           test -f docs/TRUST_MAP.md
           test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md
