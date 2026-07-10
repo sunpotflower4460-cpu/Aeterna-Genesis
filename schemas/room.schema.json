@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/room.schema.json",
+  "title": "Genesis Room (room.yaml)",
+  "description": "一つの始原条件から t=0 中断なく育った宇宙の到達状態。パラレル宇宙として上書き禁止・分岐保存（ROOM_MODEL.md）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["room_id", "title", "parent_room", "official", "dimension_status", "emergence", "physics_status"],
+  "properties": {
+    "room_id": {"type": "string", "pattern": "^room-[a-z0-9-]+$"},
+    "title": {"type": "string", "minLength": 1},
+    "parent_room": {"type": ["string", "null"], "description": "親 Room id。派生時は必ず子 Room を作り親を変更しない"},
+    "favorite": {"type": "boolean"},
+    "official": {"type": "boolean"},
+    "official_template": {"type": "boolean"},
+    "genesis_model": {"type": "string", "description": "genesis/registry/models.yaml の model id"},
+    "emergence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reached_level"],
+      "properties": {
+        "reached_level": {"type": "integer", "minimum": 0, "maximum": 8},
+        "candidate_level": {"type": "integer", "minimum": 0, "maximum": 8}
+      }
+    },
+    "dimension_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exploration_2d", "full_3d"],
+      "properties": {
+        "exploration_2d": {"$ref": "#/$defs/status"},
+        "local_3d": {"$ref": "#/$defs/status"},
+        "coarse_global_3d": {"$ref": "#/$defs/status"},
+        "full_3d": {"$ref": "#/$defs/status"}
+      }
+    },
+    "physics_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conservation", "convergence", "reproducibility", "integrity_audit"],
+      "properties": {
+        "conservation": {"$ref": "#/$defs/status"},
+        "convergence": {"$ref": "#/$defs/status"},
+        "reproducibility": {"$ref": "#/$defs/status"},
+        "integrity_audit": {"$ref": "#/$defs/status"}
+      }
+    },
+    "status": {"type": "string", "enum": ["idea", "candidate", "official", "rejected_in_3d"]}
+  },
+  "$defs": {
+    "status": {"type": "string", "enum": ["passed", "failed", "pending", "not_started", "not_applicable"]}
+  }
+}

@@ -1,0 +1,29 @@
+# genesis/registry/param_ranges.yaml
+# AI が変更してよい始原側パラメータの既定探索範囲（AI_EXPERIMENT_POLICY.md §2）。
+# AI は search_space で許可された範囲だけを変更する。成功判定/保存則/監査閾値/完成形は変更不可。
+registry_version: 1
+kind: param_ranges
+search_space:
+  initial_state:
+    noise_amplitude: {min: 1.0e-5, max: 1.0e-2, scale: log}
+    correlation_length: {min: 1.0, max: 12.0, scale: linear}
+  physical_parameters:
+    diffusion_ratio: {min: 0.1, max: 10.0, scale: log}
+    drive_strength: {min: 0.0, max: 5.0, scale: linear}
+  boundary_conditions:
+    allowed: [periodic, no_flux, physical_wall]
+mutation_types:
+  - initial_state_change
+  - parameter_change
+  - boundary_change
+  - law_variant   # 法則変更は別扱い・より厳しい監査（物理的由来/対称性/次元整合/保存則/熱力学/既知極限/非符号化）
+forbidden_to_change:
+  - success_criteria_code
+  - conservation_computation
+  - audit_thresholds
+  - past_results
+  - official_rooms
+  - parent_rooms
+  - raw_data
+  - completed_shape
+  - runtime_intervention

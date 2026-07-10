@@ -25,8 +25,8 @@
 
 | PR | 内容 | 状態 |
 |---|---|---|
-| **PR1** | 思想と用語を固定（本 docs 群＋AGENTS.md＋LAW 多軸案内＋旧地図保存＋legacy 明示） | **本 PR** |
-| PR2 | Schema と Registry（`schemas/`・`genesis/registry/`） | 予定 |
+| **PR1** | 思想と用語を固定（本 docs 群＋AGENTS.md＋LAW 多軸案内＋旧地図保存＋legacy 明示） | **完了 (#21)** |
+| **PR2** | Schema と Registry（`schemas/`・`genesis/registry/`＋CI-B 検証） | **本 PR** |
 | PR3 | 既存 e001–e045 へ `experiment.yaml` metadata | 予定 |
 | PR4 | 共通 Runner と Manifest（manifest/checkpoint/summary/checksum/no-write 正実装） | 予定 |
 | PR5 | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・局所 3D・低解像度全体 3D） | 予定 |
@@ -56,3 +56,25 @@
 - `docs/00_grand_map.md`：冒頭に「現在地は GENESIS_MAP.md」の案内バナーを追記（本文は歴史資料として保存）。
 
 **物理コードは一切動かしていない**（設計書 §24-1「既存コードを大規模に移動しない」）。
+
+---
+
+## PR2 で「何を残し・何を追加し・何を変更しなかったか」
+
+**残した（変更なし）**：`experiments/`・`core/`・`tools/`（既存）・`tests/`・全 docs・LAW.md・全 results。
+**物理コードは一切動かしていない。** schema/registry は Evidence Library を**参照するのみ**。
+
+**追加した**：
+- `schemas/`：`experiment` / `genesis` / `room` / `run` / `emergence` / `dimension-transfer` / `render` の
+  7 スキーマ（設計書 §22 PR2）＋ `registry.schema.json`（registry 検証用）。すべて JSON Schema draft 2020-12。
+- `genesis/registry/`：`models.yaml`（G001–G003 候補＋Evidence 物理）・`solvers.yaml`・`diagnostics.yaml`
+  （創発 Level 診断器）・`invariants.yaml`（保存量）・`param_ranges.yaml`（AI の探索範囲＋変更禁止項目）・`README.md`。
+- `tools/validate_schemas.py`（**CI-B**）：全 schema の妥当性・registry の schema 適合・`related_experiments`
+  参照先の実在・id 重複を機械チェック。
+
+**軽微に変更した（追加のみ）**：
+- `requirements.txt`：`PyYAML>=6.0`・`jsonschema>=4.18`（純 Python・schema/registry の検証に使用）。
+- `.github/workflows/ci.yml`：**CI-B**（`tools/validate_schemas.py`）を追加。
+
+**まだやらない**：`experiment.yaml` を各実験に付与するのは **PR3**。room/run/emergence の実体は正式 Room（PR6）から。
+schema は「置いただけ」で既存実験を再検証しない（設計書 §24-5「まず metadata 層」）。

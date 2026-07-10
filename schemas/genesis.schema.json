@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/genesis.schema.json",
+  "title": "Genesis Conditions (genesis.yaml)",
+  "description": "始原条件。狭義の初期値だけでなく、場・法則・保存則・境界・外部流入・次元・seed をまとめて記録する。完成形（完成した身体/膜/器官・内外指定・分裂位置/時刻・目標関数・求める現象を実行する if）は置けない。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "model", "dimension", "domain", "fields", "initial_state", "seed"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "model": {"type": "string", "minLength": 1, "description": "genesis/registry/models.yaml の model id"},
+    "dimension": {"type": "integer", "enum": [2, 3]},
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["size", "spacing", "boundary"],
+      "properties": {
+        "size": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 2, "maxItems": 3},
+        "spacing": {"type": "number", "exclusiveMinimum": 0},
+        "boundary": {"type": "string", "enum": ["periodic", "no_flux", "physical_wall", "mixed"]}
+      }
+    },
+    "fields": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type"],
+        "properties": {"type": {"type": "string", "enum": ["scalar", "complex_scalar", "vector", "tensor"]}}
+      }
+    },
+    "initial_state": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string", "enum": ["uniform_plus_noise", "symmetric_plus_noise", "quiescent_plus_noise", "random"]},
+        "mean_amplitude": {"type": "number"},
+        "noise_amplitude": {"type": "number", "minimum": 0},
+        "correlation_length": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "description": "完成した模様/ドメイン配置/特定波長パターンを置いてはならない（seeded 禁止）"
+    },
+    "laws": {"type": "array", "items": {"type": "string"}},
+    "protocol": {
+      "type": "object",
+      "description": "外部駆動は始原/環境条件として事前定義され途中変更されないこと。runtime_controlled 禁止。",
+      "properties": {
+        "quench": {"type": "object", "required": ["start", "duration"], "properties": {"start": {"type": "number"}, "duration": {"type": "number", "exclusiveMinimum": 0}}},
+        "drive": {"type": "object"}
+      }
+    },
+    "external_flux": {"type": "object"},
+    "seed": {"type": "integer"},
+    "drive_class": {"type": "string", "enum": ["autonomous", "externally_driven", "time_programmed_environment", "runtime_controlled"]}
+  }
+}

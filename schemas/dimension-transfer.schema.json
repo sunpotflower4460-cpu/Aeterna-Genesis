@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/dimension-transfer.schema.json",
+  "title": "Dimension Transfer Audit (dimension-transfer.yaml)",
+  "description": "2D 候補を全体 3D へ上げる前の次元移行監査（DIMENSION_POLICY.md §2）。2D 成功を 3D へ自動外挿しない。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dimension_risk"],
+  "properties": {
+    "dimension_risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_transferability"],
+      "properties": {
+        "topology_codimension_change": {"$ref": "#/$defs/risk"},
+        "inverse_cascade_dependency": {"type": "boolean"},
+        "out_of_plane_escape": {"$ref": "#/$defs/risk"},
+        "vortex_reconnection": {"$ref": "#/$defs/risk"},
+        "curvature_instability": {"$ref": "#/$defs/risk"},
+        "area_vs_volume_conservation_confusion": {"type": "boolean"},
+        "expected_transferability": {"$ref": "#/$defs/risk"}
+      }
+    },
+    "two_d_specific_mechanisms": {"type": "array", "items": {"type": "string"}},
+    "linear_analysis": {
+      "type": "object",
+      "properties": {
+        "fastest_growing_k_2d": {"type": "number"},
+        "fastest_growing_k_3d": {"type": "number"},
+        "out_of_plane_growth_rate": {"type": "number"}
+      }
+    },
+    "dimensionless_matched": {"type": "array", "items": {"type": "string"}},
+    "slab_test": {
+      "type": "object",
+      "properties": {
+        "escaped_out_of_plane": {"type": "boolean"},
+        "vortex_cut": {"type": "boolean"},
+        "new_unstable_mode": {"type": "boolean"},
+        "structure_maintained": {"type": "boolean"}
+      }
+    },
+    "status": {"type": "string", "enum": ["not_started", "audit_passed", "rejected_in_3d"]},
+    "failure": {
+      "type": "object",
+      "properties": {
+        "category": {"type": "string"},
+        "first_failure_time": {"type": "number"},
+        "detected_by": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  "$defs": {
+    "risk": {"type": "string", "enum": ["low", "medium", "high", "critical", "not_applicable"]}
+  }
+}

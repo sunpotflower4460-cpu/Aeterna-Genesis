@@ -1,0 +1,64 @@
+registry_version: 1
+kind: diagnostics
+# 創発 Level を測定量で判定する診断器（EMERGENCE_LEVELS.md）。画像の印象で判定しない。
+# measures_level = この診断器が根拠を与える Level。
+entries:
+  - id: spatial_variance
+    name: "Spatial variance vs noise floor"
+    description: "空間分散がノイズ床を超えて増大するか（成長率 λ）。Level 1 の差の指標。"
+    measures_level: [1]
+    related_experiments: ["e008", "e010"]
+
+  - id: structure_factor_peak
+    name: "Structure factor S(k) peak"
+    description: "S(k) に特徴波長 k* のピークが立つか。Level 1。"
+    measures_level: [1]
+    related_experiments: ["e033"]
+
+  - id: correlation_length
+    name: "Correlation length xi"
+    description: "相関長が有限/成長するか。Level 1（Kibble-Zurek の ξ）。"
+    measures_level: [1]
+    related_experiments: ["e010"]
+
+  - id: winding_defect_count
+    name: "Winding-number defect count"
+    description: "位相巻き/位相特異点で欠陥を検出（単なる低密度でなく）。Level 2。"
+    measures_level: [2]
+    related_experiments: ["e008", "e010", "e011", "e012"]
+
+  - id: connected_components
+    name: "Localized connected components"
+    description: "閾値超の連結成分数・局在度(participation ratio)・構造寿命。Level 2。"
+    measures_level: [2]
+    related_experiments: ["e018", "e033"]
+
+  - id: circulation_integral
+    name: "Circulation integral / vorticity / flux"
+    description: "循環積分 ∮v·dl・渦度・物質フラックス。Level 3 の自発運動/循環。"
+    measures_level: [3]
+    related_experiments: ["e003", "e013", "e017"]
+
+  - id: center_of_mass_velocity
+    name: "Center-of-mass velocity + velocity correlation"
+    description: "構造の重心運動と速度相関（自発運動が入力でなく創発）。Level 3。"
+    measures_level: [3]
+    related_experiments: ["e001", "e002", "e011", "e034"]
+
+  - id: tracked_identity_lifetime
+    name: "Tracked identity through deformation"
+    description: "形が変わっても継続する追跡 ID・内外差・摂動後回復・系サイズ非依存持続。Level 4。"
+    measures_level: [4]
+    related_experiments: ["e015", "e018", "e021"]
+
+  - id: co_occurring_processes
+    name: "Co-occurring processes + mutual dependence"
+    description: "境界+流れ+輸送+変換が一つの場から同時発生し相互依存するか。ラベル/外的最適なしで純粋 Level 5。"
+    measures_level: [5]
+    related_experiments: ["e013", "e025", "e043", "e044"]
+
+  - id: bounded_diversity_vs_neutral
+    name: "Bounded-space diversity vs neutral control"
+    description: "有界空間＋中立(選択なし)対照で選択維持を担保（無界拡散を多様性と誤判定しない）。Level 8/第8監査。"
+    measures_level: [8]
+    related_experiments: ["e045"]

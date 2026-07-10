@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/run.schema.json",
+  "title": "Room run manifest/summary (runs/seed-XXXX/manifest.json + summary.json)",
+  "description": "再現可能な run 記録。固定 seed・manifest・summary・checksum（PR4 の共通 Runner が生成）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "room_id", "seed", "dimension", "manifest"],
+  "properties": {
+    "run_id": {"type": "string", "minLength": 1},
+    "room_id": {"type": "string", "pattern": "^room-[a-z0-9-]+$"},
+    "seed": {"type": "integer"},
+    "dimension": {"type": "integer", "enum": [2, 3]},
+    "mode": {"type": "string", "enum": ["2d-screen", "local-3d", "coarse-global-3d", "full-3d"]},
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["genesis", "solver", "steps", "grid"],
+      "properties": {
+        "genesis": {"type": "string", "description": "genesis.yaml checksum or path"},
+        "solver": {"type": "string"},
+        "steps": {"type": "integer", "minimum": 1},
+        "dt": {"type": "number", "exclusiveMinimum": 0},
+        "grid": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 2, "maxItems": 3},
+        "code_version": {"type": "string"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "reached_level": {"type": "integer", "minimum": 0, "maximum": 8},
+        "conservation_drift": {"type": "number"},
+        "wall_time_s": {"type": "number", "minimum": 0}
+      }
+    },
+    "checksum": {"type": "object", "additionalProperties": {"type": "string"}}
+  }
+}
