@@ -331,3 +331,14 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | **係数は密度依存でドリフト**：係数（数/w）が密度とともに増大（99→200→400、比 4.02×／密度比 9.0）＝2D の純数（~1 で不変）と違い普遍性を失う＝d>2 IR 病理 | **measured（frontier）** | `coefficient_density_dependent`（係数比>1.3） |
 | 3 | **interpretive**：DS エントロピー数は 3D でも面積スケーリングを保つが係数の普遍性を失う（d>2 IR 病理）＝2D（e022）が SOLID・3D が床、の理由を定量化。KNOWN MATCH＝Dou-Sorkin 分子/面積則/d>2 病理 | **interpretive/analogy** | AUDIT §claim tier |
 | 4 | **FRONTIER（床）**：d>2 病理を**定量化**したが**治療していない**——Barton 系 cured 分子は未再現。3D 係数は普遍数でない、3D は床・2D は SOLID。「エントロピー/地平線/BH」は analogy——measured は分子数の統計量のみ。seed batch・box 高さで頑健 | **frontier/床** | AUDIT 床1–3・`robustness.json` |
+
+## e033 — 分業を「場」から（エージェントなし・Cahn-Hilliard スピノーダル分解）  (STATUS: GREEN, Type A/faithful, H019)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **臨界点 χ_c=2 が創発**：Flory-Huggins 相互作用 χ を上げると秩序変数（場の std）が χ_c=2 で跳ぶ＝対称混合の Flory-Huggins 臨界値と一致（入れていない）。χ<2 は一様（generalist）、χ>2 は二相 | **measured** | `results/field_division.json`：`homogeneous_below_critical`（χ=1.5 で秩序変数<0.05） |
+| 2 | **二相の共存＝場ネイティブな分業**：χ>2 でスピノーダル分解、φ_low（体細胞 proxy）と φ_high（生殖系列 proxy）が共存（both_phases=1.0、専門家率 0.75–0.89） | **measured** | `phase_separation_above_critical`（χ=3.0 で両相共存＆専門家率>0.6） |
+| 3 | **共存組成が理論 binodal と定量一致**：χ=2.5 で 0.150/0.850（理論 0.145/0.855）、χ=3.0 で 0.070/0.930（理論 0.071/0.929）＝Flory-Huggins binodal とほぼ完全一致 | **measured** | `coexistence_matches_binodal`（相組成が binodal と 0.05 以内） |
+| 4 | **入れていない随伴現象**：ドメイン波長（長さスケールを入れていない）が出る＝スピノーダル分解の特徴 | **measured** | `domain_wavelength`（χ>2 で ~11–18 grid） |
+| 5 | **interpretive**：分業（専門化＋役割共存）は**場ネイティブな実現**＝スピノーダル分解を持つ。e030 のエージェントは一つの基層、場はもう一つ。KNOWN MATCH＝Cahn-Hilliard(1958)/Flory-Huggins(1942) 臨界点・binodal・粗大化 | **interpretive/analogy** | AUDIT §claim tier |
+| 6 | **床**：「生殖体細胞/分業/多細胞性」は analogy。**同じ数学≠同じもの**——進化＝相分離とは主張せず、同じ定性事実がエージェントなしの場から出る、に限定。大 χ の near-pure binodal は grid/clip 分解能の床。(A) 忠実＝CH 法則は手入力。seed batch・κ で頑健 | **（床の明示）** | AUDIT 床1–4・`robustness.json`（κ=0.5/1/2 で binodal_err≤0.025） |
