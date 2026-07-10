@@ -163,6 +163,10 @@ jobs:
         run: python tools/build_room_g001.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g001smoke"
       - name: "AI Genesis Lab smoke (start-condition search, 2D-screened, non-destructive)"
         run: python ai_lab/lab.py --n 4 --quick --no-write
+      - name: "AI discovery ledger review (accumulated auto-tests are persisted + reviewable)"
+        run: |
+          test -f ai_lab/discoveries/ledger.json
+          python ai_lab/lab.py --review
       - name: "Observatory catalog regenerates from metadata (single source; app is catalog-driven)"
         run: |
           python tools/build_catalog.py --no-write

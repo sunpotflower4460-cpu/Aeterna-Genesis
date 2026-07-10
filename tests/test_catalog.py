@@ -37,6 +37,19 @@ def test_official_and_candidates_are_distinct():
     # AI candidates never appear inside the official rooms list
     assert isinstance(cat["ai_candidates"], list)
     assert all(r["kind"] == "official_3d_room" for r in cat["rooms"])
+    # candidate rooms are surfaced but marked non-official and distinct from the official rooms
+    assert isinstance(cat.get("candidate_rooms"), list)
+    official_ids = {r["room_id"] for r in cat["rooms"]}
+    for cr in cat["candidate_rooms"]:
+        assert cr["official"] is False
+        assert cr["room_id"] not in official_ids
+
+
+def test_ai_discovery_ledger_surfaces_in_catalog():
+    cat = _load().build()
+    assert len(cat["ai_candidates"]) >= 1                # the accumulated ledger is visible in the app
+    for c in cat["ai_candidates"]:
+        assert c["kind"] == "ai_candidate" and "screen_2d_level" in c
 
 
 def test_catalog_js_assigns_window_catalog(tmp_path):
