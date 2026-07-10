@@ -387,3 +387,21 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **機構は生態的フィードバック（空間でない）**：質量整合 well-mixed（∇²なし）でも協力率 0.465 で持続＝空間の離散性でなく密度フィードバックが機構 | **measured** | `mechanism_is_feedback_not_space`（well-mixed frac>0.3） |
 | 4 | **interpretive**：生態的フィードバックが連続体で協力を持続させ (A) 境界を精緻化（古典 PGG は離散性/network reciprocity が要る、生態的 PGG は要らない）。KNOWN MATCH＝Hauert-Holmes-Doebeli / Wakano-Nowak-Hauert 生態的公共財 | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **床**：「協力/公共財」は共存密度場の analogy。**同じ数学≠同じもの**。協力率は死亡率依存（低死亡率→崩壊境界へ＝床、robustness は persist>0.2 でゲート・死亡率域をチェリーピックしない）。(A) 忠実＝PDE は手入力 | **（床の明示）** | AUDIT 床1–4・`robustness.json`（r・死亡率で persist 頑健） |
+
+## e038 — 連続形質進化を「場」から（object tracking・de novo）  (STATUS: E, role E hybrid, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **de novo 上昇（standing variation なし）**：低い一様形質 τ=0.2 から、GS 場の tissue ごとに τ を保持し端で継承＋変異する object tracking で、平均形質が ~0.9 へ上昇（最適1.0） | **measured** | `results/objtrack.json`：`de_novo_continuous_adaptation` |
+| 2 | **形質は連続を維持**：分布が離散種に潰れず占有 bin≥4（GS の均質化を回避） | **measured** | `trait_stays_continuous`（占有 bin 6–7） |
+| 3 | **移動最適点を追跡（Red Queen）**：正弦で動く最適を lag ~0.24 で追う | **measured** | `moving_optimum_tracked`（lag<0.35） |
+| 4 | **interpretive/床**：object tracking が連続形質進化を場で均質化なしに走らせる。**HYBRID**（動力学は純 GS 場だが形質は tissue 追跡ラベル）＝床。fitness→kill は課した。「進化」は analogy。同じ数学≠同じもの。KNOWN MATCH＝replicator-mutator/de novo 適応（cf e036）。変異率・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |
+
+## e039 — 分化を「場」から（French-flag モルフォゲン＋Turing）  (STATUS: E, role E, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **French flag：一つの閾値則で 3 空間順序ドメイン**：局在源の拡散分解が指数勾配を作り（入れていない）、全細胞同一の閾値則で fate が A→B→C と空間順序化 | **measured** | `results/differentiation.json`：`french_flag_three_ordered_domains`（[23,34,63]・順序 True） |
+| 2 | **Turing：一様から自己組織パターン**：Gierer-Meinhardt 活性化-抑制系が一様+ノイズから対称性を破り、活性化因子 std 0.02→1.19 | **measured** | `turing_symmetry_breaks_from_uniform` |
+| 3 | **自発的二型分化**：高活性 fraction 0.25＝一様シートが二型に分化 | **measured** | `turing_two_type_differentiation`（0.1–0.5） |
+| 4 | **interpretive**：位置情報（勾配）と自己組織（Turing）が同一細胞を空間で分化させる。KNOWN MATCH＝Wolpert French-flag/Turing・Gierer-Meinhardt。閾値はモデル選択（床）。「分化/同じゲノム」は analogy。同じ数学≠同じもの。k・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |
