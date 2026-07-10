@@ -421,3 +421,27 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 1 | **狭ネック→clonal**：ピンチネック（幅 w）が ~1 創設者を通し娘が clonal（Simpson relatedness→~0.8） | **measured** | `results/bottleneck.json`：`narrow_neck_single_founder`/`narrow_neck_clonal_daughter` |
 | 2 | **広ネック→mixed**：広いネックは多数創設者を通し娘は mixed（relatedness→0.001） | **measured** | `wide_neck_mixed_daughter`（単調減少） |
 | 3 | **interpretive/床（role S）**：単一細胞ボトルネックはネック**幅＝分裂の幾何**から創発。KNOWN MATCH＝生殖系列/単一細胞ボトルネック(Grosberg-Strathmann)。**S＝幾何サンプリング模型**（連続場でない・ピンチ抽象・founder→clonal は課した）。「clonal/relatedness」は analogy。体サイズ・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |
+
+## e043 — 場の宇宙：ONE 場に生命6過程が同時共起（統合）  (STATUS: E, role E hybrid, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **分裂+適応+分化が ONE 場で同時**：一様 τ=0.5 シートから自己複製 GS スポットが場を満たし（occupied~0.4）、成長端で per-tissue 形質を継承+変異し、空間変化するモルフォゲン最適点へ適応（corr~0.8） | **measured** | `results/universe.json`：`division_fills_field`/`cells_adapt_to_local_optimum` |
+| 2 | **順序ある空間形質ドメイン**：body left~0.2→mid~0.5→right~0.8（分化した体、contrast~0.47） | **measured** | `ordered_spatial_trait_domains` |
+| 3 | **interpretive/床**：e038(object tracking)+e039(morphogen) を統合＝新機構でなく同時共起の実証。**HYBRID**（動力学は純 GS・形質は追跡ラベル）。最適点は入力（環境）、分化ボディは創発。「体/発生/進化」は analogy。seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json`（4/4 seeds） |
+
+## e044 — 場の統一：協力が同じ場に参加（局所公共財）  (STATUS: E, role E hybrid, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **協力が clonal 同類化で持続**：局所公共財（隣人の減衰を下げる）を足すと object-tracking の clonal パッチで協力が持続（協力割合~0.6） | **measured** | `results/unification.json`：`cooperation_persists_with_public_good` |
+| 2 | **便益ゼロ対照は崩壊**：公共財の便益をゼロにした決定的対照は協力崩壊（~0.3）、advantage>0.15＝同類化が公共財を成立させる | **measured** | `control_no_benefit_collapses`／体はなお適応・分化 |
+| 3 | **interpretive/床**：e037 の別実装（体の上で協力）。**param は事前固定**（参照の best-of 掃引＝結果に合わせたチューニングを回避）。robust は「公共財>便益ゼロ対照」（絶対値は param/death-rate 依存＝床）。「協力/公共財」は analogy | **interpretive/analogy/床** | AUDIT・`robustness.json`（各 seed で公共財>対照） |
+
+## e045 — 内生ニッチ構築は場で多様性を自己生成しない（負の結果）  (STATUS: N, role N, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **中立を超えない（反証）**：外部最適点なし・負の頻度依存だけの適応度で、生存窓の内では局所形質分散が中立ドリフト対照を上回らない（excess~-0.001≤0） | **measured(negative)** | `results/endogenous.json`：`NEGATIVE_no_local_diversity_gain` |
+| 2 | **強罰は絶滅**：罰を効かせる強さ（comp=6）にすると場は絶滅（occupied→0）＝中立を超える生存領域なし | **measured(negative)** | `NEGATIVE_strong_penalty_kills_field` |
+| 3 | **interpretive/床（role N）**：参照サンドボックスの内生多様性主張を忠実に反証。GREEN が出るまでチューニングせず（禁止）負を公表（cf e020）。内生 open-endedness が不可能とは示さない（別の場/結合なら成功しうる＝frontier）。「ニッチ/open-endedness」は analogy。格子/step/seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json`（4/4 seeds が負を確認） |
