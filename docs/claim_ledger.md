@@ -342,3 +342,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 4 | **入れていない随伴現象**：ドメイン波長（長さスケールを入れていない）が出る＝スピノーダル分解の特徴 | **measured** | `domain_wavelength`（χ>2 で ~11–18 grid） |
 | 5 | **interpretive**：分業（専門化＋役割共存）は**場ネイティブな実現**＝スピノーダル分解を持つ。e030 のエージェントは一つの基層、場はもう一つ。KNOWN MATCH＝Cahn-Hilliard(1958)/Flory-Huggins(1942) 臨界点・binodal・粗大化 | **interpretive/analogy** | AUDIT §claim tier |
 | 6 | **床**：「生殖体細胞/分業/多細胞性」は analogy。**同じ数学≠同じもの**——進化＝相分離とは主張せず、同じ定性事実がエージェントなしの場から出る、に限定。大 χ の near-pure binodal は grid/clip 分解能の床。(A) 忠実＝CH 法則は手入力。seed batch・κ で頑健 | **（床の明示）** | AUDIT 床1–4・`robustness.json`（κ=0.5/1/2 で binodal_err≤0.025） |
+
+## e034 — 空間協力を「場」から（エージェントなし・双安定反応拡散フロント）  (STATUS: GREEN, Type A/faithful, H019)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **平均場（混合）は協力崩壊**：∇²を除いた双安定反応の ODE で、閾値下シード（u₀=0.2<a=0.40）が u→0（裏切り）に崩壊 | **measured** | `results/cooperation_front.json`：`wellmixed_seed_decays_below_threshold` |
+| 2 | **空間フロントが侵入し、閾値で反転**：協力ドメインが a<1/2 でフロント侵入（c>0＝クラスタで生存）、a>1/2 で裏切りが侵入（c<0）＝誘惑が閾値超で構造でも失敗 | **measured** | `spatial_front_invades_below_maxwell_reverses_above` |
+| 3 | **創発閾値 a_c=1/2（Maxwell 点）＋ Nagumo 速度一致**：フロント速度が a=0.5 で符号反転（入れていない）、速度が √(D/2)(1−2a) と定量一致（誤差<0.01） | **measured** | `front_speed_matches_nagumo_and_maxwell_at_half` |
+| 4 | **interpretive**：空間構造が「有利な状態」の侵入を許し、生存は誘惑に依存（速度の符号反転）。e027 のエージェント三事実（混合崩壊/空間生存/条件閾値）が場から出る。KNOWN MATCH＝Nagumo/Schlögl 双安定フロント/Maxwell 点 a=1/2/速度 √(D/2)(1−2a) | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **床**：「協力/裏切り/大転移」は analogy。**同じ数学≠同じもの**——協力の進化＝双安定フロントとは主張せず、同じ三事実がエージェントなしの場から出る、に限定。協力の**安定性**であって完全な大転移でない。(A) 忠実＝RD 法則は手入力。D=0.5/1/2 で頑健（Maxwell 点 0.5 不変） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
