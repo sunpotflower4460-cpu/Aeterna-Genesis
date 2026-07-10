@@ -43,7 +43,8 @@ e016 basin は有界・絶対 L* は解像度依存。e018 は analogy（protoce
 | [H009–H010](H009_horizon_ledger.md) | 地平線の台帳（受信ループ・DS 面積則、2D SOLID/3D floor） | B | **promoted**（e022 GREEN） | e022_horizon_ledger |
 | [H012–H013](H012_topological_memory.md) | トポロジカル記憶（巻き保護された受信・記憶） | B | **promoted**（e028 GREEN） | e028_topological_memory（e020 衝突を再採番で解決） |
 | [H014](H014_self_receiver.md) | 自己受信（芯が自分の巻きを読む・生きた器の同一性） | B | **promoted**（e021 GREEN） | e021_self_receiver |
-| [H016](H016_vessel_engine_society.md) | 生きた器のエンジンと社会（ボルト→モーター→…→大転移） | B | **in progress**（e024 GREEN） | e024–e027 |
+| [H016](H016_vessel_engine_society.md) | 生きた器のエンジンと社会（ボルト→モーター→…→大転移） | B | **promoted**（e024–e027 GREEN） | e024–e027 |
+| [H017](H017_openended_frontier.md) | 深いフロンティア（内生的需要／完全な大転移） | D（frontier） | **frontier（機構実証・GREEN）** | e029_openended_frontier |
 
 **H011 / H015 について（正直に）**：H011（ブラックホール＝源の窓の渦）・創世（E-genesis）は
 サンドボックス extras_context に属し **interpretive/analogy が濃い**（「愛/至福/BH/源」）。repo 化するなら
