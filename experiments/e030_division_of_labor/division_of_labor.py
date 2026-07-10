@@ -76,24 +76,31 @@ def simulate(quick=False):
     spec_convex = next(s["specialist_frac"] for s in sweep if s["a"] == p["a_convex"])
     spec_concave = next(s["specialist_frac"] for s in sweep if s["a"] == p["a_concave"])
     both_convex = next(s["both_roles"] for s in sweep if s["a"] == p["a_convex"])
+    both_concave = next(s["both_roles"] for s in sweep if s["a"] == p["a_concave"])
     # monotone rise of specialist fraction with convexity a
     fracs = [s["specialist_frac"] for s in sweep]
     monotone = all(fracs[i] <= fracs[i + 1] + 0.03 for i in range(len(fracs) - 1))
     return {
         "params": p, "sweep": sweep,
-        "spec_convex": spec_convex, "spec_concave": spec_concave, "both_roles_convex": both_convex,
+        "spec_convex": spec_convex, "spec_concave": spec_concave,
+        "both_roles_convex": both_convex, "both_roles_concave": both_concave,
         "monotone_in_convexity": bool(monotone),
     }
 
 
 def evaluate(result, quick=False):
+    # 8th-audit fix: `both_roles>0.9` alone is NON-DISCRIMINATIVE -- with n cells and any spread almost
+    # every group holds a cell >0.8 AND a cell <0.2, so it passes even for a LINEAR/CONCAVE return
+    # (both_roles ~0.99 at a=1.0, ~0.82 at a=0.5). The discriminative signal is the SPECIALIST FRACTION
+    # (0.255 -> 0.853) and the CONTRAST (coexistence is higher at convex than concave). We gate on both.
     checks = {
         "convex_returns_drive_specialization (specialist frac at convex a >0.6)":
             bool(result["spec_convex"] > 0.6),
         "specialization_rises_with_convexity (convex >1.5x concave; monotone)":
             bool(result["spec_convex"] > 1.5 * result["spec_concave"] and result["monotone_in_convexity"]),
-        "germ_soma_differentiation (groups with pure germ AND soma >0.9 at convex a)":
-            bool(result["both_roles_convex"] > 0.9),
+        "germ_soma_coexistence_rises_with_convexity (both_roles convex>0.9 AND convex>concave)":
+            bool(result["both_roles_convex"] > 0.9
+                 and result["both_roles_convex"] > result["both_roles_concave"]),
     }
     return all(checks.values()), checks
 

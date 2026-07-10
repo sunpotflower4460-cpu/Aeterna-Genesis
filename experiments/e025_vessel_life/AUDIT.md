@@ -21,7 +21,13 @@ GREEN gates（物理量のみ）: `bulk_and_winding_sustained` / `bulk_collapses
 **測定の宝**: 二つの崩壊は**独立**——燃料切断は bulk を落とす（巻きは最後まで保持）、
 反渦は巻きを 0 にするが bulk は高いまま。**代謝 ≠ 同一性**（interpretive）。
 
-### Stage2 autopoietic（`results/autopoietic.json`）— 閉じた輪
+### Stage2 autopoietic（`results/autopoietic.json`）— 閉じた輪 **【role S：設計された閉ループ回路】**
+
+> **第8監査（本改訂）**：Stage2 の `gate = σ(|winding|−0.5)·gain` は winding→gain を**手で配線**した
+> **設計回路（internal oracle）**＝`target_encoded: true`。「巻き喪失が bulk を潰す」は**構成上そうなる**。
+> closed-vs-open の**対比は measured**（閉じると挙動が変わるかの検証）だが、結合自体は創発でない。
+> よって **role S（synthesis/circuit）**であって E/GREEN ではない。作動する autopoietic 回路の実証。
+
 | 量 | quick 再現 | 正典（evessel_auto.py） |
 |---|---|---|
 | **決定的対比** 反渦後 open / closed の bulk | **1.97 / 0.04** | 1.97 / 0.03 |

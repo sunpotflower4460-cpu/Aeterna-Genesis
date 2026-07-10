@@ -48,10 +48,13 @@ def test_e016_committed_result_sane():
         pytest.skip("committed hopf_basin.json missing (run the module to generate)")
     with open(path) as f:
         r = json.load(f)["result"]
-    assert r["law_fit_good"]
-    assert r["size_cv"] < 0.05 and r["fit_R2"] > 0.90   # CV<5% is the tightness measure
-    assert r["qh2_held"]
-    assert r["all_held_monotone"]
+    # 8th-audit: the sqrt(c4) size law is RETRACTED (target_encoded). The committed result must record
+    # that the scaling does NOT survive decoupling the start from sqrt(c4), and the surviving claims are
+    # the topological Q_H stability + energy monotonicity (role F).
+    assert r["size_law_target_encoded"]          # sqrt(c4) law is target_encoded (retracted)
+    assert r["decoupling_drift"] > 0.10          # size/sqrt(c4) drifts when the start is decoupled
+    assert r["qh2_held"]                          # Q_H=2 topological stability survives
+    assert r["all_held_monotone"]                # energy monotone under the gradient flow
 
 
 def test_e016_arrested_newton_v2_smoke():

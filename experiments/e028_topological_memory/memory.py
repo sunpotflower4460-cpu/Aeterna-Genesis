@@ -62,10 +62,14 @@ def _grid_holes(k, N):
 
 
 def _read_bit(phase, hx, hy, R):
-    """+/-1 bit = sign of the CCW winding on a loop of radius R around (hx, hy)."""
+    """+/-1 bit = sign of the CCW winding on a loop of radius R around (hx, hy).
+
+    A winding that rounds to 0 is a genuine READ MISS -- return 0 (which never equals a stored +/-1),
+    so a miss is counted as a read FAILURE. (Earlier this fell back to +1, which could spuriously match
+    a stored +1 and inflate the capacity/fidelity -- a first-layer correctness bug, LAW.md audit 7/8.)
+    """
     w = winding_around(phase, hx, hy, R, n=4 * (2 * int(R) + 1))
-    s = int(round(w))
-    return s if s != 0 else 1
+    return int(round(w))
 
 
 def _box_winding(phase, cx, cy, h):
