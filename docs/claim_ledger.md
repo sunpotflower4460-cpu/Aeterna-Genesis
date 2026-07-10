@@ -405,3 +405,19 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | **Turing：一様から自己組織パターン**：Gierer-Meinhardt 活性化-抑制系が一様+ノイズから対称性を破り、活性化因子 std 0.02→1.19 | **measured** | `turing_symmetry_breaks_from_uniform` |
 | 3 | **自発的二型分化**：高活性 fraction 0.25＝一様シートが二型に分化 | **measured** | `turing_two_type_differentiation`（0.1–0.5） |
 | 4 | **interpretive**：位置情報（勾配）と自己組織（Turing）が同一細胞を空間で分化させる。KNOWN MATCH＝Wolpert French-flag/Turing・Gierer-Meinhardt。閾値はモデル選択（床）。「分化/同じゲノム」は analogy。同じ数学≠同じもの。k・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |
+
+## e040 — 協力＝持続スパイラル波（純 PDE・C-D-L 循環優位）  (STATUS: E, role E, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **スパイラル波で三者共存**：D>C, C>L, L>D の空間循環 Lotka-Volterra がスパイラル波に自己組織し、協力者含む三者が持続（C=0.31, D=0.29, L=0.26、協力 std 0.35） | **measured** | `results/rps_cooperation.json`：`cooperation_persists_as_spirals`/`spatial_spiral_pattern` |
+| 2 | **well-mixed 対照は崩壊**：拡散なしの同じ反応はヘテロクリニックに一種優占（>0.8）、他は ~絶滅＝空間が協力を維持する | **measured** | `wellmixed_collapses_to_one` |
+| 3 | **interpretive/床**：循環優位＋空間が協力を持続させる（e037 の別ルート）。KNOWN MATCH＝循環 Lotka-Volterra/May-Leonard。**spiral 形成は regime 依存・確率的**（N>~180・D<~0.8、少数 seed は崩壊＝有限サイズ双安定・床）。robust は「多数がスパイラル＋well-mixed は常に崩壊」。「協力/RPS」は analogy | **interpretive/analogy/床** | AUDIT・`robustness.json`（spiral 4/5・wm 崩壊 5/5） |
+
+## e041 — 「一から始まる」＝幾何（ネック幅→創設者数→clonality）  (STATUS: S, role S, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **狭ネック→clonal**：ピンチネック（幅 w）が ~1 創設者を通し娘が clonal（Simpson relatedness→~0.8） | **measured** | `results/bottleneck.json`：`narrow_neck_single_founder`/`narrow_neck_clonal_daughter` |
+| 2 | **広ネック→mixed**：広いネックは多数創設者を通し娘は mixed（relatedness→0.001） | **measured** | `wide_neck_mixed_daughter`（単調減少） |
+| 3 | **interpretive/床（role S）**：単一細胞ボトルネックはネック**幅＝分裂の幾何**から創発。KNOWN MATCH＝生殖系列/単一細胞ボトルネック(Grosberg-Strathmann)。**S＝幾何サンプリング模型**（連続場でない・ピンチ抽象・founder→clonal は課した）。「clonal/relatedness」は analogy。体サイズ・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |

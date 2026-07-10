@@ -1,6 +1,6 @@
 # H020 — 場化プログラム wave 2（H019 深化：進化・発生・協力・幾何を場から）
 
-- **状態**: **進行中（e038/e039 GREEN；e040–e042 予定）**。H019（e033–e037）で「エージェント→場」の最初の波を
+- **状態**: **進行中（e038/e039/e040/e041 GREEN；e042/capstone 予定）**。H019（e033–e037）で「エージェント→場」の最初の波を
   示した。ここは同じ規律で**進化・発生・協力・幾何**の各機構をさらに場から出す（参照サンドボックス
   `fieldification_bundle`）。
 - **起票者**: Claude Code / 2026-07-10
@@ -11,8 +11,8 @@
 |---|---|---|---|
 | efieldobj.py | per-object 連続形質進化（de novo・均質化回避） | **e038 field objtrack** | **E（hybrid 床）** |
 | efielddiff.py | 分化（French-flag モルフォゲン＋Turing） | **e039 field differentiation** | **E** |
-| eco_rps.py | 協力＝C-D-L 循環スパイラル波 | e040（予定） | E |
-| efieldbottle.py | ボトルネック（ネック幾何→創設者数） | e041（予定） | S/F（幾何サンプリング） |
+| eco_rps.py | 協力＝C-D-L 循環スパイラル波 | **e040 field rps_cooperation** | **E** |
+| efieldbottle.py | ボトルネック（ネック幾何→創設者数） | **e041 field bottleneck** | **S（幾何サンプリング）** |
 | efieldboundary.py | 離散↔連続 境界地図（競争半径 R） | e042（予定） | E |
 | efieldevo/darwin, universe 系 | GS 複製子・統合 capstone | 後続（予定） | E/F |
 
