@@ -1,7 +1,23 @@
 #!/usr/bin/env python3
-"""e025 Stage 2 -- close the loop: the core reads its own winding and gates the motor.
+"""e025 Stage 2 -- a DESIGNED closure CIRCUIT (role S): the core reads its own winding and gates the motor.
 
-MODULE:   e025_vessel_life (Stage 2: autopoietic)
+---
+id: e025
+role: S
+claim_tier: measured          # the closed-vs-open CONTRAST is measured; but the coupling is DESIGNED
+evidence: "with the self-reading gate closed, losing the winding collapses the bulk (~1.97 -> ~0.03); open, the bulk survives"
+target_encoded: true          # the winding->gain link is HAND-WIRED into the gate (a designed circuit / internal oracle), not emergent
+known_match: "Maturana-Varela autopoiesis (operational closure); topological charge; CGL driven droplet"
+open_issues: ["the closure is DESIGNED (gate=sigmoid(|w|-0.5)*gain), not emergent -- role S, not E", "2D CGL toy; gate shape is a modelling choice"]
+---
+
+**Role S (synthesis / designed circuit)**: this BUILDS an operational-closure loop -- the field's own
+winding gates its gain -- and shows the designed loop has the expected closed-vs-open contrast. The
+winding->bulk causal link is HAND-WIRED (target_encoded), so this is a working autopoietic CIRCUIT, NOT an
+emergence of closure. The CONTRAST (does closing the loop change the behaviour?) is genuinely measured;
+the coupling itself is designed. Hence role S, not E/GREEN.
+
+MODULE:   e025_vessel_life (Stage 2: autopoietic -- DESIGNED closure circuit, role S)
 QUESTION: if the field gain is gated by the field's OWN winding (the core reads itself), does losing
           the winding (an anti-vortex) then DRAG the bulk down -- i.e. does closing the loop couple the
           two collapse modes that were independent in Stage 1?
@@ -14,9 +30,10 @@ CLAIM TIER: measured(the closed-vs-open bulk contrast) ; interpretive(operationa
           and its self-maintenance inseparable -- Maturana-Varela autopoiesis) ; analogy(true self vs a
           powered mechanism -- KNOWN MATCH only, never a gate name).
 KNOWN MATCH: Maturana-Varela autopoiesis (operational closure); topological charge; CGL driven droplet.
-STATUS:   GREEN (four gates; keys are physical: bulk amplitude and winding, plus the closure contrast).
-A_OR_B:   (A) faithful. Hand input = the field + motor + a self-reading gate; whether closure couples
-          winding-loss to bulk-collapse is emergent and measured.
+STATUS:   S (designed closure circuit; the closed-vs-open CONTRAST is measured, but the winding->gain
+          coupling is hand-wired = target_encoded, so this is NOT emergence of closure -- role S, not GREEN).
+A_OR_B:   (A) faithful fields, but the CLOSURE is DESIGNED: the self-reading gate wires winding->gain
+          (an internal oracle). The contrast is measured; the coupling is not emergent. Role S.
 
 THE TRAP (designer hit it, we avoid it): the gate is a SMOOTHED read of the field's own winding
 (gate <- 0.92 gate + 0.08 sigmoid(8(|w|-0.5))); the winding is read on a CCW loop (core.holonomy).
@@ -205,8 +222,8 @@ def main(argv=None):
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))
-    print("STATUS: %s (closure couples winding-loss to bulk-collapse)"
-          % ("GREEN" if passed else "RED"))
+    print("STATUS: %s [role S] (DESIGNED closure circuit: winding->gain is hand-wired; the contrast is measured)"
+          % ("PASS" if passed else "FAIL"))
     if not args.no_write and not args.quick:
         os.makedirs(os.path.join(os.path.dirname(__file__), "results"), exist_ok=True)
         out = os.path.join(os.path.dirname(__file__), "results", "autopoietic.json")

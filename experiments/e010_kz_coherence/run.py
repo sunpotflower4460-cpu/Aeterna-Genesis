@@ -31,6 +31,20 @@ CLAIM TIER: measured(spacing/xi const, 2σ=b, quantization, condensation) ; inte
 KNOWN MATCH: Kibble 1976 / Zurek 1985 (defects set by frozen xi); e008 (KZ from white noise).
 STATUS:   GREEN (mechanism + internal consistency measured; absolute b is a protocol-dependent floor).
 A_OR_B:   (A) faithful emergence. Hand input = field law + white noise. Lattice (=space) is given.
+
+id: e010
+role: E
+claim_tier: measured
+evidence: "spacing/xi constant across tau_Q (CV<0.15); xi~tau_Q^sigma and N~tau_Q^{-2sigma} so b=2sigma; quantized cores in a real condensate"
+target_encoded: false         # 8th audit CLEARED (see note)
+known_match: "Kibble 1976 / Zurek 1985: KZ defect density set by the frozen coherence length"
+open_issues: ["absolute b is protocol-dependent (tau_Q, hold, freeze window) -- a stated floor", "fixed lattice = space is given"]
+
+8th-audit note (CLEARED, target_encoded=false): `spacing = L/sqrt(N)` is only the DEFINITION of the mean
+inter-defect distance -- it is NOT a circular embedding of the KZ conclusion. The substantive claim
+`spacing/xi = const` compares TWO INDEPENDENT measurements: N (density-gated vortex count, core.vortex) and
+xi (the 1/e length of g1(r), core.measure). Neither derives the other, so "N ~ (L/xi)^2" is a genuine test
+of the KZ mechanism, not a definition. b=2sigma then follows from that independent consistency.
 """
 
 import argparse
