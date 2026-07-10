@@ -153,6 +153,10 @@ jobs:
         run: python tools/audit_roles.py
       - name: "CI-B schema + registry validation (schemas well-formed, registry validates, refs resolve)"
         run: python tools/validate_schemas.py
+      - name: "Genesis Runner 2D smoke (TDGL quench from t=0; --no-write actually simulates)"
+        run: python genesis/runners/runner.py --mode 2d-screen --quick --no-write
+      - name: "Genesis Runner 3D-local smoke (order parameter emerges in 3D from a uniform start)"
+        run: python genesis/runners/runner.py --mode local-3d --quick --no-write
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
