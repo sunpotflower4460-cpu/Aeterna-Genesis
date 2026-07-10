@@ -1,0 +1,73 @@
+{
+  "result": {
+    "params": {
+      "N": 8,
+      "r": 2.5,
+      "c": 1.0,
+      "b0": 1.0,
+      "death": 1.2,
+      "L": 120,
+      "dt": 0.01,
+      "Du": 0.1,
+      "Dv": 0.1,
+      "steps": 20000,
+      "seed": 0
+    },
+    "eco_spatial": {
+      "coop_fraction": 0.465,
+      "coop_density": 0.136,
+      "defector_density": 0.157
+    },
+    "classical_spatial": {
+      "coop_fraction": 0.0,
+      "coop_density": 0.0,
+      "defector_density": 0.0
+    },
+    "eco_wellmixed": {
+      "coop_fraction": 0.465,
+      "coop_density": 0.136,
+      "defector_density": 0.157
+    }
+  },
+  "atlas": [
+    {
+      "experiment": "e037 ecological public goods (persistent cooperation in a pure PDE, no agents)",
+      "tier": "measured",
+      "put_in": "two population-density fields (cooperators u, defectors v) + Hauert-Holmes-Doebeli ecological payoff P_C-P_D=c(rA(rho)-1) + diffusion + death; classical constant-cost control. NO agents / discreteness",
+      "emerged": [
+        "ecological (spatial): coop fraction 0.465 (density 0.136)",
+        "classical constant-cost (spatial): coop fraction 0.0 (collapses)",
+        "ecological WELL-MIXED (mass-matched, no Laplacian): coop fraction 0.465 -> mechanism is the density feedback, not space"
+      ],
+      "surprises": [
+        "cooperation persists in a PURE continuum PDE once the payoff is ecological (density-dependent); the classical constant-cost model collapses -- the mechanism, not spatial discreteness, decides"
+      ],
+      "persistence": "the ecological coexistence is a stable state of the population PDE (well-mixed and spatial)",
+      "measured_numbers": {
+        "eco_spatial": {
+          "coop_fraction": 0.465,
+          "coop_density": 0.136,
+          "defector_density": 0.157
+        },
+        "classical_spatial": {
+          "coop_fraction": 0.0,
+          "coop_density": 0.0,
+          "defector_density": 0.0
+        },
+        "eco_wellmixed": {
+          "coop_fraction": 0.465,
+          "coop_density": 0.136,
+          "defector_density": 0.157
+        }
+      },
+      "not_scripted_check": "only the payoff form (ecological vs classical) and the population law are set; persistence vs collapse is measured",
+      "claim_tier": "measured (ecological persistence vs classical collapse; well-mixed persistence) ; interpretive (ecological feedback lets cooperation persist in a continuum -- classical PGG needs discreteness, ecological does not) ; analogy (cooperation / public goods)",
+      "floors": [
+        "'cooperation / public goods' is analogy for the two co-existing density fields",
+        "\u540c\u3058\u6570\u5b66\u2260\u540c\u3058\u3082\u306e: this does NOT claim social cooperation IS this PDE",
+        "the classical (fixed-population) public goods game still needs discreteness / network reciprocity; only the ECOLOGICAL (variable-population) game persists in the continuum",
+        "(A) faithful: the population PDE is put in by hand, not derived"
+      ]
+    }
+  ]
+}

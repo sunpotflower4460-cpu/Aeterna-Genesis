@@ -377,3 +377,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **移動最適点の lag load**：共動座標系で追跡遅れ L=v/(kσ²)、速度に線形（lag/v 一定=2.236、誤差<0.003）＝e027 の追跡ラグを閉形式で | **measured** | `moving_optimum_lag_linear_and_matches_load` |
 | 4 | **interpretive**：選択＝適応度勾配上への移流、突然変異＝拡散；適応・突然変異選択平衡・lag load は場の現象。KNOWN MATCH＝replicator-mutator/Crow-Kimura/平衡分散 √(2D/k)/lag load v/(kσ²) | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **床**：「進化/適応/ニッチ」は analogy。**同じ数学≠同じもの**——進化＝RM 方程式とは主張せず、同じ事実がエージェントなしの場から出る、に限定。主張は小速度の線形 lag 領域のみ（臨界速度超で発散＝個体群喪失）。(A) 忠実＝場の法則は手入力。k・D で分散・遅れが理論曲線上（頑健） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
+
+## e037 — 生態的 PGG：純 PDE で持続する協力（エージェントなし）  (STATUS: E, role E, §7)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **生態的 payoff で協力が純 PDE で持続**：密度依存 payoff P_C−P_D=c(r·A(ρ)−1)（低密度で協力者有利）で、協力者が連続 PDE で持続（協力率 0.465・密度 0.136） | **measured** | `results/ecological_pgg.json`：`ecological_cooperation_persists_in_pure_PDE` |
+| 2 | **古典 定コストは崩壊**：P_C−P_D=−c（常に裏切り有利）では協力率→0.000＝連続体で崩壊 | **measured** | `classical_constant_cost_collapses`（frac<0.1） |
+| 3 | **機構は生態的フィードバック（空間でない）**：質量整合 well-mixed（∇²なし）でも協力率 0.465 で持続＝空間の離散性でなく密度フィードバックが機構 | **measured** | `mechanism_is_feedback_not_space`（well-mixed frac>0.3） |
+| 4 | **interpretive**：生態的フィードバックが連続体で協力を持続させ (A) 境界を精緻化（古典 PGG は離散性/network reciprocity が要る、生態的 PGG は要らない）。KNOWN MATCH＝Hauert-Holmes-Doebeli / Wakano-Nowak-Hauert 生態的公共財 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **床**：「協力/公共財」は共存密度場の analogy。**同じ数学≠同じもの**。協力率は死亡率依存（低死亡率→崩壊境界へ＝床、robustness は persist>0.2 でゲート・死亡率域をチェリーピックしない）。(A) 忠実＝PDE は手入力 | **（床の明示）** | AUDIT 床1–4・`robustness.json`（r・死亡率で persist 頑健） |

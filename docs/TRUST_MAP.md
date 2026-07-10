@@ -15,13 +15,16 @@
 | **F** Frontier | 未解決・機構実証のみ・障害の定量化 |
 | **Q** Quarantine | GREEN 剥奪（主張とコード不一致 or target_encoded） |
 
-## 集計（36 実験・複数役割の実験は主役割で計上）
-- **E（創発）: 14** — e001, e002, e003, e008, e010, e011, e012, e014, e021, e023, e028, e033, e034, e036
+## 集計（37 実験・複数役割の実験は主役割で計上）
+- **E（創発）: 15** — e001, e002, e003, e008, e010, e011, e012, e014, e021, e023, e028, e033, e034, e036, e037
 - **V（検証）: 2** — e017（Ra_c=1714/657 教科書<0.4%）, e022（DS→π²/6, 2D）
 - **S（設計回路）: 4** — e004, e013, e019, e025(autopoietic)
 - **N（負の結果）: 1** — e020
 - **F（frontier）: 11** — e016, e024, e026, e027(evolution/openended/transition), e029, e030, e031, e032, e035
 - **Q（隔離）: 0**
+
+> **CI 第8監査ガード**：`tools/audit_roles.py` が全実験の YAML ヘッダを走査し、
+> **target_encoded=true の実験が E/V（GREEN）を名乗っていないか**を機械チェック（CI で強制）。
 
 > ※ e033/e034/e035/e036 は**創発かつ教科書一致**（E＋V グレード検証）。主役割は E とし V 級一致を注記。
 > ※ e035 は Hopf 点が解析 Jacobian と一致（V 級）だが「頭打ち→内生振動」の創発が主眼＝E。
@@ -66,6 +69,7 @@
 | e034 空間協力＝場（Nagumo） | **E** | measured | false | 双安定 RD フロント（Maxwell 点・Nagumo 速度＝V級） |
 | e035 Red Queen＝場（Hopf） | **E** | measured | false | 捕食者被食者 Hopf（発生点＝解析 Hopf＝V級） |
 | e036 適応＝場（RM） | **E** | measured | false | replicator-mutator（σ²=√(2D/k)・lag load＝V級） |
+| e037 生態的 PGG（協力＝場） | **E** | measured | false | 生態的 payoff で協力が純 PDE で持続・古典は崩壊・機構は feedback（空間でない） |
 
 ## 依存（food chain — 何の上に何が乗るか）
 - **物理基盤（E/V）**: e001–e003（渦）・e008/e010/e011（KZ/欠陥）・e014/e023（因果→時空）・e017（RB）

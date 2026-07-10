@@ -133,6 +133,10 @@ jobs:
         run: python experiments/e035_field_red_queen/red_queen.py --quick --no-write
       - name: "e036 field adaptation quick (replicator-mutator Crow-Kimura, no agents)"
         run: python experiments/e036_field_adaptation/adaptation.py --quick --no-write
+      - name: "e037 ecological PGG quick (persistent cooperation in a pure PDE, no agents)"
+        run: python experiments/e037_ecological_pgg/ecological_pgg.py --quick --no-write
+      - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
+        run: python tools/audit_roles.py
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"
@@ -172,6 +176,9 @@ jobs:
           test -f experiments/e034_field_cooperation_front/results/cooperation_front.json
           test -f experiments/e035_field_red_queen/results/red_queen.json
           test -f experiments/e036_field_adaptation/results/adaptation.json
+          test -f experiments/e037_ecological_pgg/results/ecological_pgg.json
+          test -f docs/TRUST_MAP.md
+          test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md
           test -f docs/working_ledger/H018_frontier_solid.md
           test -f docs/working_ledger/H019_agents_to_fields.md
