@@ -86,13 +86,49 @@ function render(){
         <span class="badge ${allpass?'ok':''}">physics ${allpass?'✓':'?'}</span>
         <span class="badge">seeds ${r.runs.length}</span></div></div>`;
   }).join('');
+  const cand = C.ai_candidates||[];
+  const candRooms = C.candidate_rooms||[];
+  const candRows = cand.map(d=>`<tr>
+      <td class="mono">${esc(d.key)}</td><td>${d.screen_2d_level}</td>
+      <td>${d.delta_vs_parent>0?'+':''}${d.delta_vs_parent}</td>
+      <td>${esc(d.dimension_transfer_risk)}</td>
+      <td><span class="badge ${d.stage==='local_3d'?'ok':''}">${esc(d.stage)}</span></td></tr>`).join('');
+  const candRoomCards = candRooms.map(r=>`<div class="card" style="border-left:3px solid var(--f)"
+      onclick='openCandidate(${JSON.stringify(r.room_id)})'>
+      <div style="font-weight:600">${esc(r.title)}</div>
+      <div class="muted mono">${esc(r.room_id)} · 親 ${esc(r.parent_room)}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge">候補（非公式）</span>
+        <span class="badge ${r.dimension_status.local_3d==='passed'?'ok':''}">local-3D ${r.dimension_status.local_3d}</span>
+        <span class="badge">full-3D ${r.dimension_status.full_3d}</span></div></div>`).join('');
   document.getElementById('app').innerHTML = `
     <h2>Universe Lobby — Genesis Rooms（正式 3D）</h2>
     <div class="cards">${rooms||'<p class="muted">（まだ正式 Room がありません）</p>'}</div>
-    <h2>AI 発見候補（2D スクリーニング済み・正式 Room と区別）</h2>
-    <div class="muted">${(C.ai_candidates&&C.ai_candidates.length)?C.ai_candidates.length+' 候補':'なし（AI Lab は 2D 候補まで。full-3D 昇格は別段階）'}</div>
+    <h2>AI Discovery Inbox（AI Lab の探索蓄積・正式 Room と区別）</h2>
+    <div class="muted" style="margin-bottom:8px">親 room-g001-a の始原条件を 1 つずつ変えて t=0 から 2D スクリーニングした蓄積（<code>ai_lab/discoveries/ledger.json</code>）。full-3D 昇格は別段階。</div>
+    ${cand.length?`<table><tr><th>変異(始原条件)</th><th>2D level</th><th>Δ 親</th><th>3D risk</th><th>段階</th></tr>${candRows}</table>`:'<div class="muted">なし</div>'}
+    ${candRooms.length?`<h2 style="margin-top:18px">候補 Room（local-3D 昇格・非公式）</h2><div class="cards">${candRoomCards}</div>`:''}
     <h2>Evidence Library（物理辞書 ${C.evidence_library.count} 実験・役割は experiment.yaml 由来）</h2>
     <div class="chips">${roleChips(rc)}</div>`;
+}
+
+function openCandidate(id){
+  const r = (C.candidate_rooms||[]).find(x=>x.room_id===id); if(!r) return;
+  document.getElementById('dlg-t').textContent = r.title+' ('+r.room_id+')';
+  document.getElementById('dlg-b').innerHTML = `
+    <div class="panel"><h3>AI 候補 Room（非公式）</h3>
+      <div class="kv">
+        <span class="k">親 Room</span><span>${esc(r.parent_room)}（**変更していない**・別 Room として保存）</span>
+        <span class="k">status</span><span>${esc(r.status)}</span>
+        <span class="k">到達 Level</span><span>${r.reached_level}</span>
+        <span class="k">exploration 2D</span><span class="g">${esc(r.dimension_status.exploration_2d)}</span>
+        <span class="k">local 3D</span><span class="${r.dimension_status.local_3d==='passed'?'g':'warn'}">${esc(r.dimension_status.local_3d)}</span>
+        <span class="k">coarse global 3D</span><span class="muted">${esc(r.dimension_status.coarse_global_3d)}</span>
+        <span class="k">full 3D</span><span class="warn">${esc(r.dimension_status.full_3d)}（正式化は昇格段階）</span>
+      </div></div>
+    <div class="panel muted">これは AI Lab が始原条件を変えて 2D→local-3D まで通した候補。<b>official ではない</b>。
+      full-3D 格子収束・複数 seed・物理監査は未実施。「同じ数学 ≠ 同じもの」。</div>`;
+  dlg.showModal();
 }
 
 function openRoom(id){

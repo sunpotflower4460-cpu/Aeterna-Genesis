@@ -14,9 +14,21 @@ ai_lab/
 
 ## 使い方
 ```bash
-python ai_lab/lab.py --n 6 --quick --no-write   # 6 候補を 2D スクリーニング（書き込まない）
-python ai_lab/lab.py --n 6 --quick              # ai_lab/proposals/ に保存
+python ai_lab/lab.py --n 8 --no-write     # 8 候補を 2D スクリーニング（書き込まない）
+python ai_lab/lab.py --n 8 --record       # 発見台帳 ai_lab/discoveries/ledger.json に追記（append-only by key・冪等）
+python ai_lab/lab.py --review             # 蓄積した発見台帳を要約表示（AI/人が確認する一次記録）
+python ai_lab/lab.py --n 8 --promote-best # 最良候補を local-3D スクリーニングし、非公式の候補 Room を作る
 ```
+
+## 蓄積と確認（AI が読み返せる記録）
+- **`ai_lab/discoveries/ledger.json`**（commit 対象・**append-only by mutation key**・決定的）＝ AI 自動探索の**永続台帳**。
+  `--review` で AI/人が過去の探索（各変異の 2D Level・親との差・3D risk・昇格段階）を確認できる。
+- **`rooms/candidates/`**（`--promote-best` が作成）＝ 2D→**local-3D** まで通した**非公式**候補 Room（`official:false`・
+  `full_3d:not_started`）。親 `rooms/official/room-g001-a` は**変更せず**別 Room として保存（パラレル宇宙）。
+- **`rooms/rejected_in_3d/`** ＝ 3D で崩れた候補（削除せず保存）。
+- `ai_lab/proposals/`・`_demo_out/` は実行時の詳細（ephemeral・gitignore）。台帳と候補 Room だけが永続。
+
+正式化（`rooms/official/`）は昇格段階（coarse-global-3D → full-3D → 物理監査）を経て**別段階**で行う。AI は自己昇格しない。
 
 ## 不変条件（AI がやってはいけないこと）
 - **成功判定コード・保存則・監査閾値を変えない**：Lab は Runner/diagnostics を**import**（再定義しない）。

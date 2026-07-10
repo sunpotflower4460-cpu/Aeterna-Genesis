@@ -89,14 +89,47 @@ def build():
                                 "target_encoded": e.get("target_encoded"),
                                 "dimension": e.get("dimension", {}).get("computed")})
 
+    # AI Genesis Lab discoveries (ledger) + candidate/rejected rooms -- kept DISTINCT from official rooms
+    ai_candidates = []
+    ledger_path = os.path.join(_REPO, "ai_lab", "discoveries", "ledger.json")
+    if os.path.exists(ledger_path):
+        led = json.load(open(ledger_path))
+        for d in led.get("discoveries", []):
+            ai_candidates.append({
+                "key": d["key"], "kind": "ai_candidate", "parent_room": d.get("parent_room"),
+                "mutation": d.get("mutation"), "screen_2d_level": d.get("screen_2d", {}).get("reached_level"),
+                "delta_vs_parent": d.get("vs_parent", {}).get("delta_level"),
+                "dimension_transfer_risk": d.get("dimension_transfer_risk"),
+                "stage": d.get("stage"),
+                "local_3d": d.get("local_3d"),
+            })
+    candidate_rooms = []
+    for base in ("candidates", "rejected_in_3d"):
+        bdir = os.path.join(_REPO, "rooms", base)
+        if not os.path.isdir(bdir):
+            continue
+        for room in sorted(x for x in os.listdir(bdir) if os.path.isdir(os.path.join(bdir, x))):
+            ry = os.path.join(bdir, room, "room.yaml")
+            if not os.path.exists(ry):
+                continue
+            r = _load_yaml(ry)
+            candidate_rooms.append({
+                "room_id": r.get("room_id"), "title": r.get("title"), "kind": "candidate_room",
+                "official": False, "parent_room": r.get("parent_room"), "status": r.get("status"),
+                "reached_level": r.get("emergence", {}).get("reached_level"),
+                "dimension_status": r.get("dimension_status", {}),
+            })
+
     catalog = {
         "catalog_version": 1,
-        "generated_from": "rooms/catalog.json + rooms/official/*/ + experiments/*/experiment.yaml",
-        "note": "Observatory App の唯一の表示元。ハードコードしない。official 3D Room と候補は区別。",
+        "generated_from": "rooms/catalog.json + rooms/official/*/ + rooms/candidates/* + "
+                          "ai_lab/discoveries/ledger.json + experiments/*/experiment.yaml",
+        "note": "Observatory App の唯一の表示元。ハードコードしない。official 3D Room と AI 候補/候補Room は区別。",
         "rooms": rooms,
         "evidence_library": {"count": len(experiments), "role_counts": role_counts,
                              "genesis_roles": genesis_roles, "experiments": experiments},
-        "ai_candidates": [],   # 2D-screened candidates (ai_lab) surface here; kept DISTINCT from rooms
+        "ai_candidates": ai_candidates,      # AI Lab 2D-screened discoveries (ledger) -- DISTINCT from rooms
+        "candidate_rooms": candidate_rooms,  # local-3D 昇格した非公式候補 -- official ではない
     }
     return catalog
 

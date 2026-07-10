@@ -196,6 +196,45 @@ def main():
         info.append("Genesis Room OK: %d official room(s) validated (room/genesis/emergence/run/dim/render)"
                     % n_rooms)
 
+    # 8. Candidate / rejected rooms (AI Lab, non-official): lighter set -- room.yaml + genesis.yaml +
+    #    emergence.json + runs; they must NOT be marked official and must not claim full_3d passed.
+    n_cand = 0
+    rv = {s: Draft202012Validator(_load_json(os.path.join(_SCHEMAS, s)))
+          for s in ("room.schema.json", "genesis.schema.json", "emergence.schema.json", "run.schema.json")
+          if os.path.exists(os.path.join(_SCHEMAS, s))}
+    for base in ("candidates", "rejected_in_3d"):
+        bdir = os.path.join(_REPO, "rooms", base)
+        if not os.path.isdir(bdir):
+            continue
+        for room in sorted(d for d in os.listdir(bdir) if os.path.isdir(os.path.join(bdir, d))):
+            rdir = os.path.join(bdir, room)
+            ry = os.path.join(rdir, "room.yaml")
+            if os.path.exists(ry):
+                doc = _load_yaml(ry)
+                for err in rv["room.schema.json"].iter_errors(doc):
+                    errors.append("rooms/%s/%s/room.yaml: %s" % (base, room, err.message))
+                if doc.get("official") is True:
+                    errors.append("rooms/%s/%s/room.yaml: a non-official room must not set official=true" % (base, room))
+                if doc.get("dimension_status", {}).get("full_3d") == "passed":
+                    errors.append("rooms/%s/%s/room.yaml: candidate must not claim full_3d=passed (not promoted)" % (base, room))
+            for fn, sfile in [("genesis.yaml", "genesis.schema.json"), ("emergence.json", "emergence.schema.json")]:
+                fp = os.path.join(rdir, fn)
+                if os.path.exists(fp) and sfile in rv:
+                    doc = _load_yaml(fp) if fn.endswith(".yaml") else _load_json(fp)
+                    for err in rv[sfile].iter_errors(doc):
+                        errors.append("rooms/%s/%s/%s: %s" % (base, room, fn, err.message))
+            rundir = os.path.join(rdir, "runs")
+            if os.path.isdir(rundir):
+                for sd in sorted(os.listdir(rundir)):
+                    mp = os.path.join(rundir, sd, "manifest.json")
+                    if os.path.exists(mp) and "run.schema.json" in rv:
+                        for err in rv["run.schema.json"].iter_errors(_load_json(mp)):
+                            errors.append("rooms/%s/%s/runs/%s/manifest.json: %s" % (base, room, sd, err.message))
+            n_cand += 1
+    if n_cand:
+        info.append("Candidate/rejected room OK: %d non-official room(s) validated (official=false, full_3d != passed)"
+                    % n_cand)
+
     for line in info:
         print("  " + line)
     if errors:
