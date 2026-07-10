@@ -135,6 +135,14 @@ jobs:
         run: python experiments/e036_field_adaptation/adaptation.py --quick --no-write
       - name: "e037 ecological PGG quick (persistent cooperation in a pure PDE, no agents)"
         run: python experiments/e037_ecological_pgg/ecological_pgg.py --quick --no-write
+      - name: "e038 field objtrack quick (continuous-trait evolution via object tracking, no agents)"
+        run: python experiments/e038_field_objtrack/objtrack.py --quick --no-write
+      - name: "e039 field differentiation quick (French-flag morphogen + Turing, no agents)"
+        run: python experiments/e039_field_differentiation/differentiation.py --quick --no-write
+      - name: "e040 field RPS cooperation quick (cyclic-dominance spiral waves, no agents)"
+        run: python experiments/e040_field_rps_cooperation/rps_cooperation.py --quick --no-write
+      - name: "e041 field bottleneck quick (neck geometry -> clonality, role S)"
+        run: python experiments/e041_field_bottleneck/bottleneck.py --quick --no-write
       - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
         run: python tools/audit_roles.py
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
@@ -177,8 +185,13 @@ jobs:
           test -f experiments/e035_field_red_queen/results/red_queen.json
           test -f experiments/e036_field_adaptation/results/adaptation.json
           test -f experiments/e037_ecological_pgg/results/ecological_pgg.json
+          test -f experiments/e038_field_objtrack/results/objtrack.json
+          test -f experiments/e039_field_differentiation/results/differentiation.json
+          test -f experiments/e040_field_rps_cooperation/results/rps_cooperation.json
+          test -f experiments/e041_field_bottleneck/results/bottleneck.json
           test -f docs/TRUST_MAP.md
           test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md
           test -f docs/working_ledger/H018_frontier_solid.md
           test -f docs/working_ledger/H019_agents_to_fields.md
+          test -f docs/working_ledger/H020_fieldification_wave2.md

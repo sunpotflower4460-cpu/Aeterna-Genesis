@@ -15,10 +15,10 @@
 | **F** Frontier | 未解決・機構実証のみ・障害の定量化 |
 | **Q** Quarantine | GREEN 剥奪（主張とコード不一致 or target_encoded） |
 
-## 集計（37 実験・複数役割の実験は主役割で計上）
-- **E（創発）: 15** — e001, e002, e003, e008, e010, e011, e012, e014, e021, e023, e028, e033, e034, e036, e037
+## 集計（41 実験・複数役割の実験は主役割で計上）
+- **E（創発）: 18** — e001, e002, e003, e008, e010, e011, e012, e014, e021, e023, e028, e033, e034, e036, e037, e038, e039, e040
 - **V（検証）: 2** — e017（Ra_c=1714/657 教科書<0.4%）, e022（DS→π²/6, 2D）
-- **S（設計回路）: 4** — e004, e013, e019, e025(autopoietic)
+- **S（設計回路）: 5** — e004, e013, e019, e025(autopoietic), e041(bottleneck 幾何)
 - **N（負の結果）: 1** — e020
 - **F（frontier）: 11** — e016, e024, e026, e027(evolution/openended/transition), e029, e030, e031, e032, e035
 - **Q（隔離）: 0**
@@ -70,6 +70,10 @@
 | e035 Red Queen＝場（Hopf） | **E** | measured | false | 捕食者被食者 Hopf（発生点＝解析 Hopf＝V級） |
 | e036 適応＝場（RM） | **E** | measured | false | replicator-mutator（σ²=√(2D/k)・lag load＝V級） |
 | e037 生態的 PGG（協力＝場） | **E** | measured | false | 生態的 payoff で協力が純 PDE で持続・古典は崩壊・機構は feedback（空間でない） |
+| e038 連続形質進化（object tracking） | **E** | measured | false | GS 場＋tissue 形質で de novo 上昇（0.2→0.9、standing variation なし）・連続・追跡（**hybrid 床**） |
+| e039 分化（morphogen＋Turing） | **E** | measured | false | French-flag で 3 順序ドメイン・Turing が一様から自己組織（std 0.02→1.19） |
+| e040 協力＝RPS スパイラル | **E** | measured | false | C-D-L 循環 RD がスパイラル波で三者共存・well-mixed は崩壊（spiral は regime 依存・確率的 床） |
+| e041 ボトルネック（幾何） | **S** | measured | false | ネック幅→創設者数→relatedness（狭→clonal・広→mixed）。**幾何サンプリング模型（連続場でない）** |
 
 ## 依存（food chain — 何の上に何が乗るか）
 - **物理基盤（E/V）**: e001–e003（渦）・e008/e010/e011（KZ/欠陥）・e014/e023（因果→時空）・e017（RB）

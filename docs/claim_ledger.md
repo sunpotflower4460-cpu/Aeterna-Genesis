@@ -387,3 +387,37 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **機構は生態的フィードバック（空間でない）**：質量整合 well-mixed（∇²なし）でも協力率 0.465 で持続＝空間の離散性でなく密度フィードバックが機構 | **measured** | `mechanism_is_feedback_not_space`（well-mixed frac>0.3） |
 | 4 | **interpretive**：生態的フィードバックが連続体で協力を持続させ (A) 境界を精緻化（古典 PGG は離散性/network reciprocity が要る、生態的 PGG は要らない）。KNOWN MATCH＝Hauert-Holmes-Doebeli / Wakano-Nowak-Hauert 生態的公共財 | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **床**：「協力/公共財」は共存密度場の analogy。**同じ数学≠同じもの**。協力率は死亡率依存（低死亡率→崩壊境界へ＝床、robustness は persist>0.2 でゲート・死亡率域をチェリーピックしない）。(A) 忠実＝PDE は手入力 | **（床の明示）** | AUDIT 床1–4・`robustness.json`（r・死亡率で persist 頑健） |
+
+## e038 — 連続形質進化を「場」から（object tracking・de novo）  (STATUS: E, role E hybrid, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **de novo 上昇（standing variation なし）**：低い一様形質 τ=0.2 から、GS 場の tissue ごとに τ を保持し端で継承＋変異する object tracking で、平均形質が ~0.9 へ上昇（最適1.0） | **measured** | `results/objtrack.json`：`de_novo_continuous_adaptation` |
+| 2 | **形質は連続を維持**：分布が離散種に潰れず占有 bin≥4（GS の均質化を回避） | **measured** | `trait_stays_continuous`（占有 bin 6–7） |
+| 3 | **移動最適点を追跡（Red Queen）**：正弦で動く最適を lag ~0.24 で追う | **measured** | `moving_optimum_tracked`（lag<0.35） |
+| 4 | **interpretive/床**：object tracking が連続形質進化を場で均質化なしに走らせる。**HYBRID**（動力学は純 GS 場だが形質は tissue 追跡ラベル）＝床。fitness→kill は課した。「進化」は analogy。同じ数学≠同じもの。KNOWN MATCH＝replicator-mutator/de novo 適応（cf e036）。変異率・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |
+
+## e039 — 分化を「場」から（French-flag モルフォゲン＋Turing）  (STATUS: E, role E, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **French flag：一つの閾値則で 3 空間順序ドメイン**：局在源の拡散分解が指数勾配を作り（入れていない）、全細胞同一の閾値則で fate が A→B→C と空間順序化 | **measured** | `results/differentiation.json`：`french_flag_three_ordered_domains`（[23,34,63]・順序 True） |
+| 2 | **Turing：一様から自己組織パターン**：Gierer-Meinhardt 活性化-抑制系が一様+ノイズから対称性を破り、活性化因子 std 0.02→1.19 | **measured** | `turing_symmetry_breaks_from_uniform` |
+| 3 | **自発的二型分化**：高活性 fraction 0.25＝一様シートが二型に分化 | **measured** | `turing_two_type_differentiation`（0.1–0.5） |
+| 4 | **interpretive**：位置情報（勾配）と自己組織（Turing）が同一細胞を空間で分化させる。KNOWN MATCH＝Wolpert French-flag/Turing・Gierer-Meinhardt。閾値はモデル選択（床）。「分化/同じゲノム」は analogy。同じ数学≠同じもの。k・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |
+
+## e040 — 協力＝持続スパイラル波（純 PDE・C-D-L 循環優位）  (STATUS: E, role E, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **スパイラル波で三者共存**：D>C, C>L, L>D の空間循環 Lotka-Volterra がスパイラル波に自己組織し、協力者含む三者が持続（C=0.31, D=0.29, L=0.26、協力 std 0.35） | **measured** | `results/rps_cooperation.json`：`cooperation_persists_as_spirals`/`spatial_spiral_pattern` |
+| 2 | **well-mixed 対照は崩壊**：拡散なしの同じ反応はヘテロクリニックに一種優占（>0.8）、他は ~絶滅＝空間が協力を維持する | **measured** | `wellmixed_collapses_to_one` |
+| 3 | **interpretive/床**：循環優位＋空間が協力を持続させる（e037 の別ルート）。KNOWN MATCH＝循環 Lotka-Volterra/May-Leonard。**spiral 形成は regime 依存・確率的**（N>~180・D<~0.8、少数 seed は崩壊＝有限サイズ双安定・床）。robust は「多数がスパイラル＋well-mixed は常に崩壊」。「協力/RPS」は analogy | **interpretive/analogy/床** | AUDIT・`robustness.json`（spiral 4/5・wm 崩壊 5/5） |
+
+## e041 — 「一から始まる」＝幾何（ネック幅→創設者数→clonality）  (STATUS: S, role S, H020)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **狭ネック→clonal**：ピンチネック（幅 w）が ~1 創設者を通し娘が clonal（Simpson relatedness→~0.8） | **measured** | `results/bottleneck.json`：`narrow_neck_single_founder`/`narrow_neck_clonal_daughter` |
+| 2 | **広ネック→mixed**：広いネックは多数創設者を通し娘は mixed（relatedness→0.001） | **measured** | `wide_neck_mixed_daughter`（単調減少） |
+| 3 | **interpretive/床（role S）**：単一細胞ボトルネックはネック**幅＝分裂の幾何**から創発。KNOWN MATCH＝生殖系列/単一細胞ボトルネック(Grosberg-Strathmann)。**S＝幾何サンプリング模型**（連続場でない・ピンチ抽象・founder→clonal は課した）。「clonal/relatedness」は analogy。体サイズ・seed で頑健 | **interpretive/analogy/床** | AUDIT・`robustness.json` |
