@@ -83,10 +83,15 @@ def simulate(quick=False):
     _, Hs = evolve(lambda g: _spread(2), p, rng)                        # simple: 2 tasks
     _, Hr = evolve(lambda g: _spread(8), p, rng)                        # rich: 8 tasks
     _, Hg = evolve(lambda g: _spread(2 + min(g // 35, 8)), p, rng)      # rising demand 2->10
+    # 8th-audit / gate-strength fix: compare the FIRST third vs the LAST third of the rising-demand
+    # trajectory (a principled trend) instead of a single arbitrary index (was Hg[len//6]).
+    lens_rising = [h[1] for h in Hg]
+    third = max(1, len(lens_rising) // 3)
     return {
         "params": p,
         "len_simple": Hs[-1][1], "len_rich": Hr[-1][1], "len_rising": Hg[-1][1],
-        "len_rising_mid": Hg[len(Hg) // 6][1],
+        "len_rising_early": round(float(np.mean(lens_rising[:third])), 2),
+        "len_rising_late": round(float(np.mean(lens_rising[-third:])), 2),
         "solved_simple": Hs[-1][2], "solved_rich": Hr[-1][2], "solved_rising": Hg[-1][2],
     }
 
@@ -97,9 +102,10 @@ def evaluate(result, quick=False):
             bool(result["len_simple"] < 3.5),
         "demand_raises_complexity (rich > simple+2)":
             bool(result["len_rich"] > result["len_simple"] + 2),
-        "rising_demand_keeps_rising (rising > simple+2 and > mid)":
+        # rising trend measured as last-third mean > first-third mean (principled, not a single index)
+        "rising_demand_keeps_rising (rising > simple+2; late third > early third)":
             bool(result["len_rising"] > result["len_simple"] + 2
-                 and result["len_rising"] > result["len_rising_mid"]),
+                 and result["len_rising_late"] > result["len_rising_early"]),
     }
     return all(checks.values()), checks
 

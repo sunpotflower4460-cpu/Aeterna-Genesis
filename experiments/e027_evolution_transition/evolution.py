@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
-"""e027 Stage 1 -- close the Darwinian loop with mutation (adapt, diversify, track).
+"""e027 Stage 1 -- close the Darwinian loop with mutation (adapt, diversify, track). AGENT model (role F).
 
-MODULE:   e027_evolution_transition (Stage 1: evolution)
+---
+id: e027_evolution
+role: F
+claim_tier: measured          # the population statistics are measured IN THE AGENT MODEL
+evidence: "mutation ON climbs to the peak (mean ~1.51) vs OFF stuck; a moving optimum is tracked with small lag"
+target_encoded: false         # stats are measured; but this is an AGENT model (Wright-Fisher), NOT a field (LAW.md floor)
+known_match: "Wright-Fisher variation-selection; the faithful FIELD version is e036 (replicator-mutator = role E)"
+open_issues: ["AGENT model, not a field -> floor (the field version is e036)", "the DIVERSITY/niche claim is the weakest = frontier"]
+---
+
+**Role F (agent-model floor)**: adaptation and moving-optimum tracking are genuinely MEASURED population
+statistics, but this is a Wright-Fisher AGENT model, NOT a faithful field -- a LAW.md floor (the field-native
+version is e036, replicator-mutator, role E). The DIVERSITY / negative-frequency-dependence claim in
+particular is the weakest (frontier). So role F: measured-within-the-model, but not field emergence.
+
+MODULE:   e027_evolution_transition (Stage 1: evolution -- AGENT model, role F)
 QUESTION: with heredity + mutation + selection, does a population adapt to a fitness peak, maintain
           diversity under rare-favoring selection, and track a moving optimum?
 PUT IN:   a heritable scalar trait, Gaussian mutation at reproduction, and a fitness rule
@@ -14,9 +29,10 @@ CLAIM TIER: measured(the three population statistics) ; interpretive(the Darwini
           mutation: variation + heredity + selection = adaptation + novelty + endless change) ;
           analogy(evolution, niches, Red Queen).
 KNOWN MATCH: Wright-Fisher variation-selection; negative frequency-dependent selection; the Red Queen.
-STATUS:   GREEN (three gates on measured population statistics: mean trait, std, tracking lag).
-A_OR_B:   (A) faithful. Hand input = trait + mutation + fitness rule; adaptation / diversity / tracking
-          are emergent and measured.
+STATUS:   F (population stats measured in the AGENT model; not a field = floor. Field version = e036.
+          The diversity/niche claim is the weakest = frontier).
+A_OR_B:   Agent model (Wright-Fisher), NOT a field. The faithful field version is e036 (replicator-mutator).
+          Role F: measured-within-the-model, not field emergence.
 
 THE TRAP (designer hit it, we avoid it): this is an AGENT model (a population of scalar traits), NOT a
 field -- stated as a Floor. Fitness is clipped positive before sampling; mutation is applied at
@@ -142,8 +158,8 @@ def main(argv=None):
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))
-    print("STATUS: %s (adaptation/diversity/tracking measured; fixed trait space is a floor)"
-          % ("GREEN" if passed else "RED"))
+    print("STATUS: %s [role F] (AGENT model: stats measured but not a field; field version = e036; diversity is frontier)"
+          % ("PASS" if passed else "FAIL"))
     if not args.no_write and not args.quick:
         os.makedirs(os.path.join(os.path.dirname(__file__), "results"), exist_ok=True)
         out = os.path.join(os.path.dirname(__file__), "results", "evolution.json")

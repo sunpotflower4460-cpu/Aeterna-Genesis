@@ -95,6 +95,7 @@ def simulate(quick=False):
     ud, vd = u.copy(), v.copy()
     ud, vd = _step(ud, vd, 0.0, k, Du, Dv, p["death_steps"])
     dead_totv = _totv(vd)
+    dead_area = _area(vd)
     # self-heal: excise half, keep drive
     uh, vh = u.copy(), v.copy()
     uh[:p["L"] // 2, :] = 1.0
@@ -113,8 +114,10 @@ def simulate(quick=False):
     return {
         "params": p,
         "grown_total_v": round(grown_totv, 1), "grown_area": round(grown_area, 3),
-        "dead_total_v": round(dead_totv, 2),
-        "death_on_cut": bool(dead_totv < 0.05 * grown_totv),
+        "dead_total_v": round(dead_totv, 2), "dead_area": round(dead_area, 3),
+        # death = BOTH the mass M AND the area A collapse (M<theta_M AND A<theta_A), not just one
+        # (gate-strength fix, LAW.md 8th audit: a physical two-quantity threshold, no "alive" oracle)
+        "death_on_cut": bool(dead_totv < 0.05 * grown_totv and dead_area < 0.2 * grown_area),
         "self_maintains": bool(grown_totv > 10.0 and grown_area > 0.05),
         "excised_total_v": round(excised_totv, 1), "healed_total_v": round(healed_totv, 1),
         "regen_fraction": round(healed_totv / grown_totv, 3) if grown_totv else 0.0,
