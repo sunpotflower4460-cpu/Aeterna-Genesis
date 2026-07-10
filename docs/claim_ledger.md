@@ -165,16 +165,21 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | 両腕オートポイエーシス：膜を壊す/代謝を止める、どちらを切っても死 | **measured** | `autopoiesis.json`：γ→0 死・α→0 死、臨界 S_c≈0.05 |
 | 4 | 開-閉の二重性は interpretive、autopoiesis/膜/代謝/生命は analogy（床） | **（床の明示）** | AUDIT.md 床1–4 |
 
-## e016 — Hopf basin（size 則・有界 basin・Q_H=2）  (STATUS: GREEN, Type A/一部 D)
+## e016 — Hopf basin（Q_H 安定性は observed／**√c4 size 則は撤回**）  (STATUS: F, role F, 第8監査で GREEN 剥奪)
+
+> **第8監査（撤回）**：`size=k√c4` は **target_encoded**（start∝√c4 を初期条件に埋込・流れ未収束）。
+> decoupling テスト（start を √c4 から切り離す）で size/√c4 が drift 26%＝√c4 則は初期条件由来で崩れる。
+> Derrick の L*~√c4 は既知理論だが本モジュールは清潔に測定していない。**行1・5 を撤回**。
+> 残るのは Q_H≈1／Q_H=2 のトポロジカル安定性・エネルギー単調（observed）。真の start 非依存 L* は frontier/H001。
 
 | # | 主張 | tier | 裏づけ |
 |---|---|---|---|
-| 1 | 安定化流の収束 size が √c4 則に従う：size=k√c4（k=0.901・CV=3.5%＝size/√c4 が~一定・R²=0.941）、各 c4 で Q_H≈1 | **measured** | `results/hopf_basin.json`（Type A、k は c4 で ~8% 緩く低下＝軽い sub-√c4 は床） |
-| 2 | **Q_H=2**（方位角巻き×2）も同じ流れで保持（|Q_H|≈2）、エネルギー単調 | **measured** | qh2_held=True、\|Q_H\| ~1.95→~2.0（Type A） |
-| 3 | 保持する start は**有界な窓**（両側）＝ basin は有界（大域でない） | **observed** | basin_window_mult（下は未解像、上は解離）（Type B/D） |
+| 1 | ~~size=k√c4 に従う~~ **撤回（target_encoded）**：start∝√c4 を初期条件に埋込・流れ未収束。decoupling で size/√c4 が drift 26%＝創発でない | ~~measured~~ → **retracted** | `hopf_basin.json`：`size_law_target_encoded=True`, `decoupling_drift` |
+| 2 | **Q_H=2**（方位角巻き×2）も同じ流れで保持（|Q_H|≈2）、エネルギー単調＝トポロジカル安定性（size 非依存） | **observed** | qh2_held=True、\|Q_H\| ~1.95→~2.0 |
+| 3 | 保持する start は**有界な窓**（両側）＝ basin は有界（大域でない） | **observed** | basin_window_mult（下は未解像、上は解離） |
 | 4 | 絶対 k・basin 端は解像度/κ 依存／大 c4 は解像度ぎりぎり／「粒子」は analogy（床） | **（床の明示）** | robustness.json（κ~独立）、marginal_c4 |
-| 5 | L=56「破局的劣化」(v1 CV6.6%)は matched protocol では**再現しない**（c4=12 含む range 差で水増し）。size 則は L=44/52/56/64 で **CV<5%** | **measured** | `results/arrested_newton_v2.json`（原因特定＝promoted、H001 v2） |
-| 6 | ただし CV は L で単調上昇(2.2→4.2%)・sub-√c4 decline が細格子で steepen＝**有限箱圧縮**が第一候補の mild な床。arrested-Newton は basin を広げない(有界は固定格子で本質) | **observed/床** | `arrested_newton_v2.json`（L-series・basin plain=accel=[0.7,1.5]） |
+| 5 | ~~size 則は L=44/52/56/64 で CV<5%~~ **撤回**：この CV も同じ √c4-seeding 由来で創発の証拠でない。有効なのは**負の結果**（arrested-Newton は basin を広げない） | ~~measured~~ → **retracted（負の結果は有効）** | `arrested_newton_v2.json`（L-series の CV は seeding 由来） |
+| 6 | CV は L で単調上昇・arrested-Newton は basin を広げない(有界は固定格子で本質)＝**負の結果は残る** | **observed/床** | `arrested_newton_v2.json`（basin plain=accel=[0.7,1.5]） |
 
 ## e017 — 壁つき Rayleigh-Bénard（教科書 Ra_c）  (STATUS: GREEN, Type A)
 

@@ -1,6 +1,12 @@
 # H001 — Hopf の真の大域化（arrested-Newton／高解像度で任意初期→L*）
 
-- **状態**: resolved（L=56「劣化」の原因を特定＝**promoted**／κ∝dx⁴ は dead-end／真の大域 basin は frontier 継続）
+> **⚠️ 第8監査（2026-07 改訂・撤回）**：本 H001 が足場にした e016 の **size=k√c4 は target_encoded で撤回**。
+> size 則ループは各 c4 を `start∝√c4` で仕込み流れは未収束のため、CV<5% は **√c4-seeding 由来**であって
+> 創発の証拠でない（decoupling テストで size/√c4 が drift 26%）。よって下の「size 則は L=44–64 で保たれる
+> ＝promoted」も**創発としては撤回**。**有効に残るのは負の結果**：arrested-Newton は basin を広げない
+> （有界性は固定格子で本質）。**真の大域化＝start 非依存の L* への収束**は依然 **frontier（未達）**。
+
+- **状態**: **frontier（size 則は第8監査で撤回；start 非依存 L* は未達）**／負の結果（arrested-Newton は basin を広げない）は有効／κ∝dx⁴ は dead-end
 - **起票者**: Claude Code / 2026-07-01
 - **狙う Type**: B（→ 一部 D：真の大域 basin は frontier）
 - **依拠する既知事実**: e012 Stage3（完全PDE 自己安定化、Q_H≈1 保持・エネルギー単調）、
