@@ -1,5 +1,10 @@
 # 00 — 全体地図（背骨と、入力を剥がす順番）
 
+> **【現在地は移りました】** この文書は三層移行前の初期の全体地図であり、**歴史資料**として
+> その場に保存している（移動・削除しない）。**現在地の地図は [`GENESIS_MAP.md`](GENESIS_MAP.md)**
+> （Evidence Library / Genesis Rooms / AI Genesis Lab の三層）。移行記録は [`MIGRATION.md`](MIGRATION.md)、
+> 案内は [`history/00_grand_map_legacy.md`](history/00_grand_map_legacy.md)。以下は当時の背骨の記録。
+
 一行で：**本物の場から、最小条件で、構造が勝手に出るのを、掟つきで一個ずつ
 積む。** それが Aeterna-Genesis。
 
