@@ -124,6 +124,9 @@
 - **三体フル結合／開かれた進化**（代謝＋流れ＋粒子／突然変異→新規性、[H003](working_ledger/H003_three_body_coupling.md)）— frontier。
 - **内生的需要でオープンエンド性**（宿主寄生者の敵対的共進化が需要を内側から上げ複雑性の頭打ちを外す、[H017](working_ledger/H017_openended_frontier.md)）— **frontier（機構を GREEN で実証）／e029**。軍拡競争は escalate/collapse で変動＝ensemble 中央値でゲート。真の無限オープンエンド性は未解決。
 - **完全な大転移＝群れが再生産する高次個体**（選択の単位を群れに移す＋創設者ボトルネックで協力が高次個体に、[H017](working_ledger/H017_openended_frontier.md)）— **frontier（機構を GREEN で実証）／e029**。協力の安定化は必要条件、分業・生殖体細胞分化は未実装。
+- **分業＝凸リターンが生殖体細胞分化を駆動**（群れ適応度が投資配分に凸なら専門化が創発、Michod、[H018](working_ledger/H018_frontier_solid.md)）— **frontier（機構を GREEN で実証）／e030**。専門家割合 0.26→0.85 単調、生殖/体細胞 proxy が共存(1.0)。抽象 toy 適応度＝床。
+- **離散作用の平滑化で揺らぎを抑える**（BD 生作用は N とともに揺らぎ支配＝H008、Glaser-Surya 平滑化が 1/7〜1/40 に damp、[H018](working_ledger/H018_frontier_solid.md)）— **frontier（障害を GREEN で定量化）／e031**。曲率信号は ~1σ＝床。**治療でなく障害の定量化**。
+- **3D（2+1）DS の d>2 病理**（面積則は成立(R²>0.85)だが係数が密度でドリフト(4.02×)＝2D の純数と違い普遍性を失う、[H018](working_ledger/H018_frontier_solid.md)）— **frontier（病理を GREEN で定量化）／e032**。なぜ 2D が SOLID・3D が床か。Barton cured 分子は未再現＝床。
 
 ---
 

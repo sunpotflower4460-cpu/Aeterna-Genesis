@@ -302,3 +302,32 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 2 | **完全な大転移＝群れが再生産する高次個体**：個体選択は協力崩壊（0.05–0.06）、群れ再生産＋創設者ボトルネック k=1 は協力を救済（0.92–0.96）、狭いボトルネックほど協力↑（k=1: 0.92 > k=20: 0.81） | **measured（frontier）** | `results/major_transition.json`：3ゲート（Wilson 多層選択/Hamilton 則/生殖ボトルネック） |
 | 3 | **interpretive**：欠けていた材料＝**内生的に上がる需要**（軍拡競争）＋**群れ再生産（ボトルネックが対立抑制）**。KNOWN MATCH＝Red Queen/宿主寄生者共進化/多層選択/Hamilton 則/Grosberg-Strathmann | **interpretive/analogy** | AUDIT §claim tier |
 | 4 | **FRONTIER（未解決・正直に）**：真の無限オープンエンド性と、分業・生殖体細胞分化を含む完全な大転移は未解決——ここで示したのは**機構**であって解でない。軍拡競争は run ごとに escalate/collapse で変動（ensemble 中央値でゲート・cherry-pick しない）。協力の安定化は必要条件のみ。「生命/心/社会/多細胞性/オープンエンド性」は analogy——measured は物理量（ゲノム長・広がり・協力率）のみ | **frontier/床** | AUDIT 床1–4・`robustness.json`（seed batch/格子で頑健） |
+
+## e030 — 分業の創発（凸リターンが生殖体細胞分化を駆動）  (STATUS: GREEN, Type D/frontier, H018)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **凸リターンが専門化を駆動**：細胞が投資 x∈[0,1] を割り当て、群れ適応度＝⟨x^a⟩·⟨(1-x)^a⟩。凸（a>1）で専門家割合が上昇（a=0.5: 0.26 → a=4: 0.85）＝Michod の適応度凸性理論 | **measured（frontier）** | `results/division_of_labor.json`：`convex_returns_drive_specialization`（凸で spec>0.6） |
+| 2 | **専門化は凸性とともに単調上昇**：a=0.5/1/2/3/4 で 0.26/0.45/0.76/0.81/0.85（単調）、凹（a=0.5）の 3.3 倍以上 | **measured（frontier）** | `specialization_rises_with_convexity`（凸>1.5×凹・単調） |
+| 3 | **生殖体細胞分化＝役割の共存**：凸群れは x>0.8（生殖系列 proxy）と x<0.2（体細胞 proxy）を同一群れ内に共存（both_roles=1.0） | **measured（frontier）** | `germ_soma_differentiation`（both_roles_convex>0.9） |
+| 4 | **interpretive**：分業（生殖体細胞分化）は凸な適応度リターンから創発する——設計されず、投資配分の進化から。KNOWN MATCH＝Michod 適応度凸性/Volvox 生殖体細胞分化/群選択 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **FRONTIER（床）**：これは分業の**機構**（凸性→専門化）であって完全な多細胞個体でない。x は抽象的投資、適応度は toy。「生殖/体細胞/分業/多細胞性」は analogy——measured は投資配分と専門家割合のみ。seed batch・格子(G/n)で頑健 | **frontier/床** | AUDIT 床1–3・`robustness.json` |
+
+## e031 — 因果作用の平滑化（生 BD は揺らぎ支配・平滑化が抑える）  (STATUS: GREEN, Type D/frontier, H018)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **生 BD 作用は揺らぎ支配**：Benincasa-Dowker 生作用の std が N とともに増大（81→228→285）＝H008 の揺らぎ問題を定量化 | **measured（frontier）** | `results/smearing.json`：`raw_action_fluctuation_dominated`（生 std >3× 平滑 std を全 N で） |
+| 2 | **Glaser-Surya 平滑化が揺らぎを抑える**：平滑作用の std が生の 1/7〜1/40（最大 N で damp factor 6.98、大 N で >5）＝メソスケール smearing が揺らぎを damp | **measured（frontier）** | `smearing_damps_fluctuations`（最大 N で生/平滑 std >5） |
+| 3 | **曲率バンプは床**：平滑作用は曲率バンプ（mean 9.96→26.49）を拾うが揺らぎ（std 40.88）に対し ~1σ＝GREEN 閾値でなく床 | **（床の明示）** | `curvature_bump_*` vs `curvature_flat_std`（分離は ~1σ） |
+| 4 | **interpretive**：離散因果作用の H008 障害（生作用の揺らぎ）は平滑化で抑えられるが、曲率信号は有限 N では揺らぎに埋もれる。KNOWN MATCH＝Benincasa-Dowker 作用/Glaser-Surya 平滑化/n0-n1-n2 分子 | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **FRONTIER（床）**：**障害を定量化**したが**治療していない**——曲率抽出は ~1σ で床。`_bd_raw` は core.causet.bd_action_2d と一致（chain/antichain=N を検証）。「エントロピー/作用」は物理量。seed batch・eps で頑健 | **frontier/床** | AUDIT 床1–3・`robustness.json`・test で core 一致 |
+
+## e032 — 3D Dou-Sorkin の病理（2+1 面積則は成立・係数は普遍性を失う）  (STATUS: GREEN, Type D/frontier, H018)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **2+1 面積則は成立**：分子数が切り口幅 w に線形（R²>0.85、full で 0.98–0.99）＝2D（e022）の面積則が 3D へ延長 | **measured（frontier）** | `results/horizon_3d.json`：`area_law_holds_2plus1`（全密度で R²>0.85） |
+| 2 | **係数は密度依存でドリフト**：係数（数/w）が密度とともに増大（99→200→400、比 4.02×／密度比 9.0）＝2D の純数（~1 で不変）と違い普遍性を失う＝d>2 IR 病理 | **measured（frontier）** | `coefficient_density_dependent`（係数比>1.3） |
+| 3 | **interpretive**：DS エントロピー数は 3D でも面積スケーリングを保つが係数の普遍性を失う（d>2 IR 病理）＝2D（e022）が SOLID・3D が床、の理由を定量化。KNOWN MATCH＝Dou-Sorkin 分子/面積則/d>2 病理 | **interpretive/analogy** | AUDIT §claim tier |
+| 4 | **FRONTIER（床）**：d>2 病理を**定量化**したが**治療していない**——Barton 系 cured 分子は未再現。3D 係数は普遍数でない、3D は床・2D は SOLID。「エントロピー/地平線/BH」は analogy——measured は分子数の統計量のみ。seed batch・box 高さで頑健 | **frontier/床** | AUDIT 床1–3・`robustness.json` |

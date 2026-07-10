@@ -1,0 +1,110 @@
+{
+  "result": {
+    "params": {
+      "G": 100,
+      "n": 16,
+      "T": 500,
+      "mut": 0.03,
+      "as": [
+        0.5,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "a_convex": 4.0,
+      "a_concave": 0.5,
+      "seeds": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "sweep": [
+      {
+        "a": 0.5,
+        "specialist_frac": 0.255,
+        "both_roles": 0.818
+      },
+      {
+        "a": 1.0,
+        "specialist_frac": 0.453,
+        "both_roles": 0.99
+      },
+      {
+        "a": 2.0,
+        "specialist_frac": 0.761,
+        "both_roles": 1.0
+      },
+      {
+        "a": 3.0,
+        "specialist_frac": 0.805,
+        "both_roles": 1.0
+      },
+      {
+        "a": 4.0,
+        "specialist_frac": 0.853,
+        "both_roles": 1.0
+      }
+    ],
+    "spec_convex": 0.853,
+    "spec_concave": 0.255,
+    "both_roles_convex": 1.0,
+    "monotone_in_convexity": true
+  },
+  "atlas": [
+    {
+      "experiment": "e030 division of labor (germ-soma from convex returns)",
+      "tier": "measured/frontier",
+      "put_in": "G groups of n cells allocating x to reproduction vs viability; power-law return exponent a; group fitness = mean(repro)*mean(viab); group reproduction + mutation",
+      "emerged": [
+        "specialist fraction vs convexity a: [(0.5, 0.255), (1.0, 0.453), (2.0, 0.761), (3.0, 0.805), (4.0, 0.853)]",
+        "groups holding BOTH a pure germ and a pure soma cell at convex a=4.0: 1.0"
+      ],
+      "surprises": [
+        "a convex return alone splits a generalist group into a bimodal germ/soma pair -- differentiation with nothing differentiated by hand"
+      ],
+      "persistence": "specialization is stable under convex returns and scales monotonically with convexity",
+      "measured_numbers": {
+        "sweep": [
+          {
+            "a": 0.5,
+            "specialist_frac": 0.255,
+            "both_roles": 0.818
+          },
+          {
+            "a": 1.0,
+            "specialist_frac": 0.453,
+            "both_roles": 0.99
+          },
+          {
+            "a": 2.0,
+            "specialist_frac": 0.761,
+            "both_roles": 1.0
+          },
+          {
+            "a": 3.0,
+            "specialist_frac": 0.805,
+            "both_roles": 1.0
+          },
+          {
+            "a": 4.0,
+            "specialist_frac": 0.853,
+            "both_roles": 1.0
+          }
+        ],
+        "spec_convex": 0.853,
+        "spec_concave": 0.255,
+        "both_roles_convex": 1.0
+      },
+      "not_scripted_check": "only the return-curve shape is set; the bimodal specialization is measured",
+      "claim_tier": "measured (specialist fraction vs convexity; germ-soma coexistence) ; interpretive (division of labor from a convex return -- the missing piece of the major transition) ; analogy (germ-soma / multicellularity) ; FRONTIER",
+      "floors": [
+        "FRONTIER: a bounded toy; 'germ-soma / division of labor' is analogy for allocation bimodality",
+        "a concave return still leaves drift-spread; the robust facts are the convex-vs-concave contrast and the monotone rise with convexity",
+        "no real cell / organism is differentiated"
+      ]
+    }
+  ]
+}
