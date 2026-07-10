@@ -352,3 +352,13 @@ tier: `measured | observed | interpretive | analogy | frontier`
 | 3 | **創発閾値 a_c=1/2（Maxwell 点）＋ Nagumo 速度一致**：フロント速度が a=0.5 で符号反転（入れていない）、速度が √(D/2)(1−2a) と定量一致（誤差<0.01） | **measured** | `front_speed_matches_nagumo_and_maxwell_at_half` |
 | 4 | **interpretive**：空間構造が「有利な状態」の侵入を許し、生存は誘惑に依存（速度の符号反転）。e027 のエージェント三事実（混合崩壊/空間生存/条件閾値）が場から出る。KNOWN MATCH＝Nagumo/Schlögl 双安定フロント/Maxwell 点 a=1/2/速度 √(D/2)(1−2a) | **interpretive/analogy** | AUDIT §claim tier |
 | 5 | **床**：「協力/裏切り/大転移」は analogy。**同じ数学≠同じもの**——協力の進化＝双安定フロントとは主張せず、同じ三事実がエージェントなしの場から出る、に限定。協力の**安定性**であって完全な大転移でない。(A) 忠実＝RD 法則は手入力。D=0.5/1/2 で頑健（Maxwell 点 0.5 不変） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
+
+## e035 — Red Queen を「場」から（エージェントなし・捕食者被食者 Hopf 分岐）  (STATUS: GREEN, Type A/faithful, H019)
+
+| # | 主張 | tier | 裏づけ |
+|---|---|---|---|
+| 1 | **臨界富栄養化 K_c 未満で頭打ち**：Rosenzweig-MacArthur 場で K<K_c なら共存固定点が安定＝摂動が減衰し静的に頭打ち（e029 の静的寄生者プラトーの類似） | **measured** | `results/red_queen.json`：`enrichment_below_hopf_plateaus`（振幅<0.05） |
+| 2 | **K_c 超で内生持続振動**：K>K_c で安定リミットサイクルが誕生（Hopf 分岐）＝外部強制なしの内生持続振動（場の Red Queen、振幅 0.14→0.76） | **measured** | `enrichment_above_hopf_sustains_oscillation`（振幅>0.3） |
+| 3 | **発生点＝解析 Hopf 点**：測定発生点 K_c=0.706 が Jacobian trace=0 の解析 Hopf 点 K_c=0.7 と一致（誤差 0.006）。宿主・寄生者は位相ずれ振動（追いかけっこ） | **measured** | `oscillation_onset_matches_analytic_hopf`（誤差<0.1） |
+| 4 | **interpretive**：内生的持続変化＝Hopf 分岐で生まれるリミットサイクル；静的系は頭打ちに緩和。KNOWN MATCH＝Rosenzweig-MacArthur/富栄養化のパラドクス（Hopf 不安定化）/捕食者被食者リミットサイクル | **interpretive/analogy** | AUDIT §claim tier |
+| 5 | **床**：「Red Queen/共進化/軍拡競争」は analogy。**同じ数学≠同じもの**——共進化＝Hopf とは主張せず、同じ事実がエージェントなしの場から出る、に限定。場が与えるのは内生**振動**で、文字通りの無限複雑性上昇ではない（frontier）。(A) 忠実＝個体群則は手入力。m・H0 で Hopf 点が動いても発生点が追従（0.7→0.62→0.82） | **（床の明示）** | AUDIT 床1–4・`robustness.json` |
