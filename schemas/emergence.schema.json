@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/emergence.schema.json",
+  "title": "Emergence assessment (emergence.json)",
+  "description": "到達 Level 0–8 とその根拠（測定量）。画像の印象でなく数で判定する（EMERGENCE_LEVELS.md）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reached_level", "uninterrupted_from_zero", "level_detected_by_measurement", "detected", "measured_by", "purity"],
+  "properties": {
+    "reached_level": {"type": "integer", "minimum": 0, "maximum": 8},
+    "candidate_level": {"type": "integer", "minimum": 0, "maximum": 8},
+    "uninterrupted_from_zero": {"type": "boolean"},
+    "level_detected_by_measurement": {"type": "boolean"},
+    "detected": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "difference": {"type": "boolean"},
+        "localization": {"type": "boolean"},
+        "spontaneous_motion": {"type": "boolean"},
+        "circulation": {"type": "boolean"},
+        "persistent_individuality": {"type": "boolean"},
+        "co_differentiation": {"type": "boolean"},
+        "self_maintaining_closure": {"type": "boolean"},
+        "growth_division_inheritance": {"type": "boolean"},
+        "selection_open_ended": {"type": "boolean"}
+      }
+    },
+    "measured_by": {
+      "type": "object",
+      "description": "画像でなく測定量。Level に応じた指標（分散増大/構造因子/相関長/欠陥数/循環積分…）",
+      "minProperties": 1,
+      "additionalProperties": {"type": ["number", "integer", "boolean"]}
+    },
+    "purity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["per_object_labels", "external_optimum", "role"],
+      "properties": {
+        "per_object_labels": {"type": "boolean"},
+        "external_optimum": {"type": "boolean"},
+        "role": {"type": "string", "enum": ["E", "V", "S", "N", "F", "Q"]}
+      }
+    },
+    "natural_emergence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "started_from_time_zero": {"type": "boolean"},
+        "target_shape_seeded": {"type": "boolean"},
+        "runtime_interventions": {"type": "integer", "minimum": 0},
+        "target_dependent_rules": {"type": "boolean"},
+        "target_dependent_stopping": {"type": "boolean"},
+        "target_dependent_clipping": {"type": "boolean"},
+        "level_detected_by_measurement": {"type": "boolean"}
+      }
+    }
+  }
+}

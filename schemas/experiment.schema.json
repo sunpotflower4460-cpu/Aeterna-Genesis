@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/experiment.schema.json",
+  "title": "Evidence Library experiment metadata (experiment.yaml)",
+  "description": "Metadata for an existing experiments/e0xx module. PR3 adds one experiment.yaml per module. Does NOT move or rewrite physics code; it records role/confidence/what-was-put-in/what-emerged and the Genesis positioning.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "role", "confidence", "claim_tier", "put_in", "emerged", "seeded_structure", "dimension", "genesis_role", "target_encoded"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^e[0-9]{3}$"},
+    "title": {"type": "string", "minLength": 1},
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary"],
+      "properties": {
+        "primary": {"$ref": "#/$defs/role"},
+        "secondary": {"type": "array", "items": {"$ref": "#/$defs/role"}}
+      }
+    },
+    "confidence": {"type": "string", "enum": ["A", "B", "C", "D"]},
+    "claim_tier": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "enum": ["measured", "observed", "established", "interpretive", "analogy", "frontier"]}
+    },
+    "put_in": {"type": "string", "minLength": 1, "description": "何を入れたか（法則・初期条件・結合）"},
+    "emerged": {"type": "string", "minLength": 1, "description": "何が自然に出たか（測定した創発）"},
+    "seeded_structure": {"type": "boolean", "description": "完成構造を初期条件に置いたか（true=足場付き/設計）"},
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["computed"],
+      "properties": {
+        "computed": {"type": "string", "enum": ["2D", "3D", "0D", "1D", "graph", "mixed"]},
+        "official_3d": {"type": "boolean"},
+        "transfer_risk": {"$ref": "#/$defs/risk"}
+      }
+    },
+    "genesis_role": {
+      "type": "string",
+      "enum": ["genesis_candidate", "behavior_dictionary", "measurement_tool", "design_hypothesis", "negative_constraint", "sidebranch_analogy"],
+      "description": "GENESIS_MAP §1 の位置づけ"
+    },
+    "target_encoded": {"type": "boolean", "description": "第8監査: 結論と同型の因果をゲート/初期条件/方程式に符号化しているか"},
+    "unresolved_audit": {"type": "array", "items": {"type": "string"}},
+    "known_match": {"type": "string"},
+    "results": {"type": "array", "items": {"type": "string"}, "description": "results/*.json への相対パス"},
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "physics_integrity": {"$ref": "#/$defs/passfail"},
+        "no_target_encoding": {"$ref": "#/$defs/passfail"},
+        "conservation": {"$ref": "#/$defs/passfail"},
+        "convergence": {"$ref": "#/$defs/passfail"},
+        "reproducibility": {"$ref": "#/$defs/passfail"},
+        "visualization_integrity": {"$ref": "#/$defs/passfail"}
+      }
+    }
+  },
+  "$defs": {
+    "role": {"type": "string", "enum": ["E", "V", "S", "N", "F", "Q"]},
+    "risk": {"type": "string", "enum": ["low", "medium", "high", "critical", "not_applicable"]},
+    "passfail": {"type": "string", "enum": ["passed", "failed", "pending", "not_applicable"]}
+  }
+}

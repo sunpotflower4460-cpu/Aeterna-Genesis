@@ -1,0 +1,68 @@
+registry_version: 1
+kind: models
+# 機械可読な物理モデル一覧。Genesis Room の始原条件 (genesis.yaml の model) はここから選ぶ。
+# genesis_candidate = 正式 3D Room 候補 (G001-G003)。related_experiments = Evidence Library の裏づけ。
+entries:
+  - id: g001_ginzburg_landau_quench
+    name: "3D symmetry-breaking / defect formation (TDGL · complex GL · GPE quench)"
+    description: "一様/対称な場＋微小ノイズをクエンチし、分散増大→欠陥/渦線/渦ループ→移動/再結合を調べる。完成した渦線を初期条件に置かない。"
+    equations: ["complex_ginzburg_landau", "time_dependent_ginzburg_landau", "gross_pitaevskii"]
+    fields: ["psi"]
+    dimension_support: [2, 3]
+    boundary: ["periodic"]
+    dimension_sensitivity: high
+    genesis_candidate: G001
+    related_experiments: ["e008", "e010", "e012", "e016"]
+
+  - id: g002_boussinesq_convection
+    name: "3D spontaneous convection (Boussinesq · walled Rayleigh-Benard)"
+    description: "静止流体＋微小ゆらぎ＋物理的温度差から不安定モード→局在対流→循環/輸送。完成した roll を初期条件に置かない。"
+    equations: ["boussinesq", "navier_stokes_boussinesq"]
+    fields: ["velocity", "temperature", "pressure"]
+    dimension_support: [2, 3]
+    boundary: ["periodic", "no_flux", "physical_wall"]
+    dimension_sensitivity: medium
+    genesis_candidate: G002
+    related_experiments: ["e013", "e017"]
+
+  - id: g003_model_h_phase_field
+    name: "3D phase separation + fluid co-evolution (Model H · Cahn-Hilliard-Navier-Stokes)"
+    description: "同じ自由エネルギー/化学ポテンシャル/応力/流速場から相分離＋界面＋流れ＋変形＋輸送が同時に出る全体場。部品接続として扱わない。G001/G002 の後。"
+    equations: ["cahn_hilliard", "navier_stokes", "model_h"]
+    fields: ["phi", "velocity", "pressure"]
+    dimension_support: [2, 3]
+    boundary: ["periodic", "no_flux"]
+    dimension_sensitivity: high
+    genesis_candidate: G003
+    related_experiments: ["e013", "e018", "e033"]
+
+  # --- Evidence Library の忠実物理（挙動辞書/検証。genesis_candidate なし = 単独では正式 Room 候補でない） ---
+  - id: gross_pitaevskii
+    name: "Gross-Pitaevskii equation (BEC/superfluid)"
+    description: "実在の BEC/超流体の場方程式。渦の運動・相互作用・渦リング自己伝播（挙動辞書）。3D では点渦でなく渦線/ループ。"
+    equations: ["gross_pitaevskii"]
+    fields: ["psi"]
+    dimension_support: [2, 3]
+    boundary: ["periodic"]
+    dimension_sensitivity: high
+    related_experiments: ["e001", "e002", "e003", "e010"]
+
+  - id: cahn_hilliard
+    name: "Cahn-Hilliard / Flory-Huggins spinodal decomposition"
+    description: "一様＋ノイズから相分離・ドメイン形成（0→差→局在候補）。質量保存・スペクトル・相判定を確認して使う。"
+    equations: ["cahn_hilliard"]
+    fields: ["phi"]
+    dimension_support: [2, 3]
+    boundary: ["periodic", "no_flux"]
+    dimension_sensitivity: medium
+    related_experiments: ["e033"]
+
+  - id: rosenzweig_macarthur
+    name: "Rosenzweig-MacArthur predator-prey (Hopf)"
+    description: "均衡の不安定化から時間振動（時間的自己組織化候補）。空間 Genesis と別軸。"
+    equations: ["rosenzweig_macarthur"]
+    fields: ["prey", "predator"]
+    dimension_support: [0, 2]
+    boundary: ["periodic"]
+    dimension_sensitivity: low
+    related_experiments: ["e035"]

@@ -1,0 +1,40 @@
+registry_version: 1
+kind: invariants
+# 各モデルで必ず測る保存量/収支（PHYSICS_INTEGRITY.md §2, 設計書 §16）。
+# 保存量を壊す補正は禁止。収支が測定されていることが物理主張の最低条件。
+entries:
+  - id: mass
+    name: "Mass / total density"
+    description: "Cahn-Hilliard など保存系で総質量。ドリフトを測る。"
+    conserved: true
+    related_experiments: ["e033"]
+
+  - id: energy
+    name: "Energy / free energy"
+    description: "自由エネルギー・全エネルギー。散逸系では単調減少/収支。"
+    conserved: false
+    related_experiments: ["e012", "e016"]
+
+  - id: winding_number
+    name: "Topological winding number"
+    description: "位相巻き数（トポロジカル電荷）。複製は単純コピーでない（e026）。"
+    conserved: true
+    related_experiments: ["e011", "e012", "e026", "e028"]
+
+  - id: circulation
+    name: "Circulation"
+    description: "∮v·dl。渦の循環。"
+    conserved: false
+    related_experiments: ["e001", "e003"]
+
+  - id: entropy_production
+    name: "Entropy production / dissipation rate"
+    description: "散逸率・エントロピー生成。外部流入との収支。"
+    conserved: false
+    related_experiments: ["e013", "e017"]
+
+  - id: numerical_error
+    name: "Numerical error / resolution drift"
+    description: "格子/時間刻み依存性。解像度収束の確認。"
+    conserved: false
+    related_experiments: ["e031", "e032"]

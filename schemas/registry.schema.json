@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/registry.schema.json",
+  "title": "Genesis registry (models / solvers / diagnostics / invariants)",
+  "description": "機械可読な registry。AI が自由形式のファイルを作らず、ここで許可されたモデル/solver/診断器/保存量/パラメータ範囲だけを使う（AGENTS.md §変更してよいもの, 設計書 §19）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registry_version", "kind", "entries"],
+  "properties": {
+    "registry_version": {"type": "integer", "minimum": 1},
+    "kind": {"type": "string", "enum": ["models", "solvers", "diagnostics", "invariants"]},
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "description"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "name": {"type": "string", "minLength": 1},
+          "description": {"type": "string", "minLength": 1},
+          "equations": {"type": "array", "items": {"type": "string"}},
+          "fields": {"type": "array", "items": {"type": "string"}},
+          "dimension_support": {"type": "array", "items": {"type": "integer", "enum": [0, 1, 2, 3]}},
+          "boundary": {"type": "array", "items": {"type": "string", "enum": ["periodic", "no_flux", "physical_wall"]}},
+          "dimension_sensitivity": {"type": "string", "enum": ["low", "medium", "high", "critical", "not_applicable"]},
+          "genesis_candidate": {"type": "string"},
+          "related_experiments": {"type": "array", "items": {"type": "string", "pattern": "^e[0-9]{3}$"}},
+          "measures_level": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 8}},
+          "conserved": {"type": "boolean"},
+          "unit": {"type": "string"},
+          "method": {"type": "string"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+registry_version: 1
+kind: solvers
+# 利用可能な数値法。計算を軽くしてよいが物理を偽装しない（PHYSICS_INTEGRITY.md §16）。
+# 長距離相互作用は勝手に局所化せず FFT/Poisson/FMM を使う。
+entries:
+  - id: fft_spectral
+    name: "FFT pseudo-spectral (periodic)"
+    description: "周期境界での擬スペクトル法。ラプラシアン/長距離を FFT で正しく扱う。"
+    dimension_support: [1, 2, 3]
+    boundary: ["periodic"]
+    related_experiments: ["e001", "e008", "e010", "e033"]
+
+  - id: finite_difference_explicit
+    name: "Explicit finite-difference (5-point/7-point Laplacian)"
+    description: "反応拡散・phase-field の陽的差分。no_flux/physical_wall に対応。"
+    dimension_support: [1, 2, 3]
+    boundary: ["periodic", "no_flux", "physical_wall"]
+    related_experiments: ["e033", "e034", "e037"]
+
+  - id: projection_incompressible
+    name: "Projection method for incompressible flow"
+    description: "非圧縮 Navier-Stokes/Boussinesq の圧力射影。Poisson solver を用いる。"
+    dimension_support: [2, 3]
+    boundary: ["periodic", "no_flux", "physical_wall"]
+    related_experiments: ["e013", "e017"]
+
+  - id: arrested_newton_flow
+    name: "Arrested Newton flow (gradient descent to static minimizer)"
+    description: "静的最小化子（Derrick/hopfion）への勾配降下。動的発展でなく最小化。"
+    dimension_support: [2, 3]
+    boundary: ["periodic"]
+    related_experiments: ["e012", "e016"]

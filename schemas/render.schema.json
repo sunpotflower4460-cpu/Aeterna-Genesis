@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/render.schema.json",
+  "title": "Render map (render.yaml)",
+  "description": "表示要素→実測物理量の対応。存在しない流線/粒子/非物理アニメを禁止。強調表示は linear/log/normalized/clipped_for_display を明示（PHYSICS_INTEGRITY.md §18）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mapping"],
+  "properties": {
+    "mapping": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "表示チャネル→物理量。値は必ず実測物理量名（registry/diagnostics or invariants）",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["phase", "density", "energy_density", "dissipation_rate", "flux_magnitude", "physical_velocity", "scalar_field_threshold", "vorticity", "winding", "temperature", "reaction_rate", "gradient_magnitude"]
+      }
+    },
+    "emphasis": {"type": "string", "enum": ["linear", "logarithmic", "normalized", "clipped_for_display"]},
+    "data_source": {"type": "string", "enum": ["physics", "explanatory_demo"], "description": "physics=実測 / explanatory_demo=説明用（明示必須）"},
+    "separated_from_physics_data": {"type": "boolean", "description": "表示用変換データと計算用データを分離しているか"}
+  }
+}
