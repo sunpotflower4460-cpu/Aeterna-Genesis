@@ -29,8 +29,8 @@
 | **PR2** | Schema と Registry（`schemas/`・`genesis/registry/`＋CI-B 検証） | **完了 (#22)** |
 | **PR3** | 既存 e001–e045 へ `experiment.yaml` metadata（41件・schema 検証・8監査整合） | **完了 (#23)** |
 | **PR4** | 共通 Runner と Manifest（gl2d/gl3d 参照モデル・manifest/summary/checksum/emergence・no-write 正実装） | **完了 (#24)** |
-| **PR5** | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・渦線安定性・リスク報告） | **本 PR** |
-| PR6 | 最初の正式 3D Genesis Room（G001 or G002） | 予定 |
+| **PR5** | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・渦線安定性・リスク報告） | **完了 (#25)** |
+| **PR6** | 最初の正式 3D Genesis Room（G001・64³・Level 2・格子収束・複数 seed） | **本 PR** |
 | PR7 | AI Genesis Lab 最小版（許可パラメータのみ探索・既存 Room 非破壊） | 予定 |
 | PR8 | Observatory App（catalog 駆動・Physics Integrity Panel） | 予定 |
 
@@ -149,3 +149,30 @@ PR4 の Runner は「2D は探索・3D 正式」の枠を実装するが、**正
 **軽微な追加のみ**：`.github/workflows/ci.yml` に harness smoke。`.gitignore` に `_demo_transfer.yaml`。
 
 **まだやらない**：正式 3D Room（`rooms/room-g001-a/`）と full-3d 実行は **PR6**。
+
+---
+
+## PR6 で「何を残し・何を追加し・何を変更しなかったか」
+
+**残した（変更なし）**：`experiments/`・`genesis/models,runners,diagnostics,dimension/`・`schemas/`・全 docs 本文。
+
+**追加した（最初の正式 3D Genesis Room）**：
+- `rooms/official/room-g001-a/`：**3D 複素 TDGL クエンチ**を t=0 から途中介入なしで full-3D 実行した正式 Room。
+  `genesis.yaml`/`room.yaml`/`solver.yaml`/`diagnostics.yaml`/`emergence.json`/`dimension-transfer.yaml`/
+  `lineage.yaml`/`render.yaml`/`convergence.json`/`README.md` ＋ `runs/seed-000{0,1,2}/{manifest,summary,checksum,emergence}.json`。
+- `rooms/catalog.json`：Room カタログ（Python 生成の一次情報。Observatory App（PR8）が読む＝ハードコードしない）。
+- `tools/build_room_g001.py`：Room を再現可能に生成するビルダ（多 seed＋格子収束＋物理監査＋schema 検証）。
+- `tests/test_room_g001.py`：committed Room が schema 準拠・Level 2・physics_status 全 passed・多 seed。
+
+**測定（full-3D, 64³, 700 steps, seeds 0/1/2）**：
+- **reached_level=2**（全 seed）＝対称性破れ（秩序変数創発）＋**位相巻き渦線**（入れずに創発・Kibble-Zurek）。
+- **格子収束**：Level 2 が 48³/64³/80³ で一致、欠陥密度 11.3→9.2→8.1（×10⁻⁴）で収束傾向。
+- **再現性**：同 seed → 同一 field checksum。**保存**：post-quench 自由エネルギー単調減少。**第8監査**：目標構造 seeded なし・t=0 から・runtime 介入 0。
+
+**拡張のみ**：`tools/validate_schemas.py`（CI-B）が `rooms/official/*/` の全 Room 成果物（room/genesis/emergence/
+run/dimension-transfer/render）を schema 検証。`.github/workflows/ci.yml` にビルダの quick full-3D pipeline smoke。
+
+**床（正直に）**：role E（純粋創発・ラベル/外的最適なし）。「渦線 Genesis」は測定量で判定した名（強い語を使わない）。
+Level 3+（渦線の運動・再結合の循環）は candidate＝frontier。**移行完了の最低条件「少なくとも一つの正式 3D Room」を充足。**
+
+**まだやらない**：AI Genesis Lab（許可 param 探索）は **PR7**、Observatory App（catalog 駆動）は **PR8**。
