@@ -115,6 +115,43 @@ def main():
         except Exception as e:  # noqa: BLE001
             errors.append("invalid param_ranges.yaml: %s" % e)
 
+    # 6. Every experiments/e0xx/experiment.yaml validates against experiment.schema.json (PR3),
+    #    its id matches the directory prefix, and the 8th-audit rule holds
+    #    (target_encoded=true => primary role must NOT be E or V).
+    exp_schema_path = os.path.join(_SCHEMAS, "experiment.schema.json")
+    exp_dir = os.path.join(_REPO, "experiments")
+    n_exp = 0
+    if os.path.exists(exp_schema_path) and os.path.isdir(exp_dir):
+        try:
+            exp_validator = Draft202012Validator(_load_json(exp_schema_path))
+        except Exception as e:  # noqa: BLE001
+            exp_validator = None
+            errors.append("experiment.schema.json unusable: %s" % e)
+        for dirname in sorted(d for d in os.listdir(exp_dir) if d.startswith("e0")):
+            ypath = os.path.join(exp_dir, dirname, "experiment.yaml")
+            if not os.path.exists(ypath):
+                errors.append("missing experiments/%s/experiment.yaml" % dirname)
+                continue
+            try:
+                doc = _load_yaml(ypath)
+            except Exception as e:  # noqa: BLE001
+                errors.append("invalid YAML experiments/%s/experiment.yaml: %s" % (dirname, e))
+                continue
+            if exp_validator is not None:
+                for err in exp_validator.iter_errors(doc):
+                    errors.append("experiments/%s/experiment.yaml: %s at %s"
+                                  % (dirname, err.message, list(err.absolute_path)))
+            if doc.get("id") != dirname.split("_")[0]:
+                errors.append("experiments/%s/experiment.yaml: id %r must match dir prefix"
+                              % (dirname, doc.get("id")))
+            primary = (doc.get("role") or {}).get("primary")
+            if doc.get("target_encoded") and primary in ("E", "V"):
+                errors.append("experiments/%s/experiment.yaml: 8th-audit violation "
+                              "(target_encoded=true but primary role is %s; must be S/F/Q)"
+                              % (dirname, primary))
+            n_exp += 1
+        info.append("experiment.yaml OK: %d validated (schema + id match + 8th-audit)" % n_exp)
+
     for line in info:
         print("  " + line)
     if errors:
@@ -122,8 +159,8 @@ def main():
         for e in errors:
             print("  - " + e)
         return 1
-    print("\nCI-B OK: %d schemas well-formed; registry validates; refs resolve; ids unique."
-          % len(schema_files))
+    print("\nCI-B OK: %d schemas well-formed; registry validates; refs resolve; ids unique; "
+          "%d experiment.yaml validated (schema + 8th-audit)." % (len(schema_files), n_exp))
     return 0
 
 

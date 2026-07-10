@@ -26,8 +26,8 @@
 | PR | 内容 | 状態 |
 |---|---|---|
 | **PR1** | 思想と用語を固定（本 docs 群＋AGENTS.md＋LAW 多軸案内＋旧地図保存＋legacy 明示） | **完了 (#21)** |
-| **PR2** | Schema と Registry（`schemas/`・`genesis/registry/`＋CI-B 検証） | **本 PR** |
-| PR3 | 既存 e001–e045 へ `experiment.yaml` metadata | 予定 |
+| **PR2** | Schema と Registry（`schemas/`・`genesis/registry/`＋CI-B 検証） | **完了 (#22)** |
+| **PR3** | 既存 e001–e045 へ `experiment.yaml` metadata（41件・schema 検証・8監査整合） | **本 PR** |
 | PR4 | 共通 Runner と Manifest（manifest/checkpoint/summary/checksum/no-write 正実装） | 予定 |
 | PR5 | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・局所 3D・低解像度全体 3D） | 予定 |
 | PR6 | 最初の正式 3D Genesis Room（G001 or G002） | 予定 |
@@ -78,3 +78,28 @@
 
 **まだやらない**：`experiment.yaml` を各実験に付与するのは **PR3**。room/run/emergence の実体は正式 Room（PR6）から。
 schema は「置いただけ」で既存実験を再検証しない（設計書 §24-5「まず metadata 層」）。
+
+---
+
+## PR3 で「何を残し・何を追加し・何を変更しなかったか」
+
+**残した（変更なし）**：`experiments/e0xx/` の物理コード・`results/`・`AUDIT.md`・`robustness.py`・`tests/`・
+全 docs 本文・`docs/TRUST_MAP.md`・`docs/claim_ledger.md`・LAW.md。**物理コードは一切動かしていない。**
+
+**追加した**：
+- 各 `experiments/e0xx/experiment.yaml`（**41 件**）：`id/title/role{primary,secondary}/confidence(Type A–D)/
+  claim_tier/put_in/emerged/seeded_structure/dimension{computed,official_3d,transfer_risk}/genesis_role/
+  target_encoded/known_match/unresolved_audit/results`。**一次情報は `docs/TRUST_MAP.md`（役割・target_encoded）・
+  `docs/現在地と方向性_TypeABCD.md`（確信度）・`docs/GENESIS_MAP.md §1`（genesis_role）**。
+- `tools/gen_experiment_yaml.py`：experiment.yaml の再現可能な生成器（ハンド authored データ表）。
+- `tools/validate_schemas.py`（CI-B 拡張）：全 experiment.yaml を `experiment.schema.json` で検証・
+  id とディレクトリ名の一致・**第8監査整合**（target_encoded=true → 主役割は E/V でない）を機械チェック。
+
+**genesis_role（GENESIS_MAP §1 の位置づけ）の内訳**：
+genesis_candidate=e008/e010/e013/e033/e035、behavior_dictionary=e001/e002/e003/e011/e012/e016/e034/e036/
+e037/e038/e039/e040/e043/e044、measurement_tool=e014/e017/e022/e023/e031/e032、
+design_hypothesis=e015/e018/e019/e021/e024/e025/e028/e029/e030/e041、negative_constraint=e020/e026/e045、
+sidebranch_analogy=e004/e009/e027。
+
+**まだやらない**：room/run/emergence の実体は正式 Room（PR6）から。experiment.yaml は metadata であり、
+既存の `AUDIT.md`/YAML ヘッダ/TRUST_MAP を置換しない（並存する集約ビュー）。
