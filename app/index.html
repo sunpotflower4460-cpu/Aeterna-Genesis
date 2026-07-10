@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aeterna-Genesis — Observatory</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--fg:#e6edf3;--mut:#9aa7b4;--acc:#58a6ff;
+        --e:#3fb950;--v:#58a6ff;--s:#d29922;--n:#8b949e;--f:#bc8cff;--q:#f85149;}
+  @media(prefers-color-scheme:light){:root{--bg:#f6f8fa;--panel:#fff;--line:#d0d7de;--fg:#1f2328;--mut:#57606a;}}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",sans-serif;
+       background:var(--bg);color:var(--fg)}
+  header{padding:22px 20px;border-bottom:1px solid var(--line)}
+  h1{margin:0 0 4px;font-size:20px}
+  .sub{color:var(--mut);font-size:13px;max-width:760px}
+  main{max-width:1040px;margin:0 auto;padding:18px 16px 60px}
+  h2{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:26px 0 10px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-size:13px;background:var(--panel)}
+  .chip b{font-variant-numeric:tabular-nums}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .card{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:14px;cursor:pointer;
+        transition:border-color .15s}
+  .card:hover{border-color:var(--acc)}
+  .card.official{border-left:3px solid var(--e)}
+  .badge{font-size:11px;border:1px solid var(--line);border-radius:5px;padding:1px 7px;color:var(--mut)}
+  .badge.ok{color:var(--e);border-color:var(--e)}
+  .lvl{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13px;margin-top:8px}
+  .kv .k{color:var(--mut)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
+  th,td{border:1px solid var(--line);padding:4px 8px;text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);
+         max-width:760px;width:calc(100% - 32px);padding:0}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  .dlg-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .dlg-b{padding:16px 18px}
+  .close{cursor:pointer;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--fg);padding:4px 10px}
+  .panel{border:1px solid var(--line);border-radius:8px;padding:12px;margin:10px 0;background:var(--bg)}
+  .panel h3{margin:0 0 6px;font-size:13px}
+  .g{color:var(--e)} .warn{color:var(--s)} .muted{color:var(--mut)}
+  code{background:rgba(127,127,127,.12);padding:1px 5px;border-radius:4px}
+  footer{color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding:16px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>Aeterna-Genesis — Observatory</h1>
+  <div class="sub">未分化な始原条件から 3D 物理を <b>t=0 から</b> 立ち上げ、差・構造・運動・全体性が
+  どこまで<b>自然に</b>育つかを観測する。表示は全て <code>catalog.json</code>（Python 生成）由来で、
+  各要素は<b>実測物理量</b>に対応する。「同じ数学 ≠ 同じもの」。</div>
+</header>
+<main id="app"><p class="muted">catalog.js を読み込めませんでした。<code>python tools/build_catalog.py</code> を実行してください。</p></main>
+<footer>Observatory App — catalog-driven（ハードコードなし）。official 3D Room と候補は区別。強い語は使わない。</footer>
+
+<dialog id="dlg"><div class="dlg-h"><strong id="dlg-t"></strong><button class="close" onclick="dlg.close()">閉じる</button></div>
+  <div class="dlg-b" id="dlg-b"></div></dialog>
+
+<script src="./generated/catalog.js"></script>
+<script>
+const C = window.CATALOG;
+const dlg = document.getElementById('dlg');
+const ROLE = {E:['創発','var(--e)'],V:['検証','var(--v)'],S:['設計','var(--s)'],N:['負の結果','var(--n)'],F:['frontier','var(--f)'],Q:['隔離','var(--q)']};
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function roleChips(counts){return Object.entries(ROLE).filter(([k])=>counts[k]).map(([k,[lbl,col]])=>
+  `<span class="chip"><span class="dot" style="background:${col}"></span>${k} ${lbl} <b>${counts[k]}</b></span>`).join('');}
+
+function render(){
+  if(!C){return;}
+  const rc = C.evidence_library.role_counts;
+  const rooms = C.rooms.map(r=>{
+    const allpass = Object.values(r.physics_status||{}).every(v=>v==='passed');
+    return `<div class="card official" onclick='openRoom(${JSON.stringify(r.room_id)})'>
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div><div style="font-weight:600">${esc(r.title)}</div>
+          <div class="muted mono">${esc(r.room_id)} · ${esc(r.dimension)}</div></div>
+        <div style="text-align:right"><div class="lvl">${r.reached_level}</div>
+          <div class="muted" style="font-size:11px">reached level</div></div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge ${r.official?'ok':''}">official 3D</span>
+        <span class="badge ${allpass?'ok':''}">physics ${allpass?'✓':'?'}</span>
+        <span class="badge">seeds ${r.runs.length}</span></div></div>`;
+  }).join('');
+  document.getElementById('app').innerHTML = `
+    <h2>Universe Lobby — Genesis Rooms（正式 3D）</h2>
+    <div class="cards">${rooms||'<p class="muted">（まだ正式 Room がありません）</p>'}</div>
+    <h2>AI 発見候補（2D スクリーニング済み・正式 Room と区別）</h2>
+    <div class="muted">${(C.ai_candidates&&C.ai_candidates.length)?C.ai_candidates.length+' 候補':'なし（AI Lab は 2D 候補まで。full-3D 昇格は別段階）'}</div>
+    <h2>Evidence Library（物理辞書 ${C.evidence_library.count} 実験・役割は experiment.yaml 由来）</h2>
+    <div class="chips">${roleChips(rc)}</div>`;
+}
+
+function openRoom(id){
+  const r = C.rooms.find(x=>x.room_id===id); if(!r) return;
+  const conv = r.convergence||{};
+  const convRows = (conv.rows||[]).map(x=>`<tr><td>${x.edge}³</td><td>${x.reached_level}</td><td>${x.defect_density_x1e4}</td></tr>`).join('');
+  const runRows = r.runs.map(x=>`<tr><td>seed ${x.seed}</td><td>${x.grid.join('×')}</td><td>${x.reached_level}</td><td class="mono">${esc(x.checksum)}</td></tr>`).join('');
+  const ne = r.natural_emergence||{};
+  const rmap = Object.entries(r.render_map||{}).map(([k,v])=>`<code>${esc(k)}→${esc(v)}</code>`).join(' ');
+  document.getElementById('dlg-t').textContent = r.title+' ('+r.room_id+')';
+  document.getElementById('dlg-b').innerHTML = `
+    <div class="panel"><h3>Physics Integrity Panel</h3>
+      <div class="kv">
+        <span class="k">入れたもの</span><span>${esc(r.put_in)}</span>
+        <span class="k">自然に出たもの</span><span class="g">${esc(r.emerged)}</span>
+        <span class="k">到達 Level</span><span><b>${r.reached_level}</b>（candidate ${r.candidate_level??'-'}）</span>
+        <span class="k">次元</span><span>${esc(r.dimension)}（2D 探索→full-3D 正式）</span>
+        <span class="k">保存(自由E単調)</span><span class="${r.physics_status.conservation==='passed'?'g':'warn'}">${esc(r.physics_status.conservation)}</span>
+        <span class="k">格子収束</span><span class="${r.physics_status.convergence==='passed'?'g':'warn'}">${esc(r.physics_status.convergence)}</span>
+        <span class="k">seed 再現</span><span class="${r.physics_status.reproducibility==='passed'?'g':'warn'}">${esc(r.physics_status.reproducibility)}</span>
+        <span class="k">第8監査</span><span class="${r.physics_status.integrity_audit==='passed'?'g':'warn'}">${esc(r.physics_status.integrity_audit)}</span>
+      </div></div>
+    <div class="panel"><h3>自然創発（測定で判定）</h3>
+      <div class="muted mono">t=0 から:${ne.started_from_time_zero} · 目標seeded:${ne.target_shape_seeded} ·
+      runtime介入:${ne.runtime_interventions} · 測定判定:${ne.level_detected_by_measurement}</div></div>
+    <div class="panel"><h3>格子収束（到達 Level が解像度で不変か）</h3>
+      <table><tr><th>grid</th><th>reached level</th><th>欠陥密度 ×10⁻⁴</th></tr>${convRows}</table>
+      <div class="muted" style="margin-top:6px">level_converged=${conv.level_converged} · reproducible=${conv.reproducible} · 自由E単調=${conv.free_energy_monotone}</div></div>
+    <div class="panel"><h3>Runs（複数 seed・checksum で再現）</h3>
+      <table><tr><th>run</th><th>grid</th><th>level</th><th>final field sha256</th></tr>${runRows}</table></div>
+    <div class="panel"><h3>可視化対応（表示→実測物理量）</h3><div>${rmap||'<span class="muted">—</span>'}</div>
+      <div class="muted" style="margin-top:6px">存在しない流線/粒子は描かない。強調は normalized を明示。</div></div>`;
+  dlg.showModal();
+}
+render();
+</script>
+</body>
+</html>

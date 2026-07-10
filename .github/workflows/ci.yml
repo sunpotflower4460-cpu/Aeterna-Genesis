@@ -163,6 +163,12 @@ jobs:
         run: python tools/build_room_g001.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g001smoke"
       - name: "AI Genesis Lab smoke (start-condition search, 2D-screened, non-destructive)"
         run: python ai_lab/lab.py --n 4 --quick --no-write
+      - name: "Observatory catalog regenerates from metadata (single source; app is catalog-driven)"
+        run: |
+          python tools/build_catalog.py --no-write
+          test -f app/index.html
+          test -f app/generated/catalog.json
+          python -c "import json,sys; d=json.load(open('app/generated/catalog.json')); assert d['rooms'][0]['room_id']=='room-g001-a' and d['rooms'][0]['reached_level']==2, 'catalog stale'; print('catalog OK')"
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"

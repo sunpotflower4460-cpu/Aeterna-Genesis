@@ -31,8 +31,8 @@
 | **PR4** | 共通 Runner と Manifest（gl2d/gl3d 参照モデル・manifest/summary/checksum/emergence・no-write 正実装） | **完了 (#24)** |
 | **PR5** | Dimension Transfer Harness（薄い 3D スラブ・面外摂動・渦線安定性・リスク報告） | **完了 (#25)** |
 | **PR6** | 最初の正式 3D Genesis Room（G001・64³・Level 2・格子収束・複数 seed） | **完了 (#26)** |
-| **PR7** | AI Genesis Lab 最小版（許可パラメータのみ探索・2D screen・既存 Room 非破壊・自己昇格しない） | **本 PR** |
-| PR8 | Observatory App（catalog 駆動・Physics Integrity Panel） | 予定 |
+| **PR7** | AI Genesis Lab 最小版（許可パラメータのみ探索・2D screen・既存 Room 非破壊・自己昇格しない） | **完了 (#27)** |
+| **PR8** | Observatory App（catalog 駆動・Universe Lobby・Physics Integrity Panel） | **本 PR（移行 第一段階 完了）** |
 
 ---
 
@@ -196,3 +196,47 @@ Room 登録は別段階）・許可 search_space を超えた提案は reject。
 **軽微な追加のみ**：`.github/workflows/ci.yml` に Lab smoke。`.gitignore` に `ai_lab/{_demo_out,proposals,discoveries}/`。
 
 **まだやらない**：Observatory App（catalog 駆動）は **PR8**。
+
+---
+
+## PR8 で「何を残し・何を追加し・何を変更しなかったか」
+
+**残した（変更なし）**：`genesis/`・`rooms/`・`experiments/`・`ai_lab/`・`schemas/`・全 docs 本文・
+`room/中心実験室.html`（legacy デモは削除せず・`room/README.md` で明示済み）。
+
+**追加した**：
+- `tools/build_catalog.py`：**唯一の表示元** `app/generated/catalog.{json,js}` を Python 側で生成
+  （`experiments/*/experiment.yaml` + `rooms/official/*/` + `rooms/catalog.json` から）。App はハードコードしない。
+- `app/index.html`：静的 Observatory。**Universe Lobby**（正式 3D Room・**AI 候補と区別**・Evidence Library 役割別集計）、
+  **Room View / Physics Integrity Panel**（入れたもの・自然に出たもの・到達 Level・保存/収束/再現/第8監査・
+  格子収束表・複数 seed checksum・**可視化対応 表示→実測物理量**）。`catalog.js`（`window.CATALOG`）を読むので file:// でも動く。
+- `app/generated/catalog.{json,js}`（生成物）・`app/README.md`・`tests/test_catalog.py`。
+
+**軽微な追加のみ**：`.github/workflows/ci.yml` に catalog 再生成チェック（**CI が保存済み JSON でなく実際に再計算**）。
+
+**誠実さ（PHYSICS_INTEGRITY §18）**：表示要素は実測物理量に対応・存在しない流線/粒子を描かない・
+official 3D Room と 2D/AI 候補を混同しない・強い語を使わない。役割別集計は `experiment.yaml` 由来。
+
+---
+
+## 移行 第一段階 完了チェック（GENESIS_MAP §4 / 設計書 §23）
+
+| 最低条件 | 状態 |
+|---|---|
+| e001–e045 が一つも削除されていない | ✅（全て保存・Evidence Library） |
+| 既存結果へのリンクが壊れていない | ✅（案内追記のみ・旧地図も保存） |
+| Type A–D が確信度として分離 | ✅（experiment.yaml `confidence`） |
+| E/V/S/N/F(/Q) が導入 | ✅（LAW.md §6・experiment.yaml `role`） |
+| 創発 Level が導入 | ✅（EMERGENCE_LEVELS.md・emergence schema・測定判定） |
+| 2D 候補と正式 3D が区別 | ✅（DIMENSION_POLICY・mode・catalog で区別） |
+| Room schema が存在 | ✅（schemas/room.schema.json） |
+| AI の変更範囲が schema で固定 | ✅（param_ranges・AI_EXPERIMENT_POLICY・lab が強制） |
+| 過去 Room を上書きしない仕組み | ✅（ROOM_MODEL パラレル宇宙・lab 非破壊） |
+| 2D→3D 移行監査 | ✅（dimension harness・dimension-transfer schema） |
+| **少なくとも一つの正式 3D Genesis Room** | ✅（**room-g001-a**・Level 2・格子収束・多 seed） |
+| アプリが catalog を読む（ハードコードでない） | ✅（build_catalog → catalog.json → app） |
+| 可視化の各要素が実測物理量へ対応 | ✅（render schema・app の対応表示） |
+| AI 発見候補が正式 Room と混同されない | ✅（catalog で kind 区別・lab は 2d_screened のみ） |
+| **CI が保存済み JSON の存在確認だけでなく実際に再計算** | ✅（experiments quick 再実行・room builder smoke・catalog 再生成・validate_schemas） |
+
+**三層移行 第一段階 完了。** 次段：G002/G003 Room、Level 3+ frontier、次元監査の実 3D 昇格、App の Parallel/Lineage View。
