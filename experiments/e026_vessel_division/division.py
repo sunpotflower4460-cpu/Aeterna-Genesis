@@ -1,6 +1,23 @@
 #!/usr/bin/env python3
 """e026 -- topological division accounting: a wound core cannot be copied, only re-created.
 
+---
+id: e026
+role: F
+claim_tier: measured          # the WINDING-READ ARITHMETIC (loop sum = enclosed charge) is measured
+evidence: "CCW loops read winding sums exactly; a +1 split gives (+1,0), and (+1,+1) requires a shed -1 so the total stays +1"
+target_encoded: false         # loop arithmetic is real; but the 'division' is STATIC hand-placed cores, not a dynamic pinch
+known_match: "topological charge conservation; no-cloning of a topological defect; pair nucleation"
+open_issues: ["the DYNAMIC pinch that actually carries a vortex into a daughter FAILS (winding leaks to 0) = frontier", "static accounting only"]
+---
+
+**Role F (frontier)**: what is measured is the WINDING-READ ARITHMETIC on CCW loops (a real property of
+core.holonomy): loop sum = enclosed charge, so a +1 cannot become (+1,+1) without a shed -1. But the
+"division" itself is STATIC -- cores are hand-placed at the daughter positions; the DYNAMIC pinch that
+carries a vortex into each daughter FAILS (winding leaks to 0). So the topological no-copy conclusion is a
+consequence of conservation verified on placed charges, NOT an emergent division. Dynamic division is
+frontier -> role F, not GREEN.
+
 MODULE:   e026_vessel_division
 QUESTION: if identity = an enclosed winding number (conserved), can a region of winding W split into
           two daughters that BOTH carry W -- or does conservation forbid duplicating it?
@@ -14,9 +31,10 @@ CLAIM TIER: measured(the winding accounting) ; interpretive(reproduction CREATES
           does not copy; the anti-charge is a necessary by-product) ; analogy(reproduction / a "self" /
           "identity cannot be copied" -- KNOWN MATCH only, never a gate name).
 KNOWN MATCH: topological charge conservation; the no-cloning of a topological defect; pair nucleation.
-STATUS:   GREEN (two gates; keys are physical windings read on CCW loops).
-A_OR_B:   (A) faithful. Hand input = placed cores; the winding sums (and that +1 cannot become (+1,+1)
-          without a shed anti) are emergent and measured.
+STATUS:   F (the winding-read arithmetic is measured, but the DIVISION is static hand-placed accounting;
+          the dynamic pinch that carries a vortex into a daughter FAILS = frontier -> role F, not GREEN).
+A_OR_B:   (A) faithful winding reads; but the "division" is STATIC (placed cores), not a dynamic emergent
+          pinch. The topological no-copy is a consequence of conservation on placed charges. Role F.
 
 THE TRAP (designer hit it, we avoid it): this is a STATIC accounting -- cores are placed at the daughter
 positions and the enclosed winding is read on CCW loops (core.holonomy). A DYNAMIC pinch fails because
@@ -139,8 +157,8 @@ def main(argv=None):
     passed, checks = evaluate(r, quick=args.quick)
     for k, v in checks.items():
         print("  [%s] %s" % ("PASS" if v else "FAIL", k))
-    print("STATUS: %s (winding accounting measured; dynamic pinch is a floor)"
-          % ("GREEN" if passed else "RED"))
+    print("STATUS: %s [role F] (winding arithmetic measured; the DIVISION is static accounting, dynamic pinch is frontier)"
+          % ("PASS" if passed else "FAIL"))
     if not args.no_write and not args.quick:
         os.makedirs(os.path.join(os.path.dirname(__file__), "results"), exist_ok=True)
         out = os.path.join(os.path.dirname(__file__), "results", "division.json")
