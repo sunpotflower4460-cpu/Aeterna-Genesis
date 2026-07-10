@@ -159,6 +159,8 @@ jobs:
         run: python genesis/runners/runner.py --mode local-3d --quick --no-write
       - name: "Dimension Transfer Harness smoke (thin-slab out-of-plane probe; 2D success is a candidate)"
         run: python genesis/dimension/harness.py --quick --no-write
+      - name: "Genesis Room G001 builder smoke (quick full-3D pipeline into a temp dir; not committed)"
+        run: python tools/build_room_g001.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g001smoke"
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"

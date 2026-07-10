@@ -152,6 +152,50 @@ def main():
             n_exp += 1
         info.append("experiment.yaml OK: %d validated (schema + id match + 8th-audit)" % n_exp)
 
+    # 7. Every rooms/official/*/ Genesis Room validates against the room/genesis/emergence/
+    #    dimension-transfer/render schemas, and each run manifest/emergence too (PR6).
+    rooms_dir = os.path.join(_REPO, "rooms", "official")
+    n_rooms = 0
+    _room_schemas = {"genesis.yaml": "genesis.schema.json", "room.yaml": "room.schema.json",
+                     "dimension-transfer.yaml": "dimension-transfer.schema.json",
+                     "render.yaml": "render.schema.json"}
+    if os.path.isdir(rooms_dir):
+        validators = {}
+        for sfile in set(list(_room_schemas.values()) + ["emergence.schema.json", "run.schema.json"]):
+            try:
+                validators[sfile] = Draft202012Validator(_load_json(os.path.join(_SCHEMAS, sfile)))
+            except Exception as e:  # noqa: BLE001
+                errors.append("%s unusable: %s" % (sfile, e))
+        for room in sorted(d for d in os.listdir(rooms_dir) if os.path.isdir(os.path.join(rooms_dir, d))):
+            rdir = os.path.join(rooms_dir, room)
+            for fn, sfile in _room_schemas.items():
+                fpath = os.path.join(rdir, fn)
+                if not os.path.exists(fpath):
+                    errors.append("missing rooms/official/%s/%s" % (room, fn))
+                    continue
+                v = validators.get(sfile)
+                if v is not None:
+                    for err in v.iter_errors(_load_yaml(fpath)):
+                        errors.append("rooms/official/%s/%s: %s at %s"
+                                      % (room, fn, err.message, list(err.absolute_path)))
+            emg_path = os.path.join(rdir, "emergence.json")
+            if os.path.exists(emg_path) and validators.get("emergence.schema.json"):
+                for err in validators["emergence.schema.json"].iter_errors(_load_json(emg_path)):
+                    errors.append("rooms/official/%s/emergence.json: %s" % (room, err.message))
+            runs_dir = os.path.join(rdir, "runs")
+            if os.path.isdir(runs_dir):
+                for sd in sorted(os.listdir(runs_dir)):
+                    for fn, sfile in [("manifest.json", "run.schema.json"),
+                                      ("emergence.json", "emergence.schema.json")]:
+                        fpath = os.path.join(runs_dir, sd, fn)
+                        if os.path.exists(fpath) and validators.get(sfile):
+                            for err in validators[sfile].iter_errors(_load_json(fpath)):
+                                errors.append("rooms/official/%s/runs/%s/%s: %s"
+                                              % (room, sd, fn, err.message))
+            n_rooms += 1
+        info.append("Genesis Room OK: %d official room(s) validated (room/genesis/emergence/run/dim/render)"
+                    % n_rooms)
+
     for line in info:
         print("  " + line)
     if errors:
@@ -160,7 +204,8 @@ def main():
             print("  - " + e)
         return 1
     print("\nCI-B OK: %d schemas well-formed; registry validates; refs resolve; ids unique; "
-          "%d experiment.yaml validated (schema + 8th-audit)." % (len(schema_files), n_exp))
+          "%d experiment.yaml + %d Genesis Room(s) validated (schema + 8th-audit)."
+          % (len(schema_files), n_exp, n_rooms))
     return 0
 
 
