@@ -1,5 +1,16 @@
 import { create } from 'zustand'
-import type { Catalog, Room } from './lib/types'
+import type { Catalog, Room, CandidateRoom } from './lib/types'
+
+/** Present a non-official candidate room through the same Room shape the workspace/viewport expect. */
+export function candidateAsRoom(c: CandidateRoom): Room {
+  return {
+    room_id: c.room_id, title: c.title, official: false, kind: 'candidate_room',
+    parent_room: c.parent_room, genesis_model: c.genesis_model,
+    reached_level: c.reached_level, candidate_level: c.candidate_level,
+    physics_status: c.physics_status || {}, dimension_status: c.dimension_status || {},
+    frames_ref: c.frames_ref, render_manifest: c.render_manifest, lenses: c.lenses,
+  }
+}
 
 export type InspectorTab = 'template' | 'genesis' | 'view' | 'physics'
 
@@ -79,6 +90,10 @@ export const useStore = create<State>((set, get) => ({
   discardGenesis: () => set({ pendingGenesis: null }),
   currentRoom: () => {
     const { catalog, roomId } = get()
-    return catalog?.rooms.find((r) => r.room_id === roomId) || null
+    if (!catalog || !roomId) return null
+    const official = catalog.rooms.find((r) => r.room_id === roomId)
+    if (official) return official
+    const cand = (catalog.candidate_rooms || []).find((c) => c.room_id === roomId)
+    return cand ? candidateAsRoom(cand) : null
   },
 }))

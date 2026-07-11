@@ -7,6 +7,10 @@ export function dimBadge(room: Room) {
   return <span className="badge">{d || 'room'}</span>
 }
 
+export function candidateBadge() {
+  return <span className="badge b-warn" title="非公式・自己昇格しない候補">候補 · 非公式</span>
+}
+
 export function physicsBadge(room: Room) {
   const allPass = Object.values(room.physics_status || {}).every((v) => v === 'passed')
   return <span className={'badge ' + (allPass ? 'b-official' : 'b-warn')}>{allPass ? 'Physics Verified' : 'Needs Review'}</span>

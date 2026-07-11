@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useStore } from '../store'
 import type { InspectorTab } from '../store'
 import type { Room } from '../lib/types'
 import type { RoomData } from '../lib/useField'
 import { LEVEL_TEXT } from './ui'
+
+const GL_MODEL = 'g001_ginzburg_landau_quench'
 
 const TABS: InspectorTab[] = ['view', 'genesis', 'physics']
 
@@ -50,32 +53,111 @@ function ViewTab() {
   )
 }
 
+// Honest Live Runner composer: the browser does NOT compute physics. It emits a job REQUEST that a
+// Python worker (tools/run_job.py) runs from t=0 with the REAL g001 reference model, producing a
+// non-official candidate room. Only knobs the run actually applies are offered.
+const KNOBS = {
+  noise_amplitude: { label: 'noise amplitude', min: 1e-5, max: 1e-2, log: true, def: 5e-3,
+    hint: '始原の微小ノイズ振幅（構造は入れない）· 許容 1e-5–1e-2' },
+  quench_duration: { label: 'quench duration', min: 0.5, max: 40, log: false, def: 8,
+    hint: 'クエンチにかける時間 · 許容 0–40' },
+} as const
+type KnobKey = keyof typeof KNOBS
+
 function GenesisTab() {
-  const pending = useStore((s) => s.pendingGenesis)
-  const stage = useStore((s) => s.stageGenesis)
-  const discard = useStore((s) => s.discardGenesis)
-  const g = pending || {}
+  const room = useStore((s) => s.currentRoom())
+  const [param, setParam] = useState<KnobKey>('noise_amplitude')
+  const [value, setValue] = useState<number>(KNOBS.noise_amplitude.def)
+  const [seed, setSeed] = useState<number>(0)
+  const [copied, setCopied] = useState(false)
+
+  const parent = room?.room_id ?? 'room-g001-a'
+  const model = room?.genesis_model
+  if (model && model !== GL_MODEL) {
+    return (
+      <div>
+        <p className="muted" style={{ fontSize: 12.5, lineHeight: 1.6 }}>
+          Live Runner は現在 <b>g001 参照モデル</b>（Ginzburg–Landau クエンチ）の Room からの分岐のみ対応します。
+          この Room は <span className="mono">{model}</span> なので、分岐ジョブはまだ発行できません。
+        </p>
+        <p className="muted" style={{ fontSize: 11.5, marginTop: 10 }}>
+          別モデルの Live Runner は物理コード（solver / initial-condition）の追加を伴うため、別の物理 PR で扱います。
+        </p>
+      </div>
+    )
+  }
+
+  const k = KNOBS[param]
+  const clamped = Math.min(k.max, Math.max(k.min, value))
+  const jobId = 'job-' + param.replace(/_/g, '') + '-' + fmt(clamped) + '-s' + seed
+  const request = { job_id: jobId, parent_room: parent, override: { param, to: clamped }, seed }
+  const reqStr = JSON.stringify(request)
+  const cmd = "python tools/run_job.py --request '" + reqStr + "'"
+
+  // slider position: log or linear
+  const pos = k.log
+    ? (Math.log10(clamped) - Math.log10(k.min)) / (Math.log10(k.max) - Math.log10(k.min))
+    : (clamped - k.min) / (k.max - k.min)
+  const fromPos = (p: number) => k.log
+    ? Math.pow(10, Math.log10(k.min) + p * (Math.log10(k.max) - Math.log10(k.min)))
+    : k.min + p * (k.max - k.min)
+
   return (
     <div>
-      <p className="muted" style={{ fontSize: 12, margin: '0 0 12px' }}>始原条件は<b>保留中</b>として貯める。現在の Room は変えず、新しい Room として t=0 から実行する。</p>
-      <Slider label="noise amplitude" value={g['noise'] ?? 0.35} on={(v) => stage('noise', v)} />
-      <Slider label="correlation length" value={g['correlation'] ?? 0.3} on={(v) => stage('correlation', v)} />
-      <Slider label="seed (正規化)" value={g['seed'] ?? 0} on={(v) => stage('seed', v)} />
-      {pending && (
-        <div style={{ borderLeft: '3px solid var(--warn)', background: 'rgba(243,183,76,.06)', borderRadius: '0 10px 10px 0', padding: '10px 12px', marginTop: 8 }}>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--warn)', marginBottom: 4 }}>保留中の始原条件</div>
-          <div className="muted" style={{ fontSize: 12 }}>この変更は時間発展へ影響します。現在の Room は変更せず、新しい Room として t=0 から実行します。</div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button className="lens" style={{ color: 'var(--accent)', borderColor: 'rgba(79,227,224,.4)', background: 'var(--accent-dim)' }}
-              onClick={() => alert('Live Runner は Phase 3（非同期ジョブ）で実装予定。始原条件を変えた新 Room を t=0 から実行します。')}>
-              ＋ 新しい Room として実行
-            </button>
-            <button className="lens" onClick={discard}>破棄</button>
-          </div>
+      <p className="muted" style={{ fontSize: 12, margin: '0 0 6px', lineHeight: 1.6 }}>
+        始原条件を1つ変えて、<b>新しい Room として t=0 から実計算</b>する。現在の Room は変えない。
+      </p>
+      <p className="mono" style={{ fontSize: 10.5, color: 'var(--warn)', margin: '0 0 12px' }}>
+        ブラウザは物理を計算しません。下のコマンドを実行すると本物のモデルが回り、非公式の候補 Room が生成されます。
+      </p>
+
+      <div className="mono" style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>始原ノブ</div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+        {(Object.keys(KNOBS) as KnobKey[]).map((kk) => (
+          <button key={kk} className={'tab ' + (kk === param ? 'on' : '')}
+            onClick={() => { setParam(kk); setValue(KNOBS[kk].def) }}>{KNOBS[kk].label}</button>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <div className="mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>
+          <span>{k.label}{k.log ? ' (log)' : ''}</span><span className="tnum">{fmt(clamped)}</span>
         </div>
-      )}
+        <input className="range" type="range" min={0} max={1} step={0.001} value={pos}
+          onChange={(e) => setValue(fromPos(Number(e.target.value)))} />
+        <div className="muted" style={{ fontSize: 10.5, marginTop: 4 }}>{k.hint}</div>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <div className="mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>
+          <span>seed</span><span className="tnum">{seed}</span>
+        </div>
+        <input className="range" type="range" min={0} max={7} step={1} value={seed} onChange={(e) => setSeed(Number(e.target.value))} />
+      </div>
+
+      <div style={{ borderLeft: '3px solid var(--accent)', background: 'var(--accent-dim)', borderRadius: '0 10px 10px 0', padding: '10px 12px' }}>
+        <div className="mono" style={{ fontSize: 11, color: 'var(--accent)', marginBottom: 6 }}>ジョブ要求</div>
+        <code className="mono" style={{ display: 'block', fontSize: 10.5, whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: 'var(--ink)', marginBottom: 8 }}>{cmd}</code>
+        <button className="lens" style={{ color: 'var(--accent)', borderColor: 'rgba(79,227,224,.4)' }}
+          onClick={() => { copy(cmd); setCopied(true); window.setTimeout(() => setCopied(false), 1400) }}>
+          {copied ? '✓ コピーしました' : '⧉ コマンドをコピー'}
+        </button>
+        <div className="muted" style={{ fontSize: 10.5, marginTop: 8, lineHeight: 1.5 }}>
+          結果は <span className="mono">rooms/candidates/{'room-' + parent.replace('room-', '') + '-' + jobId}</span> に、
+          記録された場つきで生成されます。<b>official ではなく</b>、full-3D 昇格・格子収束は別段階です。
+        </div>
+      </div>
     </div>
   )
+}
+
+function fmt(v: number): string {
+  if (v !== 0 && (Math.abs(v) < 1e-3 || Math.abs(v) >= 1e4)) return v.toExponential(2).replace('e', 'e')
+  return String(Math.round(v * 1e4) / 1e4)
+}
+
+function copy(text: string) {
+  try { navigator.clipboard?.writeText(text) } catch { /* clipboard blocked in offline embeds; text is visible to select */ }
 }
 
 function PhysicsTab({ room, data }: { room: Room; data: RoomData }) {

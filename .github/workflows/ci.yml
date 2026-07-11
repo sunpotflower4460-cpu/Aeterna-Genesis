@@ -171,12 +171,32 @@ jobs:
         run: |
           test -f ai_lab/discoveries/ledger.json
           python ai_lab/lab.py --review
+      - name: "Live Runner smoke (UI job REQUEST -> real g001 model from t=0 -> non-official candidate room)"
+        run: python tools/run_job.py --smoke
+      - name: "Live Runner outputs stay honest (committed candidate is non-official, replayable, not self-promoted)"
+        run: |
+          python -c "import yaml,os; \
+            r=yaml.safe_load(open('rooms/candidates/room-g001-a-job-0001/room.yaml')); \
+            assert r['official'] is False, 'candidate must not be official'; \
+            assert r['dimension_status']['full_3d'] != 'passed', 'candidate must not claim full_3d'; \
+            assert os.path.exists('rooms/candidates/room-g001-a-job-0001/runs/seed-0000/field.json'), 'candidate must record replay fields'; \
+            print('Live Runner candidate honesty OK')"
+          python -c "import json; d=json.load(open('rooms/jobs/job-0001.json')); \
+            assert d['status']=='done' and d['result_room']=='room-g001-a-job-0001'; \
+            print('Live Runner job status OK')"
       - name: "Observatory catalog regenerates from metadata (single source; app is catalog-driven)"
         run: |
           python tools/build_catalog.py --no-write
           test -f app/index.html
           test -f app/generated/catalog.json
           python -c "import json; d=json.load(open('app/generated/catalog.json')); rs={r['room_id']:r for r in d['rooms']}; assert rs['room-g001-a']['reached_level']==2 and rs['room-g002-a']['reached_level']==1 and rs['room-g003-a']['reached_level']==2, 'catalog stale'; assert rs['room-g002-a']['genesis_model']=='g002_boussinesq_convection' and rs['room-g003-a']['genesis_model']=='g003_model_h_phase_field'; print('catalog OK:', len(d['rooms']), 'official rooms')"
+          python -c "import json; d=json.load(open('app/generated/catalog.json')); \
+            jobs={j['job_id']:j for j in d.get('jobs',[])}; \
+            assert 'job-0001' in jobs and jobs['job-0001']['result_room']=='room-g001-a-job-0001', 'Live Runner job missing from catalog'; \
+            cands={c['room_id']:c for c in d.get('candidate_rooms',[])}; \
+            cr=cands['room-g001-a-job-0001']; \
+            assert cr['official'] is False and cr.get('frames_ref') and cr.get('lenses'), 'candidate room must be non-official + replayable'; \
+            print('catalog Live Runner OK:', len(d.get('jobs',[])), 'job(s),', len(d.get('candidate_rooms',[])), 'candidate room(s)')"
       - name: "Recorded fields are referenced (not inlined) + honest (Phase 0; catalog stays small)"
         run: |
           python -c "import json; d=json.load(open('app/generated/catalog.json')); \

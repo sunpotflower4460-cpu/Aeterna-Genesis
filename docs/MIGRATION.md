@@ -321,3 +321,31 @@ Phase 1 の記録データ再生を作り込み。**物理・監査・正式 Roo
 
 検証：`tsc --noEmit` クリーン、オフライン `npm run build` 成功（worker を別チャンク化）、ヘッドレス Chromium で
 Room（worker 経由 2D/3D 再生）と Compare（G001 位相 3D と G002 温度 2D を同時刻で並置）が JS エラーなく描画。
+
+## Observatory UI 刷新 — Phase 3：Live Runner（物理的に誠実な実ジョブ・物理コアは不変）
+
+**「AI/ユーザが始原条件を変えた新しい宇宙を、その場で本物に育てる」を疑似でなく実装。** 疑似ジョブや
+ブラウザ内物理は作らない（LAW.md「同じ数学≠同じもの」「結果に合わせたチューニング禁止」）。
+
+- **本物のジョブランナー `tools/run_job.py`**：UI が出す**ジョブ要求**を受け、**g001 参照モデル（複素 TDGL）を
+  t=0 から実計算**する。介入なし。変えられるのは**許容探索空間内の始原ノブ 1 つだけ**
+  （`noise_amplitude` / `quench_duration`。`param_ranges.yaml` の範囲を超えられない）。
+  記録済みの場（phase/density）つきで**非公式の候補 Room**（`rooms/candidates/<id>/`）を生成し、
+  ジョブ状態（`rooms/jobs/<job_id>.json`）と台帳（`rooms/jobs/ledger.json`）を書く。
+- **自己昇格しない**：候補は `official:false`・`full_3d:not_started`。full-3D 昇格・格子収束・複数 seed は
+  別の gated 段階（AI_EXPERIMENT_POLICY / DIMENSION_POLICY）。ジョブは official Room を作れない。
+- **誠実さの防波堤**：実際に計算へ効くノブだけを公開する（`correlation_length` は白色ノイズ初期条件では
+  効かないため除外。空間相関ノイズの導入は初期条件＝物理変更なので別 PR）。親 Room が g001 でなければ
+  拒否する（他モデルを g001 で回すと物理をラベル詐称するため）。
+- **ブラウザは物理を計算しない**：Genesis タブは**ジョブ要求（実 CLI コマンド）を組み立てるだけ**。実行は
+  Python worker。結果（候補 Room・ジョブ台帳）は catalog 再生成で UI に現れる。
+- **UI 反映**：Lobby に「候補 Rooms（非公式）」と「Live Runner ジョブ台帳」を追加（正式 Room と明確に区別）。
+  候補 Room は記録場つきで**再生可能**。ジョブ行から結果 Room を開ける。
+- **スキーマ/CI**：`schemas/job.schema.json` を追加。`validate_schemas.py` が候補 Room の `field.json`/
+  `render-manifest.yaml`＋`rooms/jobs/*.json`（result_room 実在も）を検証。CI に `run_job.py --smoke`＋
+  候補の非公式/再生可能/自己非昇格チェック、catalog の jobs/candidate_rooms 検査を追加。`tests/test_run_job.py`
+  （再現性・範囲外/不許可ノブ拒否・非 g001 親拒否・スキーマ適合・genesis 忠実性）。
+
+検証：`run_job.py --smoke` が実モデルを回して候補＋状態を生成しスキーマ検証まで通り、コミット木を汚さない
+（クリーンアップ）。実ジョブ `job-0001`（`noise_amplitude=0.005`）をコミット。`pytest tests/test_run_job.py` 全通過、
+オフライン `npm run build` クリーン、ヘッドレス Chromium で候補 Room の実測場再生と Genesis ジョブ組立を確認。

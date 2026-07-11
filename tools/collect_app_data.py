@@ -30,9 +30,10 @@ def build(out_dir):
 
     rooms_out = os.path.join(out_dir, "rooms")
     n = 0
-    for room in catalog.get("rooms", []):
+    # official rooms + Live Runner / AI candidate rooms share the same reference structure, so the
+    # browser replays both the same way (candidate rooms stay visually/tagged distinct in the UI).
+    for room in catalog.get("rooms", []) + catalog.get("candidate_rooms", []):
         rid = room["room_id"]
-        # locate the source room dir from rooms/catalog.json path index
         src = _room_dir(rid)
         if not src:
             continue
@@ -57,9 +58,13 @@ def _room_dir(room_id):
         for e in json.load(open(idx)).get("rooms", []):
             if e["room_id"] == room_id:
                 return os.path.join(_REPO, e["path"])
-    # fallback: official dir
-    guess = os.path.join(_REPO, "rooms", "official", room_id)
-    return guess if os.path.isdir(guess) else None
+    # official, then non-official candidate/rejected trees
+    for cand in (os.path.join(_REPO, "rooms", "official", room_id),
+                 os.path.join(_REPO, "rooms", "candidates", room_id),
+                 os.path.join(_REPO, "rooms", "rejected_in_3d", room_id)):
+        if os.path.isdir(cand):
+            return cand
+    return None
 
 
 def main(argv=None):

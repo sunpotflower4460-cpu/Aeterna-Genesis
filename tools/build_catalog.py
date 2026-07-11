@@ -121,11 +121,40 @@ def build():
             if not os.path.exists(ry):
                 continue
             r = _load_yaml(ry)
+            rm_path = os.path.join(bdir, room, "render-manifest.yaml")
+            rmf = _load_yaml(rm_path) if os.path.exists(rm_path) else {}
             candidate_rooms.append({
                 "room_id": r.get("room_id"), "title": r.get("title"), "kind": "candidate_room",
                 "official": False, "parent_room": r.get("parent_room"), "status": r.get("status"),
+                "genesis_model": r.get("genesis_model"),
                 "reached_level": r.get("emergence", {}).get("reached_level"),
+                "candidate_level": r.get("emergence", {}).get("candidate_level"),
                 "dimension_status": r.get("dimension_status", {}),
+                "physics_status": r.get("physics_status", {}),
+                # Live Runner candidates carry recorded replay fields, same reference structure as rooms.
+                "render_manifest": ("render-manifest.yaml" if rmf else None),
+                "frames_ref": rmf.get("frames_ref"),
+                "lenses": [l["lens"] for l in rmf.get("lenses", [])],
+                "source": base,  # "candidates" (live/AI screen) or "rejected_in_3d"
+            })
+
+    # Live Runner jobs (Phase 3): UI-requested jobs executed by tools/run_job.py. The browser never runs
+    # physics; the ledger + per-job status files record what the worker actually computed. A job's
+    # result_room is a candidate room above -- a job can never self-promote to an official room.
+    jobs = []
+    jobs_dir = os.path.join(_REPO, "rooms", "jobs")
+    led_p = os.path.join(jobs_dir, "ledger.json")
+    if os.path.exists(led_p):
+        for j in json.load(open(led_p)).get("jobs", []):
+            jid = j.get("job_id")
+            sp = os.path.join(jobs_dir, "%s.json" % jid)
+            status = json.load(open(sp)) if os.path.exists(sp) else j
+            jobs.append({
+                "job_id": jid, "parent_room": j.get("parent_room"), "override": j.get("override"),
+                "seed": j.get("seed"), "status": status.get("status", j.get("status")),
+                "progress": status.get("progress"), "result_room": j.get("result_room"),
+                "reached_level": j.get("reached_level"), "checksum": j.get("checksum"),
+                "measured_by": status.get("measured_by", {}),
             })
 
     catalog = {
@@ -138,6 +167,7 @@ def build():
                              "genesis_roles": genesis_roles, "experiments": experiments},
         "ai_candidates": ai_candidates,      # AI Lab 2D-screened discoveries (ledger) -- DISTINCT from rooms
         "candidate_rooms": candidate_rooms,  # local-3D 昇格した非公式候補 -- official ではない
+        "jobs": jobs,                        # Live Runner ジョブ台帳（UIが依頼→Python worker が実計算）
     }
     return catalog
 

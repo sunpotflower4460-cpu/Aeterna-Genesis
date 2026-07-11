@@ -26,12 +26,44 @@ export interface Room {
   runs?: RoomRun[]
 }
 
+export interface CandidateRoom {
+  room_id: string
+  title: string
+  kind: 'candidate_room'
+  official: false
+  parent_room: string | null
+  genesis_model?: string
+  status?: string
+  reached_level?: number | null
+  candidate_level?: number | null
+  dimension_status: Record<string, string>
+  physics_status?: Record<string, string>
+  render_manifest?: string | null
+  frames_ref?: string | null
+  lenses?: string[]
+  source?: string
+}
+
+export interface Job {
+  job_id: string
+  parent_room: string | null
+  override: { param: string; to: number } | null
+  seed: number | null
+  status: 'queued' | 'running' | 'done' | 'rejected'
+  progress?: number | null
+  result_room?: string | null
+  reached_level?: number | null
+  checksum?: string | null
+  measured_by?: Record<string, number>
+}
+
 export interface Catalog {
   catalog_version: number
   rooms: Room[]
   evidence_library?: { count: number; role_counts: Record<string, number> }
   ai_candidates?: unknown[]
-  candidate_rooms?: unknown[]
+  candidate_rooms?: CandidateRoom[]
+  jobs?: Job[]
 }
 
 export interface LensDoc {
