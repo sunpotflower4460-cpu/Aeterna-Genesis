@@ -349,3 +349,25 @@ Room（worker 経由 2D/3D 再生）と Compare（G001 位相 3D と G002 温度
 検証：`run_job.py --smoke` が実モデルを回して候補＋状態を生成しスキーマ検証まで通り、コミット木を汚さない
 （クリーンアップ）。実ジョブ `job-0001`（`noise_amplitude=0.005`）をコミット。`pytest tests/test_run_job.py` 全通過、
 オフライン `npm run build` クリーン、ヘッドレス Chromium で候補 Room の実測場再生と Genesis ジョブ組立を確認。
+
+## Observatory UI 刷新 — Phase 4：AI Discovery Inbox（発見の受信箱・物理不変）
+
+Live Runner / AI が生んだ候補を、**正式 Room と区別して**一覧・追跡する専用ビュー。判断材料は
+**始原条件の差・到達 Level の親比・昇格パイプライン**の 3 点で、すべて記録から機械的に導く（結論を書かない）。
+
+- **親 Room との差（honest diff）**：`build_catalog.py` が候補と親の **genesis.yaml を直接 diff** して
+  変わった始原ノブだけを `{from,to}` で出す（保存ラベルではなく実ファイル由来）。到達 Level の親比
+  （`delta_level`）も親 room.yaml から算出。
+- **昇格パイプライン**：`exploration_2d → local_3d → coarse_global_3d → full_3d`（DIMENSION_POLICY）の
+  各段の passed / 現在地を `dimension_status` から**そのまま反映**。候補は決して自己昇格しない
+  （`is_official:false`）＝「測定がどこまで運んだか」を示すだけ。
+- **UI**：新ビュー `Inbox`（`app/src/components/Inbox.tsx`）。各発見カードに差分表・親比チップ・
+  パイプラインチップ・実測場再生（記録があれば）・親 Room へのリンク。棄却ジョブ（範囲外/不許可ノブ/
+  非 g001 親）は別枠に表示。Lobby は正式 Room を主役に保ち、下部の Inbox バナーから開く。
+- **スキーマ/CI/tests**：catalog の候補に `diff_vs_parent` / `parent_reached_level` / `delta_level` /
+  `promotion` を追加。CI が diff と promotion メタデータを検査。`tests/test_catalog.py` に diff/promotion と
+  「変わったノブだけを出す」テストを追加。
+
+検証：`tsc` クリーン、オフライン `npm run build` 成功、`pytest tests/test_catalog.py` 全通過、ヘッドレス
+Chromium で Inbox が AI 候補（noise 0.01→1e-4・2D/local-3D 通過）と Live Runner 候補（noise 0.01→0.005・
+2D 通過/local-3D 進行中）を差分・親比・パイプラインつきで JS エラーなく描画。物理・監査・正式 Room 結果は不変。

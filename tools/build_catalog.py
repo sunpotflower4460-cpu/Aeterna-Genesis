@@ -24,6 +24,75 @@ def _load_yaml(p):
         return yaml.safe_load(f)
 
 
+def _genesis_knobs(g):
+    """Flatten a genesis doc into the scalar start-side knobs that define the initial condition/protocol.
+    This is exactly what a Live Runner / AI mutation is allowed to change, so diffing two of these gives
+    an honest, complete 'what was put in differently' between a candidate and its parent."""
+    if not g:
+        return {}
+    ist = g.get("initial_state", {}) or {}
+    q = (g.get("protocol", {}) or {}).get("quench", {}) or {}
+    knobs = {}
+    for k in ("noise_amplitude", "correlation_length", "mean_amplitude"):
+        if k in ist:
+            knobs[k] = ist[k]
+    if "duration" in q:
+        knobs["quench_duration"] = q["duration"]
+    if g.get("seed") is not None:
+        knobs["seed"] = g.get("seed")
+    return knobs
+
+
+def _resolve_room_dir(room_id, room_index):
+    """Locate a room dir by id across the official index + candidate/rejected trees."""
+    for e in room_index:
+        if e.get("room_id") == room_id:
+            return os.path.join(_REPO, e["path"])
+    for base in ("candidates", "rejected_in_3d"):
+        d = os.path.join(_REPO, "rooms", base, room_id)
+        if os.path.isdir(d):
+            return d
+    return None
+
+
+# The promotion pipeline a candidate must climb to become an official 3D Room (DIMENSION_POLICY).
+# A candidate NEVER self-promotes; this only reports how far measurement has actually carried it.
+PROMOTION_STAGES = ["exploration_2d", "local_3d", "coarse_global_3d", "full_3d"]
+
+
+def _promotion_stage(dstat, source):
+    """Report the promotion pipeline honestly: which stages passed, the current front, and whether the
+    candidate was rejected in 3D. Does not decide promotion -- only mirrors recorded dimension_status."""
+    passed = [s for s in PROMOTION_STAGES if dstat.get(s) == "passed"]
+    current = next((s for s in PROMOTION_STAGES if dstat.get(s) not in ("passed",)), "full_3d")
+    return {
+        "stages": [{"name": s, "status": dstat.get(s, "not_started")} for s in PROMOTION_STAGES],
+        "passed": passed,
+        "current": current,
+        "rejected_in_3d": source == "rejected_in_3d",
+        "is_official": False,  # a candidate is never official; promotion is a separate gated step
+    }
+
+
+def _genesis_diff(parent_room, cand_genesis, room_index):
+    """Honest diff: which start-side knobs differ between a candidate and its parent, from the genesis
+    docs themselves (not a stored label). Returns {knob: {from, to}} plus parent reached level."""
+    diff, parent_level = {}, None
+    pdir = _resolve_room_dir(parent_room, room_index) if parent_room else None
+    if pdir:
+        pg = os.path.join(pdir, "genesis.yaml")
+        parent_knobs = _genesis_knobs(_load_yaml(pg)) if os.path.exists(pg) else {}
+        cand_knobs = _genesis_knobs(cand_genesis)
+        for k in sorted(set(parent_knobs) | set(cand_knobs)):
+            pv, cv = parent_knobs.get(k), cand_knobs.get(k)
+            if pv != cv:
+                diff[k] = {"from": pv, "to": cv}
+        pr = os.path.join(pdir, "room.yaml")
+        if os.path.exists(pr):
+            parent_level = (_load_yaml(pr).get("emergence") or {}).get("reached_level")
+    return diff, parent_level
+
+
 def build():
     # rooms
     rooms = []
@@ -123,19 +192,29 @@ def build():
             r = _load_yaml(ry)
             rm_path = os.path.join(bdir, room, "render-manifest.yaml")
             rmf = _load_yaml(rm_path) if os.path.exists(rm_path) else {}
+            cg_path = os.path.join(bdir, room, "genesis.yaml")
+            cand_genesis = _load_yaml(cg_path) if os.path.exists(cg_path) else {}
+            diff, parent_level = _genesis_diff(r.get("parent_room"), cand_genesis, room_index)
+            reached = r.get("emergence", {}).get("reached_level")
+            dstat = r.get("dimension_status", {})
             candidate_rooms.append({
                 "room_id": r.get("room_id"), "title": r.get("title"), "kind": "candidate_room",
                 "official": False, "parent_room": r.get("parent_room"), "status": r.get("status"),
                 "genesis_model": r.get("genesis_model"),
-                "reached_level": r.get("emergence", {}).get("reached_level"),
+                "reached_level": reached,
                 "candidate_level": r.get("emergence", {}).get("candidate_level"),
-                "dimension_status": r.get("dimension_status", {}),
+                "dimension_status": dstat,
                 "physics_status": r.get("physics_status", {}),
                 # Live Runner candidates carry recorded replay fields, same reference structure as rooms.
                 "render_manifest": ("render-manifest.yaml" if rmf else None),
                 "frames_ref": rmf.get("frames_ref"),
                 "lenses": [l["lens"] for l in rmf.get("lenses", [])],
                 "source": base,  # "candidates" (live/AI screen) or "rejected_in_3d"
+                # Discovery Inbox (Phase 4): honest parent diff + promotion pipeline stage.
+                "diff_vs_parent": diff,
+                "parent_reached_level": parent_level,
+                "delta_level": (reached - parent_level) if (reached is not None and parent_level is not None) else None,
+                "promotion": _promotion_stage(dstat, base),
             })
 
     # Live Runner jobs (Phase 3): UI-requested jobs executed by tools/run_job.py. The browser never runs

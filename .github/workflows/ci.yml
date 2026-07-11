@@ -196,7 +196,9 @@ jobs:
             cands={c['room_id']:c for c in d.get('candidate_rooms',[])}; \
             cr=cands['room-g001-a-job-0001']; \
             assert cr['official'] is False and cr.get('frames_ref') and cr.get('lenses'), 'candidate room must be non-official + replayable'; \
-            print('catalog Live Runner OK:', len(d.get('jobs',[])), 'job(s),', len(d.get('candidate_rooms',[])), 'candidate room(s)')"
+            assert cr['diff_vs_parent']['noise_amplitude']['from']==0.01 and cr['diff_vs_parent']['noise_amplitude']['to']==0.005, 'honest parent diff missing'; \
+            assert cr['delta_level'] is not None and cr['promotion']['is_official'] is False and 'exploration_2d' in cr['promotion']['passed'], 'Discovery Inbox promotion metadata missing'; \
+            print('catalog Live Runner + Discovery Inbox OK:', len(d.get('jobs',[])), 'job(s),', len(d.get('candidate_rooms',[])), 'candidate room(s)')"
       - name: "Recorded fields are referenced (not inlined) + honest (Phase 0; catalog stays small)"
         run: |
           python -c "import json; d=json.load(open('app/generated/catalog.json')); \

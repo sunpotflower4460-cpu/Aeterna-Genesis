@@ -42,6 +42,24 @@ export interface CandidateRoom {
   frames_ref?: string | null
   lenses?: string[]
   source?: string
+  // Discovery Inbox (Phase 4)
+  diff_vs_parent?: Record<string, { from: number | null; to: number | null }>
+  parent_reached_level?: number | null
+  delta_level?: number | null
+  promotion?: Promotion
+}
+
+export interface PromotionStage {
+  name: string
+  status: string
+}
+
+export interface Promotion {
+  stages: PromotionStage[]
+  passed: string[]
+  current: string
+  rejected_in_3d: boolean
+  is_official: false
 }
 
 export interface Job {

@@ -52,6 +52,37 @@ def test_ai_discovery_ledger_surfaces_in_catalog():
         assert c["kind"] == "ai_candidate" and "screen_2d_level" in c
 
 
+def test_candidate_carries_jobs_diff_and_promotion():
+    # Phase 3/4: Live Runner jobs + Discovery Inbox metadata flow into the single catalog source.
+    cat = _load().build()
+    jobs = {j["job_id"]: j for j in cat.get("jobs", [])}
+    assert "job-0001" in jobs and jobs["job-0001"]["result_room"] == "room-g001-a-job-0001"
+    cand = {c["room_id"]: c for c in cat["candidate_rooms"]}
+    cr = cand["room-g001-a-job-0001"]
+    # honest parent diff computed from genesis docs (not a stored label)
+    assert cr["diff_vs_parent"]["noise_amplitude"]["from"] == 0.01
+    assert cr["diff_vs_parent"]["noise_amplitude"]["to"] == 0.005
+    assert cr["parent_reached_level"] == 2 and cr["delta_level"] == cr["reached_level"] - 2
+    # promotion pipeline mirrors dimension_status; a candidate is never official / self-promoted
+    prom = cr["promotion"]
+    assert prom["is_official"] is False
+    assert "exploration_2d" in prom["passed"]
+    assert prom["current"] in _load().PROMOTION_STAGES
+    # replayable (Live Runner recorded fields)
+    assert cr["frames_ref"] and cr["lenses"]
+
+
+def test_genesis_diff_reports_only_changed_knobs():
+    m = _load()
+    parent = {"initial_state": {"noise_amplitude": 0.01, "correlation_length": 1.0}, "seed": 0}
+    child = {"initial_state": {"noise_amplitude": 0.001, "correlation_length": 1.0},
+             "protocol": {"quench": {"duration": 8.0}}, "seed": 0}
+    kp, kc = m._genesis_knobs(parent), m._genesis_knobs(child)
+    diff = {k: {"from": kp.get(k), "to": kc.get(k)} for k in set(kp) | set(kc) if kp.get(k) != kc.get(k)}
+    assert set(diff) == {"noise_amplitude", "quench_duration"}  # correlation_length + seed unchanged/added
+    assert diff["noise_amplitude"] == {"from": 0.01, "to": 0.001}
+
+
 def test_catalog_js_assigns_window_catalog(tmp_path):
     m = _load()
     cat = m.build()

@@ -888,7 +888,42 @@ window.CATALOG = {
       "render_manifest": null,
       "frames_ref": null,
       "lenses": [],
-      "source": "candidates"
+      "source": "candidates",
+      "diff_vs_parent": {
+        "noise_amplitude": {
+          "from": 0.01,
+          "to": 0.0001
+        }
+      },
+      "parent_reached_level": 2,
+      "delta_level": -1,
+      "promotion": {
+        "stages": [
+          {
+            "name": "exploration_2d",
+            "status": "passed"
+          },
+          {
+            "name": "local_3d",
+            "status": "passed"
+          },
+          {
+            "name": "coarse_global_3d",
+            "status": "not_started"
+          },
+          {
+            "name": "full_3d",
+            "status": "not_started"
+          }
+        ],
+        "passed": [
+          "exploration_2d",
+          "local_3d"
+        ],
+        "current": "coarse_global_3d",
+        "rejected_in_3d": false,
+        "is_official": false
+      }
     },
     {
       "room_id": "room-g001-a-job-0001",
@@ -918,7 +953,41 @@ window.CATALOG = {
         "phase",
         "density"
       ],
-      "source": "candidates"
+      "source": "candidates",
+      "diff_vs_parent": {
+        "noise_amplitude": {
+          "from": 0.01,
+          "to": 0.005
+        }
+      },
+      "parent_reached_level": 2,
+      "delta_level": -1,
+      "promotion": {
+        "stages": [
+          {
+            "name": "exploration_2d",
+            "status": "passed"
+          },
+          {
+            "name": "local_3d",
+            "status": "not_started"
+          },
+          {
+            "name": "coarse_global_3d",
+            "status": "not_started"
+          },
+          {
+            "name": "full_3d",
+            "status": "not_started"
+          }
+        ],
+        "passed": [
+          "exploration_2d"
+        ],
+        "current": "local_3d",
+        "rejected_in_3d": false,
+        "is_official": false
+      }
     }
   ],
   "jobs": [

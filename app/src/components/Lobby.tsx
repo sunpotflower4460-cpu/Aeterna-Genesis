@@ -1,6 +1,6 @@
 import { useStore } from '../store'
-import type { Room, CandidateRoom, Job } from '../lib/types'
-import { dimBadge, physicsBadge, candidateBadge, LevelChip } from './ui'
+import type { Room } from '../lib/types'
+import { dimBadge, physicsBadge, LevelChip } from './ui'
 
 function Preview({ room }: { room: Room }) {
   // lightweight, honest placeholder tint by dimension (real 3D preview binds on open)
@@ -38,59 +38,32 @@ function Card({ room }: { room: Room }) {
   )
 }
 
-function CandidateCard({ room }: { room: CandidateRoom }) {
-  const openRoom = useStore((s) => s.openRoom)
-  const hasFields = !!room.frames_ref
+function InboxBanner() {
+  const catalog = useStore((s) => s.catalog)!
+  const toInbox = useStore((s) => s.toInbox)
+  const candidates = catalog.candidate_rooms || []
+  const jobs = catalog.jobs || []
+  if (candidates.length === 0 && jobs.length === 0) return null
   return (
-    <button className="glass" onClick={() => openRoom(room.room_id)} disabled={!hasFields} style={{
-      textAlign: 'left', padding: 14, display: 'grid', gap: 10, border: '1px dashed var(--line)',
-      background: 'var(--panel)', color: 'var(--ink)', opacity: hasFields ? 1 : 0.6,
+    <button className="glass" onClick={toInbox} style={{
+      textAlign: 'left', width: '100%', marginTop: 32, padding: '16px 18px', display: 'flex',
+      alignItems: 'center', gap: 14, border: '1px dashed var(--line)', background: 'var(--panel)', color: 'var(--ink)',
     }}>
-      <div style={{ fontWeight: 600, fontSize: 14 }}>{room.title}</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {candidateBadge()}
-        <span className="badge">Level {room.reached_level ?? '?'}</span>
-        <span className="badge">親 {room.parent_room}</span>
+      <div style={{ fontSize: 22 }}>◇</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 600, fontSize: 15 }}>AI Discovery Inbox</div>
+        <div className="muted" style={{ fontSize: 12.5, marginTop: 3 }}>
+          {candidates.length} 候補 · {jobs.length} ジョブ · 始原条件の差・親比 Level・昇格パイプライン
+        </div>
       </div>
-      <div className="mono" style={{ fontSize: 10.5, color: 'var(--faint)' }}>
-        {(room.lenses || []).join(' · ') || '記録なし（screen のみ）'} · full_3d={room.dimension_status?.full_3d ?? '—'}
-      </div>
-      <div className="mono" style={{ fontSize: 11, color: hasFields ? 'var(--accent)' : 'var(--faint)' }}>
-        {hasFields ? '再生 →' : '再生できる場が未記録'}
-      </div>
+      <div className="mono" style={{ fontSize: 12, color: 'var(--accent)' }}>開く →</div>
     </button>
-  )
-}
-
-function JobRow({ job }: { job: Job }) {
-  const openRoom = useStore((s) => s.openRoom)
-  const color = job.status === 'done' ? 'var(--official)' : job.status === 'rejected' ? 'var(--warn)' : 'var(--muted)'
-  return (
-    <div className="glass" style={{ padding: '10px 12px', display: 'grid', gap: 4, border: '1px solid var(--line)', background: 'var(--panel)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span className="mono" style={{ fontSize: 12 }}>{job.job_id}</span>
-        <span className="badge" style={{ color }}>{job.status}</span>
-        {job.override && <span className="mono muted" style={{ fontSize: 11 }}>{job.override.param}={job.override.to}</span>}
-        <span style={{ flex: 1 }} />
-        {job.result_room && (
-          <button className="lens" style={{ color: 'var(--accent)', borderColor: 'rgba(79,227,224,.4)' }}
-            onClick={() => openRoom(job.result_room!)}>候補 Room を開く →</button>
-        )}
-      </div>
-      <div className="mono muted" style={{ fontSize: 10.5 }}>
-        親 {job.parent_room} · seed {job.seed}
-        {job.reached_level != null && <> · reached L{job.reached_level}</>}
-        {job.checksum && <> · sha {job.checksum}</>}
-      </div>
-    </div>
   )
 }
 
 export default function Lobby() {
   const catalog = useStore((s) => s.catalog)!
   const rooms = catalog.rooms
-  const candidates = catalog.candidate_rooms || []
-  const jobs = catalog.jobs || []
   return (
     <div style={{ height: '100%', overflow: 'auto' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 20px 80px' }}>
@@ -117,29 +90,7 @@ export default function Lobby() {
           {rooms.map((r) => <Card key={r.room_id} room={r} />)}
         </div>
 
-        {candidates.length > 0 && (
-          <>
-            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '32px 0 6px', color: 'var(--muted)' }}>候補 Rooms（非公式）</h2>
-            <p className="muted" style={{ fontSize: 12, margin: '0 0 12px' }}>
-              Live Runner / AI が実計算した候補。正式 Room とは区別され、自己昇格しない（full-3D 昇格・格子収束は別段階）。
-            </p>
-            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))' }}>
-              {candidates.map((c) => <CandidateCard key={c.room_id} room={c} />)}
-            </div>
-          </>
-        )}
-
-        {jobs.length > 0 && (
-          <>
-            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '32px 0 6px', color: 'var(--muted)' }}>Live Runner ジョブ台帳</h2>
-            <p className="muted" style={{ fontSize: 12, margin: '0 0 12px' }}>
-              UI が依頼 → Python worker（<span className="mono">tools/run_job.py</span>）が本物のモデルを t=0 から実行した記録。ブラウザは物理を計算しない。
-            </p>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {jobs.map((j) => <JobRow key={j.job_id} job={j} />)}
-            </div>
-          </>
-        )}
+        <InboxBanner />
       </div>
     </div>
   )

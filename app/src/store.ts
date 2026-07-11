@@ -23,7 +23,7 @@ export interface ViewSettings {
 
 interface State {
   catalog: Catalog | null
-  view: 'lobby' | 'room' | 'compare'
+  view: 'lobby' | 'room' | 'compare' | 'inbox'
   roomId: string | null
   compareIds: [string, string]
   lens: string | null
@@ -39,6 +39,7 @@ interface State {
   setCatalog: (c: Catalog) => void
   openRoom: (id: string) => void
   toLobby: () => void
+  toInbox: () => void
   toCompare: (a: string, b: string) => void
   setCompareId: (slot: 0 | 1, id: string) => void
   setLens: (l: string) => void
@@ -72,6 +73,7 @@ export const useStore = create<State>((set, get) => ({
   setCatalog: (c) => set({ catalog: c }),
   openRoom: (id) => set({ view: 'room', roomId: id, frame: 0, playing: true, lens: null, pendingGenesis: null }),
   toLobby: () => set({ view: 'lobby', roomId: null }),
+  toInbox: () => set({ view: 'inbox' }),
   toCompare: (a, b) => set({ view: 'compare', compareIds: [a, b], frame: 0, playing: true, lens: null }),
   setCompareId: (slot, id) => set((s) => {
     const c: [string, string] = [...s.compareIds]
