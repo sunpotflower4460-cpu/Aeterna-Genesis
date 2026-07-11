@@ -1,0 +1,45 @@
+room_id: room-g003-a
+frames_ref: runs/seed-0000/field.json
+dimension: 2
+lenses:
+- lens: composition
+  source:
+    field: phi
+    unit: phi
+  mapping:
+    transform: linear
+    cyclic: false
+    clipping: none
+  geometry: plane
+  honesty:
+    decorative_particles: false
+    interpolated_for_display: true
+    changes_physics: false
+- lens: boundary
+  source:
+    field: abs(grad phi)
+    unit: 1/L
+  mapping:
+    transform: linear
+    cyclic: false
+    clipping: none
+  geometry: plane
+  honesty:
+    decorative_particles: false
+    interpolated_for_display: true
+    changes_physics: false
+- lens: velocity
+  source:
+    field: abs(u)
+    unit: u
+  mapping:
+    transform: linear
+    cyclic: false
+    clipping: none
+  geometry: plane
+  honesty:
+    decorative_particles: false
+    interpolated_for_display: true
+    changes_physics: false
+data_source: physics
+separated_from_physics_data: true

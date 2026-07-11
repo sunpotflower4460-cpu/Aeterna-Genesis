@@ -36,6 +36,8 @@ def build():
         emergence = json.load(open(os.path.join(rdir, "emergence.json"))) if os.path.exists(os.path.join(rdir, "emergence.json")) else {}
         conv = json.load(open(os.path.join(rdir, "convergence.json"))) if os.path.exists(os.path.join(rdir, "convergence.json")) else {}
         render = _load_yaml(os.path.join(rdir, "render.yaml")) if os.path.exists(os.path.join(rdir, "render.yaml")) else {}
+        rm_path = os.path.join(rdir, "render-manifest.yaml")
+        rmf = _load_yaml(rm_path) if os.path.exists(rm_path) else {}
         runs = []
         runs_dir = os.path.join(rdir, "runs")
         if os.path.isdir(runs_dir):
@@ -64,6 +66,10 @@ def build():
                             "rows": conv.get("rows", [])},
             "natural_emergence": emergence.get("natural_emergence", {}),
             "render_map": render.get("mapping", {}),
+            # Phase 0: references to recorded fields + render-manifest (NOT the data itself; §3 参照構造)
+            "render_manifest": ("render-manifest.yaml" if rmf else None),
+            "frames_ref": rmf.get("frames_ref"),
+            "lenses": [l["lens"] for l in rmf.get("lenses", [])],
             "runs": runs,
             "put_in": entry.get("put_in",
                                 "一様に近い無秩序＋微小ノイズ＋TDGLクエンチ（欠陥/パターンは入れない）"),

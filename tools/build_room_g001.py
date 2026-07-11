@@ -34,6 +34,7 @@ from genesis.models import ginzburg_landau as gl  # noqa: E402
 from genesis.diagnostics import measures  # noqa: E402
 from genesis.runners import runner  # noqa: E402
 from genesis.dimension import harness  # noqa: E402
+from genesis.recording import recorder as record  # noqa: E402
 from jsonschema import Draft202012Validator  # noqa: E402
 
 ROOM_ID = "room-g001-a"
@@ -41,6 +42,7 @@ EDGE = 64
 STEPS = 700
 SEEDS = [0, 1, 2]
 CONV_EDGES = [48, 64, 80]
+FRAME_GRID = (20, 20, 20)   # display downsample for recorded 3D fields (Phase 0; interpolated_for_display)
 
 
 def _genesis(edge, seed):
@@ -67,8 +69,10 @@ def _gl_free_energy(psi, eps_final, Du):
     return float(np.mean(-0.5 * eps_final * a2 + 0.25 * a2 * a2 + 0.5 * Du * grad2))
 
 
-def _run_full3d(edge, steps, seed):
-    """Full-3D run from t=0 (no MODES table; explicit resolution for the official Room)."""
+def _run_full3d(edge, steps, seed, recorder=None):
+    """Full-3D run from t=0 (no MODES table; explicit resolution for the official Room).
+    If `recorder` is given, snapshot downsampled lens fields (phase, density) at the diagnostic cadence
+    (read-only -- recording never changes the numerics or the final checksum)."""
     p = dict(gl.DEFAULTS)
     rng = np.random.default_rng(seed)
     psi = gl.make_initial((edge, edge, edge), p["noise_amplitude"], rng)
@@ -82,6 +86,8 @@ def _run_full3d(edge, steps, seed):
             traj.append({"step": t, "mean_amp": measures.mean_amplitude(psi),
                          "sk_prom": skprom, "defects": measures.winding_defect_count(psi)})
             f_series.append(_gl_free_energy(psi, p["eps_final"], p["Du"]))
+            if recorder is not None:
+                recorder.add(t * p["dt"], {"phase": np.angle(psi), "density": np.abs(psi) ** 2})
     reached, detected, measured_by = measures.assess_level(traj)
     import hashlib
     h = hashlib.sha256()
@@ -137,10 +143,19 @@ def build(out_root, quick=False):
     out = os.path.join(out_root, "rooms", "official", ROOM_ID)
     os.makedirs(out, exist_ok=True)
 
-    # multi-seed official runs
-    runs = [_run_full3d(edge, steps, s) for s in seeds]
+    # multi-seed official runs (seed 0 also records downsampled 3D fields for replay)
+    rec = (record.FieldRecorder(3, FRAME_GRID)
+           .declare("phase", "arg(psi)", "rad", cyclic=True)
+           .declare("density", "abs(psi)^2", "n"))
+    runs = [_run_full3d(edge, steps, s, recorder=(rec if s == seeds[0] else None)) for s in seeds]
     for r in runs:
         _write_run(out, r)
+    # recorded fields (seed 0) + render-manifest -- referenced from the room, NOT inlined in catalog
+    frames_ref = "runs/seed-%04d/field.json" % seeds[0]
+    rec.write_field(os.path.join(out, "runs", "seed-%04d" % seeds[0]))
+    with open(os.path.join(out, "render-manifest.yaml"), "w") as fh:
+        yaml.safe_dump(rec.render_manifest(ROOM_ID, frames_ref), fh, allow_unicode=True,
+                       sort_keys=False, width=100)
     # reproducibility: same seed twice -> identical checksum
     repro = _run_full3d(edge, steps, seeds[0])["checksum"] == runs[0]["checksum"]
 

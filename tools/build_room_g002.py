@@ -34,9 +34,11 @@ if _REPO not in sys.path:
 
 from genesis.models import boussinesq_rb as rb  # noqa: E402
 from genesis.runners import runner  # noqa: E402
+from genesis.recording import recorder as record  # noqa: E402
 from jsonschema import Draft202012Validator  # noqa: E402
 
 ROOM_ID = "room-g002-a"
+FRAME_GRID = (48, 48)     # display downsample for recorded fields (Phase 0; interpolated_for_display)
 RA_STAR = 1000.0          # official operating point (~1.5x critical: steady convection roll, well-resolved)
 RA_SUB = 300.0            # subcritical onset control (Ra < Ra_c -> conduction only)
 N_STAR = 48               # official grid (2D: Nx x Nz)
@@ -45,10 +47,20 @@ SEEDS = [0, 1, 2]
 CONV_N = [32, 48, 64]     # three resolutions for the grid-convergence audit (2D is cheap)
 
 
-def _simulate(Ra, N, seed, t_end, sample=1.5, keep_state=False):
+def _record_fields(s):
+    """Real-space lens fields the DNS already computes (read-only; does not touch the state)."""
+    u, _, w, th = s.fields()
+    return {"temperature": th, "velocity": np.sqrt(u * u + w * w), "vorticity": s.bwd(s.om)}
+
+
+def _simulate(Ra, N, seed, t_end, sample=1.5, recorder=None, n_frames=12):
     """Drive the free-slip walled DNS to statistical steadiness; return measured diagnostics
-    (+ a final-field checksum). No intervention: fixed walls + fixed Ra only."""
+    (+ a final-field checksum). No intervention: fixed walls + fixed Ra only.
+    If `recorder` is given, snapshot downsampled lens fields at ~n_frames evenly spaced times
+    (read-only -- recording never changes the numerics or the final checksum)."""
     s = rb.Bouss(N, N, Ra, seed=seed, noise_amplitude=rb.DEFAULTS["noise_amplitude"])
+    snaps = record.snapshot_scheduler(t_end, n_frames) if recorder is not None else []
+    si = 0
     t = 0.0
     nsteps = 0
     max_steps = 60000        # a well-resolved run reaches t_end in << this; a runaway would hang -> fail
@@ -61,6 +73,9 @@ def _simulate(Ra, N, seed, t_end, sample=1.5, keep_state=False):
         if not s.finite() or nsteps > max_steps:
             raise RuntimeError("unstable/under-resolved at Ra=%g N=%d seed=%d (finite=%s, steps=%d): "
                                "raise resolution or lower Ra" % (Ra, N, seed, s.finite(), nsteps))
+        while si < len(snaps) and t >= snaps[si]:
+            recorder.add(t, _record_fields(s))
+            si += 1
         if t > t_end - sample:
             nu_f.append(s.nusselt_flux())
             nu_d.append(s.nusselt_dissipation())
@@ -73,8 +88,6 @@ def _simulate(Ra, N, seed, t_end, sample=1.5, keep_state=False):
            "nu_flux": float(np.mean(nu_f)), "nu_flux_std": float(np.std(nu_f)),
            "nu_diss": float(np.mean(nu_d)), "kinetic_energy": float(np.mean(ke)),
            "convecting": bool(np.mean(nu_f) > 1.02), "checksum": h.hexdigest()}
-    if keep_state:
-        out["state"] = s
     return out
 
 
@@ -187,8 +200,13 @@ def build(out_root, quick=False):
     out = os.path.join(out_root, "rooms", "official", ROOM_ID)
     os.makedirs(out, exist_ok=True)
 
-    # official multi-seed supercritical runs (Ra*, full-3d)
-    runs = [_simulate(RA_STAR, nstar, s, t_end) for s in seeds]
+    # official multi-seed supercritical runs (seed 0 also records downsampled fields for replay)
+    rec = (record.FieldRecorder(2, FRAME_GRID)
+           .declare("temperature", "theta", "dT")
+           .declare("velocity", "sqrt(u^2+w^2)", "u")
+           .declare("vorticity", "curl(u)", "1/t"))
+    runs = [_simulate(RA_STAR, nstar, s, t_end, recorder=(rec if s == seeds[0] else None))
+            for s in seeds]
     # subcritical onset control (Ra < Ra_c): must stay conductive (Nu≈1) -> emergence not seeded
     sub = _simulate(RA_SUB, nstar, seeds[0], t_end)
     onset_holds = runs[0]["convecting"] and (sub["nu_flux"] < 1.02)
@@ -217,6 +235,13 @@ def build(out_root, quick=False):
 
     for r in runs:
         _write_run(out, r, dt_repr=round(t_end / max(1, r["nsteps"]), 8))
+
+    # recorded fields (seed 0) + render-manifest -- referenced from the room, NOT inlined in catalog
+    frames_ref = "runs/seed-%04d/field.json" % seeds[0]
+    rec.write_field(os.path.join(out, "runs", "seed-%04d" % seeds[0]))
+    with open(os.path.join(out, "render-manifest.yaml"), "w") as fh:
+        yaml.safe_dump(rec.render_manifest(ROOM_ID, frames_ref), fh, allow_unicode=True,
+                       sort_keys=False, width=100)
 
     docs = _assemble_docs(nstar, seeds, runs, sub, reached_all, repro, conservation, convergence)
     for name, doc in docs["yaml"].items():

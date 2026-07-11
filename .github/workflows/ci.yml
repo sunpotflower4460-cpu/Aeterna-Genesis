@@ -177,6 +177,15 @@ jobs:
           test -f app/index.html
           test -f app/generated/catalog.json
           python -c "import json; d=json.load(open('app/generated/catalog.json')); rs={r['room_id']:r for r in d['rooms']}; assert rs['room-g001-a']['reached_level']==2 and rs['room-g002-a']['reached_level']==1 and rs['room-g003-a']['reached_level']==2, 'catalog stale'; assert rs['room-g002-a']['genesis_model']=='g002_boussinesq_convection' and rs['room-g003-a']['genesis_model']=='g003_model_h_phase_field'; print('catalog OK:', len(d['rooms']), 'official rooms')"
+      - name: "Recorded fields are referenced (not inlined) + honest (Phase 0; catalog stays small)"
+        run: |
+          python -c "import json; d=json.load(open('app/generated/catalog.json')); \
+            assert all(r.get('frames_ref') and r.get('lenses') for r in d['rooms']), 'room missing frames_ref/lenses'; \
+            assert 'data_b64' not in json.dumps(d), 'field data must NOT be inlined into catalog.json'; \
+            print('catalog references recorded fields; data kept in per-run files')"
+          python -c "import json; d=json.load(open('rooms/official/room-g002-a/runs/seed-0000/field.json')); \
+            assert d['honesty']['changes_physics'] is False and d['honesty']['decorative_particles'] is False; \
+            assert d['lenses'], 'no lenses recorded'; print('recorded field honesty OK')"
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"

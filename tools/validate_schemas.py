@@ -161,7 +161,8 @@ def main():
                      "render.yaml": "render.schema.json"}
     if os.path.isdir(rooms_dir):
         validators = {}
-        for sfile in set(list(_room_schemas.values()) + ["emergence.schema.json", "run.schema.json"]):
+        for sfile in set(list(_room_schemas.values()) + ["emergence.schema.json", "run.schema.json",
+                                                          "field-index.schema.json", "render-manifest.schema.json"]):
             try:
                 validators[sfile] = Draft202012Validator(_load_json(os.path.join(_SCHEMAS, sfile)))
             except Exception as e:  # noqa: BLE001
@@ -186,12 +187,18 @@ def main():
             if os.path.isdir(runs_dir):
                 for sd in sorted(os.listdir(runs_dir)):
                     for fn, sfile in [("manifest.json", "run.schema.json"),
-                                      ("emergence.json", "emergence.schema.json")]:
+                                      ("emergence.json", "emergence.schema.json"),
+                                      ("field.json", "field-index.schema.json")]:
                         fpath = os.path.join(runs_dir, sd, fn)
                         if os.path.exists(fpath) and validators.get(sfile):
                             for err in validators[sfile].iter_errors(_load_json(fpath)):
                                 errors.append("rooms/official/%s/runs/%s/%s: %s"
                                               % (room, sd, fn, err.message))
+            # Phase 0: recorded-field render manifest (viz -> measured physics, machine-readable + honesty)
+            rm = os.path.join(rdir, "render-manifest.yaml")
+            if os.path.exists(rm) and validators.get("render-manifest.schema.json"):
+                for err in validators["render-manifest.schema.json"].iter_errors(_load_yaml(rm)):
+                    errors.append("rooms/official/%s/render-manifest.yaml: %s" % (room, err.message))
             n_rooms += 1
         info.append("Genesis Room OK: %d official room(s) validated (room/genesis/emergence/run/dim/render)"
                     % n_rooms)

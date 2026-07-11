@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/render-manifest.schema.json",
+  "title": "Render manifest (render-manifest.yaml)",
+  "description": "観測レンズ→実測物理量の機械可読な対応。各レンズがどの場のどの成分・単位・変換・クリッピングか、そして表示専用処理か（honesty）を保存する。存在しない量や見栄えのための偽装を表示しない保証（PHYSICS_INTEGRITY.md §18 / AI_EXPERIMENT_POLICY）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["room_id", "frames_ref", "dimension", "lenses", "data_source", "separated_from_physics_data"],
+  "properties": {
+    "room_id": {"type": "string", "pattern": "^room-[a-z0-9-]+$"},
+    "frames_ref": {"type": "string", "description": "field.json への相対参照（catalog に生データを入れない）"},
+    "dimension": {"type": "integer", "enum": [2, 3]},
+    "data_source": {"type": "string", "enum": ["physics", "explanatory_demo"]},
+    "separated_from_physics_data": {"type": "boolean"},
+    "lenses": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["lens", "source", "mapping", "geometry", "honesty"],
+        "properties": {
+          "lens": {"type": "string"},
+          "source": {
+            "type": "object", "additionalProperties": false, "required": ["field", "unit"],
+            "properties": {"field": {"type": "string"}, "unit": {"type": "string"}}
+          },
+          "mapping": {
+            "type": "object", "additionalProperties": false, "required": ["transform", "clipping"],
+            "properties": {"transform": {"type": "string", "enum": ["linear", "logarithmic"]},
+                           "cyclic": {"type": "boolean"},
+                           "clipping": {"type": "string", "enum": ["none", "clipped_for_display"]}}
+          },
+          "geometry": {"type": "string", "enum": ["plane", "volume"]},
+          "honesty": {
+            "type": "object", "additionalProperties": false,
+            "required": ["decorative_particles", "interpolated_for_display", "changes_physics"],
+            "properties": {
+              "decorative_particles": {"type": "boolean", "const": false},
+              "interpolated_for_display": {"type": "boolean"},
+              "changes_physics": {"type": "boolean", "const": false}
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -72,6 +72,12 @@ window.CATALOG = {
         "isosurface": "scalar_field_threshold",
         "line_width": "winding"
       },
+      "render_manifest": "render-manifest.yaml",
+      "frames_ref": "runs/seed-0000/field.json",
+      "lenses": [
+        "phase",
+        "density"
+      ],
       "runs": [
         {
           "seed": 0,
@@ -179,6 +185,13 @@ window.CATALOG = {
         "isosurface": "temperature",
         "line_width": "physical_velocity"
       },
+      "render_manifest": "render-manifest.yaml",
+      "frames_ref": "runs/seed-0000/field.json",
+      "lenses": [
+        "temperature",
+        "velocity",
+        "vorticity"
+      ],
       "runs": [
         {
           "seed": 0,
@@ -286,6 +299,13 @@ window.CATALOG = {
         "isosurface": "scalar_field_threshold",
         "line_width": "physical_velocity"
       },
+      "render_manifest": "render-manifest.yaml",
+      "frames_ref": "runs/seed-0000/field.json",
+      "lenses": [
+        "composition",
+        "boundary",
+        "velocity"
+      ],
       "runs": [
         {
           "seed": 0,

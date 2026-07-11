@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/field-index.schema.json",
+  "title": "Recorded field frames (runs/seed-XXXX/field.json)",
+  "description": "再生用に間引き・量子化した実測場のスナップショット列。物理は変えず、計算済みの場を表示用に保存する（Phase 0）。巨大データは catalog.json に入れず、この run 配下の参照ファイルに置く。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dimension", "grid", "nframes", "times", "lenses", "honesty"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "dimension": {"type": "integer", "enum": [2, 3]},
+    "grid": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 2, "maxItems": 3},
+    "nframes": {"type": "integer", "minimum": 1},
+    "times": {"type": "array", "items": {"type": "number"}, "minItems": 1},
+    "downsample": {"type": "string"},
+    "lenses": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["source", "unit", "transform", "cyclic", "geometry", "vmin", "vmax", "quant", "data_b64"],
+        "properties": {
+          "source": {"type": "string", "description": "元になった実測物理量"},
+          "unit": {"type": "string"},
+          "transform": {"type": "string", "enum": ["linear", "logarithmic"]},
+          "cyclic": {"type": "boolean"},
+          "geometry": {"type": "string", "enum": ["plane", "volume"]},
+          "vmin": {"type": "number"}, "vmax": {"type": "number"},
+          "quant": {"type": "string", "enum": ["uint8"]},
+          "data_b64": {"type": "string", "description": "base64(uint8 [nframes, *grid]); value=vmin+u8/255*(vmax-vmin)"}
+        }
+      }
+    },
+    "honesty": {
+      "type": "object", "additionalProperties": false,
+      "required": ["decorative_particles", "interpolated_for_display", "changes_physics", "quantized_uint8"],
+      "properties": {
+        "decorative_particles": {"type": "boolean", "const": false},
+        "interpolated_for_display": {"type": "boolean"},
+        "changes_physics": {"type": "boolean", "const": false},
+        "quantized_uint8": {"type": "boolean"}
+      }
+    }
+  }
+}
