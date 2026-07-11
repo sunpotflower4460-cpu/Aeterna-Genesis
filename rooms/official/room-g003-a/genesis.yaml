@@ -1,0 +1,26 @@
+schema_version: 1
+model: g003_model_h_phase_field
+dimension: 2
+domain:
+  size:
+  - 128
+  - 128
+  spacing: 1.0
+  boundary: periodic
+fields:
+  phi:
+    type: scalar
+  velocity:
+    type: vector
+initial_state:
+  type: uniform_plus_noise
+  mean_amplitude: 0.0
+  noise_amplitude: 0.05
+  correlation_length: 1.0
+laws:
+- cahn_hilliard
+- navier_stokes
+- model_h
+- incompressible
+seed: 0
+drive_class: autonomous

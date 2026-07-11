@@ -161,7 +161,8 @@ def main():
                      "render.yaml": "render.schema.json"}
     if os.path.isdir(rooms_dir):
         validators = {}
-        for sfile in set(list(_room_schemas.values()) + ["emergence.schema.json", "run.schema.json"]):
+        for sfile in set(list(_room_schemas.values()) + ["emergence.schema.json", "run.schema.json",
+                                                          "field-index.schema.json", "render-manifest.schema.json"]):
             try:
                 validators[sfile] = Draft202012Validator(_load_json(os.path.join(_SCHEMAS, sfile)))
             except Exception as e:  # noqa: BLE001
@@ -186,12 +187,18 @@ def main():
             if os.path.isdir(runs_dir):
                 for sd in sorted(os.listdir(runs_dir)):
                     for fn, sfile in [("manifest.json", "run.schema.json"),
-                                      ("emergence.json", "emergence.schema.json")]:
+                                      ("emergence.json", "emergence.schema.json"),
+                                      ("field.json", "field-index.schema.json")]:
                         fpath = os.path.join(runs_dir, sd, fn)
                         if os.path.exists(fpath) and validators.get(sfile):
                             for err in validators[sfile].iter_errors(_load_json(fpath)):
                                 errors.append("rooms/official/%s/runs/%s/%s: %s"
                                               % (room, sd, fn, err.message))
+            # Phase 0: recorded-field render manifest (viz -> measured physics, machine-readable + honesty)
+            rm = os.path.join(rdir, "render-manifest.yaml")
+            if os.path.exists(rm) and validators.get("render-manifest.schema.json"):
+                for err in validators["render-manifest.schema.json"].iter_errors(_load_yaml(rm)):
+                    errors.append("rooms/official/%s/render-manifest.yaml: %s" % (room, err.message))
             n_rooms += 1
         info.append("Genesis Room OK: %d official room(s) validated (room/genesis/emergence/run/dim/render)"
                     % n_rooms)
@@ -200,7 +207,8 @@ def main():
     #    emergence.json + runs; they must NOT be marked official and must not claim full_3d passed.
     n_cand = 0
     rv = {s: Draft202012Validator(_load_json(os.path.join(_SCHEMAS, s)))
-          for s in ("room.schema.json", "genesis.schema.json", "emergence.schema.json", "run.schema.json")
+          for s in ("room.schema.json", "genesis.schema.json", "emergence.schema.json", "run.schema.json",
+                    "field-index.schema.json", "render-manifest.schema.json")
           if os.path.exists(os.path.join(_SCHEMAS, s))}
     for base in ("candidates", "rejected_in_3d"):
         bdir = os.path.join(_REPO, "rooms", base)
@@ -230,10 +238,49 @@ def main():
                     if os.path.exists(mp) and "run.schema.json" in rv:
                         for err in rv["run.schema.json"].iter_errors(_load_json(mp)):
                             errors.append("rooms/%s/%s/runs/%s/manifest.json: %s" % (base, room, sd, err.message))
+                    # Live Runner records replay fields for candidate rooms too.
+                    fp = os.path.join(rundir, sd, "field.json")
+                    if os.path.exists(fp) and "field-index.schema.json" in rv:
+                        for err in rv["field-index.schema.json"].iter_errors(_load_json(fp)):
+                            errors.append("rooms/%s/%s/runs/%s/field.json: %s" % (base, room, sd, err.message))
+            rm = os.path.join(rdir, "render-manifest.yaml")
+            if os.path.exists(rm) and "render-manifest.schema.json" in rv:
+                for err in rv["render-manifest.schema.json"].iter_errors(_load_yaml(rm)):
+                    errors.append("rooms/%s/%s/render-manifest.yaml: %s" % (base, room, err.message))
             n_cand += 1
     if n_cand:
         info.append("Candidate/rejected room OK: %d non-official room(s) validated (official=false, full_3d != passed)"
                     % n_cand)
+
+    # 9. Live Runner job status files: rooms/jobs/*.json validate against job.schema.json, and a
+    #    finished job's result_room must actually exist as a candidate room (no phantom self-promotion).
+    n_jobs = 0
+    jobs_dir = os.path.join(_REPO, "rooms", "jobs")
+    job_schema_path = os.path.join(_SCHEMAS, "job.schema.json")
+    if os.path.isdir(jobs_dir) and os.path.exists(job_schema_path):
+        jv = Draft202012Validator(_load_json(job_schema_path))
+        for fn in sorted(f for f in os.listdir(jobs_dir) if f.endswith(".json") and f != "ledger.json"):
+            doc = _load_json(os.path.join(jobs_dir, fn))
+            for err in jv.iter_errors(doc):
+                errors.append("rooms/jobs/%s: %s at %s" % (fn, err.message, list(err.absolute_path)))
+            rr = doc.get("result_room")
+            if rr and not os.path.isdir(os.path.join(_REPO, "rooms", "candidates", rr)):
+                errors.append("rooms/jobs/%s: result_room %r has no candidate room (a job cannot self-promote)"
+                              % (fn, rr))
+            n_jobs += 1
+        led_path = os.path.join(jobs_dir, "ledger.json")
+        if os.path.exists(led_path):
+            led = _load_json(led_path)
+            if not isinstance(led.get("jobs"), list):
+                errors.append("rooms/jobs/ledger.json: 'jobs' must be a list")
+            else:
+                for j in led["jobs"]:
+                    rr = j.get("result_room")
+                    if rr and not os.path.isdir(os.path.join(_REPO, "rooms", "candidates", rr)):
+                        errors.append("rooms/jobs/ledger.json: job %r result_room %r missing"
+                                      % (j.get("job_id"), rr))
+    if n_jobs:
+        info.append("Live Runner jobs OK: %d job status file(s) validated (schema + result_room exists)" % n_jobs)
 
     for line in info:
         print("  " + line)

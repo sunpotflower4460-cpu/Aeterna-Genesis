@@ -1,0 +1,32 @@
+schema_version: 1
+model: g002_boussinesq_convection
+dimension: 2
+domain:
+  size:
+  - 48
+  - 48
+  spacing: 1.0
+  boundary: mixed
+fields:
+  velocity:
+    type: vector
+  temperature:
+    type: scalar
+initial_state:
+  type: quiescent_plus_noise
+  mean_amplitude: 0.0
+  noise_amplitude: 0.001
+  correlation_length: 1.0
+laws:
+- boussinesq
+- navier_stokes_boussinesq
+- incompressible
+protocol:
+  drive:
+    type: fixed_temperature_difference
+    rayleigh: 1000.0
+    prandtl: 1.0
+    walls: free_slip
+    runtime_controlled: false
+seed: 0
+drive_class: externally_driven

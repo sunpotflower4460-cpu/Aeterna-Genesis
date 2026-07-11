@@ -161,18 +161,53 @@ jobs:
         run: python genesis/dimension/harness.py --quick --no-write
       - name: "Genesis Room G001 builder smoke (quick full-3D pipeline into a temp dir; not committed)"
         run: python tools/build_room_g001.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g001smoke"
+      - name: "Genesis Room G002 builder smoke (quick walled Rayleigh-Bénard; onset control + Nu into temp dir)"
+        run: python tools/build_room_g002.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g002smoke"
+      - name: "Genesis Room G003 builder smoke (quick Model H; phase separation + flow co-evolution into temp dir)"
+        run: python tools/build_room_g003.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g003smoke"
       - name: "AI Genesis Lab smoke (start-condition search, 2D-screened, non-destructive)"
         run: python ai_lab/lab.py --n 4 --quick --no-write
       - name: "AI discovery ledger review (accumulated auto-tests are persisted + reviewable)"
         run: |
           test -f ai_lab/discoveries/ledger.json
           python ai_lab/lab.py --review
+      - name: "Live Runner smoke (UI job REQUEST -> real g001 model from t=0 -> non-official candidate room)"
+        run: python tools/run_job.py --smoke
+      - name: "Live Runner outputs stay honest (committed candidate is non-official, replayable, not self-promoted)"
+        run: |
+          python -c "import yaml,os; \
+            r=yaml.safe_load(open('rooms/candidates/room-g001-a-job-0001/room.yaml')); \
+            assert r['official'] is False, 'candidate must not be official'; \
+            assert r['dimension_status']['full_3d'] != 'passed', 'candidate must not claim full_3d'; \
+            assert os.path.exists('rooms/candidates/room-g001-a-job-0001/runs/seed-0000/field.json'), 'candidate must record replay fields'; \
+            print('Live Runner candidate honesty OK')"
+          python -c "import json; d=json.load(open('rooms/jobs/job-0001.json')); \
+            assert d['status']=='done' and d['result_room']=='room-g001-a-job-0001'; \
+            print('Live Runner job status OK')"
       - name: "Observatory catalog regenerates from metadata (single source; app is catalog-driven)"
         run: |
           python tools/build_catalog.py --no-write
           test -f app/index.html
           test -f app/generated/catalog.json
-          python -c "import json,sys; d=json.load(open('app/generated/catalog.json')); assert d['rooms'][0]['room_id']=='room-g001-a' and d['rooms'][0]['reached_level']==2, 'catalog stale'; print('catalog OK')"
+          python -c "import json; d=json.load(open('app/generated/catalog.json')); rs={r['room_id']:r for r in d['rooms']}; assert rs['room-g001-a']['reached_level']==2 and rs['room-g002-a']['reached_level']==1 and rs['room-g003-a']['reached_level']==2, 'catalog stale'; assert rs['room-g002-a']['genesis_model']=='g002_boussinesq_convection' and rs['room-g003-a']['genesis_model']=='g003_model_h_phase_field'; print('catalog OK:', len(d['rooms']), 'official rooms')"
+          python -c "import json; d=json.load(open('app/generated/catalog.json')); \
+            jobs={j['job_id']:j for j in d.get('jobs',[])}; \
+            assert 'job-0001' in jobs and jobs['job-0001']['result_room']=='room-g001-a-job-0001', 'Live Runner job missing from catalog'; \
+            cands={c['room_id']:c for c in d.get('candidate_rooms',[])}; \
+            cr=cands['room-g001-a-job-0001']; \
+            assert cr['official'] is False and cr.get('frames_ref') and cr.get('lenses'), 'candidate room must be non-official + replayable'; \
+            assert cr['diff_vs_parent']['noise_amplitude']['from']==0.01 and cr['diff_vs_parent']['noise_amplitude']['to']==0.005, 'honest parent diff missing'; \
+            assert cr['delta_level'] is not None and cr['promotion']['is_official'] is False and 'exploration_2d' in cr['promotion']['passed'], 'Discovery Inbox promotion metadata missing'; \
+            print('catalog Live Runner + Discovery Inbox OK:', len(d.get('jobs',[])), 'job(s),', len(d.get('candidate_rooms',[])), 'candidate room(s)')"
+      - name: "Recorded fields are referenced (not inlined) + honest (Phase 0; catalog stays small)"
+        run: |
+          python -c "import json; d=json.load(open('app/generated/catalog.json')); \
+            assert all(r.get('frames_ref') and r.get('lenses') for r in d['rooms']), 'room missing frames_ref/lenses'; \
+            assert 'data_b64' not in json.dumps(d), 'field data must NOT be inlined into catalog.json'; \
+            print('catalog references recorded fields; data kept in per-run files')"
+          python -c "import json; d=json.load(open('rooms/official/room-g002-a/runs/seed-0000/field.json')); \
+            assert d['honesty']['changes_physics'] is False and d['honesty']['decorative_particles'] is False; \
+            assert d['lenses'], 'no lenses recorded'; print('recorded field honesty OK')"
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/job.schema.json",
+  "title": "Live Runner job status",
+  "description": "Status file for a UI-requested Live Runner job. The browser emits the request; a Python worker (tools/run_job.py) runs the REAL reference model from t=0 with an allowed start-side knob and writes this status. A job can never self-promote to an official room.",
+  "type": "object",
+  "required": ["job_id", "parent_room", "override", "seed", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "job_id": { "type": "string", "pattern": "^job-[A-Za-z0-9_-]+$" },
+    "parent_room": { "type": "string" },
+    "override": {
+      "type": "object",
+      "required": ["param", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "param": { "type": "string", "enum": ["noise_amplitude", "quench_duration"] },
+        "to": { "type": "number" }
+      }
+    },
+    "seed": { "type": "integer", "minimum": 0 },
+    "requested_at": { "type": "number" },
+    "status": { "type": "string", "enum": ["queued", "running", "done", "rejected"] },
+    "progress": { "type": "number", "minimum": 0, "maximum": 1 },
+    "reason": { "type": ["string", "null"] },
+    "result_room": { "type": "string" },
+    "reached_level": { "type": "integer", "minimum": 0, "maximum": 8 },
+    "checksum": { "type": "string" },
+    "measured_by": {
+      "type": "object",
+      "additionalProperties": { "type": ["number", "integer", "boolean"] }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "done" } } },
+      "then": { "required": ["result_room", "reached_level"] }
+    },
+    {
+      "if": { "properties": { "status": { "const": "rejected" } } },
+      "then": { "required": ["reason"] }
+    }
+  ]
+}

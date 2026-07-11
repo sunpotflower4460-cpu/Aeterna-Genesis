@@ -72,6 +72,12 @@ window.CATALOG = {
         "isosurface": "scalar_field_threshold",
         "line_width": "winding"
       },
+      "render_manifest": "render-manifest.yaml",
+      "frames_ref": "runs/seed-0000/field.json",
+      "lenses": [
+        "phase",
+        "density"
+      ],
       "runs": [
         {
           "seed": 0,
@@ -106,6 +112,231 @@ window.CATALOG = {
       ],
       "put_in": "一様に近い無秩序＋微小ノイズ＋TDGLクエンチ（欠陥/パターンは入れない）",
       "emerged": "対称性破れ（秩序変数）＋位相巻き渦線（Kibble-Zurek）"
+    },
+    {
+      "room_id": "room-g002-a",
+      "title": "2D Spontaneous Convection Genesis (walled Rayleigh-Bénard)",
+      "official": true,
+      "kind": "official_3d_room",
+      "parent_room": null,
+      "genesis_model": "g002_boussinesq_convection",
+      "dimension": "2d",
+      "reached_level": 1,
+      "candidate_level": 3,
+      "physics_status": {
+        "conservation": "passed",
+        "convergence": "passed",
+        "reproducibility": "passed",
+        "integrity_audit": "passed"
+      },
+      "dimension_status": {
+        "exploration_2d": "passed",
+        "local_3d": "not_started",
+        "coarse_global_3d": "not_started",
+        "full_3d": "not_started"
+      },
+      "measured_by": {
+        "nusselt_flux": 1.75431,
+        "nusselt_dissipation": 1.69073,
+        "kinetic_energy": 24.754925,
+        "subcritical_nusselt": 1.0,
+        "rayleigh": 1000.0,
+        "rayleigh_critical": 657.511,
+        "supercritical_convecting": true,
+        "onset_control_holds": true
+      },
+      "convergence": {
+        "level_converged": true,
+        "reproducible": true,
+        "free_energy_monotone": null,
+        "rows": [
+          {
+            "N": 32,
+            "nusselt_flux": 1.7624,
+            "nusselt_dissipation": 1.666,
+            "convecting": true
+          },
+          {
+            "N": 48,
+            "nusselt_flux": 1.7543,
+            "nusselt_dissipation": 1.6907,
+            "convecting": true
+          },
+          {
+            "N": 64,
+            "nusselt_flux": 1.7503,
+            "nusselt_dissipation": 1.7029,
+            "convecting": true
+          }
+        ]
+      },
+      "natural_emergence": {
+        "started_from_time_zero": true,
+        "target_shape_seeded": false,
+        "runtime_interventions": 0,
+        "target_dependent_rules": false,
+        "target_dependent_stopping": false,
+        "target_dependent_clipping": false,
+        "level_detected_by_measurement": true
+      },
+      "render_map": {
+        "hue": "temperature",
+        "opacity": "flux_magnitude",
+        "isosurface": "temperature",
+        "line_width": "physical_velocity"
+      },
+      "render_manifest": "render-manifest.yaml",
+      "frames_ref": "runs/seed-0000/field.json",
+      "lenses": [
+        "temperature",
+        "velocity",
+        "vorticity"
+      ],
+      "runs": [
+        {
+          "seed": 0,
+          "grid": [
+            48,
+            48
+          ],
+          "reached_level": 1,
+          "checksum": "3da5aa8eafd2"
+        },
+        {
+          "seed": 1,
+          "grid": [
+            48,
+            48
+          ],
+          "reached_level": 1,
+          "checksum": "6b8068b2720e"
+        },
+        {
+          "seed": 2,
+          "grid": [
+            48,
+            48
+          ],
+          "reached_level": 1,
+          "checksum": "75b4c490cfa7"
+        }
+      ],
+      "put_in": "静止流体＋微小ノイズ＋上下の壁＋固定温度差（対流セル/波長は入れない）",
+      "emerged": "臨界 Ra を境に自発的対流（並進対称性の破れ・Nu>1・循環）"
+    },
+    {
+      "room_id": "room-g003-a",
+      "title": "2D Phase-Separation + Flow Co-evolution Genesis (Model H)",
+      "official": true,
+      "kind": "official_3d_room",
+      "parent_room": null,
+      "genesis_model": "g003_model_h_phase_field",
+      "dimension": "2d",
+      "reached_level": 2,
+      "candidate_level": 5,
+      "physics_status": {
+        "conservation": "passed",
+        "convergence": "passed",
+        "reproducibility": "passed",
+        "integrity_audit": "passed"
+      },
+      "dimension_status": {
+        "exploration_2d": "passed",
+        "local_3d": "not_started",
+        "coarse_global_3d": "not_started",
+        "full_3d": "not_started"
+      },
+      "measured_by": {
+        "phase_amplitude_start": 0.0498,
+        "phase_amplitude_final": 0.7312,
+        "domain_scale_start": 2.616,
+        "domain_scale_final": 13.307,
+        "interface_fraction_final": 0.3248,
+        "free_energy_drop": 0.11262,
+        "kinetic_energy_final": 0.004937,
+        "mass_drift": 0.0,
+        "coarsening_gain_vs_noflow": 1.1569,
+        "flow_generated_from_field": true,
+        "coupling_contrast_holds": true
+      },
+      "convergence": {
+        "level_converged": true,
+        "reproducible": true,
+        "free_energy_monotone": null,
+        "rows": [
+          {
+            "N": 96,
+            "phase_amplitude": 0.7409,
+            "domain_scale": 13.591,
+            "separated": true
+          },
+          {
+            "N": 128,
+            "phase_amplitude": 0.7312,
+            "domain_scale": 13.307,
+            "separated": true
+          },
+          {
+            "N": 160,
+            "phase_amplitude": 0.7385,
+            "domain_scale": 13.64,
+            "separated": true
+          }
+        ]
+      },
+      "natural_emergence": {
+        "started_from_time_zero": true,
+        "target_shape_seeded": false,
+        "runtime_interventions": 0,
+        "target_dependent_rules": false,
+        "target_dependent_stopping": false,
+        "target_dependent_clipping": false,
+        "level_detected_by_measurement": true
+      },
+      "render_map": {
+        "hue": "phase",
+        "opacity": "density",
+        "isosurface": "scalar_field_threshold",
+        "line_width": "physical_velocity"
+      },
+      "render_manifest": "render-manifest.yaml",
+      "frames_ref": "runs/seed-0000/field.json",
+      "lenses": [
+        "composition",
+        "boundary",
+        "velocity"
+      ],
+      "runs": [
+        {
+          "seed": 0,
+          "grid": [
+            128,
+            128
+          ],
+          "reached_level": 2,
+          "checksum": "e2ec2ceb6ca7"
+        },
+        {
+          "seed": 1,
+          "grid": [
+            128,
+            128
+          ],
+          "reached_level": 2,
+          "checksum": "69caa03be776"
+        },
+        {
+          "seed": 2,
+          "grid": [
+            128,
+            128
+          ],
+          "reached_level": 2,
+          "checksum": "0288bcd7624d"
+        }
+      ],
+      "put_in": "一様な混合場＋微小ノイズ＋一つの自由エネルギー（ドメイン/界面/波長は入れない）",
+      "emerged": "相分離（差・界面の局在）＋場から生まれた流れによる流体力学的粗大化（共発展）"
     }
   ],
   "evidence_library": {
@@ -639,12 +870,143 @@ window.CATALOG = {
       "official": false,
       "parent_room": "room-g001-a",
       "status": "candidate",
+      "genesis_model": "g001_ginzburg_landau_quench",
       "reached_level": 1,
+      "candidate_level": 2,
       "dimension_status": {
         "exploration_2d": "passed",
         "local_3d": "passed",
         "coarse_global_3d": "not_started",
         "full_3d": "not_started"
+      },
+      "physics_status": {
+        "conservation": "pending",
+        "convergence": "pending",
+        "reproducibility": "passed",
+        "integrity_audit": "passed"
+      },
+      "render_manifest": null,
+      "frames_ref": null,
+      "lenses": [],
+      "source": "candidates",
+      "diff_vs_parent": {
+        "noise_amplitude": {
+          "from": 0.01,
+          "to": 0.0001
+        }
+      },
+      "parent_reached_level": 2,
+      "delta_level": -1,
+      "promotion": {
+        "stages": [
+          {
+            "name": "exploration_2d",
+            "status": "passed"
+          },
+          {
+            "name": "local_3d",
+            "status": "passed"
+          },
+          {
+            "name": "coarse_global_3d",
+            "status": "not_started"
+          },
+          {
+            "name": "full_3d",
+            "status": "not_started"
+          }
+        ],
+        "passed": [
+          "exploration_2d",
+          "local_3d"
+        ],
+        "current": "coarse_global_3d",
+        "rejected_in_3d": false,
+        "is_official": false
+      }
+    },
+    {
+      "room_id": "room-g001-a-job-0001",
+      "title": "Live candidate: noise_amplitude=0.005",
+      "kind": "candidate_room",
+      "official": false,
+      "parent_room": "room-g001-a",
+      "status": "candidate",
+      "genesis_model": "g001_ginzburg_landau_quench",
+      "reached_level": 1,
+      "candidate_level": 2,
+      "dimension_status": {
+        "exploration_2d": "passed",
+        "local_3d": "not_started",
+        "coarse_global_3d": "not_started",
+        "full_3d": "not_started"
+      },
+      "physics_status": {
+        "conservation": "pending",
+        "convergence": "pending",
+        "reproducibility": "passed",
+        "integrity_audit": "passed"
+      },
+      "render_manifest": "render-manifest.yaml",
+      "frames_ref": "runs/seed-0000/field.json",
+      "lenses": [
+        "phase",
+        "density"
+      ],
+      "source": "candidates",
+      "diff_vs_parent": {
+        "noise_amplitude": {
+          "from": 0.01,
+          "to": 0.005
+        }
+      },
+      "parent_reached_level": 2,
+      "delta_level": -1,
+      "promotion": {
+        "stages": [
+          {
+            "name": "exploration_2d",
+            "status": "passed"
+          },
+          {
+            "name": "local_3d",
+            "status": "not_started"
+          },
+          {
+            "name": "coarse_global_3d",
+            "status": "not_started"
+          },
+          {
+            "name": "full_3d",
+            "status": "not_started"
+          }
+        ],
+        "passed": [
+          "exploration_2d"
+        ],
+        "current": "local_3d",
+        "rejected_in_3d": false,
+        "is_official": false
+      }
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": "job-0001",
+      "parent_room": "room-g001-a",
+      "override": {
+        "param": "noise_amplitude",
+        "to": 0.005
+      },
+      "seed": 0,
+      "status": "done",
+      "progress": 1.0,
+      "result_room": "room-g001-a-job-0001",
+      "reached_level": 1,
+      "checksum": "01f6c2ab9ae83616",
+      "measured_by": {
+        "mean_amplitude_growth": 285.3562,
+        "defect_count": 8
       }
     }
   ]
