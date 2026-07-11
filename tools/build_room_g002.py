@@ -304,8 +304,11 @@ def _readme(N, seeds, runs, sub, reached_all, repro, conservation, convergence):
           "- 循環（Level 3 の物理）は測定済みだが、定常セルはパターンとして並進しないため Level 3 gate は",
           "  主張しない＝candidate=3（frontier）。強い語は使わない。",
           "- **次元**：これは**検証済み 2D** Room。3D 昇格は別段階の監査（DIMENSION_POLICY）＝2D 成功を",
-          "  自動外挿しない。3D primitive-variable ソルバは 3/2 ゼロ詰め de-aliasing を入れるまで非線形項が",
-          "  飽和しない（2/3 truncation だけでは格子スケールの aliasing が蓄積）ため frontier。",
+          "  自動外挿しない。3D ソルバ（`genesis/models/boussinesq_rb_3d.py`, **experimental**）は 3/2 ゼロ詰め",
+          "  de-aliasing を実装済み・変換は厳密（roundtrip ~1e-14）・**亜臨界は Nu→1 で有界**と検証済み。ただし",
+          "  **超臨界**対流は入手可能な解像度（N≤24）で飽和近傍に崩れる＝aliasing でも dt でもなく**解像度不足**",
+          "  （同一物理時刻で崩れ・dt 非依存）。有界・格子収束の 3D DNS には N≳32 とより頑健な時間積分が要る",
+          "  ＝計算資源の段階。frontier として再現可能に保存（正式 Room には未接続）。",
           "- 剛体壁（no-slip）・高 Ra の時間依存対流も別 Room（始原条件を変えて再実行）。\n"]
     return "\n".join(L)
 
