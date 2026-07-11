@@ -65,8 +65,10 @@ def build():
             "natural_emergence": emergence.get("natural_emergence", {}),
             "render_map": render.get("mapping", {}),
             "runs": runs,
-            "put_in": "一様に近い無秩序＋微小ノイズ＋TDGLクエンチ（欠陥/パターンは入れない）",
-            "emerged": "対称性破れ（秩序変数）＋位相巻き渦線（Kibble-Zurek）",
+            "put_in": entry.get("put_in",
+                                "一様に近い無秩序＋微小ノイズ＋TDGLクエンチ（欠陥/パターンは入れない）"),
+            "emerged": entry.get("emerged",
+                                 "対称性破れ（秩序変数）＋位相巻き渦線（Kibble-Zurek）"),
         })
 
     # evidence library role counts (from experiment.yaml — the primary metadata)

@@ -82,7 +82,7 @@ function render(){
           <div class="muted" style="font-size:11px">reached level</div></div>
       </div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-        <span class="badge ${r.official?'ok':''}">official 3D</span>
+        <span class="badge ${r.official?'ok':''}">official · ${esc(r.dimension||'')}</span>
         <span class="badge ${allpass?'ok':''}">physics ${allpass?'✓':'?'}</span>
         <span class="badge">seeds ${r.runs.length}</span></div></div>`;
   }).join('');
@@ -102,7 +102,7 @@ function render(){
         <span class="badge ${r.dimension_status.local_3d==='passed'?'ok':''}">local-3D ${r.dimension_status.local_3d}</span>
         <span class="badge">full-3D ${r.dimension_status.full_3d}</span></div></div>`).join('');
   document.getElementById('app').innerHTML = `
-    <h2>Universe Lobby — Genesis Rooms（正式 3D）</h2>
+    <h2>Universe Lobby — Genesis Rooms（正式）</h2>
     <div class="cards">${rooms||'<p class="muted">（まだ正式 Room がありません）</p>'}</div>
     <h2>AI Discovery Inbox（AI Lab の探索蓄積・正式 Room と区別）</h2>
     <div class="muted" style="margin-bottom:8px">親 room-g001-a の始原条件を 1 つずつ変えて t=0 から 2D スクリーニングした蓄積（<code>ai_lab/discoveries/ledger.json</code>）。full-3D 昇格は別段階。</div>
@@ -134,7 +134,12 @@ function openCandidate(id){
 function openRoom(id){
   const r = C.rooms.find(x=>x.room_id===id); if(!r) return;
   const conv = r.convergence||{};
-  const convRows = (conv.rows||[]).map(x=>`<tr><td>${x.edge}³</td><td>${x.reached_level}</td><td>${x.defect_density_x1e4}</td></tr>`).join('');
+  const convFlux = (conv.rows||[]).length && conv.rows[0].nusselt_flux!==undefined;  // g002 (RB) vs g001 (defects)
+  const convRows = (conv.rows||[]).map(x=> convFlux
+    ? `<tr><td>${x.N}³</td><td>${x.nusselt_flux}</td><td>${x.nusselt_dissipation}</td></tr>`
+    : `<tr><td>${x.edge}³</td><td>${x.reached_level}</td><td>${x.defect_density_x1e4}</td></tr>`).join('');
+  const convHead = convFlux ? '<th>grid</th><th>Nu (flux)</th><th>Nu (dissipation)</th>'
+                            : '<th>grid</th><th>reached level</th><th>欠陥密度 ×10⁻⁴</th>';
   const runRows = r.runs.map(x=>`<tr><td>seed ${x.seed}</td><td>${x.grid.join('×')}</td><td>${x.reached_level}</td><td class="mono">${esc(x.checksum)}</td></tr>`).join('');
   const ne = r.natural_emergence||{};
   const rmap = Object.entries(r.render_map||{}).map(([k,v])=>`<code>${esc(k)}→${esc(v)}</code>`).join(' ');
@@ -145,8 +150,8 @@ function openRoom(id){
         <span class="k">入れたもの</span><span>${esc(r.put_in)}</span>
         <span class="k">自然に出たもの</span><span class="g">${esc(r.emerged)}</span>
         <span class="k">到達 Level</span><span><b>${r.reached_level}</b>（candidate ${r.candidate_level??'-'}）</span>
-        <span class="k">次元</span><span>${esc(r.dimension)}（2D 探索→full-3D 正式）</span>
-        <span class="k">保存(自由E単調)</span><span class="${r.physics_status.conservation==='passed'?'g':'warn'}">${esc(r.physics_status.conservation)}</span>
+        <span class="k">次元</span><span>${esc(r.dimension)}（2D 探索→3D 昇格は別段階の監査）</span>
+        <span class="k">保存則</span><span class="${r.physics_status.conservation==='passed'?'g':'warn'}">${esc(r.physics_status.conservation)}</span>
         <span class="k">格子収束</span><span class="${r.physics_status.convergence==='passed'?'g':'warn'}">${esc(r.physics_status.convergence)}</span>
         <span class="k">seed 再現</span><span class="${r.physics_status.reproducibility==='passed'?'g':'warn'}">${esc(r.physics_status.reproducibility)}</span>
         <span class="k">第8監査</span><span class="${r.physics_status.integrity_audit==='passed'?'g':'warn'}">${esc(r.physics_status.integrity_audit)}</span>
@@ -154,9 +159,9 @@ function openRoom(id){
     <div class="panel"><h3>自然創発（測定で判定）</h3>
       <div class="muted mono">t=0 から:${ne.started_from_time_zero} · 目標seeded:${ne.target_shape_seeded} ·
       runtime介入:${ne.runtime_interventions} · 測定判定:${ne.level_detected_by_measurement}</div></div>
-    <div class="panel"><h3>格子収束（到達 Level が解像度で不変か）</h3>
-      <table><tr><th>grid</th><th>reached level</th><th>欠陥密度 ×10⁻⁴</th></tr>${convRows}</table>
-      <div class="muted" style="margin-top:6px">level_converged=${conv.level_converged} · reproducible=${conv.reproducible} · 自由E単調=${conv.free_energy_monotone}</div></div>
+    <div class="panel"><h3>格子収束（指標が解像度で不変か）</h3>
+      <table><tr>${convHead}</tr>${convRows}</table>
+      <div class="muted" style="margin-top:6px">level_converged=${conv.level_converged} · reproducible=${conv.reproducible}${conv.free_energy_monotone!=null?' · 自由E単調='+conv.free_energy_monotone:''}</div></div>
     <div class="panel"><h3>Runs（複数 seed・checksum で再現）</h3>
       <table><tr><th>run</th><th>grid</th><th>level</th><th>final field sha256</th></tr>${runRows}</table></div>
     <div class="panel"><h3>可視化対応（表示→実測物理量）</h3><div>${rmap||'<span class="muted">—</span>'}</div>

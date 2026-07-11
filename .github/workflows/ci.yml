@@ -161,6 +161,8 @@ jobs:
         run: python genesis/dimension/harness.py --quick --no-write
       - name: "Genesis Room G001 builder smoke (quick full-3D pipeline into a temp dir; not committed)"
         run: python tools/build_room_g001.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g001smoke"
+      - name: "Genesis Room G002 builder smoke (quick walled Rayleigh-Bénard; onset control + Nu into temp dir)"
+        run: python tools/build_room_g002.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g002smoke"
       - name: "AI Genesis Lab smoke (start-condition search, 2D-screened, non-destructive)"
         run: python ai_lab/lab.py --n 4 --quick --no-write
       - name: "AI discovery ledger review (accumulated auto-tests are persisted + reviewable)"
@@ -172,7 +174,7 @@ jobs:
           python tools/build_catalog.py --no-write
           test -f app/index.html
           test -f app/generated/catalog.json
-          python -c "import json,sys; d=json.load(open('app/generated/catalog.json')); assert d['rooms'][0]['room_id']=='room-g001-a' and d['rooms'][0]['reached_level']==2, 'catalog stale'; print('catalog OK')"
+          python -c "import json; d=json.load(open('app/generated/catalog.json')); rs={r['room_id']:r for r in d['rooms']}; assert rs['room-g001-a']['reached_level']==2 and rs['room-g002-a']['reached_level']==1, 'catalog stale'; assert rs['room-g002-a']['genesis_model']=='g002_boussinesq_convection'; print('catalog OK:', len(d['rooms']), 'official rooms')"
       - name: "room + ledgers exist (central lab, Type A-D, working ledger)"
         run: |
           test -f "room/中心実験室.html"

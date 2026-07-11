@@ -1,0 +1,12 @@
+solver: spectral_free_slip_walled_2d
+scheme: integrating-factor (ETD1) Euler
+formulation: vorticity-streamfunction (pressure eliminated, incompressibility exact)
+horizontal: Fourier (periodic x)
+vertical: sine on free-slip walls (z)
+diffusion: integrated exactly (no explicit-diffusion CFL)
+dealias: 2/3 rule
+grid:
+- 48
+- 48
+note: walls make convection BOUNDED; only advection is explicit (adaptive CFL). mode changes grid/steps
+  only, never the physics
