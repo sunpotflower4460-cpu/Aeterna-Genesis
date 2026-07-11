@@ -210,6 +210,113 @@ window.CATALOG = {
       ],
       "put_in": "静止流体＋微小ノイズ＋上下の壁＋固定温度差（対流セル/波長は入れない）",
       "emerged": "臨界 Ra を境に自発的対流（並進対称性の破れ・Nu>1・循環）"
+    },
+    {
+      "room_id": "room-g003-a",
+      "title": "2D Phase-Separation + Flow Co-evolution Genesis (Model H)",
+      "official": true,
+      "kind": "official_3d_room",
+      "parent_room": null,
+      "genesis_model": "g003_model_h_phase_field",
+      "dimension": "2d",
+      "reached_level": 2,
+      "candidate_level": 5,
+      "physics_status": {
+        "conservation": "passed",
+        "convergence": "passed",
+        "reproducibility": "passed",
+        "integrity_audit": "passed"
+      },
+      "dimension_status": {
+        "exploration_2d": "passed",
+        "local_3d": "not_started",
+        "coarse_global_3d": "not_started",
+        "full_3d": "not_started"
+      },
+      "measured_by": {
+        "phase_amplitude_start": 0.0498,
+        "phase_amplitude_final": 0.7312,
+        "domain_scale_start": 2.616,
+        "domain_scale_final": 13.307,
+        "interface_fraction_final": 0.3248,
+        "free_energy_drop": 0.11262,
+        "kinetic_energy_final": 0.004937,
+        "mass_drift": 0.0,
+        "coarsening_gain_vs_noflow": 1.1569,
+        "flow_generated_from_field": true,
+        "coupling_contrast_holds": true
+      },
+      "convergence": {
+        "level_converged": true,
+        "reproducible": true,
+        "free_energy_monotone": null,
+        "rows": [
+          {
+            "N": 96,
+            "phase_amplitude": 0.7409,
+            "domain_scale": 13.591,
+            "separated": true
+          },
+          {
+            "N": 128,
+            "phase_amplitude": 0.7312,
+            "domain_scale": 13.307,
+            "separated": true
+          },
+          {
+            "N": 160,
+            "phase_amplitude": 0.7385,
+            "domain_scale": 13.64,
+            "separated": true
+          }
+        ]
+      },
+      "natural_emergence": {
+        "started_from_time_zero": true,
+        "target_shape_seeded": false,
+        "runtime_interventions": 0,
+        "target_dependent_rules": false,
+        "target_dependent_stopping": false,
+        "target_dependent_clipping": false,
+        "level_detected_by_measurement": true
+      },
+      "render_map": {
+        "hue": "phase",
+        "opacity": "density",
+        "isosurface": "scalar_field_threshold",
+        "line_width": "physical_velocity"
+      },
+      "runs": [
+        {
+          "seed": 0,
+          "grid": [
+            128,
+            128
+          ],
+          "reached_level": 2,
+          "checksum": "e2ec2ceb6ca7"
+        },
+        {
+          "seed": 1,
+          "grid": [
+            128,
+            128
+          ],
+          "reached_level": 2,
+          "checksum": "69caa03be776"
+        },
+        {
+          "seed": 2,
+          "grid": [
+            128,
+            128
+          ],
+          "reached_level": 2,
+          "checksum": "0288bcd7624d"
+        }
+      ],
+      "put_in": "一様な混合場＋微小ノイズ＋一つの自由エネルギー（ドメイン/界面/波長は入れない）",
+      "emerged": "相分離（差・界面の局在）＋場から生まれた流れによる流体力学的粗大化（共発展）"
     }
   ],
   "evidence_library": {

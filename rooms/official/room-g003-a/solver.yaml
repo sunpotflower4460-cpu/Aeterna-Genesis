@@ -1,0 +1,13 @@
+solver: pseudospectral_model_h_2d
+scheme: semi-implicit Cahn-Hilliard + ETD1 vorticity
+domain: bi-periodic (FFT)
+phi_stiff_term: implicit 4th-order (unconditionally stable)
+viscosity: exact integrating factor
+flow: vorticity-streamfunction (incompressible)
+coupling: Korteweg capillary force curl(-phi grad mu)
+dealias: 2/3 rule
+grid:
+- 128
+- 128
+note: relaxational -> free energy decreases -> BOUNDED (no walls needed). mode changes grid/steps only,
+  never the physics
