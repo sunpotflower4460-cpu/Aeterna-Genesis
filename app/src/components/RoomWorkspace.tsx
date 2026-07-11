@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStore } from '../store'
 import { useRoomField } from '../lib/useField'
 import Viewport from './Viewport'
@@ -12,18 +12,12 @@ export default function RoomWorkspace() {
   const data = useRoomField(room?.room_id ?? null)
   const nframes = data.field?.nframes ?? 1
   const is3d = data.field?.dimension === 3
+  const clock = useRef(0) // smooth playhead in frame units, advanced by the render loop
 
   // default lens once fields load
   useEffect(() => {
     if (data.lensNames.length && (!lens || !data.lensNames.includes(lens))) setLens(data.lensNames[0])
   }, [data.lensNames, lens, setLens])
-
-  // playback loop over recorded frames
-  useEffect(() => {
-    if (!playing || nframes <= 1) return
-    const id = setInterval(() => setFrame((useStore.getState().frame + 1) % nframes), 1000 / (3.5 * speed))
-    return () => clearInterval(id)
-  }, [playing, speed, nframes, setFrame])
 
   if (!room) return null
   const decoded = lens ? data.lenses[lens] : null
@@ -46,7 +40,8 @@ export default function RoomWorkspace() {
         <div style={{ position: 'relative' }}>
           {data.loading && <Overlay text="◈ recorded field を読み込み中…" />}
           {data.error && <Overlay text={'記録された場がありません（' + data.error + '）'} />}
-          {decoded && <Viewport lens={decoded} frame={frame} view={viewSettings} is3d={is3d} />}
+          {decoded && <Viewport lens={decoded} view={viewSettings} is3d={is3d} playing={playing}
+            speed={speed} clock={clock} nframes={nframes} onFrame={(i) => setFrame(i)} />}
 
           {/* HUD */}
           <Hud pos={{ top: 12, left: 12 }}>
@@ -71,11 +66,11 @@ export default function RoomWorkspace() {
 
       {/* playback bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'rgba(6,11,20,.5)' }}>
-        <button className="tbtn" onClick={() => setFrame(0)} aria-label="reset">⏮</button>
+        <button className="tbtn" onClick={() => { clock.current = 0; setFrame(0) }} aria-label="reset">⏮</button>
         <button className="tbtn pri" onClick={togglePlay} aria-label="play/pause">{playing ? '❚❚' : '▶'}</button>
-        <button className="tbtn" onClick={() => setFrame((frame + 1) % nframes)} aria-label="step">⏭</button>
+        <button className="tbtn" onClick={() => { const n = (frame + 1) % nframes; clock.current = n; setFrame(n) }} aria-label="step">⏭</button>
         <input className="range" type="range" min={0} max={Math.max(0, nframes - 1)} value={Math.min(frame, nframes - 1)}
-          onChange={(e) => setFrame(Number(e.target.value))} style={{ flex: 1 }} aria-label="timeline" />
+          onChange={(e) => { const v = Number(e.target.value); clock.current = v; setFrame(v) }} style={{ flex: 1 }} aria-label="timeline" />
         <span className="mono muted tnum" style={{ fontSize: 12, minWidth: 64, textAlign: 'right' }}>
           {t !== undefined ? 't=' + t.toFixed(1) : ''}
         </span>

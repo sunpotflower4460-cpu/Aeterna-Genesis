@@ -44,6 +44,8 @@ function ViewTab() {
       <Slider label="等値面 閾値" value={vs.threshold} on={(v) => setView({ threshold: v })} hint="この値未満の領域を隠す" />
       <Slider label="透明度" value={vs.opacity} on={(v) => setView({ opacity: v })} />
       <Slider label="発光強度" value={vs.glow} on={(v) => setView({ glow: v })} />
+      <Slider label="表示品質 (LOD)" value={vs.quality} on={(v) => setView({ quality: Math.max(0.3, v) })}
+        hint="低性能端末では下げる（点密度・解像度を落とす／物理解像度とは無関係）" />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useStore } from './store'
 import { loadCatalog } from './lib/data'
 import Lobby from './components/Lobby'
 import RoomWorkspace from './components/RoomWorkspace'
+import CompareView from './components/CompareView'
 
 export default function App() {
   const catalog = useStore((s) => s.catalog)
@@ -20,5 +21,7 @@ export default function App() {
       </div>
     )
   }
-  return view === 'room' ? <RoomWorkspace /> : <Lobby />
+  if (view === 'room') return <RoomWorkspace />
+  if (view === 'compare') return <CompareView />
+  return <Lobby />
 }

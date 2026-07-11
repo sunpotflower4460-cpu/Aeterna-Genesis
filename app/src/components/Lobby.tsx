@@ -50,8 +50,15 @@ export default function Lobby() {
             <h1 style={{ margin: 0, fontSize: 30, fontWeight: 600, letterSpacing: '-.02em' }}>あなたの宇宙</h1>
             <p className="muted" style={{ margin: '6px 0 0' }}>始原条件から育った宇宙を選ぶ</p>
           </div>
-          <div className="mono muted" style={{ fontSize: 12 }}>
-            {rooms.length} rooms · {catalog.evidence_library?.count ?? 0} evidence
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {rooms.length >= 2 && (
+              <button className="lens" onClick={() => useStore.getState().toCompare(rooms[0].room_id, rooms[1].room_id)}>
+                ◫ Compare
+              </button>
+            )}
+            <span className="mono muted" style={{ fontSize: 12 }}>
+              {rooms.length} rooms · {catalog.evidence_library?.count ?? 0} evidence
+            </span>
           </div>
         </div>
 
