@@ -27,6 +27,15 @@
 - **T-oracle：e025 の oracle 判定** — 成否を外部 oracle で決めていた（role 降格）。回避：判定は測定量から。
 - **T-e030：分業ゲートの判別力不足** — ゲートが条件を選り分けていなかった。回避：ゲートに判別力テスト。
 - **T-e016 √c4（上と同根）** — size 則の GREEN を撤回、role F。
+- **T-vortexseed：`vortex_charges` IC で位相巻きを種に置く** — サンドボックスの大量探索で、IC family に
+  `vortex_charges`（種に ±1 の巻き数を `atan2` で埋める）を混ぜると hit 率 ~10%、`seed→plant` に届いた。
+  だが **GL の Level 2 ＝位相巻き渦（巻き数）そのもの**なので、これは**完成形を初期条件に埋め込んでいる**
+  ＝ target_encoded（T-dim2/T-√c4 と同類）。「登った」のは創発でなく**入れたものを見ているだけ**。
+  → repo の探索 family から**意図的に除外**（`ai_lab/lab.py` の `IC_FAMILIES` に入れない、テストで固定）。
+  「位相が効く」という発見自体は本物だが、それは **random-phase 系（seeds_phase：バンプ×一定ランダム位相・
+  巻きなし／spectral_powerlaw／bandpass：ランダム位相スペクトル）**で**巻きを置かずに**再現するのが誠実。
+  位相**なし**の種（single_seed/sparse_seeds＝実振幅のみ）が登りにくいのは honest な床（sandbox の
+  `seeds` 0% に対応）。
 
 ## 数値の罠
 
@@ -47,7 +56,13 @@
 - **T-entropy-sat：複雑さ窓の entropy が 1.0 に飽和** — 素朴な正規化エントロピーは多くの run で 1.0 に
   張り付き、**ランキング信号を殺す**。回避：ai_lab のスコアは**非飽和な complexity measure**
   （参加率 / 構造因子のスペクトル集中度 / 有効モード数）を使い、run 間で分散が残ることをテストで担保。
-- **T-crumple2：crumple 膜の「2-cell が 2D」** — 2-cell 構成が d を 2 に張り付ける副作用。measured-negative。
+- **T-realwinding：巻き数カウントが実数場のドメイン壁を誤検出** — ai_lab の大量探索で **`real_seed`（純実数
+  IC）が L2 に 33% 到達**して見えた。だが GL は実数場を実数のまま保つ（`max|imag|=0` を実測）ので
+  **真の 2π 渦は存在しえない**。`winding_defect_count`（`atan2`＋プラケット巡回）は実数場の**節線・ドメイン壁
+  接合部**を ±1 巻きと**誤カウント**する（`wrap(π)` の符号曖昧）。→ 実数場の「L2」は**測定アーティファクト**。
+  対応：`measures.assess_level`（成功判定＝no_touch）は変えず、**Lab 側に物理妥当性ガード**を入れて
+  実数場に L2 を与えない（生の measured level と理由は記録＝隠さない）。サンドボックスの「位相なし=0%」は
+  **真の渦については正しい**が、離散巻き測度は実数場を過大カウントする——という二重の honest 発見。
   回避：幾何主張は CDT/因果次元など独立手法で。
 - **T-furrow：furrow が材料を削る** — 分裂の furrow 近似が質量を 2.5–6.7% 削る、noisy。回避：保存形、
   削りを床として明記（Lv7 は入口まで）。

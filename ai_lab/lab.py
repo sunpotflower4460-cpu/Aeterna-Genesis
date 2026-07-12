@@ -55,9 +55,22 @@ from genesis.diagnostics import measures  # noqa: E402
 # other laws need their own make_initial/step/free_energy and are a separate (frontier) step.
 PARENTS = {"g001": gl}
 
-# IC families: generic disordered / symmetric starts. NONE encodes the GL target (symmetry-breaking +
-# phase-winding vortices) -- amplitude structure only, no phase winding seeded. See docs/honest_floors.md.
-IC_FAMILIES = ["white", "white_lowk", "white_highk", "single_seed", "sparse_seeds", "ring", "gradient"]
+# IC families: generic disordered / symmetric starts. NONE encodes the GL target (organized, localized
+# phase-winding vortices). Amplitude families carry NO phase; phase families carry RANDOM phase (no
+# winding number placed). See docs/honest_floors.md.
+#   amplitude-only : white / white_lowk / white_highk / single_seed / sparse_seeds / ring / gradient
+#   random-phase   : seeds_phase (bumps × constant random phase) / spectral_powerlaw / bandpass
+# A sandbox mass-search found phase-LESS seeds climb 0% while phase-bearing families climb ~10%
+# ("length-scale/phase control on top"); these random-phase families reproduce that HONESTLY.
+# NOTE: `vortex_charges` (seeds carrying ±winding via atan2) is DELIBERATELY EXCLUDED -- it seeds the
+# GL target (巻き数) = 第8監査 violation; its apparent climb is target-encoded, not emergence
+# (docs/traps_museum.md: T-vortexseed, docs/honest_floors.md).
+IC_FAMILIES = ["white", "white_lowk", "white_highk", "single_seed", "sparse_seeds", "ring", "gradient",
+               "seeds_phase", "spectral_powerlaw", "bandpass", "real_seed"]
+AMPLITUDE_FAMILIES = ["single_seed", "sparse_seeds", "ring", "gradient"]  # added structure is purely real
+PHASE_FAMILIES = ["seeds_phase", "spectral_powerlaw", "bandpass"]         # random phase, no winding placed
+# real_seed is PURELY REAL: GL preserves reality so it can NEVER localize (L2) -- a mechanistic control
+# reproducing the sandbox 'phase-less seeds = 0%' finding (docs/honest_floors.md phase-control floor).
 
 # full start-side knob space the Lab may sample (ranges enforced by param_ranges.yaml search_space).
 # correlation_length is realized HONESTLY as low-k filtering of the noise (spatially-correlated IC),
@@ -90,15 +103,34 @@ def _highk_noise(shape, rng, corr_len):
     return out / (np.std(out) + 1e-30)
 
 
+def _spectral_field(shape, rng, kind, corr_len):
+    """Field with a chosen power-spectrum envelope and RANDOM phases (no organized winding placed)."""
+    ks = [np.fft.fftfreq(n) * n for n in shape]
+    grids = np.meshgrid(*ks, indexing="ij")
+    kr = np.sqrt(sum(g ** 2 for g in grids))
+    if kind == "powerlaw":
+        env = 1.0 / ((kr + 1.0) ** 1.5)                      # scale-rich k^-1.5 envelope
+    else:                                                    # bandpass around a length scale ~ corr_len
+        k0 = max(shape) / max(corr_len, 1.0) / (2 * np.pi)
+        env = np.exp(-0.5 * ((kr - k0) / max(k0 * 0.5, 1.0)) ** 2)
+    phase = rng.uniform(0.0, 2 * np.pi, shape)               # RANDOM phases -> no winding number encoded
+    out = np.fft.ifftn(env * np.exp(1j * phase))
+    return out / (np.std(out) + 1e-30)
+
+
 def make_ic(family, shape, noise_amplitude, rng, corr_len=1.0):
     """Build a disordered / symmetric initial complex field for the GL model. 第8監査-compliant:
-    seed / noise / symmetric amplitude only -- NO phase winding, NO target pattern seeded."""
+    amplitude families carry NO phase; phase families carry RANDOM phase (no winding number placed).
+    NO organized, localized phase-winding vortex (the GL target) is ever seeded."""
     if family == "white":
         return gl.make_initial(shape, noise_amplitude, rng)  # byte-identical to the runner's default
     if family == "white_lowk":
         return (noise_amplitude * _lowk_noise(shape, rng, corr_len)).astype(np.complex128)
     if family == "white_highk":
         return (noise_amplitude * _highk_noise(shape, rng, corr_len)).astype(np.complex128)
+    if family in ("spectral_powerlaw", "bandpass"):          # random-phase spectra (scale/phase control)
+        kind = "powerlaw" if family == "spectral_powerlaw" else "bandpass"
+        return (noise_amplitude * _spectral_field(shape, rng, kind, corr_len)).astype(np.complex128)
     base = gl.make_initial(shape, noise_amplitude, rng)
     coords = [np.linspace(-1.0, 1.0, n) for n in shape]
     grid = np.meshgrid(*coords, indexing="ij")
@@ -112,11 +144,25 @@ def make_ic(family, shape, noise_amplitude, rng, corr_len=1.0):
             rr = sum((grid[i] - c[i]) ** 2 for i in range(len(shape)))
             bump = bump + np.exp(-rr / 0.03)
         return base + noise_amplitude * 4.0 * bump
+    if family == "seeds_phase":                              # bumps × CONSTANT random phase (no winding)
+        field = base.astype(np.complex128)
+        for _ in range(3):
+            c = [rng.uniform(-0.6, 0.6) for _ in shape]
+            rr = sum((grid[i] - c[i]) ** 2 for i in range(len(shape)))
+            theta = rng.uniform(0.0, 2 * np.pi)              # ONE phase per bump -> spatially constant
+            field = field + noise_amplitude * 4.0 * np.exp(-rr / 0.03) * np.exp(1j * theta)
+        return field
     if family == "ring":                                     # symmetric annulus amplitude (no winding)
         r = np.sqrt(r2)
         return base + noise_amplitude * 4.0 * np.exp(-((r - 0.5) ** 2) / 0.02)
     if family == "gradient":                                 # smooth real gradient across the first axis
         return base + noise_amplitude * 3.0 * grid[0]
+    if family == "real_seed":                                # PURELY REAL: real noise + real bump.
+        # GL preserves reality (all step terms of a real field are real) -> the phase never leaves {0,pi}
+        # -> no 2*pi winding can ever form -> L2 (localization) is UNREACHABLE by construction. This
+        # reproduces the sandbox 'phase-less seeds = 0%' finding AND explains WHY (a control, not a trap).
+        rnoise = noise_amplitude * rng.standard_normal(shape)
+        return (rnoise + noise_amplitude * 4.0 * np.exp(-r2 / 0.05)).astype(np.complex128)
     raise ValueError("unknown IC family %r" % family)
 
 
@@ -283,12 +329,27 @@ def _screen_ic(family, knobs, seed, quick=True):
                 "score": None, "checksum": None,
                 "reason": "numerical_instability (explicit stepper CFL, Du=%.3g)" % p["Du"]}
     level, _, mb = measures.assess_level(traj)
+    # PHYSICS-VALIDITY GUARD (not a threshold change): a purely REAL field can host no true 2*pi phase
+    # vortex (its phase is confined to {0, pi}), so a Level-2 (localization-via-winding) verdict on it is
+    # a discrete-measure artifact -- winding_defect_count miscounts the field's domain-wall junctions.
+    # We keep measures.assess_level untouched and RECORD the raw level, but do not CREDIT the climber
+    # with L2 on a real field. Surfaced honestly (docs/traps_museum.md: T-realwinding). This is exactly
+    # the sandbox 'phase-less seeds = 0%' finding, now with its mechanism + the measure caveat.
+    field_real = bool(np.max(np.abs(psi.imag)) == 0.0)
+    level_raw = level
+    winding_note = None
+    if field_real and level >= 2:
+        level = 1
+        winding_note = "winding_artifact_real_field: Re-only field has no true vortices; measured L2 is a domain-wall miscount"
     complexity = spectral_complexity(psi)
     h = hashlib.sha256()
     h.update(np.ascontiguousarray(psi.real).tobytes()); h.update(np.ascontiguousarray(psi.imag).tobytes())
-    return {"reached_level": level, "status": "2d_screened", "measured_by": mb,
-            "complexity": round(complexity, 4), "score": score_run(level, mb, complexity),
-            "checksum": h.hexdigest()[:16]}
+    out = {"reached_level": level, "status": "2d_screened", "measured_by": mb,
+           "complexity": round(complexity, 4), "score": score_run(level, mb, complexity),
+           "checksum": h.hexdigest()[:16], "field_real": field_real, "reached_level_raw": level_raw}
+    if winding_note:
+        out["winding_note"] = winding_note
+    return out
 
 
 def _grid_values(param):
@@ -386,6 +447,26 @@ def _evolutionary(n, parent, seed, quick, families, ss, gens=4):
     allr.sort(key=_score_key, reverse=True)
     return {"mode": "evolutionary", "parent_room": "room-%s-a" % parent, "n": len(allr),
             "results": allr, "generations": gens}
+
+
+def family_hitrates(results):
+    """Per-family summary: how often each IC family reaches the localization climb (L>=2). Reproduces the
+    sandbox 'phase-less seeds climb ~0% / phase-bearing families climb' finding in honest measured terms."""
+    fams = {}
+    for r in results:
+        f = fams.setdefault(r["family"], {"n": 0, "l2": 0, "unstable": 0, "best_score": None})
+        f["n"] += 1
+        if r.get("score") is None:
+            f["unstable"] += 1
+            continue
+        if (r["reached_level"] or 0) >= 2:
+            f["l2"] += 1
+        if f["best_score"] is None or r["score"] > f["best_score"]:
+            f["best_score"] = r["score"]
+    for f in fams.values():
+        scored = max(1, f["n"] - f["unstable"])
+        f["l2_rate"] = f["l2"] / scored
+    return dict(sorted(fams.items(), key=lambda kv: kv[1]["l2_rate"], reverse=True))
 
 
 def _search_key(rec):
@@ -626,6 +707,10 @@ def _run_search(args):
         lv[k] = lv.get(k, 0) + 1
     print("  level histogram: %s" % ", ".join("%s:%d" % (("L%d" % k if isinstance(k, int) else k), lv[k])
                                               for k in sorted(lv, key=lambda x: (isinstance(x, str), x))))
+    print("  family hit-rate (share reaching L>=2, the 'localization/seed->plant' climb):")
+    for fam, st in family_hitrates(res["results"]).items():
+        print("    %-16s n=%-4d L2-rate=%4.0f%% best_score=%s unstable=%d"
+              % (fam, st["n"], 100 * st["l2_rate"], st["best_score"], st["unstable"]))
     print("  NOTE: 2D-screened only. AI cannot self-promote to full-3D or write rooms/official.")
     if args.record and not args.no_write:
         led = record_search(res)

@@ -53,18 +53,47 @@ from genesis.diagnostics import measures  # noqa: E402
 
 
 def test_ic_families_seed_no_phase_winding_8th_audit():
-    """第8監査: an IC family adds only REAL (zero-phase) amplitude structure -- it never seeds the GL
-    target (organized phase-winding vortices). The added component must be purely real."""
+    """第8監査: no IC family seeds the GL target (organized, localized phase-winding vortices).
+    Amplitude families add purely REAL structure; phase families carry RANDOM phase with per-bump
+    CONSTANT phase / random-phase spectra -- so their t=0 winding never exceeds plain white noise
+    (they inject NO organized vortices). `vortex_charges` (which would seed winding) is excluded."""
     shape = (48, 48)
-    for fam in ("single_seed", "sparse_seeds", "ring", "gradient"):
+    # amplitude families: the injected structure is purely real (no phase, no winding)
+    for fam in lab.AMPLITUDE_FAMILIES:
         base = lab.make_ic("white", shape, 1e-2, np.random.default_rng(0))
-        fld = lab.make_ic(fam, shape, 1e-2, np.random.default_rng(0), corr_len=6.0)
-        added = fld - base                                 # the structure this family injects
-        assert np.max(np.abs(added.imag)) < 1e-12          # purely real: no phase / vortex seeded
-    # low-k/high-k families are just filtered noise (no injected structure at all)
-    for fam in ("white_lowk", "white_highk"):
-        fld = lab.make_ic(fam, shape, 1e-2, np.random.default_rng(0), corr_len=6.0)
-        assert np.isfinite(fld).all()
+        added = lab.make_ic(fam, shape, 1e-2, np.random.default_rng(0), corr_len=6.0) - base
+        assert np.max(np.abs(added.imag)) < 1e-12
+    # phase families: random phase but NO organized winding injected -> winding <= white-noise band
+    w_white = np.mean([measures.winding_defect_count(lab.make_ic("white", shape, 1e-2, np.random.default_rng(s)))
+                       for s in range(4)])
+    for fam in lab.PHASE_FAMILIES:
+        w_fam = np.mean([measures.winding_defect_count(
+            lab.make_ic(fam, shape, 1e-2, np.random.default_rng(s), corr_len=6.0)) for s in range(4)])
+        assert w_fam <= 1.2 * w_white                      # does not inject organized vortices
+    # seeds_phase specifically: each seed's phase is spatially CONSTANT (no winding number placed)
+    g = [np.linspace(-1, 1, 48)] * 2
+    X, Y = np.meshgrid(*g, indexing="ij")
+    bump = np.exp(-((X) ** 2 + (Y) ** 2) / 0.03) * np.exp(1j * np.random.default_rng(0).uniform(0, 2 * np.pi))
+    core = bump[np.abs(bump) > 0.3 * np.abs(bump).max()]
+    assert np.std(np.angle(core)) < 1e-9
+    # vortex_charges must NOT be a searchable family (it would seed the target = 第8監査 violation)
+    assert "vortex_charges" not in lab.IC_FAMILIES
+
+
+def test_real_seed_stays_real_and_cannot_localize():
+    """Mechanistic reproduction of the sandbox 'phase-less seeds = 0%': a PURELY REAL IC stays real under
+    the GL flow (all step terms of a real field are real), so its phase never leaves {0, pi} and no 2*pi
+    winding (Level 2) can ever form. Not a trap -- an honest control that explains the finding."""
+    from genesis.models import ginzburg_landau as gl
+    p = dict(gl.DEFAULTS)
+    psi = lab.make_ic("real_seed", (48, 48), 1e-2, np.random.default_rng(0))
+    assert np.max(np.abs(psi.imag)) == 0.0
+    for t in range(120):
+        psi = gl.step(psi, t * p["dt"], p)
+    assert np.max(np.abs(psi.imag)) == 0.0                 # reality preserved -> no phase winding possible
+    l2 = sum((lab._screen_ic("real_seed", {"noise_amplitude": 1e-3}, s, quick=True)["reached_level"] or 0) >= 2
+             for s in range(6))
+    assert l2 == 0                                          # phase-less -> Level 2 unreachable by construction
 
 
 def test_complexity_is_non_saturating():

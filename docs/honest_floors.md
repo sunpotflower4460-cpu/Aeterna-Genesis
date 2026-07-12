@@ -35,8 +35,14 @@
 
 - 主張したい構造（三角形・液滴・分裂後の 2 つ・双曲の木・巻き数・√c4）を IC に埋めない。
   埋めたら measured に見えても **target_encoded**（→ T-√c4, T-dim2）。
-- **床**：IC family は **種・ノイズ・対称構造のみ**（white/lowk/highk/single_seed/sparse_seeds/ring/gradient）。
-  eval ゲート・成功判定・保存則・監査閾値も結論を先取りしない。
+- **床**：IC family は **種・ノイズ・対称構造・ランダム位相のみ**（white/lowk/highk/single_seed/
+  sparse_seeds/ring/gradient/seeds_phase/spectral_powerlaw/bandpass）。eval ゲート・成功判定・保存則・
+  監査閾値も結論を先取りしない。
+- **位相制御の床（phase control ≠ target）**：サンドボックスの大量探索で「位相なしの種＝ hit 0%／
+  位相を持つ family ＝~10%」が出た。**ランダム位相**（seeds_phase の一定ランダム位相・spectral/bandpass の
+  ランダム位相スペクトル）は無秩序の一部で 第8監査 OK＝**位相が効く**のは本物。だが **`vortex_charges`
+  （±巻き数を種に置く）は GL の target（巻き数）を埋め込む＝ target_encoded** で越えられない床。
+  「位相が効く」を主張してよいのは**巻きを置かない**random-phase 系まで（→ traps_museum.md T-vortexseed）。
 
 ## Measure floor：スコア/指標は現象を測れているか
 
