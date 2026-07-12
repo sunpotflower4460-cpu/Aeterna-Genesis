@@ -167,6 +167,16 @@ jobs:
         run: python tools/build_room_g003.py --quick --out-root "${RUNNER_TEMP:-/tmp}/g003smoke"
       - name: "AI Genesis Lab smoke (start-condition search, 2D-screened, non-destructive)"
         run: python ai_lab/lab.py --n 4 --quick --no-write
+      - name: "AI Genesis Lab expanded engine smoke (IC families + full knobs + score ranking, non-destructive)"
+        run: |
+          python -m ai_lab.lab --mode random --n 8 --seed 1 --quick --no-write
+          python -m ai_lab.lab --mode grid --n 6 --quick --no-write
+          python -m ai_lab.lab --mode evolutionary --n 8 --seed 1 --quick --no-write
+      - name: "AI Lab knowledge base is present (PIECES + traps + honest floors, tier-tagged)"
+        run: |
+          test -f docs/PIECES.md
+          test -f docs/traps_museum.md
+          test -f docs/honest_floors.md
       - name: "AI discovery ledger review (accumulated auto-tests are persisted + reviewable)"
         run: |
           test -f ai_lab/discoveries/ledger.json

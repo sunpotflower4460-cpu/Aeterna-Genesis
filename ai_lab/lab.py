@@ -38,6 +38,127 @@ KNOBS = {
     "quench_duration": [4.0, 6.0, 8.0, 12.0, 16.0],
 }
 
+import hashlib  # noqa: E402
+
+import numpy as np  # noqa: E402
+
+from genesis.diagnostics import measures  # noqa: E402
+
+# ---------------------------------------------------------------------------------------------------
+# EXPANDED SEARCH (指示書①): non-saturating score + IC families + full knob space + modes + parents.
+# Discipline kept: the Level is still decided by measures.assess_level (imported, NOT redefined); the
+# score is ONLY a ranking heuristic (never a success gate, never a promotion trigger). IC families are
+# seed / noise / symmetric structures ONLY -- they never encode the target (第8監査).
+# ---------------------------------------------------------------------------------------------------
+
+# parents the Lab can screen from t=0. Only g001 (Ginzburg-Landau TDGL) is end-to-end screenable here;
+# other laws need their own make_initial/step/free_energy and are a separate (frontier) step.
+PARENTS = {"g001": gl}
+
+# IC families: generic disordered / symmetric starts. NONE encodes the GL target (symmetry-breaking +
+# phase-winding vortices) -- amplitude structure only, no phase winding seeded. See docs/honest_floors.md.
+IC_FAMILIES = ["white", "white_lowk", "white_highk", "single_seed", "sparse_seeds", "ring", "gradient"]
+
+# full start-side knob space the Lab may sample (ranges enforced by param_ranges.yaml search_space).
+# correlation_length is realized HONESTLY as low-k filtering of the noise (spatially-correlated IC),
+# so it actually changes the computation (not just recorded). diffusion_ratio->Du, drive_strength->eps.
+FULL_KNOBS = ["noise_amplitude", "correlation_length", "diffusion_ratio", "drive_strength", "quench_duration"]
+
+
+def _lowk_noise(shape, rng, corr_len):
+    """White noise smoothed to a correlation length via a Gaussian low-pass in k-space (symmetric)."""
+    w = rng.standard_normal(shape) + 1j * rng.standard_normal(shape)
+    if corr_len <= 1.0:
+        return w
+    f = np.fft.fftn(w)
+    ks = [np.fft.fftfreq(n) * n for n in shape]
+    grids = np.meshgrid(*ks, indexing="ij")
+    k2 = sum(g ** 2 for g in grids)
+    f *= np.exp(-0.5 * (corr_len ** 2) * (2 * np.pi / max(shape)) ** 2 * k2)
+    out = np.fft.ifftn(f)
+    return out / (np.std(out) + 1e-30)
+
+
+def _highk_noise(shape, rng, corr_len):
+    w = rng.standard_normal(shape) + 1j * rng.standard_normal(shape)
+    f = np.fft.fftn(w)
+    ks = [np.fft.fftfreq(n) * n for n in shape]
+    grids = np.meshgrid(*ks, indexing="ij")
+    k2 = sum(g ** 2 for g in grids)
+    f *= (1.0 - np.exp(-0.5 * (max(corr_len, 2.0) ** 2) * (2 * np.pi / max(shape)) ** 2 * k2))
+    out = np.fft.ifftn(f)
+    return out / (np.std(out) + 1e-30)
+
+
+def make_ic(family, shape, noise_amplitude, rng, corr_len=1.0):
+    """Build a disordered / symmetric initial complex field for the GL model. 第8監査-compliant:
+    seed / noise / symmetric amplitude only -- NO phase winding, NO target pattern seeded."""
+    if family == "white":
+        return gl.make_initial(shape, noise_amplitude, rng)  # byte-identical to the runner's default
+    if family == "white_lowk":
+        return (noise_amplitude * _lowk_noise(shape, rng, corr_len)).astype(np.complex128)
+    if family == "white_highk":
+        return (noise_amplitude * _highk_noise(shape, rng, corr_len)).astype(np.complex128)
+    base = gl.make_initial(shape, noise_amplitude, rng)
+    coords = [np.linspace(-1.0, 1.0, n) for n in shape]
+    grid = np.meshgrid(*coords, indexing="ij")
+    r2 = sum(g ** 2 for g in grid)
+    if family == "single_seed":                              # one symmetric real amplitude bump (no phase)
+        return base + noise_amplitude * 4.0 * np.exp(-r2 / 0.05)
+    if family == "sparse_seeds":                             # a few symmetric bumps at rng positions
+        bump = np.zeros(shape)
+        for _ in range(3):
+            c = [rng.uniform(-0.6, 0.6) for _ in shape]
+            rr = sum((grid[i] - c[i]) ** 2 for i in range(len(shape)))
+            bump = bump + np.exp(-rr / 0.03)
+        return base + noise_amplitude * 4.0 * bump
+    if family == "ring":                                     # symmetric annulus amplitude (no winding)
+        r = np.sqrt(r2)
+        return base + noise_amplitude * 4.0 * np.exp(-((r - 0.5) ** 2) / 0.02)
+    if family == "gradient":                                 # smooth real gradient across the first axis
+        return base + noise_amplitude * 3.0 * grid[0]
+    raise ValueError("unknown IC family %r" % family)
+
+
+def spectral_complexity(psi):
+    """Non-saturating structural complexity in [0,1]: LOG-scaled participation ratio of the power
+    spectrum (drop the k=0 mean). Single dominant mode -> ~0; white noise (all modes) -> ~1; organized
+    multi-domain structure -> intermediate. The log scale spreads the organized regime (few..tens of
+    modes) across the useful range instead of pinning it near 0, and it AVOIDS the entropy->1.0
+    saturation that flattens ranking (docs/traps_museum.md: T-entropy-sat)."""
+    f = np.fft.fftn(psi - psi.mean())
+    s = (np.abs(f) ** 2).ravel().astype(float)
+    if not np.all(np.isfinite(s)):
+        return float("nan")
+    s[0] = 0.0
+    tot = s.sum()
+    if tot <= 0:
+        return 0.0
+    p = s / tot
+    pr = 1.0 / np.sum(p ** 2)                       # participation ratio = effective # excited modes
+    return float(np.log10(max(pr, 1.0)) / np.log10(len(p)))
+
+
+def _window_bonus(c, lo=0.3, hi=0.9):
+    """Mid-complexity window (A5 cat-map / Aaronson coffee): reward structure between trivial (single
+    mode ~0) and pure noise (~1). Plateau inside [lo,hi], smooth Gaussian falloff outside."""
+    if lo <= c <= hi:
+        return 1.0
+    d = (lo - c) if c < lo else (c - hi)
+    return float(np.exp(-((d / 0.15) ** 2)))
+
+
+def score_run(level, mb, complexity):
+    """RANKING heuristic only (NOT a success gate; Level from measures.assess_level stays the truth).
+    Level dominates: the within-level bonus is capped BELOW 1.0 so a deeper reached Level always outranks
+    a shallower one. Within a level, the mid-complexity window + measured signals refine the ranking."""
+    growth = min(np.log10(max(float(mb["mean_amplitude_growth"]), 1.0)) / 6.0, 1.0)  # 0..1
+    prom = min(float(mb["structure_factor_prominence"]) / 10.0, 1.0)                  # 0..1
+    defects = min(float(mb["defect_count"]) / 20.0, 1.0)                              # 0..1
+    signal = (growth + prom + defects) / 3.0                                          # 0..1
+    within = 0.5 * _window_bonus(complexity) + 0.4 * signal                           # 0..0.9 (< 1)
+    return round(float(level) + within, 4)
+
 
 def _load_search_space():
     p = os.path.join(_REPO, "genesis", "registry", "param_ranges.yaml")
@@ -86,6 +207,211 @@ def _within_allowed(mutation, search_space):
 def screen(genesis, quick=True):
     r = runner.run(genesis, mode="2d-screen", quick=quick)
     return r["manifest"]["summary"]["reached_level"], r["emergence"]["measured_by"], r["manifest"]["checksum"]
+
+
+# ---- expanded search engine: IC-family + full-knob screen, scored & ranked (grid/random/evolutionary) ----
+
+STEPS_2D = {True: (48, 260, 10), False: (96, 400, 12)}   # quick -> (edge, steps, snapshots)
+
+
+def _apply_knobs(p, knobs):
+    """Map allowed start-side knobs onto the GL solver params (ranges enforced upstream)."""
+    if "noise_amplitude" in knobs:
+        p["noise_amplitude"] = float(knobs["noise_amplitude"])
+    if "quench_duration" in knobs:
+        p["quench_duration"] = float(knobs["quench_duration"])
+    if "diffusion_ratio" in knobs:
+        p["Du"] = float(knobs["diffusion_ratio"])            # diffusion coefficient Du in [0.1,10]
+    if "drive_strength" in knobs:
+        p["eps_final"] = max(0.1, float(knobs["drive_strength"]))  # quench end epsilon
+    return p
+
+
+def _knob_within_allowed(param, value, ss):
+    """AI may only pick values inside the allowed search space (param_ranges.yaml)."""
+    ir, pr = ss["initial_state"], ss["physical_parameters"]
+    if param == "noise_amplitude":
+        return ir["noise_amplitude"]["min"] <= value <= ir["noise_amplitude"]["max"]
+    if param == "correlation_length":
+        return ir["correlation_length"]["min"] <= value <= ir["correlation_length"]["max"]
+    if param == "diffusion_ratio":
+        return pr["diffusion_ratio"]["min"] <= value <= pr["diffusion_ratio"]["max"]
+    if param == "drive_strength":
+        return pr["drive_strength"]["min"] <= value <= pr["drive_strength"]["max"]
+    if param == "quench_duration":
+        return 0.0 < value <= 40.0
+    return False
+
+
+def _cfl_substeps(Du, base_dt, ndim=2, dx=1.0, cap=8):
+    """Explicit GL diffusion is stable only for dt*Du*2*ndim/dx^2 <~ 0.4 (docs/traps_museum.md: T-euler).
+    Sub-step to hold physical time constant while staying stable; cap the sub-steps (beyond it the trial
+    is flagged unstable rather than reported as a false Level 0)."""
+    safe_dt = 0.4 / max(Du * 2 * ndim / (dx * dx), 1e-9)
+    return int(min(cap, max(1, np.ceil(base_dt / safe_dt))))
+
+
+def _screen_ic(family, knobs, seed, quick=True):
+    """REAL 2D screen from t=0 with an IC family + start-side knobs. Level via measures.assess_level
+    (imported, NOT redefined); adds a non-saturating complexity + score for RANKING only. CFL-sub-steps
+    for numerical stability and flags genuinely non-finite runs as 'unstable' (an honest numerical
+    failure, NOT a physical Level-0 result)."""
+    edge, steps, nsnap = STEPS_2D[bool(quick)]
+    shape = (edge, edge)
+    p = _apply_knobs(dict(gl.DEFAULTS), knobs)
+    base_dt = p["dt"]
+    nsub = _cfl_substeps(p["Du"], base_dt)
+    p["dt"] = base_dt / nsub                          # smaller dt: SAME physics, more sub-steps
+    total = steps * nsub
+    rng = np.random.default_rng(seed)
+    corr = float(knobs.get("correlation_length", 1.0))
+    psi = make_ic(family, shape, p["noise_amplitude"], rng, corr_len=corr)
+    traj = []
+    snap = max(1, total // nsnap)
+    unstable = False
+    for t in range(total):
+        psi = gl.step(psi, t * p["dt"], p)
+        if not np.all(np.isfinite(psi)):
+            unstable = True
+            break
+        if t % snap == 0 or t == total - 1:
+            _, prom = measures.structure_factor_peak(psi)
+            traj.append({"mean_amp": measures.mean_amplitude(psi), "sk_prom": prom,
+                         "defects": measures.winding_defect_count(psi)})
+    if unstable or not traj:
+        return {"reached_level": None, "status": "unstable", "measured_by": {}, "complexity": None,
+                "score": None, "checksum": None,
+                "reason": "numerical_instability (explicit stepper CFL, Du=%.3g)" % p["Du"]}
+    level, _, mb = measures.assess_level(traj)
+    complexity = spectral_complexity(psi)
+    h = hashlib.sha256()
+    h.update(np.ascontiguousarray(psi.real).tobytes()); h.update(np.ascontiguousarray(psi.imag).tobytes())
+    return {"reached_level": level, "status": "2d_screened", "measured_by": mb,
+            "complexity": round(complexity, 4), "score": score_run(level, mb, complexity),
+            "checksum": h.hexdigest()[:16]}
+
+
+def _grid_values(param):
+    return {"noise_amplitude": KNOBS["noise_amplitude"], "quench_duration": KNOBS["quench_duration"],
+            "correlation_length": [1.0, 3.0, 6.0, 9.0, 12.0], "diffusion_ratio": [0.2, 0.5, 1.0, 3.0, 8.0],
+            "drive_strength": [0.5, 1.0, 2.0, 3.0, 5.0]}.get(param, [])
+
+
+def _sample_knobs(rng, ss):
+    """Sample allowed start-side knobs respecting each param's scale (log/linear) from param_ranges."""
+    def logu(r):
+        return float(10 ** rng.uniform(np.log10(r["min"]), np.log10(r["max"])))
+
+    def linu(r):
+        return float(rng.uniform(r["min"], r["max"]))
+    ir, pr = ss["initial_state"], ss["physical_parameters"]
+    return {"noise_amplitude": logu(ir["noise_amplitude"]),
+            "correlation_length": linu(ir["correlation_length"]),
+            "diffusion_ratio": logu(pr["diffusion_ratio"]),
+            "drive_strength": linu(pr["drive_strength"]),
+            "quench_duration": float(rng.uniform(4.0, 20.0))}
+
+
+def _clamp_knob(param, value, ss):
+    ir, pr = ss["initial_state"], ss["physical_parameters"]
+    rng = {"noise_amplitude": ir["noise_amplitude"], "correlation_length": ir["correlation_length"],
+           "diffusion_ratio": pr["diffusion_ratio"], "drive_strength": pr["drive_strength"]}.get(param)
+    if rng:
+        return float(min(rng["max"], max(rng["min"], value)))
+    if param == "quench_duration":
+        return float(min(40.0, max(0.5, value)))
+    return value
+
+
+def search(mode="random", n=50, parent="g001", seed=0, quick=True, families=None):
+    """Large-scale start-condition search. Returns score-ranked results. Discipline: every knob value is
+    checked against the allowed space (AI cannot exceed it); IC families are seed/noise/symmetric only;
+    the score ONLY ranks -- the reached Level (measured) is the truth; no self-promotion here."""
+    if parent not in PARENTS:
+        raise ValueError("parent %r is not screenable in the Lab yet (only: %s). Other laws need their own "
+                         "screen -- a separate (frontier) step." % (parent, ", ".join(PARENTS)))
+    ss = _load_search_space()
+    families = families or IC_FAMILIES
+    if mode == "evolutionary":
+        return _evolutionary(n, parent, seed, quick, families, ss)
+    rng = np.random.default_rng(seed)
+    trials = []
+    if mode == "grid":
+        for fam in families:                              # deterministic: family x one-knob-change grid
+            for param in FULL_KNOBS:
+                for val in _grid_values(param):
+                    trials.append({"family": fam, "knobs": {param: val}, "seed": 0})
+        trials = trials[:n]
+    elif mode == "random":
+        for _ in range(n):
+            fam = families[int(rng.integers(len(families)))]
+            trials.append({"family": fam, "knobs": _sample_knobs(rng, ss), "seed": int(rng.integers(0, 10000))})
+    else:
+        raise ValueError("unknown mode %r (use grid/random/evolutionary)" % mode)
+    results = []
+    for tr in trials:
+        if not all(_knob_within_allowed(k, v, ss) for k, v in tr["knobs"].items()):
+            continue                                      # AI cannot exceed the allowed space
+        results.append({**tr, **_screen_ic(tr["family"], tr["knobs"], tr["seed"], quick=quick)})
+    results.sort(key=_score_key, reverse=True)
+    return {"mode": mode, "parent_room": "room-%s-a" % parent, "n": len(results), "results": results}
+
+
+def _score_key(x):
+    """Sort key that pushes unstable (score=None) trials to the bottom, best score first otherwise."""
+    return (x["score"] is not None, x["score"] if x["score"] is not None else 0.0)
+
+
+def _evolutionary(n, parent, seed, quick, families, ss, gens=4):
+    """Mutate the best ICs over generations: elites survive, children perturb ONE knob (or family)."""
+    rng = np.random.default_rng(seed)
+    pop = [{"family": families[int(rng.integers(len(families)))], "knobs": _sample_knobs(rng, ss),
+            "seed": int(rng.integers(0, 10000))} for _ in range(max(4, n // gens))]
+    allr = []
+    for g in range(gens):
+        scored = [{**ind, **_screen_ic(ind["family"], ind["knobs"], ind["seed"], quick=quick), "generation": g}
+                  for ind in pop]
+        allr.extend(scored)
+        scored.sort(key=_score_key, reverse=True)
+        elites = [s for s in scored if s["score"] is not None][:max(2, len(scored) // 2)] or scored[:2]
+        pop = []
+        for e in elites:
+            pop.append({"family": e["family"], "knobs": dict(e["knobs"]), "seed": e["seed"]})  # keep elite
+            child = {"family": e["family"], "knobs": dict(e["knobs"]), "seed": int(rng.integers(0, 10000))}
+            k = list(child["knobs"])[int(rng.integers(len(child["knobs"])))]
+            child["knobs"][k] = _clamp_knob(k, child["knobs"][k] * float(rng.uniform(0.5, 2.0)), ss)
+            if rng.uniform() < 0.3:
+                child["family"] = families[int(rng.integers(len(families)))]
+            pop.append(child)
+    allr.sort(key=_score_key, reverse=True)
+    return {"mode": "evolutionary", "parent_room": "room-%s-a" % parent, "n": len(allr),
+            "results": allr, "generations": gens}
+
+
+def _search_key(rec):
+    kv = ",".join("%s=%g" % (k, rec["knobs"][k]) for k in sorted(rec["knobs"]))
+    return "%s|%s" % (rec["family"], kv)
+
+
+def record_search(result, path=None):
+    """Persist scored search results into the ledger (append-only by key, ranked by score)."""
+    path = path or LEDGER_PATH
+    led = load_ledger(path)
+    led.setdefault("search_discoveries", [])
+    by = {d["key"]: d for d in led["search_discoveries"]}
+    for rec in result["results"]:
+        if rec.get("score") is None:                    # skip numerically-unstable trials (not a result)
+            continue
+        key = _search_key(rec)
+        by[key] = {"key": key, "parent_room": result["parent_room"], "family": rec["family"],
+                   "knobs": rec["knobs"], "seed": rec["seed"], "reached_level": rec["reached_level"],
+                   "score": rec["score"], "complexity": rec["complexity"], "measured_by": rec["measured_by"],
+                   "checksum_2d": rec["checksum"], "stage": by.get(key, {}).get("stage", "2d_screened")}
+    led["search_discoveries"] = sorted(by.values(), key=lambda d: d["score"], reverse=True)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(led, f, indent=2, ensure_ascii=False)
+    return led
 
 
 def run_lab(n=4, quick=True):
@@ -187,6 +513,18 @@ def review(path=LEDGER_PATH):
     holds = [d for d in ds if d["vs_parent"]["delta_level"] == 0]
     print("  summary: %d beat parent, %d hold parent level, %d total. (all 2D candidates; full-3D は昇格段階)"
           % (len(beats), len(holds), len(ds)))
+    sd = led.get("search_discoveries", [])
+    if sd:
+        print("=== expanded search ledger (%d IC-family/knob trials, ranked by score) — top 12 ===" % len(sd))
+        for d in sd[:12]:
+            kv = ",".join("%s=%g" % (k, d["knobs"][k]) for k in sorted(d["knobs"]))
+            print("  score=%-6.3f L=%d cx=%.3f | %-12s | %s | stage=%s"
+                  % (d["score"], d["reached_level"], d["complexity"], d["family"], kv, d["stage"]))
+        lv = {}
+        for d in sd:
+            lv[d["reached_level"]] = lv.get(d["reached_level"], 0) + 1
+        print("  reached-level histogram: %s (score ranks WITHIN the honest Level; not a success gate)"
+              % ", ".join("L%d:%d" % (k, lv[k]) for k in sorted(lv)))
     return led
 
 
@@ -268,8 +606,41 @@ def _write_candidate_room(repo, cand_id, proposal, genesis, r3, survived):
         f.write("`dimension_status.full_3d = not_started`（full-3D 昇格・格子収束・複数 seed は未実施）。\n")
 
 
+def _run_search(args):
+    """CLI path for the expanded engine (--mode grid/random/evolutionary): scored, ranked, IC families."""
+    res = search(mode=args.mode, n=args.n, parent=args.parent, seed=args.seed, quick=args.quick)
+    print("=== AI Genesis Lab — %s search: %d trials (parent %s, 2D-screened from t=0) ==="
+          % (args.mode, res["n"], res["parent_room"]))
+    print("  score = Level(dominant) + mid-complexity-window + signals. Level is MEASURED; score only RANKS.")
+    for r in res["results"][:args.top]:
+        kv = ",".join("%s=%g" % (k, r["knobs"][k]) for k in sorted(r["knobs"]))
+        if r["score"] is None:
+            print("  UNSTABLE                        | %-12s | %s  (%s)" % (r["family"], kv, r.get("reason", "")))
+            continue
+        print("  score=%-6.3f L=%d cx=%.3f growth=%.1f defects=%d | %-12s | %s"
+              % (r["score"], r["reached_level"], r["complexity"], r["measured_by"]["mean_amplitude_growth"],
+                 r["measured_by"]["defect_count"], r["family"], kv))
+    lv = {}
+    for r in res["results"]:
+        k = r["reached_level"] if r["reached_level"] is not None else "unstable"
+        lv[k] = lv.get(k, 0) + 1
+    print("  level histogram: %s" % ", ".join("%s:%d" % (("L%d" % k if isinstance(k, int) else k), lv[k])
+                                              for k in sorted(lv, key=lambda x: (isinstance(x, str), x))))
+    print("  NOTE: 2D-screened only. AI cannot self-promote to full-3D or write rooms/official.")
+    if args.record and not args.no_write:
+        led = record_search(res)
+        print("  recorded %d search discoveries into ai_lab/discoveries/ledger.json"
+              % len(led.get("search_discoveries", [])))
+    return 0
+
+
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="AI Genesis Lab (minimal start-condition searcher)")
+    ap = argparse.ArgumentParser(description="AI Genesis Lab (start-condition searcher)")
+    ap.add_argument("--mode", default="legacy", choices=["legacy", "grid", "random", "evolutionary"],
+                    help="legacy = the original 2-knob grid; grid/random/evolutionary = expanded engine")
+    ap.add_argument("--parent", default="g001", help="parent law to branch (only g001 screenable for now)")
+    ap.add_argument("--seed", type=int, default=0, help="master seed for the sampler (deterministic)")
+    ap.add_argument("--top", type=int, default=12, help="how many top-ranked trials to print")
     ap.add_argument("--n", type=int, default=4)
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--no-write", action="store_true")
@@ -283,6 +654,9 @@ def main(argv=None):
     if args.review:
         review()
         return 0
+
+    if args.mode != "legacy":
+        return _run_search(args)
 
     res = run_lab(n=args.n, quick=args.quick)
     print("=== AI Genesis Lab: %d proposals (parent room-g001-a, 2D-screened from t=0) ===" % args.n)
