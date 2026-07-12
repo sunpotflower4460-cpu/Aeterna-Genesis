@@ -34,8 +34,9 @@ GL は 2D で **L2** が上限。深い Level は**法則クラスを変えて 0
 追加測度 `genesis/diagnostics/higher_levels.py`。成功判定 `measures.assess_level` は不変＝no_touch）：
 - **g001 GL**：一様＋ノイズ → 位相巻き渦 **L2**。
 - **g002 Boussinesq/RB**：REST＋ノイズ → 自発循環ロールが飽和 **coherent L3**（turbulent≠coherent を flag）。
-- **gray_scott 反応拡散**：ノイズ種 → スポット自己複製。**FULL L7 = 分裂＋遺伝**（遺伝する双安定タグを娘が
-  親から継承・命令でなく力学で）。分裂だけなら **L7-partial** と正直に呼ぶ（spots≠life）。
+- **gray_scott 反応拡散**：ノイズ種 → スポット自己複製・分裂。**天井は L7-partial（分裂のみ）**。遺伝は
+  U,V から生まれず、遺伝場 `T` を**足す＝答えを置く**ことになる（`docs/ANTI_DRIFT.md`）。→ **FULL L7 主張は
+  取り下げ**（T 系は `inheritance_placed` と正直にラベル）。spots≠life。
 - **g003 Model H**：co-differentiation **L5** は frontier（測度 WIP）。
 
 ### 拡張エンジン（大量自動探索）

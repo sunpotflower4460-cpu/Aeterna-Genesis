@@ -60,10 +60,11 @@
   売らない（→ traps 予備軍）。
 - **spots ≠ life（L7 の床）**：Gray-Scott の自己複製スポットは**反応拡散の場現象**（Pearson 1993）であって
   細胞・生命ではない。tier=measured（複製という測定量）だが、**生命語を使わない**（LAW 禁止語）。
-- **分裂だけでは L7 でない（L7-partial の床）**：**FULL L7 = 分裂 ＋ 遺伝 ＋ 会計整合**
-  （`division_not_seeded AND state_inherited AND accounting_consistent`）。スポットが増えるだけ（遺伝タグの
-  継承なし）は **L7-partial** と正直に呼ぶ。遺伝は**遺伝する双安定タグ**を娘が親から継承すること（bistable
-  purity・両系統存続で測る・命令しない）。会計整合は「静的分裂の数え間違い」罠を防ぐ（spot_size_cv で担保）。
+- **遺伝は"置いた"もの＝ L7-partial の床（ANTI_DRIFT）**：Gray-Scott(U,V) の白から生まれるのは**自己複製・
+  分裂**まで＝**天井は L7-partial**。**遺伝（heredity）は U,V から生まれない。** 遺伝を出すには遺伝場 `T` を
+  **足す**しかなく、それは「答えを置く」（`ANTI_DRIFT.md` 原則1：買ってきたリンゴを枝にくくりつける）。
+  → **「Gray-Scott が IC-only で FULL L7」は取り下げ**。T 系は `inheritance_placed=True` と正直にラベルし
+  full-L7-emergence を主張しない。「白から遺伝が生まれ得るか」は **frontier**（出ないなら天井として記録）。
 - **Model H の L5 は frontier**：相分離×流体の co-differentiation 測度は未収束＝frontier。screenable だが L5 を
   measured とは言わない。
 

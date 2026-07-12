@@ -35,28 +35,28 @@ def test_flow_level_measure_l3_and_rest_l0():
     assert lt == 3 and dt["turbulent_churn"] and not dt["coherent_rolls"]
 
 
-def test_full_l7_needs_division_AND_inheritance():
-    """FULL L7 = division AND state_inherited AND accounting_consistent. Division ALONE is only L7-partial."""
-    # division only (no tag info) -> L7-partial, NOT full L7
-    lp, det, _ = hl.assess_replication_level([8, 12, 18, 20])
-    assert lp == 0 and det["division_not_seeded"] and det["l7_partial"] and not det["full_l7"]
-    # division + clean inherited bistable tags + uniform spots -> FULL L7
+def test_gray_scott_ceiling_is_L7partial_heredity_is_placed():
+    """ANTI_DRIFT: the HONEST emergent ceiling of the Gray-Scott U,V white is L7-partial (division only).
+    Heredity does NOT emerge from U,V; a tag field is PLACED, so no full-L7 EMERGENCE is claimed."""
+    # division from the U,V white (no tag) -> L7-partial (emergent), NEVER a full-L7 claim
+    lp, det, mb = hl.assess_replication_level([8, 12, 18, 20])
+    assert lp == 0 and det["division_not_seeded"] and det["l7_partial"]
+    assert det["full_l7_emergence"] is False and det["inheritance_placed"] is False
+    assert "L7-partial" in mb["emergent_ceiling"]
+    # a PLACED tag field is measured but flagged inheritance_placed=True -- still NOT full-L7 emergence
     spots = [{"tag": t, "purity": 0.95, "size": 30} for t in ([0] * 10 + [1] * 10)]
-    lf, detf, mbf = hl.assess_replication_level([8, 12, 18, 20], spots=spots)
-    assert lf == 7 and detf["full_l7"] and detf["state_inherited"] and detf["accounting_consistent"]
-    assert detf["both_lineages_survive"] and mbf["mean_purity"] > 0.9
-    # division but SMEARED tags (purity ~0, no clean heredity) -> not full L7, stays partial
-    smeared = [{"tag": 0, "purity": 0.1, "size": 30} for _ in range(20)]
-    ls, dets, _ = hl.assess_replication_level([8, 12, 18, 20], spots=smeared)
-    assert ls == 0 and not dets["state_inherited"] and dets["l7_partial"]
-    # no division -> not L7 at all
+    lpl, detpl, mbpl = hl.assess_replication_level([8, 12, 18, 20], spots=spots)
+    assert lpl == 0                                        # heredity was PLACED, not born -> no full L7
+    assert detpl["inheritance_placed"] is True and detpl["full_l7_emergence"] is False
+    assert "PLACED" in mbpl["note"]
+    # no division -> below L7
     l0, det0, _ = hl.assess_replication_level([8, 8, 7, 8])
     assert l0 == 0 and not det0["division_not_seeded"]
 
 
-def test_tagged_gray_scott_inherits_parent_tag():
-    """The heritable bistable tag is CLEAN (0/1) and BOTH founder lineages persist through division
-    (daughters carry the parent's tag; it is not a global switch and it is not commanded)."""
+def test_placed_tag_is_carried_but_labeled_placed_not_emergent():
+    """The tag field (U,V->U,V,T) is a PLACED heritable degree of freedom. We may still measure that the
+    placed tag is carried cleanly through division, but it is labeled placed -- never sold as emergence."""
     p = dict(gs.DEFAULTS)
     rng = np.random.default_rng(1)
     U, V, T, founder_tags = gs.make_initial_tagged((96, 96), 8, rng, seed_radius=p["seed_radius"], mix=0.5)
@@ -64,23 +64,25 @@ def test_tagged_gray_scott_inherits_parent_tag():
     for i in range(12000):
         U, V, T = gs.step_tagged(U, V, T, p)
     spots = gs.spot_tags(V, T)
-    assert len(spots) >= 2 * 8                              # divided (self-replication)
-    purities = [s["purity"] for s in spots]
-    assert np.mean([pu > 0.6 for pu in purities]) > 0.7     # clean bistable tags (heritable state)
-    tags = [s["tag"] for s in spots]
-    assert 0 in tags and 1 in tags                          # BOTH lineages survive = real inheritance
+    assert len(spots) >= 2 * 8                              # divided (self-replication EMERGES from U,V)
+    _, det, mb = hl.assess_replication_level([8] + [len(spots)], spots=spots)
+    assert det["inheritance_placed"] is True               # the tag was PLACED, not born
+    assert det["full_l7_emergence"] is False               # so NO full-L7 emergence is claimed
+    assert "PLACED" in mb["note"]
 
 
-def test_lawscan_climbs_deeper_with_different_law():
-    """The headline: GL caps at L2, flow reaches L3, self-replication reaches L7 -- a deeper Level needs
-    a DIFFERENT LAW, not a different score. All from t=0, measured."""
+def test_lawscan_gray_scott_is_L7partial_not_full_l7():
+    """GL caps at L2, flow reaches L3, and Gray-Scott's HONEST ceiling is L7-partial (division only) --
+    a full L7 would require PLACING heredity (docs/ANTI_DRIFT.md). Deeper Level needs a different LAW."""
     rows = {r["law"]: r for r in lab.lawscan(seed=0, quick=True)}
-    assert rows["g001"]["reached_level"] == 2          # Ginzburg-Landau: winding defects (L2) is the cap in 2D
+    assert rows["g001"]["reached_level"] == 2          # Ginzburg-Landau: winding defects (L2) cap in 2D
     assert rows["g002"]["reached_level"] == 3          # Boussinesq: rest+noise -> coherent circulation (L3)
     assert rows["g002"]["measured_by"]["ke_start"] == 0.0 and rows["g002"]["measured_by"]["ke_final"] > 1.0
-    assert rows["gray_scott"]["reached_level"] == 7    # Gray-Scott: noise seeds -> self-replication (L7)
-    assert rows["gray_scott"]["measured_by"]["final_spots"] >= 2 * rows["gray_scott"]["measured_by"]["seed_spots"]
-    assert "NOT life" in rows["gray_scott"]["floor"]   # 同じ数学 != 同じもの
+    gs_row = rows["gray_scott"]
+    assert gs_row["reached_level"] == 0                 # NOT full L7 (retracted); division only
+    assert "L7-partial" in gs_row["l7_status"] and "PLACED" in gs_row["l7_status"]
+    assert gs_row["detected"]["l7_partial"] and gs_row["detected"]["full_l7_emergence"] is False
+    assert gs_row["measured_by"]["final_spots"] >= 2 * gs_row["measured_by"]["seed_spots"]  # division real
 
 
 def test_lawscan_ic_is_not_the_target_8th_audit():

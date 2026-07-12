@@ -35,44 +35,43 @@ def assess_flow_level(ke_traj, circulation, late_fluct):
 
 
 def assess_replication_level(spot_counts, spots=None):
-    """Level 7 (reproduction). FULL L7 needs THREE things, not just division:
+    """Reproduction, measured HONESTLY per docs/ANTI_DRIFT.md (「答えを置くな」).
 
-        reached_L7 = division_not_seeded AND state_inherited AND accounting_consistent
+    Self-replication (division) EMERGES from the Gray-Scott U,V white (spots come from the U,V
+    concentrations already in the white) -> the honest EMERGENT ceiling of this white is **L7-partial**
+    (division only). Heredity does NOT emerge from U,V: to get it you must ADD a heritable field (a tag T)
+    -- that is PLACING the answer (原則1: tying a bought apple to the tree), NOT emergence. So:
 
-      - division_not_seeded : spots MULTIPLY by division from the seed count (growth, doubling).
-      - state_inherited     : each spot carries a CLEAN bistable heritable tag (0/1) -- daughters inherit
-                              the parent's tag (measured, not commanded). frac_clean>0.7 AND mean_purity>0.6.
-      - accounting_consistent: the spots are genuine similar-sized separate components (guards the
-                              "static division accounting" trap where one static region is miscounted).
+      * division alone  -> L7-partial (emergent, real).
+      * tag info given  -> the inheritance is measured but flagged inheritance_placed=True; a full-L7
+                           EMERGENCE is NOT claimed (the heritable degree of freedom was placed, not born).
 
-    spot_counts : spot count sampled over time (starts at the seed/founder count).
-    spots       : final per-spot list of {tag, purity, size} (from gray_scott.spot_tags). If omitted,
-                  only DIVISION is measurable -> the result is L7-PARTIAL (honest), never full L7.
-    Returns (reached_level, detected, measured_by): reached_level == 7 ONLY for full L7; otherwise 0 with
-    detected['l7_partial'] flagging division-without-heredity.
+    Returns (reached_level, detected, measured_by). reached_level is 0 (no clean higher Level EMERGED
+    beyond the partial); detected carries l7_partial (division) and, if a tag field was placed,
+    inheritance_placed=True with the placed-tag metrics. `emergent_ceiling` labels the honest ceiling.
     """
     import numpy as np
     c0, cN, cmax = int(spot_counts[0]), int(spot_counts[-1]), int(max(spot_counts))
     division = bool(cN >= max(2, c0 + 3) and cmax >= 2 * max(c0, 1))
-    detected = {"division_not_seeded": division}
-    mb = {"seed_spots": c0, "final_spots": cN, "peak_spots": cmax, "growth_factor": round(cN / max(c0, 1), 3)}
-    if not spots:                                          # no tag info -> division only -> L7-partial
-        detected["state_inherited"] = None
-        detected["full_l7"] = False
-        detected["l7_partial"] = division
+    detected = {"division_not_seeded": division, "l7_partial": division, "full_l7_emergence": False}
+    mb = {"seed_spots": c0, "final_spots": cN, "peak_spots": cmax, "growth_factor": round(cN / max(c0, 1), 3),
+          "emergent_ceiling": "L7-partial (self-replication/division only)" if division else "below L7"}
+    if not spots:
+        detected["inheritance_placed"] = False
         return 0, detected, mb
+    # A tag field was PLACED (U,V -> U,V,T). We still measure how cleanly the placed tag is carried through
+    # division, but this is NOT emergence of heredity from the U,V white (ANTI_DRIFT 原則1/原則4).
     purities = [s["purity"] for s in spots]
     sizes = [s["size"] for s in spots]
     tags = [s["tag"] for s in spots]
     frac_clean = float(np.mean([p > 0.6 for p in purities]))
     mean_purity = float(np.mean(purities))
-    state_inherited = bool(frac_clean > 0.7 and mean_purity > 0.6)
-    cv = float(np.std(sizes) / (np.mean(sizes) + 1e-9))    # size uniformity -> genuine separate spots
-    accounting_consistent = bool(len(spots) == cN and cv < 1.2)
-    full = bool(division and state_inherited and accounting_consistent)
-    detected.update({"state_inherited": state_inherited, "accounting_consistent": accounting_consistent,
-                     "full_l7": full, "l7_partial": bool(division and not full),
+    cv = float(np.std(sizes) / (np.mean(sizes) + 1e-9))
+    detected.update({"inheritance_placed": True,
+                     "placed_tag_carried_cleanly": bool(frac_clean > 0.7 and mean_purity > 0.6),
+                     "accounting_consistent": bool(len(spots) == cN and cv < 1.2),
                      "both_lineages_survive": bool(0 in tags and 1 in tags)})
-    mb.update({"frac_clean_bistable": round(frac_clean, 3), "mean_purity": round(mean_purity, 3),
-               "spot_size_cv": round(cv, 3), "tag0": tags.count(0), "tag1": tags.count(1)})
-    return (7 if full else 0), detected, mb
+    mb.update({"placed_frac_clean": round(frac_clean, 3), "placed_mean_purity": round(mean_purity, 3),
+               "spot_size_cv": round(cv, 3), "tag0": tags.count(0), "tag1": tags.count(1),
+               "note": "tag field PLACED (U,V->U,V,T): inheritance is placed, not emergent (docs/ANTI_DRIFT.md)"})
+    return 0, detected, mb                                 # no full-L7 EMERGENCE claim; heredity was placed
