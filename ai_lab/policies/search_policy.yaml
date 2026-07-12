@@ -9,7 +9,28 @@ knobs:
   - name: quench_duration
     mutation_type: parameter_change
     grid: [4.0, 6.0, 8.0, 12.0, 16.0]
-one_change_per_proposal: true
+# 拡張エンジン（指示書①）：許可空間全域の knob ＋ IC family ＋ score ランキング ＋ 探索モード。
+# Level は measures.assess_level（imported・再定義しない）が真。score は RANKING のみ（成功ゲートでない）。
+expanded_knobs:                # 実際に計算へ効くもののみ。範囲は param_ranges.yaml が強制。
+  - noise_amplitude            # initial_state
+  - correlation_length         # 低k フィルタ＝空間相関ノイズとして実装（本当に効く）
+  - diffusion_ratio            # -> Du（CFL sub-step で安定化。explicit Euler の T-euler 罠回避）
+  - drive_strength             # -> eps_final
+  - quench_duration            # protocol
+ic_families:                   # 第8監査：種・ノイズ・対称のみ。GL の target（位相巻き渦）は入れない
+  - white                      # 一様＋白色ノイズ（runner の既定と byte 一致）
+  - white_lowk                 # 低k フィルタ（大スケール相関）
+  - white_highk                # 高k フィルタ
+  - single_seed                # 対称な実振幅バンプ 1 個（位相なし）
+  - sparse_seeds               # 対称バンプ数個（位置は seed 由来）
+  - ring                       # 対称な環状振幅（巻きなし）
+  - gradient                   # なだらかな実勾配
+modes:                         # --mode
+  - grid                       # 決定的：family × 単一 knob グリッド
+  - random                     # --n N・seed でサンプル（決定的）
+  - evolutionary               # 上位 IC を世代で変異（elite ＋ child）
+score: level_dominant          # score = Level(支配) + 中間複雑性窓 + 測定信号。窓 entropy 飽和は回避（T-entropy-sat）
+one_change_per_proposal: true  # legacy grid のみ。expanded は複数 knob 同時可（IC family と併せて探索）
 screen_mode: 2d-screen        # 2D は探索（候補発見）。full-3D 昇格は別段階
 self_promotion_allowed: false # Lab は 2d_screened まで。full-3D 判定・Room 登録は昇格コマンド/人
 no_touch:
