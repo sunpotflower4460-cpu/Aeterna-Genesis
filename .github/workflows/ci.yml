@@ -172,11 +172,12 @@ jobs:
           python -m ai_lab.lab --mode random --n 8 --seed 1 --quick --no-write
           python -m ai_lab.lab --mode grid --n 6 --quick --no-write
           python -m ai_lab.lab --mode evolutionary --n 8 --seed 1 --quick --no-write
-      - name: "AI Lab knowledge base is present (PIECES + traps + honest floors, tier-tagged)"
+      - name: "AI Lab knowledge base is present (PIECES + traps + honest floors + anti-drift, tier-tagged)"
         run: |
           test -f docs/PIECES.md
           test -f docs/traps_museum.md
           test -f docs/honest_floors.md
+          test -f docs/ANTI_DRIFT.md
       - name: "AI Lab law-class climb from t=0 (GL L2 < flow L3 < self-replication L7, non-destructive)"
         run: python -m ai_lab.lab --mode lawscan --seed 0 --quick --no-write
       - name: "AI discovery ledger review (accumulated auto-tests are persisted + reviewable)"
