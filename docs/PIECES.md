@@ -138,6 +138,17 @@
 
 ---
 
+- **H2 法則クラスで Level を登る（深い Level は別の法則が要る）** `measured` — 「同じスコアを上げる」のでなく
+  **法則クラスを変える**と 0 から届く Level が変わる（`ai_lab/lab.py --mode lawscan`、`genesis/models/`＋
+  `genesis/diagnostics/higher_levels.py`）。すべて t=0・IC は種/ノイズのみ（第8監査）・Level は measured：
+  - **g001 GL/TDGL**：一様＋ノイズ → 位相巻き渦 **L2**（2D の上限）。
+  - **g002 Boussinesq/RB**：**REST＋ノイズ** → 自発的な循環ロールが育って**飽和**（**coherent L3**）。
+    実測 KE 0→112・circulation 50.9・late_fluct=0（＝乱流 churn でなく coherent。**turbulent ≠ coherent** を flag）。
+  - **gray_scott（反応拡散）**：**ノイズ種 8 個** → スポットが**自己複製・分裂**して増える（**L7 signature**、
+    実測 8→20〜39・2.5–4.9×）。**同じ数学 ≠ 同じもの**：反応拡散スポットであって生命ではない（floor）。
+  - **g003 Model H**：相分離×流体の共発展（**L5**）は screenable 登録だが co-differentiation 測度は **frontier**（WIP）。
+  規律：no_touch（`measures.assess_level` の L1/L2 成功判定は不変・追加測度は新モジュール）・self_promotion なし・決定的。
+
 ## O. 方法論・framework（→ honest_floors）
 
 - **O1 既知モデルは沢山ある** `frontier/floor` — Turing/Lenia/Vicsek/CGL。「作れる」ことと「本物」は別（sim の underdetermination）。
