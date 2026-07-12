@@ -43,6 +43,9 @@ import hashlib  # noqa: E402
 import numpy as np  # noqa: E402
 
 from genesis.diagnostics import measures  # noqa: E402
+from genesis.diagnostics import higher_levels as hl  # noqa: E402
+from genesis.models import boussinesq_rb as rb  # noqa: E402
+from genesis.models import gray_scott as gs  # noqa: E402
 
 # ---------------------------------------------------------------------------------------------------
 # EXPANDED SEARCH (指示書①): non-saturating score + IC families + full knob space + modes + parents.
@@ -719,10 +722,108 @@ def _run_search(args):
     return 0
 
 
+# ---------------------------------------------------------------------------------------------------
+# MULTIPLE LAW CLASSES (指示書: 0 から L3 以上): GL caps at L2 in 2D; other laws climb deeper from t=0.
+#   g002 Boussinesq/RB : REST + noise -> coherent circulation rolls (L3), KE 0->saturate, ∮v·dl != 0.
+#   gray_scott (RD)    : noise seeds -> spots SELF-REPLICATE / divide (L7 signature).
+#   g003 Model H       : phase separation + flow co-evolution (L5) -- registered FRONTIER (measure WIP).
+# Discipline kept: from t=0, IC seeded禁止 (rest+noise / noise seeds, NOT the target), Level measured
+# (genesis/diagnostics), no self-promotion, no_touch. 「turbulent != coherent」/「同じ数学 != 同じもの」.
+# ---------------------------------------------------------------------------------------------------
+
+# law-specific drive knobs the Lab may vary, with allowed ranges (physical, bounded; AI cannot exceed).
+LAW_KNOBS = {
+    "g002": {"Ra": (300.0, 30000.0)},                 # Rayleigh number (sub->super critical; Ra_c≈657.5)
+    "gray_scott": {"F": (0.02, 0.06), "k": (0.05, 0.07), "n_seeds": (2, 20)},
+}
+LAW_CLASSES = {
+    "g001": {"model": gl.MODEL_ID, "kind": "scalar_gl", "target_level": 2, "tier": "measured"},
+    "g002": {"model": rb.MODEL_ID, "kind": "flow", "target_level": 3, "tier": "measured"},
+    "gray_scott": {"model": gs.MODEL_ID, "kind": "reaction_diffusion", "target_level": 7, "tier": "measured"},
+    "g003": {"model": "g003_model_h_phase_field", "kind": "phase_flow", "target_level": 5, "tier": "frontier"},
+}
+
+
+def _clip(v, lo, hi):
+    return float(min(hi, max(lo, v)))
+
+
+def _screen_boussinesq(Ra, seed, quick=True):
+    """REST + noise -> self-organized convection. Coherent rolls saturate (L3); turbulent churn is
+    flagged, not sold as coherent. Ra is the drive (subcritical -> no flow -> L0)."""
+    Nx, Nz, steps = (24, 25, 3500) if quick else (32, 33, 7000)
+    s = rb.Bouss(Nx, Nz, _clip(Ra, *LAW_KNOBS["g002"]["Ra"]), seed=seed, noise_amplitude=1e-3)
+    ke, snap = [], max(1, steps // 12)
+    for i in range(steps):
+        s.step(s.cfl_dt(cap=rb.DEFAULTS["dt_cap"]))
+        if not s.finite():
+            return {"reached_level": None, "status": "unstable", "reason": "non-finite (Ra=%.0f)" % Ra}
+        if i % snap == 0 or i == steps - 1:
+            ke.append(s.kinetic_energy())
+    circulation = float(np.mean(np.abs(s.bwd(s.om))))         # mean |vorticity| on the grid
+    late = ke[-3:] if len(ke) >= 3 else ke
+    fluct = float(np.std(late) / (np.mean(late) + 1e-12))
+    level, detected, mb = hl.assess_flow_level(ke, circulation, fluct)
+    return {"reached_level": level, "status": "2d_screened", "measured_by": mb, "detected": detected,
+            "law": "g002", "drive": {"Ra": round(float(Ra), 1)}}
+
+
+def _screen_gray_scott(F, k, n_seeds, seed, quick=True):
+    """Noise seeds -> reaction-diffusion spots that self-replicate/divide (L7 signature). Spots ≠ life."""
+    N, steps = (80, 9000) if quick else (96, 14000)      # RD self-replication needs ~10k+ steps to divide
+    p = dict(gs.DEFAULTS)
+    p["F"] = _clip(F, *LAW_KNOBS["gray_scott"]["F"]); p["k"] = _clip(k, *LAW_KNOBS["gray_scott"]["k"])
+    n_seeds = int(_clip(n_seeds, *LAW_KNOBS["gray_scott"]["n_seeds"]))
+    rng = np.random.default_rng(seed)
+    U, V = gs.make_initial((N, N), n_seeds, rng, seed_radius=p["seed_radius"])
+    counts, snap = [gs.spot_count(V)], max(1, steps // 12)
+    for i in range(steps):
+        U, V = gs.step(U, V, p)
+        if not np.all(np.isfinite(V)):
+            return {"reached_level": None, "status": "unstable", "reason": "non-finite (F=%.3f,k=%.3f)" % (F, k)}
+        if i % snap == 0 or i == steps - 1:
+            counts.append(gs.spot_count(V))
+    level, detected, mb = hl.assess_replication_level(counts)
+    return {"reached_level": level, "status": "2d_screened", "measured_by": mb, "detected": detected,
+            "law": "gray_scott", "drive": {"F": round(float(F), 4), "k": round(float(k), 4), "n_seeds": n_seeds}}
+
+
+def lawscan(seed=0, quick=True):
+    """Run each law class from t=0 and report the reached Level (measured). Shows GL(L2) < flow(L3) <
+    self-replication(L7): deeper Levels need a different law, not a different score."""
+    out = []
+    r = _screen_ic("white", {"noise_amplitude": 1.0e-2}, seed, quick=quick)   # GL reference (L1/L2)
+    out.append({"law": "g001", "kind": "scalar_gl", "reached_level": r["reached_level"],
+                "tier": "measured", "measured_by": r.get("measured_by", {}), "from": "uniform+noise (t=0)"})
+    rb_r = _screen_boussinesq(2000.0, seed, quick=quick)                       # supercritical -> L3
+    out.append({"law": "g002", "kind": "flow", "reached_level": rb_r["reached_level"], "tier": "measured",
+                "measured_by": rb_r.get("measured_by", {}), "detected": rb_r.get("detected", {}),
+                "drive": rb_r.get("drive", {}), "from": "REST + noise (t=0)"})
+    gs_r = _screen_gray_scott(0.035, 0.062, 8, seed, quick=quick)              # mitosis -> L7 signature
+    out.append({"law": "gray_scott", "kind": "reaction_diffusion", "reached_level": gs_r["reached_level"],
+                "tier": "measured", "measured_by": gs_r.get("measured_by", {}), "detected": gs_r.get("detected", {}),
+                "drive": gs_r.get("drive", {}), "from": "noise seeds (t=0)",
+                "floor": "reaction-diffusion spots, NOT life (同じ数学 != 同じもの)"})
+    return out
+
+
+def record_lawscan(rows, path=None):
+    """Persist the per-law-class climb into the ledger (replace latest lawscan snapshot)."""
+    path = path or LEDGER_PATH
+    led = load_ledger(path)
+    led["lawclass_climbs"] = rows
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(led, f, indent=2, ensure_ascii=False)
+    return led
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="AI Genesis Lab (start-condition searcher)")
-    ap.add_argument("--mode", default="legacy", choices=["legacy", "grid", "random", "evolutionary"],
-                    help="legacy = the original 2-knob grid; grid/random/evolutionary = expanded engine")
+    ap.add_argument("--mode", default="legacy",
+                    choices=["legacy", "grid", "random", "evolutionary", "lawscan"],
+                    help="legacy = original 2-knob grid; grid/random/evolutionary = expanded engine; "
+                         "lawscan = run each LAW CLASS from t=0 (GL L2 < flow L3 < self-replication L7)")
     ap.add_argument("--parent", default="g001", help="parent law to branch (only g001 screenable for now)")
     ap.add_argument("--seed", type=int, default=0, help="master seed for the sampler (deterministic)")
     ap.add_argument("--top", type=int, default=12, help="how many top-ranked trials to print")
@@ -738,6 +839,22 @@ def main(argv=None):
 
     if args.review:
         review()
+        return 0
+
+    if args.mode == "lawscan":
+        rows = lawscan(seed=args.seed, quick=args.quick)
+        print("=== AI Genesis Lab — law-class climb from t=0 (deeper Level needs a different LAW) ===")
+        for r in rows:
+            lv = r["reached_level"]
+            print("  %-11s [%-18s] reached L%s  (%s) tier=%s"
+                  % (r["law"], r["kind"], lv if lv is not None else "?", r["from"], r["tier"]))
+            print("       measured: %s" % r.get("measured_by", {}))
+            if r.get("floor"):
+                print("       floor: %s" % r["floor"])
+        print("  NOTE: from t=0, IC seeded禁止 (rest+noise / noise seeds). Level MEASURED; no self-promotion; no_touch.")
+        if args.record and not args.no_write:
+            record_lawscan(rows)
+            print("  recorded law-class climb into ai_lab/discoveries/ledger.json")
         return 0
 
     if args.mode != "legacy":

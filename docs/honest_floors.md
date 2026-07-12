@@ -50,6 +50,19 @@
 - 「dim=2」は 2-cell 構成の副作用で幾何ではない（→ T-crumple2, T-dim2）。furrow は材料を削る（→ T-furrow）。
 - **床**：スコアは**非飽和 measure**で、run 間に分散が残ることをテストで担保。次元主張は独立手法で二重化。
 
+## Law-class floor：深い Level は「スコア」でなく「別の法則」から来る（turbulent≠coherent / spots≠life）
+
+- **深い Level は法則が決める**：GL は 2D で **L2** が上限（位相巻き）。**L3 の自発循環**は Boussinesq、
+  **L7 の自己複製**は Gray-Scott——**同じスコアを上げても Level は上がらない**。深くしたいなら**始原条件でなく
+  法則クラスを変えて 0 から**（`ai_lab --mode lawscan`）。
+- **turbulent ≠ coherent（L3 の床）**：循環があっても、KE がいつまでも揺らぐ**乱流 churn** は coherent な
+  定常ロールと同じではない。L3 は flag（`coherent_rolls` / `turbulent_churn`）で区別し、churn を coherent と
+  売らない（→ traps 予備軍）。
+- **spots ≠ life（L7 の床）**：Gray-Scott の自己複製スポットは**反応拡散の場現象**（Pearson 1993）であって
+  細胞・生命ではない。tier=measured（複製という測定量）だが、**生命語を使わない**（LAW 禁止語）。
+- **Model H の L5 は frontier**：相分離×流体の co-differentiation 測度は未収束＝frontier。screenable だが L5 を
+  measured とは言わない。
+
 ## Sandbox floor：サンドボックス ≠ リポジトリの measured
 
 - P 群（AB リング・Ricci・E-gap 等）は別チャットのサンドボックス測定で、**このリポジトリに未収録**。
