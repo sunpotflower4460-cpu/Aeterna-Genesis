@@ -124,10 +124,17 @@
 - **H1 始原探索スコア（非飽和・中間複雑性窓）** `measured tool` — `ai_lab/lab.py` に **score = Level(支配)
   ＋ 中間複雑性の窓 ＋ 測定信号**を実装。複雑さは**非飽和**な log 参加率（entropy が 1.0 に飽和する罠
   `T-entropy-sat` を回避）。IC family（white/lowk/highk/single_seed/sparse_seeds/ring/gradient・第8監査 OK）
-  ＋ 許可空間全域 knob ＋ grid/random/evolutionary。**80 trial の実探索**（`ledger.json` search_discoveries）で
-  L0:4 / L1:56 / L2:20、上位は **white_highk/lowk ＋ 低 diffusion_ratio(0.1–0.4) ＋ 高 drive ＋ 短 quench** に
-  高欠陥・中間複雑性（cx 0.42–0.54, defects 26–54）が集中——「登る IC」の傾向を measured で拾えた。
-  **score は成功ゲートでない**（Level が真）。
+  ＋ 許可空間全域 knob ＋ grid/random/evolutionary。**300 trial の実探索**（`ledger.json`）で
+  L0 / L1 / L2 に分布、上位は **seeds_phase/white_highk ＋ 低 diffusion_ratio(0.1–0.4) ＋ 高 drive ＋ 短 quench** に
+  高欠陥・中間複雑性が集中。**score は成功ゲートでない**（Level が真）。
+- **H1b 位相制御 ＝ 登坂の鍵、ただし巻き測度は実数場を過大カウント** `measured` — サンドボックスの大量探索
+  （350 IC・`seeds`(位相なし) 0% / 位相を持つ family ~10%）を repo で**機構ごと**再現・**深掘り**：
+  random-phase 系（seeds_phase＝バンプ×一定ランダム位相・巻きなし／spectral_powerlaw／bandpass）と、
+  対照 **real_seed（純実数）**を追加。**GL は実数場を実数のまま保つ**（`max|imag|=0` 実測）ので real_seed に
+  真の渦は無い。だが `winding_defect_count` は実数場の**ドメイン壁**を巻きと**誤検出**し、素の測定では
+  real_seed が L2 に 33% 「到達」して見えた（**T-realwinding**）。→ Lab に**物理妥当性ガード**を入れ実数場に
+  L2 を与えない（生 level と理由は記録）。**`vortex_charges`（巻きを種に置く）は target_encoded で除外**。
+  結論：位相が効くのは本物、だが「実数場＝渦なし」＆「離散巻き測度は実数場を過大カウント」の二重の床。
 
 ---
 
