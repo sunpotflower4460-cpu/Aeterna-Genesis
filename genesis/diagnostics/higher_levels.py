@@ -34,19 +34,45 @@ def assess_flow_level(ke_traj, circulation, late_fluct):
     return reached, detected, measured_by
 
 
-def assess_replication_level(spot_counts):
-    """Level 7 (self-replication) signature: localized spots MULTIPLY by growth/division over time.
+def assess_replication_level(spot_counts, spots=None):
+    """Level 7 (reproduction). FULL L7 needs THREE things, not just division:
 
-    spot_counts : number of spots sampled over time (starts at the seed count).
-    Reached L7 when the population grows substantially AND ends well above the seed count (division),
-    not merely drifting. Returns (reached_level, detected, measured_by).
+        reached_L7 = division_not_seeded AND state_inherited AND accounting_consistent
+
+      - division_not_seeded : spots MULTIPLY by division from the seed count (growth, doubling).
+      - state_inherited     : each spot carries a CLEAN bistable heritable tag (0/1) -- daughters inherit
+                              the parent's tag (measured, not commanded). frac_clean>0.7 AND mean_purity>0.6.
+      - accounting_consistent: the spots are genuine similar-sized separate components (guards the
+                              "static division accounting" trap where one static region is miscounted).
+
+    spot_counts : spot count sampled over time (starts at the seed/founder count).
+    spots       : final per-spot list of {tag, purity, size} (from gray_scott.spot_tags). If omitted,
+                  only DIVISION is measurable -> the result is L7-PARTIAL (honest), never full L7.
+    Returns (reached_level, detected, measured_by): reached_level == 7 ONLY for full L7; otherwise 0 with
+    detected['l7_partial'] flagging division-without-heredity.
     """
-    c0 = int(spot_counts[0])
-    cN = int(spot_counts[-1])
-    cmax = int(max(spot_counts))
-    replicated = bool(cN >= max(2, c0 + 3) and cmax >= 2 * max(c0, 1))   # multiplied by division
-    reached = 7 if replicated else 0
-    detected = {"self_replication": replicated}
-    measured_by = {"seed_spots": c0, "final_spots": cN, "peak_spots": cmax,
-                   "growth_factor": round(cN / max(c0, 1), 3)}
-    return reached, detected, measured_by
+    import numpy as np
+    c0, cN, cmax = int(spot_counts[0]), int(spot_counts[-1]), int(max(spot_counts))
+    division = bool(cN >= max(2, c0 + 3) and cmax >= 2 * max(c0, 1))
+    detected = {"division_not_seeded": division}
+    mb = {"seed_spots": c0, "final_spots": cN, "peak_spots": cmax, "growth_factor": round(cN / max(c0, 1), 3)}
+    if not spots:                                          # no tag info -> division only -> L7-partial
+        detected["state_inherited"] = None
+        detected["full_l7"] = False
+        detected["l7_partial"] = division
+        return 0, detected, mb
+    purities = [s["purity"] for s in spots]
+    sizes = [s["size"] for s in spots]
+    tags = [s["tag"] for s in spots]
+    frac_clean = float(np.mean([p > 0.6 for p in purities]))
+    mean_purity = float(np.mean(purities))
+    state_inherited = bool(frac_clean > 0.7 and mean_purity > 0.6)
+    cv = float(np.std(sizes) / (np.mean(sizes) + 1e-9))    # size uniformity -> genuine separate spots
+    accounting_consistent = bool(len(spots) == cN and cv < 1.2)
+    full = bool(division and state_inherited and accounting_consistent)
+    detected.update({"state_inherited": state_inherited, "accounting_consistent": accounting_consistent,
+                     "full_l7": full, "l7_partial": bool(division and not full),
+                     "both_lineages_survive": bool(0 in tags and 1 in tags)})
+    mb.update({"frac_clean_bistable": round(frac_clean, 3), "mean_purity": round(mean_purity, 3),
+               "spot_size_cv": round(cv, 3), "tag0": tags.count(0), "tag1": tags.count(1)})
+    return (7 if full else 0), detected, mb
