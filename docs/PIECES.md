@@ -144,8 +144,11 @@
   - **g001 GL/TDGL**：一様＋ノイズ → 位相巻き渦 **L2**（2D の上限）。
   - **g002 Boussinesq/RB**：**REST＋ノイズ** → 自発的な循環ロールが育って**飽和**（**coherent L3**）。
     実測 KE 0→112・circulation 50.9・late_fluct=0（＝乱流 churn でなく coherent。**turbulent ≠ coherent** を flag）。
-  - **gray_scott（反応拡散）**：**ノイズ種 8 個** → スポットが**自己複製・分裂**して増える（**L7 signature**、
-    実測 8→20〜39・2.5–4.9×）。**同じ数学 ≠ 同じもの**：反応拡散スポットであって生命ではない（floor）。
+  - **gray_scott（反応拡散）**：**ノイズ種** → スポットが自己複製・分裂して増える。**FULL L7 = 分裂 ＋ 遺伝**
+    ＝`division_not_seeded AND state_inherited AND accounting_consistent`。各スポットは**遺伝する双安定タグ
+    (0/1)** を持ち、**娘が親のタグを継承**（命令でなく力学で）。実測：分裂 6→24（4×）・bistable purity 0.98・
+    frac_clean 0.96・両系統存続（tag0=14/tag1=10）・spot_size_cv 0.61（会計整合）。分裂だけなら **L7-partial**
+    と正直に呼ぶ。**同じ数学 ≠ 同じもの**：反応拡散スポットであって生命ではない（floor）。
   - **g003 Model H**：相分離×流体の共発展（**L5**）は screenable 登録だが co-differentiation 測度は **frontier**（WIP）。
   規律：no_touch（`measures.assess_level` の L1/L2 成功判定は不変・追加測度は新モジュール）・self_promotion なし・決定的。
 

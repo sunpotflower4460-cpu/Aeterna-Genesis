@@ -18,7 +18,8 @@ import numpy as np
 MODEL_ID = "gray_scott_reaction_diffusion"
 
 # mitosis / self-replicating-spot regime (Pearson class-lambda/mu neighbourhood)
-DEFAULTS = {"Du": 0.16, "Dv": 0.08, "F": 0.035, "k": 0.062, "dt": 1.0, "n_seeds": 8, "seed_radius": 3.0}
+DEFAULTS = {"Du": 0.16, "Dv": 0.08, "F": 0.035, "k": 0.062, "dt": 1.0, "n_seeds": 8, "seed_radius": 3.0,
+            "DT": 0.10, "gT": 4.0}   # heritable bistable tag: diffusion DT, bistable gain gT
 
 
 def laplacian(Z):
@@ -52,26 +53,24 @@ def step(U, V, p):
     return U, V
 
 
-def spot_count(V, thresh=0.25, min_size=2):
-    """Number of localized V spots = connected components of V>thresh (self-replication counter).
-    Uses scipy.ndimage.label with periodic wrap merged so a spot across the boundary counts once."""
+def _merged_labels(V, thresh=0.25):
+    """Label connected V>thresh components, merging pieces that touch across the periodic boundary.
+    Returns (root_label_array, {root: size})."""
     from scipy import ndimage
-    mask = V > thresh
-    lbl, n = ndimage.label(mask)
+    lbl, n = ndimage.label(V > thresh)
     if n == 0:
-        return 0
-    # merge components that touch across the periodic boundary (left<->right, top<->bottom)
+        return lbl, {}
     remap = {}
-
-    def _union(a, b):
-        ra, rb = _find(a), _find(b)
-        if ra != rb:
-            remap[max(ra, rb)] = min(ra, rb)
 
     def _find(a):
         while a in remap:
             a = remap[a]
         return a
+
+    def _union(a, b):
+        ra, rb = _find(a), _find(b)
+        if ra != rb:
+            remap[max(ra, rb)] = min(ra, rb)
     for i in range(V.shape[0]):
         a, b = lbl[i, 0], lbl[i, -1]
         if a and b:
@@ -80,8 +79,70 @@ def spot_count(V, thresh=0.25, min_size=2):
         a, b = lbl[0, j], lbl[-1, j]
         if a and b:
             _union(a, b)
-    roots = {}
+    roots = np.zeros_like(lbl)
+    sizes = {}
     for c in range(1, n + 1):
         r = _find(c)
-        roots[r] = roots.get(r, 0) + int(np.count_nonzero(lbl == c))
-    return int(sum(1 for r, sz in roots.items() if sz >= min_size))
+        m = lbl == c
+        roots[m] = r
+        sizes[r] = sizes.get(r, 0) + int(np.count_nonzero(m))
+    return roots, sizes
+
+
+def spot_count(V, thresh=0.25, min_size=2):
+    """Number of localized V spots = connected components of V>thresh (self-replication counter),
+    with periodic-boundary pieces merged so a spot across the wrap counts once."""
+    _, sizes = _merged_labels(V, thresh)
+    return int(sum(1 for sz in sizes.values() if sz >= min_size))
+
+
+# ---- heritable bistable TAG (FULL L7 = division + inheritance): daughters carry the parent's tag ----
+
+def make_initial_tagged(shape, n_seeds, rng, seed_radius=3.0, mix=0.5):
+    """Seed n_seeds founders, each carrying a bistable TAG (0 or 1) painted onto its own V region; the
+    background tag is a neutral 0.5. The tag is a START condition on the FOUNDERS only -- daughters are
+    NOT assigned tags; they must INHERIT via the dynamics (that is what we measure). 第8監査-safe."""
+    U = np.ones(shape)
+    V = np.zeros(shape)
+    T = np.full(shape, 0.5)
+    ys, xs = np.arange(shape[0])[:, None], np.arange(shape[1])[None, :]
+    founder_tags = []
+    for _ in range(int(n_seeds)):
+        cy, cx = rng.integers(0, shape[0]), rng.integers(0, shape[1])
+        d2 = (np.minimum(np.abs(ys - cy), shape[0] - np.abs(ys - cy)) ** 2
+              + np.minimum(np.abs(xs - cx), shape[1] - np.abs(xs - cx)) ** 2)
+        blob = np.exp(-d2 / (2.0 * seed_radius ** 2))
+        tag = 1.0 if rng.random() < mix else 0.0
+        founder_tags.append(tag)
+        U -= 0.5 * blob
+        V += 0.5 * blob
+        core = blob > 0.2
+        T[core] = tag                                     # paint the founder's tag onto its core
+    return U, V, T, founder_tags
+
+
+def step_tagged(U, V, T, p):
+    """One RD step plus a bistable tag update: T is pushed toward {0,1} where V is present (spots), and
+    diffuses slightly so a dividing spot carries its tag into both daughters (inheritance, not command)."""
+    U, V = step(U, V, p)
+    T = T + p["dt"] * (p["DT"] * laplacian(T) + p["gT"] * V * T * (1.0 - T) * (T - 0.5))
+    T = np.clip(T, 0.0, 1.0)
+    return U, V, T
+
+
+def spot_tags(V, T, thresh=0.25, min_size=2):
+    """Per-spot inherited tag + bistable purity. Returns a list of {tag, purity, size}; purity =
+    |mean_tag - 0.5| * 2 in [0,1] (1 = a clean 0-or-1 heritable state; 0 = smeared at 0.5)."""
+    roots, sizes = _merged_labels(V, thresh)
+    out = []
+    for r, sz in sizes.items():
+        if sz < min_size:
+            continue
+        mt = float(np.mean(T[roots == r]))
+        out.append({"tag": int(round(mt)), "purity": float(abs(mt - 0.5) * 2.0), "size": int(sz)})
+    return out
+
+
+def v_mass(V, thresh=0.25):
+    """Total V-mass above threshold (independent accounting check against the spot count)."""
+    return float(np.sum(V[V > thresh]))

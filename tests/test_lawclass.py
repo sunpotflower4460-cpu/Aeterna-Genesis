@@ -35,11 +35,40 @@ def test_flow_level_measure_l3_and_rest_l0():
     assert lt == 3 and dt["turbulent_churn"] and not dt["coherent_rolls"]
 
 
-def test_replication_level_measure_l7_and_flat_l0():
-    l7, det, _ = hl.assess_replication_level([8, 12, 18, 20])
-    assert l7 == 7 and det["self_replication"]
-    l0, _, _ = hl.assess_replication_level([8, 8, 7, 8])   # no multiplication -> not L7
-    assert l0 == 0
+def test_full_l7_needs_division_AND_inheritance():
+    """FULL L7 = division AND state_inherited AND accounting_consistent. Division ALONE is only L7-partial."""
+    # division only (no tag info) -> L7-partial, NOT full L7
+    lp, det, _ = hl.assess_replication_level([8, 12, 18, 20])
+    assert lp == 0 and det["division_not_seeded"] and det["l7_partial"] and not det["full_l7"]
+    # division + clean inherited bistable tags + uniform spots -> FULL L7
+    spots = [{"tag": t, "purity": 0.95, "size": 30} for t in ([0] * 10 + [1] * 10)]
+    lf, detf, mbf = hl.assess_replication_level([8, 12, 18, 20], spots=spots)
+    assert lf == 7 and detf["full_l7"] and detf["state_inherited"] and detf["accounting_consistent"]
+    assert detf["both_lineages_survive"] and mbf["mean_purity"] > 0.9
+    # division but SMEARED tags (purity ~0, no clean heredity) -> not full L7, stays partial
+    smeared = [{"tag": 0, "purity": 0.1, "size": 30} for _ in range(20)]
+    ls, dets, _ = hl.assess_replication_level([8, 12, 18, 20], spots=smeared)
+    assert ls == 0 and not dets["state_inherited"] and dets["l7_partial"]
+    # no division -> not L7 at all
+    l0, det0, _ = hl.assess_replication_level([8, 8, 7, 8])
+    assert l0 == 0 and not det0["division_not_seeded"]
+
+
+def test_tagged_gray_scott_inherits_parent_tag():
+    """The heritable bistable tag is CLEAN (0/1) and BOTH founder lineages persist through division
+    (daughters carry the parent's tag; it is not a global switch and it is not commanded)."""
+    p = dict(gs.DEFAULTS)
+    rng = np.random.default_rng(1)
+    U, V, T, founder_tags = gs.make_initial_tagged((96, 96), 8, rng, seed_radius=p["seed_radius"], mix=0.5)
+    assert set(int(t) for t in founder_tags) <= {0, 1}
+    for i in range(12000):
+        U, V, T = gs.step_tagged(U, V, T, p)
+    spots = gs.spot_tags(V, T)
+    assert len(spots) >= 2 * 8                              # divided (self-replication)
+    purities = [s["purity"] for s in spots]
+    assert np.mean([pu > 0.6 for pu in purities]) > 0.7     # clean bistable tags (heritable state)
+    tags = [s["tag"] for s in spots]
+    assert 0 in tags and 1 in tags                          # BOTH lineages survive = real inheritance
 
 
 def test_lawscan_climbs_deeper_with_different_law():

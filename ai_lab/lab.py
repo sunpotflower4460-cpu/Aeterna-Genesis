@@ -769,22 +769,25 @@ def _screen_boussinesq(Ra, seed, quick=True):
 
 
 def _screen_gray_scott(F, k, n_seeds, seed, quick=True):
-    """Noise seeds -> reaction-diffusion spots that self-replicate/divide (L7 signature). Spots ≠ life."""
+    """Noise seeds -> RD spots that self-replicate/divide AND carry a heritable bistable tag daughters
+    inherit from the parent (FULL L7 = division + inheritance). Spots ≠ life (Pearson 1993)."""
     N, steps = (80, 9000) if quick else (96, 14000)      # RD self-replication needs ~10k+ steps to divide
     p = dict(gs.DEFAULTS)
     p["F"] = _clip(F, *LAW_KNOBS["gray_scott"]["F"]); p["k"] = _clip(k, *LAW_KNOBS["gray_scott"]["k"])
     n_seeds = int(_clip(n_seeds, *LAW_KNOBS["gray_scott"]["n_seeds"]))
     rng = np.random.default_rng(seed)
-    U, V = gs.make_initial((N, N), n_seeds, rng, seed_radius=p["seed_radius"])
+    U, V, T, _ = gs.make_initial_tagged((N, N), n_seeds, rng, seed_radius=p["seed_radius"], mix=0.5)
     counts, snap = [gs.spot_count(V)], max(1, steps // 12)
     for i in range(steps):
-        U, V = gs.step(U, V, p)
-        if not np.all(np.isfinite(V)):
+        U, V, T = gs.step_tagged(U, V, T, p)
+        if not (np.all(np.isfinite(V)) and np.all(np.isfinite(T))):
             return {"reached_level": None, "status": "unstable", "reason": "non-finite (F=%.3f,k=%.3f)" % (F, k)}
         if i % snap == 0 or i == steps - 1:
             counts.append(gs.spot_count(V))
-    level, detected, mb = hl.assess_replication_level(counts)
+    spots = gs.spot_tags(V, T)                            # per-spot inherited tag + bistable purity
+    level, detected, mb = hl.assess_replication_level(counts, spots=spots)
     return {"reached_level": level, "status": "2d_screened", "measured_by": mb, "detected": detected,
+            "l7_status": "L7" if detected.get("full_l7") else "L7-partial",
             "law": "gray_scott", "drive": {"F": round(float(F), 4), "k": round(float(k), 4), "n_seeds": n_seeds}}
 
 
@@ -799,8 +802,9 @@ def lawscan(seed=0, quick=True):
     out.append({"law": "g002", "kind": "flow", "reached_level": rb_r["reached_level"], "tier": "measured",
                 "measured_by": rb_r.get("measured_by", {}), "detected": rb_r.get("detected", {}),
                 "drive": rb_r.get("drive", {}), "from": "REST + noise (t=0)"})
-    gs_r = _screen_gray_scott(0.035, 0.062, 8, seed, quick=quick)              # mitosis -> L7 signature
+    gs_r = _screen_gray_scott(0.035, 0.062, 8, seed, quick=quick)              # mitosis -> FULL L7
     out.append({"law": "gray_scott", "kind": "reaction_diffusion", "reached_level": gs_r["reached_level"],
+                "l7_status": gs_r.get("l7_status"),
                 "tier": "measured", "measured_by": gs_r.get("measured_by", {}), "detected": gs_r.get("detected", {}),
                 "drive": gs_r.get("drive", {}), "from": "noise seeds (t=0)",
                 "floor": "reaction-diffusion spots, NOT life (同じ数学 != 同じもの)"})
@@ -846,8 +850,9 @@ def main(argv=None):
         print("=== AI Genesis Lab — law-class climb from t=0 (deeper Level needs a different LAW) ===")
         for r in rows:
             lv = r["reached_level"]
-            print("  %-11s [%-18s] reached L%s  (%s) tier=%s"
-                  % (r["law"], r["kind"], lv if lv is not None else "?", r["from"], r["tier"]))
+            tag = (" [%s]" % r["l7_status"]) if r.get("l7_status") else ""
+            print("  %-11s [%-18s] reached L%s%s  (%s) tier=%s"
+                  % (r["law"], r["kind"], lv if lv is not None else "?", tag, r["from"], r["tier"]))
             print("       measured: %s" % r.get("measured_by", {}))
             if r.get("floor"):
                 print("       floor: %s" % r["floor"])
