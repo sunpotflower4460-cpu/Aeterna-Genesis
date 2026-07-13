@@ -119,3 +119,60 @@ def assess_individuality_level(amax, area_fraction, persistence_change,
                    "recovers_after_perturbation": recovers, "size_independent": size_indep,
                    "emergent_ceiling": ceiling}
     return reached, detected, measured_by
+
+
+def assess_self_propulsion(count_series, area_fraction_series, seed_displacement_vectors,
+                           recovers_after_perturbation):
+    """A SELF-PROPELLED individual (L4 individuality AND emergent self-motion), measured HONESTLY, with the
+    anti-trap that separates a single moving BODY from a moving POPULATION (the Gray-Scott replication trap:
+    a replicating cluster's centroid wanders, which is NOT one individual self-propelling).
+
+    The decisive 3-check (docs: self_propelled_individual_white_search):
+      1. SINGLE body        : spot count stays 1 (not replication / splitting).
+      2. motion EMERGENT     : from symmetric ICs the drift direction is RANDOM across seeds (spontaneous
+                               symmetry breaking). A FIXED direction => IC/boundary artifact, not emergence.
+      3. SELF-HEALING (L4)   : recovers its form after a perturbation.
+    Also COMPACT (not domain-filling) so a "single body" is genuinely localized.
+
+    count_series             : spot counts over time (late half should be all 1 for a single body).
+    area_fraction_series     : support-area / domain-area over time (compact => small; ~1 => filled).
+    seed_displacement_vectors: list of (dy,dx) net centroid displacements, ONE PER SEED (>=2 seeds).
+    recovers_after_perturbation: True if the body recovers after a cut (self-healing, L4).
+    Returns (reached_level, detected, measured_by). reached_level is 4 only if a SINGLE COMPACT body moves
+    with an EMERGENT (random-direction) drift AND self-heals; else 0 (frontier), with replication_drift_trap
+    flagged when motion comes from a non-single (replicating/splitting) structure.
+    """
+    import numpy as np
+    late = slice(max(1, len(count_series) // 2), None)
+    single_body = bool(len(count_series) and all(int(c) == 1 for c in count_series[late]))
+    compact = bool(len(area_fraction_series) and max(area_fraction_series[late]) < 0.25)
+    vecs = [np.asarray(v, dtype=float) for v in (seed_displacement_vectors or [])]
+    speeds = [float(np.hypot(v[0], v[1])) for v in vecs]
+    moves = bool(speeds and float(np.mean(speeds)) > 1.0)     # net displacement well above measurement noise
+    # emergent = random direction across seeds: normalized resultant length ~0 (vectors point every which way)
+    if len(vecs) >= 2 and all(s > 1e-9 for s in speeds):
+        units = np.array([v / (np.hypot(v[0], v[1]) + 1e-12) for v in vecs])
+        resultant = float(np.hypot(*units.mean(axis=0)))      # ~1 => aligned (artifact); ~0 => random (emergent)
+        emergent_random = bool(resultant < 0.6)
+    else:
+        resultant, emergent_random = 1.0, False
+    recovers = bool(recovers_after_perturbation)
+    self_propelled = bool(single_body and compact and moves and emergent_random and recovers)
+    replication_drift_trap = bool(moves and not single_body)   # motion from a replicating population (not one body)
+    reached = 4 if self_propelled else 0
+    if self_propelled:
+        ceiling = "L4 + self-motion: a SINGLE compact body self-propels with emergent (random) direction and self-heals"
+    elif replication_drift_trap:
+        ceiling = "NOT self-propelled: motion is a REPLICATING population's centroid wander (Gray-Scott trap), not one body"
+    elif single_body and not moves:
+        ceiling = "static single individual (L4-static): a single body but no self-motion emerged"
+    else:
+        ceiling = "self-propelled single individual NOT reached (dies/fills/splits) -> frontier"
+    detected = {"self_propelled_individual": self_propelled, "single_body": single_body, "compact": compact,
+                "self_motion": moves, "emergent_random_direction": emergent_random, "self_healing": recovers,
+                "replication_drift_trap": replication_drift_trap}
+    measured_by = {"n_seeds": len(vecs), "mean_speed_disp": round(float(np.mean(speeds)) if speeds else 0.0, 3),
+                   "direction_resultant": round(resultant, 3), "max_area_fraction": round(
+                       float(max(area_fraction_series[late])) if len(area_fraction_series) else 0.0, 3),
+                   "late_counts": [int(c) for c in count_series[late]], "emergent_ceiling": ceiling}
+    return reached, detected, measured_by

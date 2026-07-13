@@ -72,6 +72,11 @@
   局在状態は **L4（持続・自己修復・サイズ非依存の個体）** を measured で満たすが、**変分なので動かない**（静的個体）。
   Boussinesq/CGL は**動くが個体でない**。**自走する個体（L4 ∧ 運動）はどの単純な白も出していない＝frontier**。
   「L4 に達した」と「自走する生き物のよう」は違う（自己修復する場の attractor であって生命ではない・生命語なし）。
+- **自走個体 ≠ 複製 drift（self-propulsion の床）**：「動く個体」を主張するには**単一の体が動く**ことを示す必要が
+  ある。**複製する集団の重心がさまよう**のを「自走」と呼んではいけない（Gray-Scott の罠）。`assess_self_propulsion`
+  は `single_body`（スポット数=1）∧ `compact` ∧ `emergent_random_direction`（対称 IC からの drift 方向が seed ごと
+  ランダム＝自発的対称性の破れ／固定方向は IC・境界アーティファクト）∧ `self_healing` で判定し、非単一の運動は
+  `replication_drift_trap` と正直にフラグ。**自走する単一個体（3成分RD）は現状 frontier**（`WHITE_CEILINGS.md`）。
 - **Model H の L5 は frontier**：相分離×流体の co-differentiation 測度は未収束＝frontier。screenable だが L5 を
   measured とは言わない。
 

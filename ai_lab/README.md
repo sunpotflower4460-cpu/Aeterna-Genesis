@@ -42,6 +42,9 @@ GL は 2D で **L2** が上限。深い Level は**法則クラスを変えて 0
 - **swift_hohenberg 双安定パターン**：対称バンプ＋ノイズ → **持続・自己修復する局在個体 = L4-static**（内外差＋
   摂動から再成長＋サイズ非依存を measured）。ただし**変分で動かない**＝自走個体（L4∧運動）は frontier。
   **個体性(L4)と自発運動(L3)は独立な二軸**（`docs/WHITE_CEILINGS.md`）。
+- **three_component_rd 散逸ソリトン（`--frontier`）**：単一持続個体が自発的に動き出す（drift 分岐）白はあるか。
+  運動は足さず 0 から探索 → **frontier**（単一コンパクト個体の窓が極薄・外れると死ぬ/埋まる/多スポットに分裂＝複製
+  drift の罠）。`assess_self_propulsion` が単一自走と複製 drift を分離。`--frontier` で lawscan に追加（遅い）。
 - **g003 Model H**：co-differentiation **L5** は frontier（測度 WIP）。
 
 ### 拡張エンジン（大量自動探索）

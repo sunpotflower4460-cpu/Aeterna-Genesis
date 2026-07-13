@@ -10,6 +10,7 @@ from ai_lab import lab
 from genesis.models import gray_scott as gs
 from genesis.models import complex_ginzburg_landau as cgl
 from genesis.models import swift_hohenberg as sh
+from genesis.models import three_component_rd as tcr
 from genesis.diagnostics import higher_levels as hl
 
 
@@ -186,6 +187,45 @@ def test_lawscan_swift_hohenberg_reaches_L4_static_individual():
     assert row["detected"]["static_individual"] and not row["detected"]["self_moving"]
     assert row["measured_by"]["centroid_drift"] == 0.0 and row["measured_by"]["size_independent"] is True
     assert "frontier" in row["floor"]                          # self-propelled individual honestly frontier
+
+
+def test_assess_self_propulsion_single_vs_replication_and_artifact():
+    """The self-propulsion measure: a SINGLE compact body moving with EMERGENT (random-direction) drift that
+    self-heals is L4+motion; a moving REPLICATING population is the Gray-Scott trap (not self-propelled); a
+    fixed-direction drift is an IC/boundary artifact (not emergent); a single static body is L4-static."""
+    # single body, random direction across seeds, self-heals -> self-propelled (L4 + emergent motion)
+    lvl, det, mb = hl.assess_self_propulsion([1, 1, 1, 1], [0.02] * 4, [(5, 3), (-4, 4), (1, -6)], True)
+    assert lvl == 4 and det["self_propelled_individual"] and det["emergent_random_direction"]
+    assert mb["direction_resultant"] < 0.6                  # directions point every which way = emergent
+    # replicating population that drifts -> trap flagged, NOT a self-propelled individual
+    lvl2, det2, _ = hl.assess_self_propulsion([1, 3, 5, 6], [0.05, 0.1, 0.15, 0.2], [(10, 2), (8, 5), (9, -3)], False)
+    assert lvl2 == 0 and det2["replication_drift_trap"] and not det2["self_propelled_individual"]
+    # fixed-direction drift from symmetric ICs = artifact (not emergent), even if single & self-healing
+    lvl3, det3, mb3 = hl.assess_self_propulsion([1, 1, 1, 1], [0.02] * 4, [(6, 0), (6, 0.1), (6, -0.1)], True)
+    assert lvl3 == 0 and not det3["emergent_random_direction"] and mb3["direction_resultant"] > 0.9
+    # single body but no motion -> L4-static (not self-propelled)
+    lvl4, det4, mb4 = hl.assess_self_propulsion([1, 1, 1, 1], [0.02] * 4, [(0.1, 0.0), (0.0, 0.1)], True)
+    assert lvl4 == 0 and not det4["self_motion"] and "static" in mb4["emergent_ceiling"]
+
+
+def test_three_component_rd_self_propulsion_is_frontier():
+    """The 3-component RD white (dissipative-soliton attempt) is a DISTINCT white probing self-propelled
+    individuality. Honest ceiling: from a symmetric seed the structure dies/fills/splits -- no clean SINGLE
+    self-propelled spot at accessible resolution (原則5: attacked, motion NOT placed). Frontier, and the
+    stepper stays finite (no NaN)."""
+    counts, fracs, vecs = [], [], []
+    for s in (1, 2):
+        r = tcr.run_traj(s, N=96, steps=3000, snap=500)
+        assert not r.get("unstable")                       # semi-implicit spectral stepper stays finite
+        traj = [p for p in r["traj"] if p["count"] > 0 and np.isfinite(p["centroid"][0])]
+        if len(traj) < 2:
+            counts.append(0); fracs.append(0.0); vecs.append((0.0, 0.0)); continue
+        counts.append(traj[-1]["count"]); fracs.append(traj[-1]["area_fraction"])
+        a, b = traj[len(traj) // 2], traj[-1]
+        vecs.append((b["centroid"][0] - a["centroid"][0], b["centroid"][1] - a["centroid"][1]))
+    lvl, det, mb = hl.assess_self_propulsion(counts, fracs, vecs, recovers_after_perturbation=False)
+    assert lvl == 0                                        # self-propelled single individual NOT reached
+    assert not det["self_propelled_individual"]            # frontier: dies/fills/splits (not a clean single body)
 
 
 def test_lawscan_ic_is_not_the_target_8th_audit():
