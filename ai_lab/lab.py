@@ -880,9 +880,38 @@ def _screen_swift_hohenberg(seed, quick=True):
             "ceiling_label": mb["emergent_ceiling"], "law": "swift_hohenberg"}
 
 
-def lawscan(seed=0, quick=True):
+def _screen_three_component_rd(seeds=(1, 2), quick=True):
+    """Three-component RD (activator + fast + slow inhibitor): does a SINGLE persistent spot spontaneously
+    self-propel (drift bifurcation), NOT replicate? Runs a few symmetric-seed ICs (motion NOT placed) and
+    judges via hl.assess_self_propulsion (single body ∧ compact ∧ emergent random direction ∧ self-healing;
+    with the anti-trap that separates one moving body from a replicating population's centroid wander).
+    HONEST STATUS: frontier -- across the scan the structure dies/fills/splits; no clean single self-
+    propelled spot at accessible 2D resolution (docs/WHITE_CEILINGS.md)."""
+    from genesis.models import three_component_rd as tcr
+    N, steps = (96, 6000) if quick else (128, 9000)
+    counts, fracs, disp_vecs = [], [], []
+    for s in seeds:
+        r = tcr.run_traj(s, N=N, steps=steps, snap=steps // 6)
+        if r.get("unstable"):
+            disp_vecs.append((0.0, 0.0)); counts.append(0); fracs.append(0.0); continue
+        traj = [p for p in r["traj"] if p["count"] > 0 and np.isfinite(p["centroid"][0])]
+        if len(traj) < 2:
+            disp_vecs.append((0.0, 0.0)); counts.append(0); fracs.append(0.0); continue
+        counts.append(traj[-1]["count"]); fracs.append(traj[-1]["area_fraction"])
+        a, b = traj[len(traj) // 2], traj[-1]                  # net displacement over the late half
+        disp_vecs.append((b["centroid"][0] - a["centroid"][0], b["centroid"][1] - a["centroid"][1]))
+    reached, detected, mb = hl.assess_self_propulsion(
+        count_series=counts, area_fraction_series=fracs, seed_displacement_vectors=disp_vecs,
+        recovers_after_perturbation=False)                     # no clean stable body to even test healing
+    return {"reached_level": reached, "detected": detected, "measured_by": mb,
+            "ceiling_label": mb["emergent_ceiling"], "law": "three_component_rd"}
+
+
+def lawscan(seed=0, quick=True, include_frontier=False):
     """Run each law class from t=0 and report the reached Level (measured). Shows GL(L2) < flow(L3) <
-    self-replication(L7): deeper Levels need a different law, not a different score."""
+    self-replication(L7): deeper Levels need a different law, not a different score.
+
+    include_frontier=True also runs the slow three-component-RD self-propulsion probe (frontier)."""
     out = []
     r = _screen_ic("white", {"noise_amplitude": 1.0e-2}, seed, quick=quick)   # GL reference (L1/L2)
     out.append({"law": "g001", "kind": "scalar_gl", "reached_level": r["reached_level"],
@@ -913,6 +942,15 @@ def lawscan(seed=0, quick=True):
                 "floor": "L4 individuality EMERGES (persistent + self-healing + size-independent) but STATIC: "
                          "SH is variational -> no self-motion. Self-propelled individual (L4 ∧ motion) = frontier. "
                          "individuality (L4) and self-motion (L3) are INDEPENDENT axes (docs/WHITE_CEILINGS.md)"})
+    if include_frontier:
+        tc = _screen_three_component_rd(quick=quick)                          # self-propelled individual probe
+        out.append({"law": "three_component_rd", "kind": "dissipative_soliton_attempt",
+                    "reached_level": tc["reached_level"], "l7_status": tc.get("ceiling_label"),
+                    "tier": "frontier", "measured_by": tc.get("measured_by", {}), "detected": tc.get("detected", {}),
+                    "from": "symmetric bump + noise (t=0)",
+                    "floor": "self-propelled SINGLE individual NOT reached (dies/fills/splits); a moving multi-spot "
+                             "is REPLICATION drift, not one body (Gray-Scott trap). frontier (原則5: attacked, "
+                             "motion NOT placed) — docs/WHITE_CEILINGS.md"})
     return out
 
 
@@ -943,6 +981,8 @@ def main(argv=None):
     ap.add_argument("--review", action="store_true", help="print the accumulated discovery ledger and exit")
     ap.add_argument("--promote-best", action="store_true",
                     help="local-3D screen the best candidate and write a (non-official) candidate room")
+    ap.add_argument("--frontier", action="store_true",
+                    help="lawscan: also run the (slow) three-component-RD self-propelled-individual probe")
     ap.add_argument("--out-root", default=None)
     args = ap.parse_args(argv)
 
@@ -951,7 +991,7 @@ def main(argv=None):
         return 0
 
     if args.mode == "lawscan":
-        rows = lawscan(seed=args.seed, quick=args.quick)
+        rows = lawscan(seed=args.seed, quick=args.quick, include_frontier=args.frontier)
         print("=== AI Genesis Lab — law-class climb from t=0 (deeper Level needs a different LAW) ===")
         for r in rows:
             lv = r["reached_level"]

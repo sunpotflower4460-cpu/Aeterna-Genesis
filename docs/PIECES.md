@@ -163,6 +163,12 @@
     持続的個体を作らない → **天井 < L4**。\|A\|~1 は IC 設定で**床からの成長でない**。**測定床**：
     `winding_defect_count` は CGL の低-\|A\| 芯を過小カウント（TDGL 用調整）＝振幅ホール芯で数えるのが正直。
     **turbulent ≠ coherent**（同じ「動き」でも Boussinesq の coherent L3 とは質が違う＝同じ数学 ≠ 同じもの）。
+  - **three_component_rd（散逸ソリトン・自走個体の探索）**：活性 u＋速い抑制 v＋遅い長距離抑制 w。**単一持続個体が
+    自発的に動き出す（drift 分岐）白はあるか**を、運動を"足さず"（IC は対称 bump＋ノイズ）0 から探索。結果は
+    **frontier**：単一コンパクト個体の存在窓が2Dで極薄で、外れると死ぬ／"+"が侵入して埋まる／多スポット乱流に分裂
+    （＝複製 drift の罠。複製集団の重心 drift は単一自走でない）。**閉じ込めと自走が拮抗**。新測度
+    `assess_self_propulsion`（単一∧コンパクト∧seed毎ランダム方向＝創発∧自己修復、複製 drift を分離）を追加
+    （no_touch）。原則5：避けず挑み、正直に天井として記録。spots≠life。→ `docs/WHITE_CEILINGS.md`。
   - **g003 Model H**：相分離×流体の共発展（**L5**）は screenable 登録だが co-differentiation 測度は **frontier**（WIP）。
   規律：no_touch（`measures.assess_level` の L1/L2 成功判定は不変・追加測度は新モジュール）・self_promotion なし・決定的。
   → 白ごとの天井を一覧にした地図：[`WHITE_CEILINGS.md`](WHITE_CEILINGS.md)。
