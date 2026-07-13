@@ -13,7 +13,7 @@
 | **g001 TDGL** | 複素スカラー ψ・**緩和**GL クエンチ | **L2**（位相巻き渦） | measured | 緩和勾配流＝**運動量/移流がない** → 自発運動が出ない。単一場＝繁殖用の第2自由度もない |
 | **g002 Boussinesq** | 温度θ＋速度・浮力対流 | **coherent L3**（循環・KE 0→112・∮≠0） | measured | **運動量/移流がある**ので流れが出る。だが大域対流ロール＝**局在した持続的個体でない** → L4 手前 |
 | **cgl** | 複素スカラー A・**振動**GL | **spiral-defect turbulence**（L1 模様＋L2 芯＋乱流運動・天井 < L4） | measured | 振動/分散で渦芯が**動く**（乱流運動・autocorr→0）が、**乱流（非 coherent）**で持続的個体を作らない。\|A\|~1 は IC 設定（**床からの成長でない**） |
-| **swift_hohenberg** | スカラー u・双安定パターン形成（SH35） | **L4-static**（持続・自己修復する局在個体・自発運動なし） | measured | 局在状態は**個体**（内外差＋摂動から自己修復＝置けない）だが**変分**（勾配流）で**動かない**。自走個体（L4∧運動）は frontier |
+| **swift_hohenberg** | スカラー u・双安定パターン形成（SH35） | **L4-static**（持続・自己修復・**局在は seeded**） | measured | 自己修復・持続・サイズ非依存は emerged だが**局在は seeded**（bump を置く・GPT②）＝「0 から個体」でない。**変分**で動かない。自走個体は frontier |
 | **gray_scott** | 2種 U,V・反応拡散 | **L7-partial**（自己複製・分裂のみ） | measured | パターンは自己コピーするが、U,V に**遺伝する内部状態の自由度がない** → 遺伝は生まれない（置けば別の白） |
 | **three_component_rd** | u＋速い抑制 v＋遅い抑制 w・反応拡散（散逸ソリトン） | **自走個体は frontier**（単一・自発運動・自己修復は未達） | frontier | 単一コンパクト個体の存在窓が2Dで極薄——外れると死ぬ／"+"が侵入して埋まる／多スポット乱流に分裂（＝複製 drift の罠） |
 | **g003 Model H** | φ＋流体・相分離×流れ | L5 co-differentiation は **frontier**（測度 WIP） | frontier | co-differentiation 測度が未収束 |

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/causal-ancestry.schema.json",
+  "title": "Causal Ancestry (causal-ancestry.yaml)",
+  "description": "ある Room の環境/状態が、別 Room の発展から因果的に生成された系譜。variant_lineage（同じ問いの別設定）とは別物（docs/GENESIS_PROVENANCE.md 4節）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "causal_closure_level"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "causal_closure_level": {"type": "string", "enum": ["C0", "C1", "C2", "C3", "C4"], "description": "docs/CAUSAL_CLOSURE.md"},
+    "ancestors": {
+      "type": "array",
+      "description": "この Room の入力を生成した上流 Room（因果的受け渡し）",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["room_id", "provides", "consumed_as"],
+        "properties": {
+          "room_id": {"type": "string", "minLength": 1},
+          "provides": {"type": "string", "description": "上流 Room の Emerged State（例 temperature_field）"},
+          "consumed_as": {"type": "string", "enum": ["environmental_condition", "prepared_state"], "description": "この Room での入力分類"}
+        }
+      }
+    },
+    "variant_lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "同じ問いの別設定（因果祖先ではない）。混同しない。",
+      "properties": {
+        "parent": {"type": ["string", "null"]},
+        "changes_from_parent": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "frontier": {"type": "boolean", "description": "この主張の因果境界が frontier（研究は止めず境界を明示）"}
+  }
+}

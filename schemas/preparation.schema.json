@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna-genesis/schemas/preparation.schema.json",
+  "title": "Preparation Protocol (preparation.yaml)",
+  "description": "状態を『置く』でなく準備過程から生成する（C2・docs/PREPARATION_PROTOCOLS.md）。停止条件は汎用で、目標形状を名指さない。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "protocols"],
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "protocols": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "state", "provenance"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "state": {"type": "string", "enum": ["supported_equilibrium", "quiescent", "uniform_plus_noise", "constrained"], "description": "準備の初期セットアップ（汎用・目標非埋込）"},
+          "relax_until": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "汎用の停止条件（目標形状を名指さない）",
+            "properties": {
+              "net_force": {"type": "string"},
+              "kinetic_energy": {"type": "string"},
+              "residual": {"type": "string"}
+            }
+          },
+          "event": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "remove_support_at": {"type": ["number", "string"]},
+              "release_constraint_at": {"type": ["number", "string"]}
+            }
+          },
+          "provenance": {"type": "string", "const": "preparation_result", "description": "manually_set=false に対応"}
+        }
+      }
+    }
+  }
+}
