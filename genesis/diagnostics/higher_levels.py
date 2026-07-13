@@ -53,7 +53,12 @@ def assess_replication_level(spot_counts, spots=None):
     import numpy as np
     c0, cN, cmax = int(spot_counts[0]), int(spot_counts[-1]), int(max(spot_counts))
     division = bool(cN >= max(2, c0 + 3) and cmax >= 2 * max(c0, 1))
-    detected = {"division_not_seeded": division, "l7_partial": division, "full_l7_emergence": False}
+    # Per-capability seeded/emerged (docs/GENESIS_PROVENANCE.md, GPT②): the division EVENT is emergent
+    # (not commanded), but the POPULATION grows from the SEEDED founder spots (c0 were placed). So this is
+    # not "0 -> L7" -- it is "seeded founders -> replication". division_not_seeded kept for back-compat.
+    detected = {"division_not_seeded": division, "division_event_not_commanded": division,
+                "spot_count_growth_from_seeded_founders": division, "l7_partial": division,
+                "full_l7_emergence": False}
     mb = {"seed_spots": c0, "final_spots": cN, "peak_spots": cmax, "growth_factor": round(cN / max(c0, 1), 3),
           "emergent_ceiling": "L7-partial (self-replication/division only)" if division else "below L7"}
     if not spots:
@@ -78,8 +83,16 @@ def assess_replication_level(spot_counts, spots=None):
 
 
 def assess_individuality_level(amax, area_fraction, persistence_change,
-                               recovers_after_perturbation, size_independent, centroid_drift):
+                               recovers_after_perturbation, size_independent, centroid_drift,
+                               localization_seeded=False):
     """Level 4 (persistent individuality) per EMERGENCE_LEVELS.md, measured HONESTLY.
+
+    PER-CAPABILITY SEEDED vs EMERGED (docs/GENESIS_PROVENANCE.md, GPT②): self-repair / persistence /
+    size-independence can be EMERGENT while the LOCALIZATION is SEEDED (Swift-Hohenberg places one Gaussian
+    bump: `localization_seeded=True`). Then it is NOT "individuality emerged from 0" but "a placed localized
+    seed stabilized into a self-healing attractor" -- ROBUSTNESS emergent, single-body localization placed.
+    (From uniform+noise SH nucleates MANY states; a single individual whose localization is ALSO emergent is
+    itself frontier.)
 
     L4 judgment there = `inside_outside_contrast > θ AND tracked_id_lifetime > τ AND
     recovers_after_perturbation` AND size-independent (not a finite-size effect). The DISCRIMINATOR that
@@ -102,22 +115,26 @@ def assess_individuality_level(amax, area_fraction, persistence_change,
     recovers = bool(recovers_after_perturbation)           # self-heals after a cut -> genuine individual (not L2)
     size_indep = bool(size_independent)
     self_moving = float(centroid_drift) > 0.5              # spontaneous motion of the individual (L3 in a body)
+    loc_seeded = bool(localization_seeded)                  # was the single-body localization PLACED, not self-selected?
     individual = bool(localized and contrast and persistent and recovers and size_indep)
     reached = 4 if individual else 0                       # L4 individuality criteria (motion is a separate axis)
+    seed_note = " (localization SEEDED; self-repair/persistence EMERGENT)" if (individual and loc_seeded) else ""
     if not individual:
         ceiling = "below L4 (no persistent self-healing localized individual)"
     elif self_moving:
-        ceiling = "L4 + self-motion (self-propelled individual)"   # the missing conjunction (not expected here)
+        ceiling = "L4 + self-motion (self-propelled individual)" + seed_note   # the missing conjunction
     else:
         ceiling = ("L4 persistent individuality, STATIC: inside/outside + self-healing + size-independent, "
-                   "but VARIATIONAL -> no self-motion (self-propelled individual = frontier)")
+                   "but VARIATIONAL -> no self-motion (self-propelled individual = frontier)" + seed_note)
     detected = {"persistent_individual": individual, "self_healing": recovers, "localized": localized,
                 "size_independent": size_indep, "self_moving": self_moving,
-                "static_individual": bool(individual and not self_moving)}
+                "static_individual": bool(individual and not self_moving),
+                "seeded_localization": loc_seeded, "emerged_self_repair": bool(individual and recovers),
+                "emerged_persistence": persistent, "emerged_size_independence": size_indep}
     measured_by = {"amax": round(float(amax), 3), "area_fraction": round(float(area_fraction), 4),
                    "persistence_change": float(persistence_change), "centroid_drift": round(float(centroid_drift), 4),
                    "recovers_after_perturbation": recovers, "size_independent": size_indep,
-                   "emergent_ceiling": ceiling}
+                   "seeded_localization": loc_seeded, "emergent_ceiling": ceiling}
     return reached, detected, measured_by
 
 

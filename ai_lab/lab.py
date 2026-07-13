@@ -875,7 +875,8 @@ def _screen_swift_hohenberg(seed, quick=True):
     area_fraction = s1["area"] / float(N * N)
     reached, detected, mb = hl.assess_individuality_level(
         amax=s1["amax"], area_fraction=area_fraction, persistence_change=persistence_change,
-        recovers_after_perturbation=recovers, size_independent=size_independent, centroid_drift=drift)
+        recovers_after_perturbation=recovers, size_independent=size_independent, centroid_drift=drift,
+        localization_seeded=True)                              # SH places one Gaussian bump (GPT②): honest flag
     return {"reached_level": reached, "status": "2d_screened", "detected": detected, "measured_by": mb,
             "ceiling_label": mb["emergent_ceiling"], "law": "swift_hohenberg"}
 

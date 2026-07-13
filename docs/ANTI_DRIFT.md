@@ -76,6 +76,28 @@ drift は静かに起きる。「もう一段深い Level を出したい」→ 
 
 ---
 
+## 精密化（原則1〜5 の運用を細かくする・GPT レビュー＋Provenance）
+
+原則を否定せず**より正確に**する。上流拡張は [`GENESIS_PROVENANCE.md`](GENESIS_PROVENANCE.md)・
+[`CAUSAL_CLOSURE.md`](CAUSAL_CLOSURE.md)、多軸記述は [`PERIODIC_TABLE.md`](PERIODIC_TABLE.md)。
+
+- **精密化③（運動）**：「運動を足すな」を正確に——**動く"能力"を与えるのは可、動く"方向・解"を与えるのが drift。**
+  非変分な駆動や外力ポテンシャル（動ける素地）は白の選択として可。だが**どちらへ動くかは自発的対称性の破れから
+  選ばれねばならない**。方向が固定なら IC/境界アーティファクト。SH が動かないのは変分だから——**"動く白"を選ぶ
+  （非変分）のは可、"動く構造"を置くのは不可**（[`WHITE_CEILINGS.md`](WHITE_CEILINGS.md) 自走個体）。
+- **精密化⑤（AI の目的関数）**：「高い Level／スコアを出せ」ではなく**「最も不確かな境界を情報利得で明らかにせよ」**。
+  スコア最大化は抜け道（実数場の誤検出・タグ場 FULL L7）を誘発する。境界の例：動く/動かない・修復する/しない・
+  遺伝する/しない・2D で出るが 3D はアーティファクト。**Discovery（大胆・2D・frontier）と Verification（固定
+  プロトコル・holdout seed・3D・ゲート変更禁止）を分け、発見 AI が同 seed で自己検証しない。**
+- **精密化②（能力ごとの seeded/emerged）**：一つの白が全部 emerged とは限らない。**能力ごと**に記録する
+  （`higher_levels` の `seeded_localization` 等＝`provenance.yaml` の state_variable 毎 `manually_set` の粒度版）。
+  例：SH の L4 は自己修復・持続が emerged だが**局在は seeded**。Gray-Scott は分裂 event が emerged だが個体数は
+  **seeded founders** 起点。→ 「0 から創発」でなく「どの能力が生まれ、どの能力を置いたか」を正直に。
+- **物理量を先に、意味ラベルは後**：「個体」「遺伝」「自己修復」を先に置くと、既知の解をその言葉に合わせて評価して
+  しまう。**測ってから、限定的に名付ける。**
+
+---
+
 ## 創発 vs drift（対照表・修正版）
 
 | | ⭕ 創発（生まれた・measured） | ❌ drift（置いた・target_encoded / 別の白を選び直した） |
@@ -133,6 +155,10 @@ drift は静かに起きる。「もう一段深い Level を出したい」→ 
       （渦線≒宇宙ひも・spots≠life・もつれ→重力＝線形化 は **analogy**。生命語・断定語を使わない）
 - [ ] **フロンティアだからと避けていないか?**（原則5）——未踏の問いから逃げて"安全な既知"に閉じこもって
       いないか。挑むのは drift ではない。**避けるのが drift。**（ただし挑む＝答えを置く、ではない）
+- [ ] **その IC 自体はどこから来たか?**（Provenance）——速度/静止/配置を直接置いたか、準備過程から生成したか
+      （`manually_set`）。環境条件に `claim_excludes` を付けたか。能力ごとに seeded/emerged を分けたか
+      （[`GENESIS_PROVENANCE.md`](GENESIS_PROVENANCE.md)・[`CAUSAL_CLOSURE.md`](CAUSAL_CLOSURE.md)）。
+- [ ] **物理量を先に測り、意味ラベルは後に付けたか?**（「個体」「遺伝」を先に置いて評価を歪めていないか）
 
 > 迷ったときの合言葉：**「それは生まれたのか、置いたのか?／その部品、どこから持ってきたの?」**
 > **「フロンティアだからと避けていないか?」**（挑め、だが答えは置くな——逃げるのも置くのも drift）

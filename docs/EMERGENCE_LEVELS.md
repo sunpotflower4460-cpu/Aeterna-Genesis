@@ -1,5 +1,10 @@
 # EMERGENCE_LEVELS.md — 創発の深さと測定指標
 
+> 🧭 **多軸の見方**：Level は一本道ではない（個体性と自発運動は独立軸など）。能力ごとの
+> 「創発能力ベクトル／創発の周期表」は [`PERIODIC_TABLE.md`](PERIODIC_TABLE.md)。IC の由来と因果的閉包は
+> [`GENESIS_PROVENANCE.md`](GENESIS_PROVENANCE.md)・[`CAUSAL_CLOSURE.md`](CAUSAL_CLOSURE.md)。
+> **能力ごとに seeded/emerged を分ける**（SH の L4 は局在 seeded・自己修復 emerged）。
+
 **Level は優劣ではなく、一つの run が時刻 0 からどこまで中断なく自然に育ったかの到達深度。** 画像の印象で決めない——**測定量**で判定する。各 Level は「入れてはいけないもの（seeded 禁止）」と「測る量」を持つ。
 
 **大原則：** ある Level を主張するには、その構造が**始原条件に入っておらず**（第8監査）、**時間発展の結果として現れた**ことを測定で示す。**Level N の後に Level N+1 の機能を追加してはならない**——より深くしたいなら始原条件を変えて Level 0 から再実行。
