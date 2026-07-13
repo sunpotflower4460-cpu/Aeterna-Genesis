@@ -48,6 +48,9 @@
 
 - 複雑さ窓の**正規化エントロピーは 1.0 に飽和**しやすく、ランキング信号を殺す（→ T-entropy-sat）。
 - 「dim=2」は 2-cell 構成の副作用で幾何ではない（→ T-crumple2, T-dim2）。furrow は材料を削る（→ T-furrow）。
+- **winding_defect_count は CGL の芯を過小カウント**：`measures.winding_defect_count` は TDGL 用に
+  低振幅をマスクするため、CGL（複素振動場）の低-|A| 渦芯を数え落とす。CGL の欠陥は**振幅ホール芯**で数えるのが
+  正直（`complex_ginzburg_landau.winding_defects`）。＝**測度は白ごとに妥当性を確認する**（→ WHITE_CEILINGS.md 測定床）。
 - **床**：スコアは**非飽和 measure**で、run 間に分散が残ることをテストで担保。次元主張は独立手法で二重化。
 
 ## Law-class floor：深い Level は「スコア」でなく「別の法則」から来る（turbulent≠coherent / spots≠life）

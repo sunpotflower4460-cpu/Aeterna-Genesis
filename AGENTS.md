@@ -4,6 +4,7 @@
 
 > ⚠️ **Level を扱う前に必ず [`docs/ANTI_DRIFT.md`](docs/ANTI_DRIFT.md) を読む**（創発 vs 入れ込み）。
 > 結論（完成形）を初期条件に入れると target_encoded＝drift。合言葉：**「それは育ったのか、置いたのか？」**
+> 白ごとにどこまで登りどこで天井になるかは [`docs/WHITE_CEILINGS.md`](docs/WHITE_CEILINGS.md)（白の天井地図）。
 
 ---
 

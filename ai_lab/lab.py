@@ -46,6 +46,7 @@ from genesis.diagnostics import measures  # noqa: E402
 from genesis.diagnostics import higher_levels as hl  # noqa: E402
 from genesis.models import boussinesq_rb as rb  # noqa: E402
 from genesis.models import gray_scott as gs  # noqa: E402
+from genesis.models import complex_ginzburg_landau as cgl  # noqa: E402
 
 # ---------------------------------------------------------------------------------------------------
 # EXPANDED SEARCH (指示書①): non-saturating score + IC families + full knob space + modes + parents.
@@ -793,6 +794,47 @@ def _screen_gray_scott(F, k, n_seeds, seed, quick=True):
             "law": "gray_scott", "drive": {"F": round(float(F), 4), "k": round(float(k), 4), "n_seeds": n_seeds}}
 
 
+def _screen_cgl(seed, quick=True):
+    """Complex Ginzburg-Landau: a SINGLE complex oscillatory field. Question: does spontaneous motion
+    emerge from a scalar field with NO velocity field? Honest answer (measured): it develops
+    spiral-DEFECT TURBULENCE -- patterns + topological cores that MOVE chaotically, but TURBULENT (not
+    coherent) and NOT persistent individuals -> ceiling below L4. |A|~1 is set by the IC (no growth-from-
+    floor). NOTE a measurement floor: measures.winding_defect_count UNDERCOUNTS CGL (it masks low-|A|
+    cores, tuned for TDGL); the honest defect signature here is amplitude-hole cores."""
+    N, steps = (64, 3000) if quick else (96, 5000)
+    p = dict(cgl.DEFAULTS)
+    rng = np.random.default_rng(seed)
+    A = cgl.make_initial((N, N), 1e-2, rng)
+    k2 = cgl._k2(A.shape)
+    sk, ncores, autocorr, amp_prev, snap = [], [], [], None, max(1, steps // 12)
+    for i in range(steps):
+        A = cgl.step(A, p, k2)
+        if not np.all(np.isfinite(A)):
+            return {"reached_level": None, "status": "unstable", "reason": "non-finite"}
+        if i % snap == 0 or i == steps - 1:
+            _, prom = measures.structure_factor_peak(A)
+            _, cents = cgl.winding_defects(A)
+            sk.append(float(prom)); ncores.append(len(cents))
+            a = np.abs(A)
+            if amp_prev is not None:
+                autocorr.append(float(np.corrcoef(a.ravel(), amp_prev.ravel())[0, 1]))
+            amp_prev = a
+    patterns = max(sk) > 5.0                              # structure factor peak emerged (L1)
+    cores = max(ncores) >= 3                              # topological cores formed (L2, via amp holes)
+    moves = bool(autocorr and min(autocorr[len(autocorr) // 2:] or [1.0]) < 0.6)   # pattern decorrelates
+    steady_turbulence = bool(all(c > 0 for c in ncores[-3:]) and moves)            # never freezes/converges
+    return {"reached_level": None, "status": "2d_screened",
+            "measured_by": {"sk_peak_max": round(max(sk), 2), "cores_max": max(ncores),
+                            "amp_autocorr_tail": round(min(autocorr[-3:]) if autocorr else 1.0, 3),
+                            "growth_from_floor": False},
+            "detected": {"patterns_L1": patterns, "topological_cores_L2": cores,
+                         "turbulent_motion": moves, "coherent": False, "persistent_individuals": False,
+                         "steady_turbulence": steady_turbulence},
+            "ceiling_label": "spiral-defect TURBULENCE: L1 patterns + L2 cores + turbulent motion; "
+                             "NOT coherent, NOT persistent -> ceiling below L4 (spatiotemporal chaos)",
+            "law": "cgl"}
+
+
 def lawscan(seed=0, quick=True):
     """Run each law class from t=0 and report the reached Level (measured). Shows GL(L2) < flow(L3) <
     self-replication(L7): deeper Levels need a different law, not a different score."""
@@ -811,6 +853,13 @@ def lawscan(seed=0, quick=True):
                 "drive": gs_r.get("drive", {}), "from": "noise seeds (t=0)",
                 "floor": "spots ≠ life; division EMERGES (L7-partial) but heredity does NOT — it would be "
                          "PLACED (a tag field), not born from U,V (docs/ANTI_DRIFT.md)"})
+    cg_r = _screen_cgl(seed, quick=quick)                                      # single complex field -> turbulence
+    out.append({"law": "cgl", "kind": "complex_oscillatory", "reached_level": cg_r["reached_level"],
+                "l7_status": cg_r.get("ceiling_label"),   # reuse the ceiling-label slot for the honest ceiling
+                "tier": "measured", "measured_by": cg_r.get("measured_by", {}), "detected": cg_r.get("detected", {}),
+                "from": "uniform+noise (t=0)",
+                "floor": "motion is TURBULENT not coherent (turbulent ≠ coherent); no persistent individual; "
+                         "measures.winding_defect_count UNDERCOUNTS CGL cores (measurement floor)"})
     return out
 
 
