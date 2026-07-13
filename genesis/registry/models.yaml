@@ -25,6 +25,17 @@ entries:
     genesis_candidate: G002
     related_experiments: ["e013", "e017"]
 
+  - id: g002c3_boussinesq_flux_heated
+    name: "Flux-heated convection (Boussinesq · absorbed-flux, gradient GENERATED not imposed)"
+    description: "静止一様温度＋ノイズ（温度差を置かない）＋吸収エネルギー流 S(z)。温度勾配が流束から生成され超臨界で対流が創発。ΔT を境界固定する g002（C1）に対し勾配を Emerged State にする C3 方向（docs/CAUSAL_CLOSURE.md）。完成した roll を置かない。流束自体は imposed 環境（正直にラベル）。"
+    equations: ["boussinesq", "navier_stokes_boussinesq", "internal_heating"]
+    fields: ["velocity", "temperature", "pressure"]
+    dimension_support: [2]
+    boundary: ["periodic", "physical_wall"]
+    dimension_sensitivity: medium
+    genesis_candidate: G002
+    related_experiments: ["e013", "e017"]
+
   - id: g003_model_h_phase_field
     name: "3D phase separation + fluid co-evolution (Model H · Cahn-Hilliard-Navier-Stokes)"
     description: "同じ自由エネルギー/化学ポテンシャル/応力/流速場から相分離＋界面＋流れ＋変形＋輸送が同時に出る全体場。部品接続として扱わない。G001/G002 の後。"
