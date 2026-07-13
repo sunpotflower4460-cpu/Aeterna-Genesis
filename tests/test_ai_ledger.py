@@ -37,12 +37,14 @@ def test_committed_candidate_room_is_non_official():
     cdir = os.path.join(_REPO, "rooms", "candidates")
     rooms = [d for d in os.listdir(cdir) if os.path.isdir(os.path.join(cdir, d))] if os.path.isdir(cdir) else []
     assert rooms, "expected at least one AI candidate room"
+    official_ids = {d for d in os.listdir(os.path.join(_REPO, "rooms", "official"))
+                    if os.path.isdir(os.path.join(_REPO, "rooms", "official", d))}
     room_schema = Draft202012Validator(json.load(open(os.path.join(_REPO, "schemas", "room.schema.json"))))
     for rid in rooms:
         r = yaml.safe_load(open(os.path.join(cdir, rid, "room.yaml")))
         room_schema.validate(r)
         assert r["official"] is False                        # never official
-        assert r["parent_room"] == "room-g001-a"             # parent is preserved, not overwritten
+        assert r["parent_room"] in official_ids              # parent is a real official room, preserved not overwritten
         assert r["dimension_status"]["full_3d"] != "passed"  # full-3D NOT claimed (not promoted)
 
 

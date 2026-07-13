@@ -1,0 +1,29 @@
+schema_version: 1
+# docs/GENESIS_PROVENANCE.md -- where did each input come from?
+# The C1 parent (room-g002-a) imposes the temperature gradient (ΔT) directly. Here the gradient is GENERATED
+# from an imposed energy flux, so the gradient becomes an Emerged State and the flux is the imposed environment.
+entries:
+  - name: boussinesq_law
+    input_class: fundamental_relation
+    manually_set: true
+    source: law
+    outcome_targeted: false
+  - name: quiescent_temperature      # uniform T + tiny noise -- NO gradient placed at t=0
+    input_class: prepared_state
+    manually_set: false
+    source: preparation_result
+    outcome_targeted: false
+  - name: absorbed_energy_flux        # the imposed environment (still placed; flux-from-upstream = frontier)
+    input_class: environmental_condition
+    manually_set: true
+    outcome_targeted: false
+    claim_excludes: [spontaneous_energy_flux]
+  - name: temperature_gradient        # DEVELOPS from the flux vs conduction balance -> emerged (not imposed)
+    input_class: emerged_state
+    manually_set: false
+    source: environmental_model
+    outcome_targeted: false
+  - name: convection_rolls            # born from the developed unstable gradient
+    input_class: emerged_state
+    manually_set: false
+    outcome_targeted: false

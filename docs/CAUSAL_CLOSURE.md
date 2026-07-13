@@ -24,10 +24,19 @@
 | **room-g002-a** Boussinesq | Boussinesq/NS・壁・重力(浮力) | 静止＋ノイズ(KE=0) | **固定温度差 Ra=1000**（`spontaneous_temperature_gradient`） | 循環ロール L3候補 | **C1** |
 | **room-g003-a** Model H | CH/NS/ModelH・周期BC | 一様＋ノイズ(mean0) | **なし（autonomous）** | 相分離＋流れ L2(L5候補) | **C1（C2 に最も近い）** |
 
-- 3 Room とも現状 **C1**。既存の `drive_class`・`natural_emergence`（`target_shape_seeded: false` 等）は C1 の証跡。
-- **g002 が C2/C3 昇格の筆頭**：ΔT は今 `imposed_environment`。温度差**自体**を「吸収エネルギー流」から
-  生成する **C3 版子 Room** を（既存を上書きせず）新規に作れば、「温度差も創発」に一歩近づく。
+- 3 official Room とも現状 **C1**。既存の `drive_class`・`natural_emergence`（`target_shape_seeded: false` 等）は C1 の証跡。
 - **g003 は autonomous**（環境 impose なし）＝ IC を準備過程から生成すれば **C2** に最も昇格しやすい。
+
+### C3 方向の子 Room（実装済み・候補・official でない）
+
+| 候補 Room | 親 | 変えたこと | Emerged / imposed | CC Level |
+|---|---|---|---|---|
+| **room-g002-c3-flux** | room-g002-a | 固定 ΔT を除去 → **吸収エネルギー流 S(z)** を課し、温度勾配を**自己生成** | 勾配・対流＝**emerged**／エネルギー流＝imposed（`claim_excludes: spontaneous_energy_flux`） | **C3 方向** |
+
+- **測定**（`genesis/models/boussinesq_flux_heated.py`）：垂直勾配 RMS 0.087（ノイズ）→ **5.03**（生成）・KE 0 → **29.4**・Nu **2.10**。
+  ＝温度勾配は「置いた」のでなく**流束から生成**（C1 imposed → C3 generated）。
+- **正直な境界**：**流束自体はまだ imposed**。流束を上流 Room から生成するのが true C3/C4＝**frontier**（`causal-ancestry.yaml frontier: true`）。
+- 親 `room-g002-a` は**上書きしていない**（no_touch）。昇格（official 化）は別段階。
 
 > **昇格は別段階**（人が確認）。この表は**監査**であって、既存 Room の物理は変えない（no_touch）。
 

@@ -1,0 +1,35 @@
+schema_version: 1
+model: g002c3_boussinesq_flux_heated
+dimension: 2
+domain:
+  size:
+  - 48
+  - 48
+  spacing: 1.0
+  boundary: mixed
+fields:
+  velocity:
+    type: vector
+  temperature:
+    type: scalar
+initial_state:
+  type: quiescent_plus_noise      # REST + noise, temperature UNIFORM -- NO temperature gradient imposed
+  mean_amplitude: 0.0
+  noise_amplitude: 0.001
+  correlation_length: 1.0
+laws:
+- boussinesq
+- navier_stokes_boussinesq
+- incompressible
+- internal_heating
+protocol:
+  drive:
+    type: absorbed_flux_heating   # imposed ENERGY FLUX (environment); the gradient is GENERATED from it
+    rayleigh: 2000.0
+    prandtl: 1.0
+    heating_Q: 20.0
+    absorption: 0.0               # 0 = uniform internal heating; >0 = absorbed near the bottom
+    walls: free_slip_cold         # both walls held cold -> temperature develops from the flux
+    runtime_controlled: false
+seed: 0
+drive_class: externally_driven
