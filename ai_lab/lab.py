@@ -47,6 +47,7 @@ from genesis.diagnostics import higher_levels as hl  # noqa: E402
 from genesis.models import boussinesq_rb as rb  # noqa: E402
 from genesis.models import gray_scott as gs  # noqa: E402
 from genesis.models import complex_ginzburg_landau as cgl  # noqa: E402
+from genesis.models import swift_hohenberg as sh  # noqa: E402
 
 # ---------------------------------------------------------------------------------------------------
 # EXPANDED SEARCH (指示書①): non-saturating score + IC families + full knob space + modes + parents.
@@ -835,6 +836,50 @@ def _screen_cgl(seed, quick=True):
             "law": "cgl"}
 
 
+def _screen_swift_hohenberg(seed, quick=True):
+    """Swift-Hohenberg (cubic-quintic): a bistable field with STABLE LOCALIZED STATES. Probes the map's
+    missing rung L4 (persistent individuality). From a generic symmetric bump + noise (NO boundary seeded),
+    a bounded structure forms that PERSISTS, has inside/outside contrast, and SELF-HEALS after a cut (the L4
+    discriminator). Being variational, it does NOT self-move (drift~0): a STATIC individual. Self-propelled
+    individuality (L4 + motion) is frontier. All L4 criteria are MEASURED via hl.assess_individuality_level."""
+    N, settle, hold, heal = (64, 2500, 800, 2500) if quick else (96, 3500, 1200, 3500)
+    p = dict(sh.DEFAULTS)
+    rng = np.random.default_rng(seed)
+    u = sh.make_initial((N, N), 1e-3, rng, p)
+    k2 = sh._k2(N, p["dx"])
+    for _ in range(settle):                                     # settle from the seed to the attractor
+        u = sh.step(u, p, k2)
+        if not np.all(np.isfinite(u)):
+            return {"reached_level": None, "status": "unstable"}
+    s0 = sh.individual_stats(u)
+    prev = u.copy()
+    for _ in range(hold):                                       # hold: measure persistence + no self-motion
+        u = sh.step(u, p, k2)
+    s1 = sh.individual_stats(u)
+    persistence_change = float(np.abs(u - prev).max())        # change across the whole hold window (settled ~0)
+    drift = float(np.hypot(s1["centroid"][0] - s0["centroid"][0], s1["centroid"][1] - s0["centroid"][1]))
+    # self-heal: destroy the top half of the individual, let the white REGROW it
+    up = u.copy(); up[:N // 2, :] = 0.0
+    for _ in range(heal):
+        up = sh.step(up, p, k2)
+    sh_heal = sh.individual_stats(up)
+    recovers = bool(abs(sh_heal["area"] - s1["area"]) <= 8 and abs(sh_heal["amax"] - s1["amax"]) < 0.12)
+    # size-independence: same individual on a bigger box (not a finite-size effect)
+    N2 = N + 32
+    u2 = sh.make_initial((N2, N2), 1e-3, np.random.default_rng(seed), p)
+    k22 = sh._k2(N2, p["dx"])
+    for _ in range(settle):
+        u2 = sh.step(u2, p, k22)
+    s2 = sh.individual_stats(u2)
+    size_independent = bool(abs(s2["area"] - s1["area"]) <= 10)
+    area_fraction = s1["area"] / float(N * N)
+    reached, detected, mb = hl.assess_individuality_level(
+        amax=s1["amax"], area_fraction=area_fraction, persistence_change=persistence_change,
+        recovers_after_perturbation=recovers, size_independent=size_independent, centroid_drift=drift)
+    return {"reached_level": reached, "status": "2d_screened", "detected": detected, "measured_by": mb,
+            "ceiling_label": mb["emergent_ceiling"], "law": "swift_hohenberg"}
+
+
 def lawscan(seed=0, quick=True):
     """Run each law class from t=0 and report the reached Level (measured). Shows GL(L2) < flow(L3) <
     self-replication(L7): deeper Levels need a different law, not a different score."""
@@ -860,6 +905,14 @@ def lawscan(seed=0, quick=True):
                 "from": "uniform+noise (t=0)",
                 "floor": "motion is TURBULENT not coherent (turbulent ≠ coherent); no persistent individual; "
                          "measures.winding_defect_count UNDERCOUNTS CGL cores (measurement floor)"})
+    sh_r = _screen_swift_hohenberg(seed, quick=quick)                         # localized state -> L4 (static)
+    out.append({"law": "swift_hohenberg", "kind": "pattern_bistable", "reached_level": sh_r["reached_level"],
+                "l7_status": sh_r.get("ceiling_label"),   # reuse the ceiling-label slot for the honest ceiling
+                "tier": "measured", "measured_by": sh_r.get("measured_by", {}), "detected": sh_r.get("detected", {}),
+                "from": "symmetric bump + noise (t=0)",
+                "floor": "L4 individuality EMERGES (persistent + self-healing + size-independent) but STATIC: "
+                         "SH is variational -> no self-motion. Self-propelled individual (L4 ∧ motion) = frontier. "
+                         "individuality (L4) and self-motion (L3) are INDEPENDENT axes (docs/WHITE_CEILINGS.md)"})
     return out
 
 

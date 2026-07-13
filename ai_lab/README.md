@@ -37,6 +37,11 @@ GL は 2D で **L2** が上限。深い Level は**法則クラスを変えて 0
 - **gray_scott 反応拡散**：ノイズ種 → スポット自己複製・分裂。**天井は L7-partial（分裂のみ）**。遺伝は
   U,V から生まれず、遺伝場 `T` を**足す＝答えを置く**ことになる（`docs/ANTI_DRIFT.md`）。→ **FULL L7 主張は
   取り下げ**（T 系は `inheritance_placed` と正直にラベル）。spots≠life。
+- **cgl 複素振動場**：一様＋ノイズ → **spiral-defect turbulence**（動く芯だが turbulent≠coherent・個体化せず
+  天井 < L4）。測定床：`winding_defect_count` は CGL 芯を過小カウント（振幅ホール芯で数える）。
+- **swift_hohenberg 双安定パターン**：対称バンプ＋ノイズ → **持続・自己修復する局在個体 = L4-static**（内外差＋
+  摂動から再成長＋サイズ非依存を measured）。ただし**変分で動かない**＝自走個体（L4∧運動）は frontier。
+  **個体性(L4)と自発運動(L3)は独立な二軸**（`docs/WHITE_CEILINGS.md`）。
 - **g003 Model H**：co-differentiation **L5** は frontier（測度 WIP）。
 
 ### 拡張エンジン（大量自動探索）

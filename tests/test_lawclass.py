@@ -9,6 +9,7 @@ import numpy as np
 from ai_lab import lab
 from genesis.models import gray_scott as gs
 from genesis.models import complex_ginzburg_landau as cgl
+from genesis.models import swift_hohenberg as sh
 from genesis.diagnostics import higher_levels as hl
 
 
@@ -118,6 +119,73 @@ def test_lawscan_cgl_ceiling_is_turbulence_below_L4():
     assert cg["measured_by"]["growth_from_floor"] is False  # |A|~1 is the IC, not born from L0
     assert cg["measured_by"]["amp_autocorr_tail"] < 0.6     # genuine decorrelation = turbulent motion
     assert "UNDERCOUNTS" in cg["floor"]                     # honest measurement floor recorded
+
+
+def _sh_settle(N, steps, seed=0):
+    p = dict(sh.DEFAULTS)
+    rng = np.random.default_rng(seed)
+    u = sh.make_initial((N, N), 1e-3, rng, p)
+    k2 = sh._k2(N, p["dx"])
+    for _ in range(steps):
+        u = sh.step(u, p, k2)
+    return u, k2, p
+
+
+def test_swift_hohenberg_is_a_persistent_self_healing_individual():
+    """A NEW white (Swift-Hohenberg localized state) reaches the map's missing rung: a persistent LOCALIZED
+    individual that SELF-HEALS after perturbation (the L4 discriminator) -- from a generic symmetric seed,
+    NOT a placed boundary. Being variational it does NOT self-move (static individual)."""
+    N = 64
+    u, k2, p = _sh_settle(N, 2500)
+    s0 = sh.individual_stats(u)
+    assert s0["area"] > 0 and s0["peaks"] == 1                 # one bounded localized individual formed
+    assert s0["area"] < 0.25 * N * N                            # localized (inside/outside), not global
+    assert s0["amax"] > 0.5                                     # clear inside contrast vs ~0 background
+    c0 = s0["centroid"]
+    for _ in range(600):                                        # persistence + no self-motion (variational)
+        u = sh.step(u, p, k2)
+    s1 = sh.individual_stats(u)
+    drift = float(np.hypot(s1["centroid"][0] - c0[0], s1["centroid"][1] - c0[1]))
+    assert drift < 0.5                                          # STATIC individual (no spontaneous motion)
+    # self-heal: destroy the top half; the white REGROWS the same individual (you cannot PLACE self-healing)
+    up = u.copy(); up[:N // 2, :] = 0.0
+    assert sh.individual_stats(up)["area"] < s1["area"]         # genuinely damaged
+    for _ in range(2500):
+        up = sh.step(up, p, k2)
+    heal = sh.individual_stats(up)
+    assert abs(heal["area"] - s1["area"]) <= 8 and abs(heal["amax"] - s1["amax"]) < 0.12  # recovered
+    # size-independence: same individual on a bigger box (not a finite-size effect)
+    u2, _, _ = _sh_settle(N + 32, 2500)
+    assert abs(sh.individual_stats(u2)["area"] - s1["area"]) <= 10
+
+
+def test_assess_individuality_level_l4_static_and_below():
+    """The additive L4 measure: a persistent, localized, self-healing, size-independent, NON-moving field
+    is L4 (static individual); missing self-healing OR localization drops below L4."""
+    lvl, det, mb = hl.assess_individuality_level(amax=1.41, area_fraction=0.015, persistence_change=2e-8,
+                                                 recovers_after_perturbation=True, size_independent=True,
+                                                 centroid_drift=0.0)
+    assert lvl == 4 and det["persistent_individual"] and det["static_individual"]
+    assert det["self_healing"] and not det["self_moving"]
+    assert "STATIC" in mb["emergent_ceiling"]
+    # no self-healing -> not a genuine individual (L2-like frozen blob), below L4
+    lvl2, det2, _ = hl.assess_individuality_level(1.41, 0.015, 2e-8, False, True, 0.0)
+    assert lvl2 == 0 and not det2["persistent_individual"]
+    # a self-moving individual would be the missing conjunction (L4 + motion)
+    _, det3, mb3 = hl.assess_individuality_level(1.41, 0.015, 2e-8, True, True, 3.0)
+    assert det3["self_moving"] and "self-propelled" in mb3["emergent_ceiling"]
+
+
+def test_lawscan_swift_hohenberg_reaches_L4_static_individual():
+    """lawscan: Swift-Hohenberg reaches L4 (persistent individuality) MEASURED, but STATIC -- individuality
+    (L4) and self-motion (L3) are independent axes; a self-propelled individual is frontier."""
+    rows = {r["law"]: r for r in lab.lawscan(seed=0, quick=True)}
+    row = rows["swift_hohenberg"]
+    assert row["reached_level"] == 4 and row["tier"] == "measured"
+    assert row["detected"]["persistent_individual"] and row["detected"]["self_healing"]
+    assert row["detected"]["static_individual"] and not row["detected"]["self_moving"]
+    assert row["measured_by"]["centroid_drift"] == 0.0 and row["measured_by"]["size_independent"] is True
+    assert "frontier" in row["floor"]                          # self-propelled individual honestly frontier
 
 
 def test_lawscan_ic_is_not_the_target_8th_audit():
