@@ -39,8 +39,9 @@ def test_c3_room_is_candidate_not_official_and_no_gradient_seeded():
     assert genesis["initial_state"]["type"] == "quiescent_plus_noise"   # no ΔT / gradient imposed
     assert genesis["protocol"]["drive"]["type"] == "absorbed_flux_heating"
     emg = json.loads((CAND / "emergence.json").read_text())
-    assert emg["causal_closure_level"] == "C3"
-    assert emg["detected"]["gradient_seeded"] is False and emg["detected"]["temperature_gradient_generated"] is True
+    assert emg["measured_by"]["gradient_seeded"] is False and emg["measured_by"]["gradient_generated"] is True
+    anc = yaml.safe_load((CAND / "causal-ancestry.yaml").read_text())
+    assert anc["causal_closure_level"] == "C3"                # causal-closure level lives in causal-ancestry.yaml
 
 
 def test_c3_room_yamls_validate_against_schemas():
