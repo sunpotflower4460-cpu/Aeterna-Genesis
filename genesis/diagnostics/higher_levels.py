@@ -75,3 +75,47 @@ def assess_replication_level(spot_counts, spots=None):
                "spot_size_cv": round(cv, 3), "tag0": tags.count(0), "tag1": tags.count(1),
                "note": "tag field PLACED (U,V->U,V,T): inheritance is placed, not emergent (docs/ANTI_DRIFT.md)"})
     return 0, detected, mb                                 # no full-L7 EMERGENCE claim; heredity was placed
+
+
+def assess_individuality_level(amax, area_fraction, persistence_change,
+                               recovers_after_perturbation, size_independent, centroid_drift):
+    """Level 4 (persistent individuality) per EMERGENCE_LEVELS.md, measured HONESTLY.
+
+    L4 judgment there = `inside_outside_contrast > θ AND tracked_id_lifetime > τ AND
+    recovers_after_perturbation` AND size-independent (not a finite-size effect). The DISCRIMINATOR that
+    separates a genuine L4 individual from an L2 frozen defect is **recovery after perturbation**
+    (self-healing) -- you cannot PLACE self-healing (ANTI_DRIFT). Self-MOTION (L3 in a body) is a SEPARATE
+    axis: an individual may be persistent yet STATIC. A self-propelled individual (L4 AND self-motion) is
+    the map's true missing conjunction and is frontier.
+
+    amax                       : peak |field| inside the structure (inside/outside contrast vs ~0 background).
+    area_fraction              : support area / domain area (localized => small; ~1 => global, not an individual).
+    persistence_change         : late-time max |u_{t+dt}-u_t| (small => settled to a stable attractor).
+    recovers_after_perturbation: True if, after destroying part of it, the structure REGREW (self-healing).
+    size_independent           : True if the same individual forms on a larger domain (not finite-size).
+    centroid_drift             : centroid displacement over a long window (>0 => self-moving; ~0 => static).
+    Returns (reached_level, detected, measured_by).
+    """
+    localized = 0.0 < float(area_fraction) < 0.25          # bounded support, not the whole domain
+    contrast = float(amax) > 0.5                            # clear inside signal vs ~0 outside
+    persistent = float(persistence_change) < 1e-2          # settled to a stable attractor (tracked id persists)
+    recovers = bool(recovers_after_perturbation)           # self-heals after a cut -> genuine individual (not L2)
+    size_indep = bool(size_independent)
+    self_moving = float(centroid_drift) > 0.5              # spontaneous motion of the individual (L3 in a body)
+    individual = bool(localized and contrast and persistent and recovers and size_indep)
+    reached = 4 if individual else 0                       # L4 individuality criteria (motion is a separate axis)
+    if not individual:
+        ceiling = "below L4 (no persistent self-healing localized individual)"
+    elif self_moving:
+        ceiling = "L4 + self-motion (self-propelled individual)"   # the missing conjunction (not expected here)
+    else:
+        ceiling = ("L4 persistent individuality, STATIC: inside/outside + self-healing + size-independent, "
+                   "but VARIATIONAL -> no self-motion (self-propelled individual = frontier)")
+    detected = {"persistent_individual": individual, "self_healing": recovers, "localized": localized,
+                "size_independent": size_indep, "self_moving": self_moving,
+                "static_individual": bool(individual and not self_moving)}
+    measured_by = {"amax": round(float(amax), 3), "area_fraction": round(float(area_fraction), 4),
+                   "persistence_change": float(persistence_change), "centroid_drift": round(float(centroid_drift), 4),
+                   "recovers_after_perturbation": recovers, "size_independent": size_indep,
+                   "emergent_ceiling": ceiling}
+    return reached, detected, measured_by

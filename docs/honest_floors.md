@@ -68,6 +68,10 @@
   **足す**しかなく、それは「答えを置く」（`ANTI_DRIFT.md` 原則1：買ってきたリンゴを枝にくくりつける）。
   → **「Gray-Scott が IC-only で FULL L7」は取り下げ**。T 系は `inheritance_placed=True` と正直にラベルし
   full-L7-emergence を主張しない。「白から遺伝が生まれ得るか」は **frontier**（出ないなら天井として記録）。
+- **individuality ≠ motion（L4 の二軸床）**：**個体性（L4）と自発運動（L3）は独立な軸**。Swift-Hohenberg の
+  局在状態は **L4（持続・自己修復・サイズ非依存の個体）** を measured で満たすが、**変分なので動かない**（静的個体）。
+  Boussinesq/CGL は**動くが個体でない**。**自走する個体（L4 ∧ 運動）はどの単純な白も出していない＝frontier**。
+  「L4 に達した」と「自走する生き物のよう」は違う（自己修復する場の attractor であって生命ではない・生命語なし）。
 - **Model H の L5 は frontier**：相分離×流体の co-differentiation 測度は未収束＝frontier。screenable だが L5 を
   measured とは言わない。
 
