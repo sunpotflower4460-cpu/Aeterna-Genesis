@@ -8,6 +8,7 @@ import numpy as np
 
 from ai_lab import lab
 from genesis.models import gray_scott as gs
+from genesis.models import complex_ginzburg_landau as cgl
 from genesis.diagnostics import higher_levels as hl
 
 
@@ -83,6 +84,40 @@ def test_lawscan_gray_scott_is_L7partial_not_full_l7():
     assert "L7-partial" in gs_row["l7_status"] and "PLACED" in gs_row["l7_status"]
     assert gs_row["detected"]["l7_partial"] and gs_row["detected"]["full_l7_emergence"] is False
     assert gs_row["measured_by"]["final_spots"] >= 2 * gs_row["measured_by"]["seed_spots"]  # division real
+
+
+def test_cgl_is_a_distinct_white_no_velocity_field_seeded():
+    """CGL is a SINGLE complex oscillatory field: IC = uniform + tiny complex noise (no spiral/defect
+    seeded). Deterministic per seed, amplitude-preserving (|A|~1 is set by the IC, not grown from a floor)."""
+    rng = np.random.default_rng(0)
+    A = cgl.make_initial((32, 32), 1e-2, rng)
+    assert A.dtype == np.complex128
+    assert abs(float(np.abs(A).mean()) - 1.0) < 0.05        # |A|~1 from the IC (NOT growth-from-floor)
+    p = dict(cgl.DEFAULTS)
+    k2 = cgl._k2(A.shape)
+    A1 = cgl.step(A.copy(), p, k2)
+    A2 = cgl.step(cgl.make_initial((32, 32), 1e-2, np.random.default_rng(0)), p, k2)
+    assert np.allclose(A1, A2)                              # deterministic for a fixed seed
+    for _ in range(200):
+        A1 = cgl.step(A1, p, k2)
+    assert np.all(np.isfinite(A1))                          # spectral integrating-factor stays finite
+
+
+def test_lawscan_cgl_ceiling_is_turbulence_below_L4():
+    """The CGL white climbs to L1 patterns + L2 moving cores, but the motion is TURBULENT (not coherent)
+    and makes no persistent individual -> honest ceiling BELOW L4 (turbulent != coherent). reached_level
+    is None (not a clean integer Level), amplitude does NOT grow from a floor, and we record the
+    measurement floor that winding_defect_count undercounts CGL cores."""
+    rows = {r["law"]: r for r in lab.lawscan(seed=0, quick=True)}
+    cg = rows["cgl"]
+    assert cg["reached_level"] is None                      # not a clean L; it is turbulence, honestly
+    assert cg["kind"] == "complex_oscillatory" and cg["tier"] == "measured"
+    assert cg["detected"]["turbulent_motion"] is True       # cores MOVE (amp autocorrelation decays)
+    assert cg["detected"]["coherent"] is False              # but turbulent, NOT coherent
+    assert cg["detected"]["persistent_individuals"] is False
+    assert cg["measured_by"]["growth_from_floor"] is False  # |A|~1 is the IC, not born from L0
+    assert cg["measured_by"]["amp_autocorr_tail"] < 0.6     # genuine decorrelation = turbulent motion
+    assert "UNDERCOUNTS" in cg["floor"]                     # honest measurement floor recorded
 
 
 def test_lawscan_ic_is_not_the_target_8th_audit():

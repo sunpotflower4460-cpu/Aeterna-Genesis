@@ -152,8 +152,14 @@
     T 系（U,V,T）は「遺伝場を置いた別の genesis 条件」として、置いたタグが分裂で運ばれる様は測れるが
     `inheritance_placed=True` と正直にラベルし full-L7-emergence は主張しない。「白から遺伝が生まれ得るか」は
     **frontier**。**同じ数学 ≠ 同じもの**：反応拡散スポットは生命ではない（floor）。
+  - **cgl（複素 GL・振動場）**：一様＋ノイズ → **spiral-defect turbulence**（L1 模様＋L2 芯＋乱流運動）。
+    速度場を足さずに**単一スカラー場だけで運動が出るか**を問う白。答え（measured）：芯は動くが**乱流（非 coherent）**・
+    持続的個体を作らない → **天井 < L4**。\|A\|~1 は IC 設定で**床からの成長でない**。**測定床**：
+    `winding_defect_count` は CGL の低-\|A\| 芯を過小カウント（TDGL 用調整）＝振幅ホール芯で数えるのが正直。
+    **turbulent ≠ coherent**（同じ「動き」でも Boussinesq の coherent L3 とは質が違う＝同じ数学 ≠ 同じもの）。
   - **g003 Model H**：相分離×流体の共発展（**L5**）は screenable 登録だが co-differentiation 測度は **frontier**（WIP）。
   規律：no_touch（`measures.assess_level` の L1/L2 成功判定は不変・追加測度は新モジュール）・self_promotion なし・決定的。
+  → 白ごとの天井を一覧にした地図：[`WHITE_CEILINGS.md`](WHITE_CEILINGS.md)。
 
 ## O. 方法論・framework（→ honest_floors）
 
