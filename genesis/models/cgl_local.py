@@ -48,6 +48,21 @@ def step(A, dt, p):
     return A + dt * (A + (1.0 + 1j * p["b"]) * lap - (1.0 + 1j * p["c"]) * (np.abs(A) ** 2) * A)
 
 
+def spectral_k2(shape, dx=1.0):
+    """|k|^2 grid for the pseudo-spectral Laplacian (independent numerics for corroboration)."""
+    ks = [np.fft.fftfreq(n, d=dx) * 2.0 * np.pi for n in shape]
+    K = np.meshgrid(*ks, indexing="ij")
+    return sum(k ** 2 for k in K)
+
+
+def step_spectral(A, dt, p, k2):
+    """One explicit step with a SPECTRAL (FFT) Laplacian instead of the local stencil. Same PDE, same time
+    integrator, DIFFERENT spatial discretisation -> agreement of physical observables with `step` is
+    solver-independent corroboration (not a finite-difference artefact). Not the local main line -- a verifier."""
+    lap = np.fft.ifftn(-k2 * np.fft.fftn(A))
+    return A + dt * (A + (1.0 + 1j * p["b"]) * lap - (1.0 + 1j * p["c"]) * (np.abs(A) ** 2) * A)
+
+
 def run(shape, t_final, seed, params=None, noise_amplitude=0.01, dt=None, snap_frac=1.0 / 20):
     """Evolve from t=0 (near-zero + noise) with no intervention; return (snapshots, phys). `shape` sets the
     dimension (len 2 -> 2D, len 3 -> 3D). dt auto-selected from b if None."""
