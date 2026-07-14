@@ -1,0 +1,30 @@
+# Frontier Campaign M2-B result (machine-readable, GPT M2 addendum §19).
+# Coupled-Jacobian eigenvalue re-audit of the (non-)variational Swift-Hohenberg (a,c) plane.
+# a = |grad u|^2 coefficient, c = u lap(u) coefficient. measured by genesis/models/
+# nonvariational_swift_hohenberg.coupled_audit (source of truth: genesis/diagnostics/coupled_spectrum.py).
+model: nonvariational_swift_hohenberg
+solver: coupled_step_map_jacobian_arnoldi
+domain: {N: 64, dx: 0.5, dt: 0.2, step_map_T: 50, arnoldi_k: 10}
+points:
+  - {a: 0.0, c: 0.0, residual: 0.0, center_drift: 0.0, n_goldstone: 2,
+     lambda_m1_non_goldstone: null, lambda_m2plus: -0.183, classification: static}
+  - {a: 0.3, c: 0.0, residual: 0.0, center_drift: 0.0, n_goldstone: 2,
+     lambda_m1_non_goldstone: null, lambda_m2plus: -0.134, classification: static}
+  - {a: 0.5, c: 0.0, residual: 0.0, center_drift: 0.0, n_goldstone: 2,
+     lambda_m1_non_goldstone: null, lambda_m2plus: -0.023, classification: static}
+  - {a: 0.0, c: 0.3, classification: unstable_blowup}
+  - {a: 0.3, c: 0.3, classification: unstable_blowup}
+  - {a: 0.5, c: 0.3, classification: unstable_blowup}
+finding:
+  no_non_goldstone_m1_mode_in_scan: true      # the only m=1 modes are the translation Goldstone (excluded)
+  m2_destabilised_by_a: true                  # split eigenvalue rises -0.183 -> -0.023 as a grows (c=0)
+  c_positive_blows_up: true
+no_go:
+  stage: N2                                   # split_first_in_tested_white_and_domain (addendum §17)
+  statement: "On the tested SH (a,c) region (a in [0,0.5], c=0; c>0 blows up), no non-Goldstone m=1 mode
+    exists on the tracked branch and the m=2 split mode approaches onset first. white-specific + domain-bounded."
+  reason: "The SH family (scanned region) has no polarity/drift eigenmode; drift-before-split needs a
+    different structure (two-field / non-reciprocal / delay) -> M2-D."
+  domain: {a_range: [0.0, 0.5], c_range: [0.0, 0.0_stable], N: 64, dx: 0.5, dt: 0.2}
+  three_d_checked: false
+tier: frontier
