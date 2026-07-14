@@ -70,7 +70,22 @@ marginal のまま**。→ この調査断面では m=2 が先。
 全場を束ねた**結合ヤコビアン**を matrix-free（step-map JVP）＋ Arnoldi で解き、**Goldstone を overlap で同定・除外**し、
 **非 Goldstone m=1** が m=2 より先にゼロを横切るか（drift-before-split）で判定する（`classify_drift_before_split`）。
 スカラー SH で検証済み：**m=1 近傍の2モードは並進 Goldstone（λ≈0・overlap≈1・x/y 縮退）＝正しく除外**、非 Goldstone m=1
-は**なし**、m=2 は安定（λ≈−0.18）＝M1 の符号順序と整合。**真の drift 判定はこの結合固有値解による**（次段 M2-B/C/D）。
+は**なし**、m=2 は安定（λ≈−0.18）＝M1 の符号順序と整合。**真の drift 判定はこの結合固有値解による**。
+
+### M2-B：SH の (a,c) 面を結合固有値解で再監査（`nonvariational_swift_hohenberg.coupled_audit`）
+
+| (a, c) | 分類 | Goldstone数 | λ(m=1 非Goldstone) | λ(m=2) | residual |
+|---|---|---|---|---|---|
+| (0, 0) 変分 | static | 2 | **なし** | −0.183 | 0 |
+| (0.3, 0) | static | 2 | **なし** | −0.134 | 0 |
+| (0.5, 0) | static | 2 | **なし** | −0.023 | 0 |
+| (·, 0.3) | 発散 | — | — | — | — |
+
+**測定された機構**：SH (a,c) の調査領域には**非 Goldstone m=1 モードがそもそも存在しない**（唯一の m=1 は並進 Goldstone・除外）。
+`a` を上げると **m=2(split) が onset へ近づく**（−0.183→−0.023）。c>0 は発散。residual=0・center_drift=0（真の固定点）。
+→ **N2 no-go**（`split_first_in_tested_white_and_domain`・white-specific・調査領域 a∈[0,0.5]/c=0 付き）。
+**知見**：SH 族（調査域）は **drift 極性モードを持たない**＝分裂に結合するが drift モードが無い → 真の drift-before-split には
+**別構造（二場・非相反・時間遅れ）**が要る（M2-D の根拠）。結果は機械可読 `ai_lab/campaigns/m2_results/m2b_sh_ac_plane.yaml`。
 
 ## 運動を置かない（ANTI_DRIFT・条件付き非変分 OK）
 
