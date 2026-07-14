@@ -39,7 +39,23 @@
 ## no-go は white-specific に
 
 「変分の白では m=1 ≤ 0」は**この白（と調査領域）での no-go**。**「宇宙の全パラメータで不可能」とは言わない。**
-自走が出るには **m=1 が m=2 より先に正**になる白（**非変分／非相反**）が要る＝次段（V1：非変分 SH の drift 分岐）。
+自走が出るには **m=1 が m=2 より先に正**になる白（**非変分／非相反**）が要る。
+
+## V1（測定）：非変分 SH は split-before-drift（自走しない・機構つき）
+
+勾配構造を壊せば m=1 が正になるか? を測定（`genesis/models/nonvariational_swift_hohenberg.py`：SH ＋
+**等方・parity-even・非変分**項 `a|∇u|² + c u∇²u`。方向は課さない＝もし m=1 が不安定化すれば方向は自発的破れ）。
+
+| 非変分係数 a | σ(m=1) translation | σ(m=2) split | 分類 |
+|---|---|---|---|
+| 0.0（変分） | ≈ 0（marginal） | −0.216 | static |
+| 0.5 | ≈ 0（**変わらない**） | **−0.028（+0.19 上昇）** | static（split 側へ） |
+| ≳1.0 | — | — | 発散（blow-up） |
+
+**測定された機構**：非変分項は **split モード（m=2）を不安定側へ動かすが、translation（m=1）は marginal のまま**。
+＝**split-before-drift**：この白は**分裂に結合し、drift には結合しない**。→ **SH 族（変分でも、この非変分形でも）に自走は
+出ない＝white-specific frontier**、ただし「**なぜ必ず分裂が先か**」に**測定で答えた**（この族は m=2 に強く結合）。
+真の drift-before-split には別構造（二場・時間遅れ・非相反）が要る＝より深い frontier。
 
 ## 運動を置かない（ANTI_DRIFT・条件付き非変分 OK）
 
