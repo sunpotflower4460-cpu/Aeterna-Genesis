@@ -7,6 +7,7 @@
 > 白ごとにどこまで登りどこで天井になるかは [`docs/WHITE_CEILINGS.md`](docs/WHITE_CEILINGS.md)（白の天井地図）。
 > IC の由来（その部品どこから来たの?）は [`docs/GENESIS_PROVENANCE.md`](docs/GENESIS_PROVENANCE.md)＋
 > [`docs/CAUSAL_CLOSURE.md`](docs/CAUSAL_CLOSURE.md)（C0〜C4）、能力の多軸記述は [`docs/PERIODIC_TABLE.md`](docs/PERIODIC_TABLE.md)。
+> 自走個体は「探す」でなく角モード固有値の順序を「測る」＝ [`docs/ANGULAR_MODES.md`](docs/ANGULAR_MODES.md)（M1）。
 
 ---
 
