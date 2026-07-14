@@ -87,6 +87,29 @@ marginal のまま**。→ この調査断面では m=2 が先。
 **知見**：SH 族（調査域）は **drift 極性モードを持たない**＝分裂に結合するが drift モードが無い → 真の drift-before-split には
 **別構造（二場・非相反・時間遅れ）**が要る（M2-D の根拠）。結果は機械可読 `ai_lab/campaigns/m2_results/m2b_sh_ac_plane.yaml`。
 
+### M2-C：3成分RD を**全場**で再測定＋存在ゲート（`three_component_rd.coupled_audit`）
+
+M2-B は SH 族に **drift 極性モードが無い**ことを示した。次は**別構造**（3成分 RD：活性化子 u ＋速い抑制子 v ＋
+遅く長距離な抑制子 w）を、**u だけの proxy でなく (u,v,w) を束ねた全結合状態**で測る（`StateLayout(("u","v","w"))`）。
+ただし drift 分岐は**個体についての主張**なので、線形化の前に**存在ゲート** `coupled_spectrum.existence_gate` を通す
+（単一・compact・局在・**静止固定点**か）。個体が無い所で固有値を出すのは無意味だから。
+
+| k1 | count | area_frac | rel_res | ゲート | 理由 | 枝 |
+|---|---|---|---|---|---|---|
+| −0.05 | 0 | 0.0 | 0.003 | **REFUSED** | no_localized_individual | 死ぬ |
+| −0.02 | 0 | 0.0 | 0.003 | **REFUSED** | no_localized_individual | 死ぬ |
+| 0.0 | 1 | 0.40 | **0.023** | **REFUSED** | **not_stationary** | 拡散する漂流ブロブ |
+| 0.02 | 1 | 1.0 | 0.004 | **REFUSED** | no_localized_individual | 「＋」状態が充満 |
+| 0.05 | 1 | 1.0 | 0.003 | **REFUSED** | no_localized_individual | 「＋」状態が充満 |
+
+**陽性対照（同じゲートが受理）**：SH #40 個体は count=1・area_frac=0.015・rel_res=0・**Goldstone 2**＝ゲート **PASSED**。
+→ 拒否は**この白の性質**であって測定器の欠陥ではない（同じゲートが本物の個体は受理する）。
+
+**測定された知見**：走査域の 3成分 RD には**線形化すべき compact 局在静止個体が存在しない**（死ぬ／漂流ブロブ＝非静止／
+充満＝非局在）。→ **N0 no-go**（`not_found_in_scan`）だが、これは drift の**上流にある存在レベルのフロンティア**。
+測定器は個体の無い所でスペクトルを**捏造しない**（seed を変えても拒否は不変・seed=7 では分裂 count=2）。結果は機械可読
+`ai_lab/campaigns/m2_results/m2c_rd_existence.yaml`。→ **M2-D の根拠**：安定な compact 局在スポットに落ち着く**二場白**が要る。
+
 ## 運動を置かない（ANTI_DRIFT・条件付き非変分 OK）
 
 非変分/非相反は**条件付き OK**：等方的・外部方向なし・初期極性なし・速度指定なし・**drift 方向が seed ごとにランダム**
