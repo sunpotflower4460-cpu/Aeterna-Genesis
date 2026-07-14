@@ -89,6 +89,27 @@ def coupled_spectrum(state_vec, step_map_T, layout, dx, T_dt, k=12, eps=1e-4, nc
     return out
 
 
+def existence_gate(state_vec, next_vec, layout, count, area_frac, res_gate=1e-2, area_max=0.5):
+    """Guard BEFORE linearising: refuse to compute/interpret a coupled spectrum unless the base state is a
+    genuine COMPACT LOCALIZED (single) STATIONARY individual. A drift bifurcation is a statement ABOUT an
+    individual; if the state has DIED, keeps EVOLVING (not a fixed point), or the domain is FILLED (uniform,
+    not localized), there is no individual to linearise around and any eigenvalues would be meaningless. This
+    encodes the honest posture that an EXISTENCE frontier is UPSTREAM of a drift frontier (docs/ANGULAR_MODES.md
+    M2-C): the instrument must not hallucinate a spectrum where there is no individual.
+
+    Returns (ok, info) where info carries the measured rel_res / localized / stationary / count / area_frac and,
+    when refused, the `reason` ('no_localized_individual' | 'not_stationary'). `state_vec`/`next_vec` are the
+    bundled full state at t and t+dt (one step), `layout` the StateLayout, `count`/`area_frac` the connected
+    activator-spot count and its area fraction of the domain."""
+    rel_res = float(np.linalg.norm(next_vec - state_vec) / (np.linalg.norm(state_vec) + 1e-30))
+    localized = bool(count == 1 and 0.0 < area_frac < area_max)
+    stationary = bool(rel_res < res_gate)
+    ok = bool(localized and stationary)
+    reason = None if ok else ("no_localized_individual" if not localized else "not_stationary")
+    return ok, {"rel_res": round(rel_res, 6), "localized": localized, "stationary": stationary,
+                "count": int(count), "area_frac": round(float(area_frac), 4), "reason": reason}
+
+
 def classify_drift_before_split(spectrum, tol=1.0e-3):
     """Name the structure from the COUPLED spectrum with the Goldstone EXCLUDED. A spectral drift candidate
     needs a NON-Goldstone m=1 mode with Re lambda > tol that is the first to cross (>= the leading m>=2).

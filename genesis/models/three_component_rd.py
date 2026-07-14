@@ -18,6 +18,13 @@ trap: the centroid of a REPLICATING population wanders, which is NOT a single se
 A clean single, compact, persistent spot that also self-propels was NOT reached at accessible resolution
 => **self-propelled single individual = frontier** (原則5: attacked, not avoided; motion not placed).
 「同じ数学 != 同じもの」: a moving field spot is a moving localized structure, not a living thing.
+
+M2-C RE-MEASUREMENT (docs/ANGULAR_MODES.md): re-measured with the FULL coupled state (u,v,w bundled), not
+the u-only proxy, and guarded by `coupled_spectrum.existence_gate`. Across the k1 scan the instrument
+REFUSES to report a spectrum at every point -- the state either DIES (count 0), stays a DIFFUSE DRIFTING blob
+(not a stationary fixed point), or the "+" state INVADES and FILLS the domain (not localized). So the frontier
+here is UPSTREAM of drift: an EXISTENCE frontier (N0 not_found_in_scan). The SAME gate ACCEPTS the SH #40
+individual (positive control), so the refusal is a property of THIS white, not the instrument.
 """
 
 import numpy as np
@@ -75,6 +82,50 @@ def spot_stats(u, thr=0.4):
     cy = float((idx[0] * m).sum() / m.sum())
     cx = float((idx[1] * m).sum() / m.sum())
     return {"count": int(n), "area": area, "centroid": (cy, cx)}
+
+
+def coupled_audit(k1=None, N=96, settle_steps=6000, T=30, seed=1, k=8, res_gate=1e-2, area_max=0.5, p=None):
+    """M2-C: re-measure this white with the FULL coupled state (u,v,w bundled), not the u-only proxy. Settle
+    from the symmetric seed, then apply `coupled_spectrum.existence_gate`: only if the settled state is a
+    single, compact, localized, STATIONARY individual do we linearise (bundle all three fields into a
+    StateLayout, solve the coupled step-map Jacobian, identify/exclude the translation Goldstone, classify
+    drift-before-split). Otherwise the audit REFUSES and returns the gate reason -- an honest existence-level
+    finding (no individual to linearise; the frontier here is upstream of drift). `k1=None` uses DEFAULTS."""
+    from genesis.models.adapters.state_layout import StateLayout
+    from genesis.diagnostics import coupled_spectrum as cs
+    p = dict(DEFAULTS if p is None else p)
+    if k1 is not None:
+        p["k1"] = float(k1)
+    rng = np.random.default_rng(seed)
+    u, v, w = make_initial((N, N), 1e-3, rng, p)
+    k2 = _k2(N)
+    for _ in range(settle_steps):
+        u, v, w = step(u, v, w, p, k2)
+        if not np.all(np.isfinite(u)):
+            return {"k1": p["k1"], "gate": "REFUSED", "reason": "blow_up"}
+    lay = StateLayout(("u", "v", "w"), ((N, N), (N, N), (N, N)))
+    U = lay.flatten((u, v, w))
+    U1 = lay.flatten(step(u, v, w, p, k2))
+    s = spot_stats(u)
+    area_frac = s["area"] / float(N * N)
+    ok, info = cs.existence_gate(U, U1, lay, s["count"], area_frac, res_gate=res_gate, area_max=area_max)
+    out = {"k1": p["k1"], **info}
+    if not ok:
+        out["gate"] = "REFUSED"
+        return out
+    out["gate"] = "PASSED"
+
+    def step_T(vec):
+        a, b, c = lay.unflatten(vec)
+        for _ in range(T):
+            a, b, c = step(a, b, c, p, k2)
+        return lay.flatten((a, b, c))
+
+    spec = cs.coupled_spectrum(U, step_T, lay, dx=1.0, T_dt=T * p["dt"], k=k)
+    label, detected, mb = cs.classify_drift_before_split(spec)
+    out.update({"n_goldstone": sum(1 for x in spec if x["is_goldstone"]), "spec_label": label,
+                "detected": detected, "measured_by": mb})
+    return out
 
 
 def run_traj(seed, N=96, steps=8000, snap=1000, p=None):
