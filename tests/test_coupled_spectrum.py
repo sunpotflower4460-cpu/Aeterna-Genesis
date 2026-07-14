@@ -54,8 +54,11 @@ def test_scalar_sh_m1_is_the_goldstone_not_drift():
     spec = _spectrum(u, p, k2, N)
     gold = [s for s in spec if s["is_goldstone"]]
     assert len(gold) == 2                                      # x/y translation doublet
-    assert all(abs(s["lambda"]) < 5e-3 and s["m"] == 1 and max(s["overlap_x"], s["overlap_y"]) > 0.9
-               for s in gold)
+    # rotation-invariant: ARPACK returns an ARBITRARY rotation within the degenerate x/y Goldstone doublet,
+    # so an individual eigenvector can be a 45-deg mix (overlap_x~overlap_y~0.7). Check the COMBINED overlap
+    # (the mode lies in the translation subspace) instead of max() -- fixes intermittent CI flakiness.
+    assert all(abs(s["lambda"]) < 5e-3 and s["m"] == 1
+               and (s["overlap_x"] ** 2 + s["overlap_y"] ** 2) > 0.8 for s in gold)
     assert abs(gold[0]["lambda"] - gold[1]["lambda"]) < 5e-3   # x/y degenerate
     label, det, mb = cs.classify_drift_before_split(spec)
     assert label == "static"                                  # nothing non-Goldstone unstable
