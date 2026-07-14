@@ -52,10 +52,25 @@
 | 0.5 | ≈ 0（**変わらない**） | **−0.028（+0.19 上昇）** | static（split 側へ） |
 | ≳1.0 | — | — | 発散（blow-up） |
 
-**測定された機構**：非変分項は **split モード（m=2）を不安定側へ動かすが、translation（m=1）は marginal のまま**。
-＝**split-before-drift**：この白は**分裂に結合し、drift には結合しない**。→ **SH 族（変分でも、この非変分形でも）に自走は
-出ない＝white-specific frontier**、ただし「**なぜ必ず分裂が先か**」に**測定で答えた**（この族は m=2 に強く結合）。
-真の drift-before-split には別構造（二場・時間遅れ・非相反）が要る＝より深い frontier。
+**測定された機構（M1 proxy）**：非変分項は **split モード（m=2）を不安定側へ動かすが、translation（m=1）は
+marginal のまま**。→ この調査断面では m=2 が先。
+
+> ⚠️ **M2 による限定・修正（GPT M2 追記 §1〜§2・正直な後退）**：M1 の m=1 測定は**単一場の並進形 ∂x u へ直接
+> 摂動する短時間 proxy** だった。だが並進対称 PDE の静止解では **∂x U\* は並進対称性由来の Goldstone モードで、
+> drift 分岐の前後を問わず固有値は中立（λ≈0）**。したがって **「σ(m=1)≈0」は Goldstone が中立なだけ**で、drift の
+> 有無を語らない。真の drift モードは **Goldstone とは別の非 Goldstone m=1 極性モード**である。
+> **正確な結論**：**調査した非変分 SH の c=0 断面・測定範囲では m=2 の増幅が先に観測され、非 Goldstone な drift 分岐は
+> 未確認（否定もできていない）**。**「SH 族全体に自走なし」「SH では必ず split が先」とは（結合固有値解と (a,c)
+> 2次元面の確認前には）言わない。** 変分 SH の勾配流 no-go（構造的）と、特定の非変分 SH 断面の測定結果は分ける。
+> → M2 の正式判定は結合固有値解 [`coupled_spectrum.py`](../genesis/diagnostics/coupled_spectrum.py) を source of truth とする
+> （`angular_modes.py` は M1 proxy として履歴保持）。
+
+## M2：結合固有値解（source of truth）
+
+全場を束ねた**結合ヤコビアン**を matrix-free（step-map JVP）＋ Arnoldi で解き、**Goldstone を overlap で同定・除外**し、
+**非 Goldstone m=1** が m=2 より先にゼロを横切るか（drift-before-split）で判定する（`classify_drift_before_split`）。
+スカラー SH で検証済み：**m=1 近傍の2モードは並進 Goldstone（λ≈0・overlap≈1・x/y 縮退）＝正しく除外**、非 Goldstone m=1
+は**なし**、m=2 は安定（λ≈−0.18）＝M1 の符号順序と整合。**真の drift 判定はこの結合固有値解による**（次段 M2-B/C/D）。
 
 ## 運動を置かない（ANTI_DRIFT・条件付き非変分 OK）
 
