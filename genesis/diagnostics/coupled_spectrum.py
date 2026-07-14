@@ -24,30 +24,65 @@ from scipy import ndimage
 
 
 def _deriv(field, dx, axis):
+    """d/d(axis) via spectral differentiation, for ANY number of dimensions (2D or 3D)."""
     N = field.shape[axis]
     k = np.fft.fftfreq(N, d=dx) * 2.0 * np.pi
-    K = k[:, None] if axis == 0 else k[None, :]
-    return np.real(np.fft.ifft2(1j * K * np.fft.fft2(field)))
+    shape = [1] * field.ndim
+    shape[axis] = N
+    K = k.reshape(shape)
+    return np.real(np.fft.ifftn(1j * K * np.fft.fftn(field)))
 
 
 def translation_modes(fields, dx, layout):
-    """Coupled Goldstone shapes Tx, Ty = d/dx, d/dy of ALL fields, bundled and metric-normalised."""
-    Tx = layout.flatten([_deriv(f, dx, 0) for f in fields])
-    Ty = layout.flatten([_deriv(f, dx, 1) for f in fields])
-    return layout.normalized(Tx), layout.normalized(Ty)
+    """Coupled translation Goldstone shapes = d/d(axis) of ALL fields, bundled and metric-normalised.
+    Returns ONE mode per spatial axis: [Tx, Ty] in 2D, [Tx, Ty, Tz] in 3D."""
+    ndim = fields[0].ndim
+    return [layout.normalized(layout.flatten([_deriv(f, dx, ax) for f in fields])) for ax in range(ndim)]
 
 
 def _centre(field, thr=0.3):
     m = np.abs(field) > thr
-    if m.sum() == 0:
-        n = field.shape[0]
-        return (n / 2.0, n / 2.0)
     idx = np.indices(field.shape)
-    return (float((idx[0] * m).sum() / m.sum()), float((idx[1] * m).sum() / m.sum()))
+    if m.sum() == 0:
+        return tuple(s / 2.0 for s in field.shape)
+    return tuple(float((idx[a] * m).sum() / m.sum()) for a in range(field.ndim))
+
+
+def _fib_sphere(n):
+    """n quasi-uniform unit directions on the sphere (Fibonacci lattice), as an (n, 3) array."""
+    i = np.arange(n) + 0.5
+    phi = np.arccos(1.0 - 2.0 * i / n)
+    theta = np.pi * (1.0 + 5.0 ** 0.5) * i
+    return np.stack([np.sin(phi) * np.cos(theta), np.sin(phi) * np.sin(theta), np.cos(phi)], axis=1)
+
+
+def _angular_content_3d(field, centre, dx, nr=12, rmax=8.0, ndir=150):
+    """Dominant SPHERICAL-HARMONIC degree ell (0=breathing/monopole, 1=translation/dipole, 2=split/
+    quadrupole) of a 3D `field` around `centre`: sample on spherical shells, project onto real SH l=0,1,2."""
+    dirs = _fib_sphere(ndir)                                  # (ndir, 3) unit vectors in (axis0,1,2)
+    x, y, z = dirs[:, 0], dirs[:, 1], dirs[:, 2]
+    groups = [(0, [np.ones_like(x)]),
+              (1, [x, y, z]),
+              (2, [x * y, y * z, z * x, x * x - y * y, 3.0 * z * z - 1.0])]  # orthogonal over the sphere
+    c = np.array(centre)
+    rr = np.linspace(1.0, rmax, nr)
+    power = np.zeros(3)
+    for r in rr:
+        pts = c[:, None] + r * dirs.T / dx                   # (3, ndir) index coordinates
+        vals = ndimage.map_coordinates(field, pts, order=1, mode="wrap")
+        for ell, basis in groups:
+            for B in basis:
+                Bn = B / (np.sqrt(np.mean(B * B)) + 1e-30)    # normalise each SH over the sample
+                power[ell] += float(np.mean(vals * Bn)) ** 2
+    return int(np.argmax(power)), (power / (power.sum() + 1e-30)).tolist()
 
 
 def angular_content(field, centre, dx, nr=16, nth=64, rmax=8.0):
-    """Dominant angular wavenumber m (0..5) of `field` around `centre` (polar sample -> angular FFT)."""
+    """Dominant angular index of `field` around `centre`: in 2D the angular wavenumber m (0..5, polar FFT);
+    in 3D the spherical-harmonic degree ell (0..2). Both use 1=translation/drift, >=2=split -- so the same
+    drift-before-split classifier works in either dimension."""
+    if field.ndim == 3:
+        return _angular_content_3d(field, centre, dx, nr=nr, rmax=rmax)
     cy, cx = centre
     rr = np.linspace(1.0, rmax, nr)
     th = np.linspace(0.0, 2.0 * np.pi, nth, endpoint=False)
@@ -73,18 +108,21 @@ def coupled_spectrum(state_vec, step_map_T, layout, dx, T_dt, k=12, eps=1e-4, nc
     mu, vecs = eigs(A, k=k, which="LM", ncv=min(ncv, n - 1), maxiter=4000, tol=1e-7)
     lam = np.log(np.abs(mu) + 1e-300) / float(T_dt)
     fields = layout.unflatten(state_vec)
-    Tx, Ty = translation_modes(fields, dx, layout)
+    trans = translation_modes(fields, dx, layout)            # [Tx, Ty] (2D) or [Tx, Ty, Tz] (3D)
     centre = _centre(fields[0])
+    ndim = fields[0].ndim
     out = []
     for i in range(len(mu)):
         q = layout.normalized(np.real(vecs[:, i]))
-        ox = abs(layout.inner(q, Tx))
-        oy = abs(layout.inner(q, Ty))
+        overlaps = [abs(layout.inner(q, T)) for T in trans]  # overlap with each translation Goldstone
         qm = layout.unflatten(q)[0]                          # angular content of the primary field
-        m, _ = angular_content(qm, centre, dx)
-        is_gold = bool(abs(lam[i]) < goldstone_tol and max(ox, oy) > overlap_tol)
-        out.append({"lambda": float(lam[i]), "mu_abs": float(abs(mu[i])), "overlap_x": round(ox, 3),
-                    "overlap_y": round(oy, 3), "m": m, "is_goldstone": is_gold})
+        m, _ = angular_content(qm, centre, dx)               # m (2D) or spherical ell (3D)
+        is_gold = bool(abs(lam[i]) < goldstone_tol and max(overlaps) > overlap_tol)
+        d = {"lambda": float(lam[i]), "mu_abs": float(abs(mu[i])), "overlap_x": round(overlaps[0], 3),
+             "overlap_y": round(overlaps[1], 3), "m": m, "is_goldstone": is_gold}
+        if ndim == 3:
+            d["overlap_z"] = round(overlaps[2], 3)
+        out.append(d)
     out.sort(key=lambda d: -d["lambda"])
     return out
 
