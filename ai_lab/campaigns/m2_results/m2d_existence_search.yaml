@@ -1,0 +1,57 @@
+# Frontier Campaign M2-D — machine-readable result (GPT M2 addendum §19)
+# Broad, documented EXISTENCE search for a stable localized individual to measure drift on. Using the
+# existence_gate as the OBJECTIVE (ANTI_DRIFT-clean: measure WHERE a stable individual exists, do not place
+# one / do not hunt a moving model), we scan the three-component RD across 5 physical axes. NO point yields a
+# compact localized STATIONARY single individual -> the drift measurement is BLOCKED by an existence frontier
+# UPSTREAM of drift. Combined with M2-B (the ONE white with a stable individual, SH, has NO drift mode), this
+# is the M2 "scissors": a white either has a stable individual but no drift mode, or the drift mechanism but
+# no stable individual. Drift-before-split is not measurable in this repo's accessible whites.
+campaign: M2-D
+instrument: genesis/diagnostics/coupled_spectrum.py::existence_gate
+measured_by: genesis/models/three_component_rd.py::existence_scan
+grid: {N: 80, dx: 1.0, dt: 0.1}
+settle_steps: 5000
+seed: 1
+gate: {res_gate: 0.01, area_max: 0.5, criteria: [single_component, compact_localized, stationary_fixed_point]}
+
+axes_scanned: [k3, k4, k1, Dv, Dw]
+probes_total: 36          # RD; plus a corroborating 9-point two-component FHN (Dv,eps) cross-check, also all fill
+passes: 0
+
+failure_modes:
+  dies:            "count 0, area_frac 0  (activator collapses)"
+  plus_fills:      "area_frac ~1.0        (the '+' state invades and fills the domain)"
+  fragments:       "count 3..56           (background Turing-unstable -> labyrinth/multi-spot, no isolated single)"
+  non_stationary:  "count 1 but rel_res > gate  (diffuse blob keeps evolving)"
+
+# representative rows (full 36 in scratchpad m2d_search_combined.txt; regenerate via existence_scan)
+points:
+  - {k3: 0.5, k4: 2.0, k1: 0.0,  count: 5,  area_frac: 0.136, gate: REFUSED, mode: fragments}
+  - {k3: 1.0, k4: 2.0, k1: 0.0,  count: 56, area_frac: 0.160, gate: REFUSED, mode: fragments}
+  - {k3: 2.0, k4: 2.0, k1: -0.02, count: 1, area_frac: 0.701, gate: REFUSED, mode: plus_fills}
+  - {Dv: 1.0, Dw: 20.0, k1: 0.0, count: 3,  area_frac: 0.488, gate: REFUSED, mode: fragments}
+  - {Dv: 4.0, Dw: 40.0, k1: 0.0, count: 1,  area_frac: 0.409, gate: REFUSED, mode: non_stationary}
+  - {Dv: 2.0, Dw: 80.0, k1: 0.0, count: 0,  area_frac: 0.0,   gate: REFUSED, mode: dies}
+
+no_go:
+  stage: N0                       # not_found_in_scan (§17), broadened to a 5-axis / 36-probe grid
+  level: existence                # UPSTREAM of drift; no stable individual to linearise
+  white_specific: true
+  claim_excludes: [all_parameters_impossible, all_resolutions, all_domain_sizes]
+  tier: frontier
+
+m2_synthesis_scissors:
+  stable_individual_but_no_drift_mode:
+    white: swift_hohenberg (variational + non-variational)
+    evidence: M2-B (#47) — only translation Goldstone; NO non-Goldstone m=1; split (m=2) destabilises first (N2)
+  drift_mechanism_but_no_stable_individual:
+    white: three_component_rd (slow long-range inhibitor)
+    evidence: M2-C (#48) + M2-D — existence_gate refuses across 36 probes / 5 axes (dies/fills/fragments)
+  conclusion: >
+    In this repo's accessible whites, drift-before-split is NOT measurable: a white either has a stable
+    localized individual but no drift polarity mode (SH), or the mechanism that could drive drift (slow
+    inhibitor) but no stable individual to carry it (RD). To measure a genuine drift bifurcation one needs a
+    DISTINCT white that simultaneously (a) settles to a stable compact single spot AND (b) has a slow/
+    non-reciprocal recovery field — e.g. a mass-conserved / globally-inhibited activator-inhibitor whose
+    stable background forbids front-invasion. That is the honest next white (beyond this campaign's scan).
+  language: spots != life; a settling/moving field structure is not a living thing (docs/ANTI_DRIFT.md).

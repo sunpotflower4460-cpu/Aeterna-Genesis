@@ -110,6 +110,29 @@ M2-B は SH 族に **drift 極性モードが無い**ことを示した。次は
 測定器は個体の無い所でスペクトルを**捏造しない**（seed を変えても拒否は不変・seed=7 では分裂 count=2）。結果は機械可読
 `ai_lab/campaigns/m2_results/m2c_rd_existence.yaml`。→ **M2-D の根拠**：安定な compact 局在スポットに落ち着く**二場白**が要る。
 
+### M2-D：安定個体を存在ゲートで広域探索（`three_component_rd.existence_scan`）＝M2 の scissors
+
+M2-C は 3成分 RD の k1 断面に個体が無いことを示した。ここでは**存在ゲートを目的関数**にして（＝**動くモデルを
+探す**のでなく、**安定個体がどこに在るかを測る**・ANTI_DRIFT）、3成分 RD を **5軸（k3,k4,k1,Dv,Dw）36探針**で走査する。
+
+| 失敗様式 | 判定 | 意味 |
+|---|---|---|
+| 死ぬ（count=0） | REFUSED | 活性化子が崩壊 |
+| 「＋」充満（area_frac≈1） | REFUSED | ＋状態が侵入・充満（非局在） |
+| 断片化（count 3〜56） | REFUSED | 背景が Turing 不安定＝迷路/多スポット（単一個体でない） |
+| 非静止（count=1・rel_res>gate） | REFUSED | 拡散ブロブが進化し続ける |
+
+**結果：36探針すべて REFUSED（PASS=0）**＝走査域に**線形化すべき安定 compact 単一静止個体が存在しない**。
+（二成分 FHN の (Dv,eps) 断面も同様に充満・裏取り。）→ **N0 存在フロンティア**（drift の上流・white/領域限定）。
+
+**M2 の scissors（総合）**：
+- **安定個体はあるが drift モードが無い**：**SH**（変分＋非変分）＝M2-B（#47）。並進 Goldstone のみ・非 Goldstone m=1 無し・m=2 が先（N2）。
+- **drift の機構はあるが安定個体が無い**：**3成分 RD**（遅い長距離抑制子）＝M2-C（#48）＋M2-D。存在ゲートが36探針で拒否。
+- ⇒ **この repo の到達可能な白では drift-before-split は測定不能**：白は「安定個体を持つが極性モードが無い」か
+  「drift 機構を持つが安定個体が無い」かのどちらか。真の drift 分岐を測るには、**安定 compact 単一スポットに
+  落ち着き かつ 遅い/非相反な回復場を併せ持つ別の白**（例：質量保存/大域抑制で背景が front 侵入を禁じる
+  activator-inhibitor）が要る——本キャンペーンの走査の外にある次の白。機械可読 `ai_lab/campaigns/m2_results/m2d_existence_search.yaml`。
+
 ## 運動を置かない（ANTI_DRIFT・条件付き非変分 OK）
 
 非変分/非相反は**条件付き OK**：等方的・外部方向なし・初期極性なし・速度指定なし・**drift 方向が seed ごとにランダム**

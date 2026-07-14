@@ -128,6 +128,41 @@ def coupled_audit(k1=None, N=96, settle_steps=6000, T=30, seed=1, k=8, res_gate=
     return out
 
 
+def existence_scan(grid, N=64, settle=4000, seed=1):
+    """M2-D: use `coupled_spectrum.existence_gate` as the OBJECTIVE to search WHERE a stable compact single
+    stationary spot exists -- NOT to hunt a moving model (ANTI_DRIFT: measure where a stable individual is,
+    do not place/chase one). `grid` is a list of parameter-override dicts. Returns a list of
+    {**over, gate, count, area_frac, rel_res, reason}, deterministic for a fixed seed. A PASS is a regime
+    where drift could then be measured; across the documented grid there are none -> the drift measurement is
+    blocked by an existence frontier UPSTREAM of drift (docs/ANGULAR_MODES.md M2-D)."""
+    from genesis.models.adapters.state_layout import StateLayout
+    from genesis.diagnostics import coupled_spectrum as cs
+    out = []
+    for over in grid:
+        p = dict(DEFAULTS); p.update(over)
+        rng = np.random.default_rng(seed)
+        u, v, w = make_initial((N, N), 1e-3, rng, p)
+        k2 = _k2(N)
+        blew = False
+        for _ in range(settle):
+            u, v, w = step(u, v, w, p, k2)
+            if not np.all(np.isfinite(u)):
+                blew = True
+                break
+        if blew:
+            out.append({**over, "gate": "REFUSED", "reason": "blow_up"})
+            continue
+        lay = StateLayout(("u", "v", "w"), ((N, N), (N, N), (N, N)))
+        U = lay.flatten((u, v, w))
+        U1 = lay.flatten(step(u, v, w, p, k2))
+        s = spot_stats(u)
+        af = s["area"] / float(N * N)
+        ok, info = cs.existence_gate(U, U1, lay, s["count"], af)
+        out.append({**over, "gate": "PASSED" if ok else "REFUSED", "count": s["count"],
+                    "area_frac": round(af, 3), "rel_res": info["rel_res"], "reason": info["reason"]})
+    return out
+
+
 def run_traj(seed, N=96, steps=8000, snap=1000, p=None):
     """Run from a symmetric seed; return per-snapshot (count, area_fraction, centroid) trajectory."""
     p = dict(DEFAULTS if p is None else p)
