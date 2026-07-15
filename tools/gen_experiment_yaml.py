@@ -182,6 +182,12 @@ DATA = {
     put="負の頻度依存のみ（外部最適点なし）＋中立対照＋強罰 run",
     emg="生存窓内では中立を超えず・強罰は絶滅＝内生多様性は自己生成しない（負の結果）",
     km="negative frequency-dependent selection / neutral null"),
+  "e046_topological_state_capacity": dict(title="トポロジカル状態容量（独立ホロノミーチャネル=b₁）",
+    role="V", sec=["N"], conf="A", tier=["measured", "established"],
+    dim="graph", risk="low", grole="measurement_tool", te=False, seeded=True,
+    put="固定曲面の胞複体＋辺 U(1) 接続＋H₁ 基底＋（一部）指定巻き（トポロジーと巻きは置く）",
+    emg="rank H₁=b₁=2g／読み戻し正確／ゲージ不変／可縮=0／同ホモロジー同値（測定器検証＝V・非創発）",
+    km="胞体コホモロジー H¹ / トーリック符号の保護論理dof / Aharonov-Bohm / Poincaré-Hopf(別statement)"),
 }
 
 
