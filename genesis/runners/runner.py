@@ -140,6 +140,31 @@ def write_run(result, out_root):
     return run_dir
 
 
+def corroborate_run(quick=False, seed=0, out_dir=None, panel_fn=None):
+    """Optional post-run CROSS-REPO backing (opt-in via --corroborate). Fires the SAME CGL-family question
+    CONCURRENTLY at independent reference repos -- Genesis-Room (3D, same_model_quantitative) and 0-looper
+    (2D, reduced_mechanism_structural) -- and returns/writes a backing panel ALONGSIDE the run.
+
+    Honest by construction: this backs the CGL-family white (`cgl_local`, which is what has independent 2D/3D
+    counterparts), NOT this run's exact checksum. It is network-dependent, so it is OFF by default and NEVER
+    part of the hermetic CI (the local-vs-spectral layer in genesis/diagnostics/corroborate.py is the CI-side
+    backing). Offline is a SOFT failure: an unavailable repo reports backed=None, never a faked pass. Writes a
+    SEPARATE `corroboration.json`; it does not touch manifest/summary/emergence/checksum."""
+    fn = panel_fn
+    if fn is None:
+        from tools.corroborate import corroborate_all as fn  # lazy: network-dependent import
+    shape2d = (32, 32) if quick else (64, 64)
+    shape3d = (16, 16, 16) if quick else (24, 24, 24)
+    panel = fn(shape2d=shape2d, shape3d=shape3d, seed=seed)
+    panel["note"] = ("cross-repo backing of the CGL-family white (cgl_local), run concurrently: "
+                     "Genesis-Room 3D + 0-looper 2D. backed=None means that reference repo was offline "
+                     "(soft failure, never a faked pass). This backs the white's physics, not this run's checksum.")
+    if out_dir is not None:
+        with open(os.path.join(out_dir, "corroboration.json"), "w") as f:
+            json.dump(panel, f, indent=2)
+    return panel
+
+
 _DEMO_GENESIS = {
     "schema_version": 1, "model": gl.MODEL_ID, "dimension": 2,
     "domain": {"size": [96, 96], "spacing": 1.0, "boundary": "periodic"},
@@ -157,6 +182,9 @@ def main(argv=None):
     ap.add_argument("--no-write", action="store_true")
     ap.add_argument("--out-root", default=None)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--corroborate", action="store_true",
+                    help="after the run, dispatch the CGL-family question to Genesis-Room (3D) + 0-looper (2D) "
+                         "concurrently and save corroboration.json (network-dependent; offline = soft None).")
     args = ap.parse_args(argv)
     genesis = dict(_DEMO_GENESIS)
     genesis["seed"] = args.seed
@@ -171,10 +199,23 @@ def main(argv=None):
           % (m["summary"]["reached_level"], e["detected"]["difference"], e["detected"]["localization"],
              m["summary"]["conservation_drift"]))
     print("  checksum=%s" % m["checksum"]["final_field_sha256"][:16])
+    run_dir = None
     if not args.no_write:
         out_root = args.out_root or os.path.join(_REPO, "genesis", "runners", "_demo_run")
         run_dir = write_run(r, out_root)
         print("  wrote %s" % os.path.relpath(run_dir, _REPO))
+    if args.corroborate:
+        try:
+            panel = corroborate_run(quick=args.quick, seed=args.seed, out_dir=run_dir)
+            for backend in ("genesis_room_3d", "zero_looper_2d"):
+                v = panel[backend]
+                print("  corroborate %-16s backed=%s kind=%s%s"
+                      % (backend, v.get("backed"), v.get("kind"),
+                         "" if v.get("backed") is not None else " (%s)" % v.get("reason")))
+            if run_dir is not None:
+                print("  wrote %s/corroboration.json" % os.path.relpath(run_dir, _REPO))
+        except Exception as e:  # noqa: BLE001 -- corroboration must never break the run
+            print("  corroborate skipped (%s) -- the run itself is unaffected" % type(e).__name__)
     # emergence is a measured outcome, not a pass/fail gate; exit 0 if it computed a Level.
     return 0
 
