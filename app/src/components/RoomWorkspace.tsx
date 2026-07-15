@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { useRoomField } from '../lib/useField'
 import Viewport from './Viewport'
 import Inspector from './Inspector'
-import { LEVEL_TEXT, dimBadge } from './ui'
+import { LEVEL_TEXT, LENS_JP, LENS_LEGEND, dimBadge } from './ui'
+import type { Room } from '../lib/types'
 
 export default function RoomWorkspace() {
   const room = useStore((s) => s.currentRoom())
@@ -13,6 +14,7 @@ export default function RoomWorkspace() {
   const nframes = data.field?.nframes ?? 1
   const is3d = data.field?.dimension === 3
   const clock = useRef(0) // smooth playhead in frame units, advanced by the render loop
+  const [capOpen, setCapOpen] = useState(true) // "これは何？" caption starts open
 
   // default lens once fields load
   useEffect(() => {
@@ -21,14 +23,18 @@ export default function RoomWorkspace() {
 
   if (!room) return null
   const decoded = lens ? data.lenses[lens] : null
+  // a cyclic (phase) lens is gated by an amplitude sibling (density) so it isn't full-volume rainbow
+  const maskLens = decoded?.cyclic
+    ? (Object.values(data.lenses).find((l) => l && !l.cyclic) ?? null)
+    : null
   const t = data.field?.times[Math.min(frame, nframes - 1)]
 
   return (
     <div style={{ height: '100%', display: 'grid', gridTemplateRows: 'auto 1fr auto', background: 'var(--ground)' }}>
       {/* header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid var(--line)' }}>
+      <div className="room-head" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid var(--line)' }}>
         <button className="tbtn" onClick={toLobby} aria-label="back">‹</button>
-        <span style={{ fontWeight: 600 }}>{room.title}</span>
+        <span className="room-title" style={{ fontWeight: 600 }}>{room.title}</span>
         <span className="badge">Level {room.reached_level ?? '?'}</span>
         {dimBadge(room)}
         <span style={{ flex: 1 }} />
@@ -36,29 +42,35 @@ export default function RoomWorkspace() {
       </div>
 
       {/* viewport + overlays + inspector */}
-      <div style={{ position: 'relative', overflow: 'hidden', display: 'grid', gridTemplateColumns: inspectorOpen ? '1fr 300px' : '1fr' }}>
+      <div className="room-body" style={{ position: 'relative', overflow: 'hidden', display: 'grid', gridTemplateColumns: inspectorOpen ? '1fr 300px' : '1fr' }}>
         <div style={{ position: 'relative' }}>
           {data.loading && <Overlay text="◈ recorded field を読み込み中…" />}
           {data.error && <Overlay text={'記録された場がありません（' + data.error + '）'} />}
-          {decoded && <Viewport lens={decoded} view={viewSettings} is3d={is3d} playing={playing}
+          {decoded && <Viewport lens={decoded} mask={maskLens} view={viewSettings} is3d={is3d} playing={playing}
             speed={speed} clock={clock} nframes={nframes} onFrame={(i) => setFrame(i)} />}
 
-          {/* HUD */}
-          <Hud pos={{ top: 12, left: 12 }}>
-            <b style={{ color: 'var(--accent)' }}>Level {room.reached_level ?? '?'}</b><br />
-            <span className="muted">{LEVEL_TEXT[room.reached_level ?? 0] ?? ''}</span>
-          </Hud>
+          {/* "これは何？" plain-language caption — what emerged, level meaning, honesty, what was put in */}
+          <Caption room={room} open={capOpen} onToggle={() => setCapOpen((v) => !v)} />
+
+          {/* HUD (compact, top-right) */}
           <Hud pos={{ top: 12, right: 12 }}>
             <b style={{ color: room.official ? 'var(--official)' : 'var(--muted)' }}>{room.dimension}</b><br />
             <span className="muted">{room.runs?.length ?? 0} seeds</span>
           </Hud>
-          {t !== undefined && <Hud pos={{ left: 12, bottom: 58 }}>t = <b className="tnum">{t.toFixed(2)}</b></Hud>}
+          {t !== undefined && <Hud pos={{ left: 12, bottom: 84 }}>t = <b className="tnum">{t.toFixed(2)}</b></Hud>}
 
-          {/* lens row */}
-          <div style={{ position: 'absolute', left: 12, right: 12, bottom: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {data.lensNames.map((l) => (
-              <button key={l} className={'lens ' + (l === lens ? 'on' : '')} onClick={() => setLens(l)}>{l}</button>
-            ))}
+          {/* lens row (JP labels) + color legend for the active lens */}
+          <div style={{ position: 'absolute', left: 12, right: 12, bottom: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {lens && LENS_LEGEND[lens] && (
+              <div className="legend mono muted">🎨 {LENS_LEGEND[lens]}</div>
+            )}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {data.lensNames.map((l) => (
+                <button key={l} className={'lens ' + (l === lens ? 'on' : '')} onClick={() => setLens(l)}>
+                  {LENS_JP[l] ?? l}<span className="lens-en"> {l}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         {inspectorOpen && <Inspector room={room} data={data} />}
@@ -78,6 +90,29 @@ export default function RoomWorkspace() {
         <button className="lens" style={{ color: 'var(--accent)', borderColor: 'rgba(79,227,224,.4)', background: 'var(--accent-dim)' }}
           onClick={() => useStore.getState().setTab('genesis')}>⑃ Branch Room</button>
       </div>
+    </div>
+  )
+}
+
+function Caption({ room, open, onToggle }: { room: Room; open: boolean; onToggle: () => void }) {
+  const level = room.reached_level ?? 0
+  if (!open) {
+    return (
+      <button className="cap-chip" onClick={onToggle} aria-label="これは何？">? これは何</button>
+    )
+  }
+  return (
+    <div className="caption">
+      <div className="cap-head">
+        <b>{room.emerged || room.title}</b>
+        <button className="cap-x" onClick={onToggle} aria-label="close">×</button>
+      </div>
+      <div className="cap-line">
+        <span className="cap-badge">Level {level}</span>
+        <span className="muted">{LEVEL_TEXT[level] ?? ''}</span>
+      </div>
+      <div className="cap-honest">完成した構造は初期状態に入れていません（0から育った）</div>
+      {room.put_in && <div className="cap-putin muted">入れたもの: {room.put_in}</div>}
     </div>
   )
 }

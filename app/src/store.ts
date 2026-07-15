@@ -67,7 +67,7 @@ export const useStore = create<State>((set, get) => ({
   inspectorOpen: false,
   inspectorTab: 'view',
   physicsTier: 1,
-  viewSettings: { threshold: 0.35, opacity: 0.85, glow: 0.6, quality: 1 },
+  viewSettings: { threshold: 0.2, opacity: 0.7, glow: 0.32, quality: 1 },
   pendingGenesis: null,
 
   setCatalog: (c) => set({ catalog: c }),
