@@ -1,0 +1,74 @@
+# Frontier Campaign M2-E-3D -- machine-readable result
+# The M2-D scissors said: in this repo's whites, drift-before-split is unmeasurable because a white either has
+# a stable localized individual but NO drift mode (SH), or the drift mechanism but NO stable individual (RD,
+# whose '+' state FILLS the domain). M2-D named the honest next white: a MASS-CONSERVED activator-inhibitor
+# whose conserved total forbids that front-invasion. M2-E-3D builds it, in 3D, with a LOCAL 7-point stencil
+# (np.roll only, no FFT; central-none), and measures both halves of the scissors.
+#
+# RESULT: the EXISTENCE half is BROKEN in 3D (a genuinely-3D stable compact SINGLE individual GROWS from a
+# structureless start and PASSES the gate -- no 2D M2 white could). The DRIFT half PERSISTS (that individual's
+# coupled 3D spectrum is `static`: the only ~0 mode is the mass-conservation zero mode; the ell=1 modes are
+# lattice-pinned TRANSLATION Goldstones, stable; NO non-Goldstone drift-polarity mode). Mass conservation buys
+# the individual but not self-propulsion. Genuine 3D drift needs a non-reciprocal / time-delayed push that
+# moves the translation Goldstone POSITIVE without destroying the background -> next white M2-E-3D-NR.
+campaign: M2-E-3D
+white: genesis/models/mass_conserved_3d.py            # da/dt=Da lap a + f ; db/dt=Db lap b - f ; (a+b) conserved
+reaction: "f = b*(k0 + gamma a^2/(K^2+a^2)) - delta a"   # same f, opposite sign -> total mass has no source/sink
+numerics: local_7point_np.roll                        # no FFT, no global solve (AGENTS.md: local x parallel x central-none)
+instrument: genesis/diagnostics/coupled_spectrum.py   # existence_gate + dimension-aware coupled eigen-solver
+tests: tests/test_mass_conserved_3d.py
+tier: frontier
+language: spots != life; a settling field 'ball' is a field structure, not a living thing (docs/ANTI_DRIFT.md)
+
+params: {Da: 0.1, Db: 2.0, k0: 0.067, gamma: 1.0, K: 1.0, delta: 1.0, b0: 3.0}
+ic: symmetric_bump_plus_tiny_noise                    # motion NOT seeded; law isotropic (grow, don't place)
+
+existence:                                            # BROKEN half of the scissors: a 3D individual DOES exist
+  grid: {N: 20, dx: 1.0, dt: 0.0208}                  # test config (also verified N=24/28: same verdict)
+  settle_steps: 2000
+  seed: 0
+  result: {ncomp: 1, vol_frac: 0.401, mass_drift: 0.0, rel_res: 7.0e-06,
+           gate: PASS, genuinely_3d: true, extruded_from_2d: false}
+  scan_note: >
+    b0/Db scan (N=32, dt=0.02): b0>=3.0 -> single ball (gate PASS); b0=2.5 -> splits into 2 (REFUSED).
+    Representative: (b0=3.0,Db=2.0) PASS ncomp=1 vol_frac=0.33 mass_drift=1.5e-16 genuinely_3d;
+    (b0=3.5,Db=2.0) PASS; (b0=2.5,Db=2.0) REFUSED no_localized_individual.
+  breaks: existence_frontier                          # the 'no stable individual' side of M2-C/M2-D/scissors
+
+drift:                                                # PERSISTING half of the scissors: the individual is static
+  method: coupled_step_map_jacobian_JVP               # matrix-free JVP + scipy eigs(which=LM); 3 Goldstones + ell
+  grid: {N: 20, T_dt: 1.25}
+  label: static
+  spectral_drift_candidate: false
+  measured_by: {lambda_leading: 0.0, lambda_m1_non_goldstone: -0.0414, lambda_m2plus: -0.0414, drift_margin: -4.0e-05}
+  modes:
+    - {ell: 0, lambda: 0.0,     interpretation: mass_conservation_zero_mode}   # conserved total => exact zero mode
+    - {ell: 1, lambda: -0.0414, translation_overlap: 0.88, interpretation: translation_Goldstone_x_lattice_pinned}
+    - {ell: 1, lambda: -0.0414, translation_overlap: 0.81, interpretation: translation_Goldstone_y_lattice_pinned}
+    - {ell: 1, lambda: -0.0414, translation_overlap: 0.85, interpretation: translation_Goldstone_z_lattice_pinned}
+    - {ell: 2, lambda: -0.0414, interpretation: split_mode_stable}             # ell=2 (split) is stable, not first
+  conclusion: >
+    All eigenvalues <= 0. The single ~0 mode is the mass-conservation zero mode (NOT a drift instability). The
+    three ell=1 modes are the translation Goldstones (high translation overlap), stable at lambda~=-0.04. There
+    is NO non-Goldstone ell=1 drift-polarity mode. => the individual is relaxational (variational-like) and does
+    NOT self-propel. Same phenotype as SH: a stable individual with no drift mode.
+
+honest_floor:
+  - Coarse N=20/24 measurement WITH lattice pinning: the discrete grid breaks continuous translation symmetry,
+    so the translation Goldstones sit slightly negative (lambda~=-0.04) rather than exactly 0.
+  - goldstone_tol=5e-3 is too tight for these pinned Goldstones, so coupled_spectrum tags them is_goldstone=False
+    and reports lambda_m1_non_goldstone=-0.0414. The conclusion is ROBUST to that tag: every ell=1 mode has high
+    translation overlap AND is stable, so none is a drift candidate regardless of labelling. A follow-up
+    measurement PR should make is_goldstone overlap-primary (relative-lambda tol) for pinned lattices.
+  - "3D stable individual" is NOT a claim of life / a universe (same maths != same thing; spots != life, 3D).
+
+m2_scissors_update:
+  before: stable_individual XOR drift_mechanism (SH has the individual, RD has the mechanism; never both)
+  after:  >
+    Mass conservation + 3D delivers the STABLE INDIVIDUAL that RD lacked -- but that individual lands on the
+    SH side of the scissors (stable, no drift mode). The scissors is not resolved; it MOVED: the open frontier
+    is now purely 'add a drift mode WITHOUT destroying the background', which is exactly what a reciprocal
+    (variational) law cannot do.
+
+next: M2-E-3D-NR   # mass-conserved + slow NON-RECIPROCAL field: push the translation Goldstone positive (drift)
+                   # WITHOUT killing the ball -> the first honest test of a genuine 3D self-propulsion threshold
