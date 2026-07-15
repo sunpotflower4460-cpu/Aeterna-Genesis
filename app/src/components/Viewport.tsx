@@ -27,7 +27,7 @@ const FRAG = `
     vec2 d = gl_PointCoord - vec2(0.5);
     float r = length(d);
     if(r > 0.5) discard;
-    float a = pow(1.0 - r*2.0, 1.4) * vAlpha;
+    float a = pow(1.0 - r*2.0, 2.3) * vAlpha; // tighter dot -> crisper than a soft blob
     gl_FragColor = vec4(vColor, a);
   }`
 
@@ -53,9 +53,9 @@ function posFromIndex(grid: number[], flat: number, S: number): [number, number,
   return [(i / (a - 1) - 0.5) * S, (k / (c - 1) - 0.5) * S, (j / (b - 1) - 0.5) * S]
 }
 
-function FieldPoints({ lens, view, playing, speed, clock, nframes, onFrame }: {
-  lens: DecodedLens; view: ViewSettings; playing: boolean; speed: number; clock: React.MutableRefObject<number>
-  nframes: number; onFrame: (i: number) => void
+function FieldPoints({ lens, mask, view, playing, speed, clock, nframes, onFrame }: {
+  lens: DecodedLens; mask: DecodedLens | null; view: ViewSettings; playing: boolean; speed: number
+  clock: React.MutableRefObject<number>; nframes: number; onFrame: (i: number) => void
 }) {
   const stride = lens.grid.reduce((a, b) => a * b, 1)
   const idx = useMemo(() => lodIndices(lens.grid, view.quality), [lens.grid.join(','), view.quality])
@@ -94,14 +94,33 @@ function FieldPoints({ lens, view, playing, speed, clock, nframes, onFrame }: {
     const col = obj.geometry.getAttribute('acolor') as THREE.BufferAttribute
     const alp = obj.geometry.getAttribute('aalpha') as THREE.BufferAttribute
     const ca = col.array as Float32Array, aa = alp.array as Float32Array
-    const vscale = lens.grid.length === 3 ? 0.32 : 0.85
+    const vscale = lens.grid.length === 3 ? 0.6 : 0.85
+    const mnorm = mask ? mask.norm : null // amplitude field (e.g. density) that gates a cyclic (phase) lens
     for (let n = 0; n < count; n++) {
       const c = idx ? idx[n] : n
       const v0 = lens.norm[off0 + c]
       const v = lens.cyclic ? v0 : v0 + (lens.norm[off1 + c] - v0) * frac // interpolate linear; snap cyclic
       const [r, g, b] = lensColor(v, lens.cyclic)
       ca[n * 3] = r; ca[n * 3 + 1] = g; ca[n * 3 + 2] = b
-      aa[n] = (!lens.cyclic && v < view.threshold) ? 0 : lensAlpha(v, lens.cyclic) * view.opacity * vscale
+      if (lens.cyclic && mnorm) {
+        // phase(hue) gated by amplitude. The vortex LINES are where the condensate is DEPLETED (low |psi|^2),
+        // so light ONLY the low-amplitude points as bright phase-colored threads. We deliberately do NOT
+        // render the ordered bulk: a faint per-voxel alpha, summed additively through the ~20-voxel view
+        // depth, integrates into a uniform grey veil (the "ぼやぼや"). Keeping the bulk transparent is what
+        // collapses the fog and leaves the real recorded structure legible.
+        const m0 = mnorm[off0 + c]
+        const m = m0 + (mnorm[off1 + c] - m0) * frac
+        const core = Math.pow(Math.max(0, 1 - m), 3.0) // ~1 at a vortex core, ~0 in the ordered bulk
+        aa[n] = core * view.opacity * vscale
+      } else if (!lens.cyclic) {
+        // scalar lens (e.g. density): same principle — light the genuinely depleted cores (the vortex
+        // lines), leave the dense condensate transparent so there is no additive haze.
+        const depl = Math.max(0, 1 - v)
+        const core = Math.pow(depl, 2.4)
+        aa[n] = core * view.opacity * vscale
+      } else {
+        aa[n] = lensAlpha(v, true) * view.opacity * vscale
+      }
     }
     col.needsUpdate = true; alp.needsUpdate = true
     ;(obj.material as THREE.ShaderMaterial).uniforms.uSize.value = 1.4 + view.glow * 2.0
@@ -112,9 +131,9 @@ function FieldPoints({ lens, view, playing, speed, clock, nframes, onFrame }: {
   return <primitive object={obj} />
 }
 
-export default function Viewport({ lens, view, is3d, playing, speed, clock, nframes, onFrame }: {
-  lens: DecodedLens | null; view: ViewSettings; is3d: boolean; playing: boolean; speed: number
-  clock: React.MutableRefObject<number>; nframes: number; onFrame: (i: number) => void
+export default function Viewport({ lens, mask, view, is3d, playing, speed, clock, nframes, onFrame }: {
+  lens: DecodedLens | null; mask?: DecodedLens | null; view: ViewSettings; is3d: boolean; playing: boolean
+  speed: number; clock: React.MutableRefObject<number>; nframes: number; onFrame: (i: number) => void
 }) {
   if (!hasWebGL2()) {
     return (
@@ -127,8 +146,8 @@ export default function Viewport({ lens, view, is3d, playing, speed, clock, nfra
     <Canvas camera={{ position: is3d ? [2.6, 1.8, 2.6] : [0, 0, 3.1], fov: 42 }} dpr={[1, Math.min(2, Math.round(1 + view.quality))]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} style={{ position: 'absolute', inset: 0 }}>
       <color attach="background" args={['#04070e']} />
-      <fog attach="fog" args={['#04070e', 5, 11]} />
-      {lens && <FieldPoints lens={lens} view={view} playing={playing} speed={speed} clock={clock} nframes={nframes} onFrame={onFrame} />}
+      <fog attach="fog" args={['#04070e', 7, 20]} />
+      {lens && <FieldPoints lens={lens} mask={mask ?? null} view={view} playing={playing} speed={speed} clock={clock} nframes={nframes} onFrame={onFrame} />}
       <OrbitControls enablePan={false} enableDamping dampingFactor={0.08} minDistance={1.6} maxDistance={7}
         autoRotate={is3d && !REDUCED} autoRotateSpeed={0.3} />
     </Canvas>

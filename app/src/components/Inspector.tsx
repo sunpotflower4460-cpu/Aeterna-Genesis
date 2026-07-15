@@ -13,7 +13,7 @@ export default function Inspector({ room, data }: { room: Room; data: RoomData }
   const tab = useStore((s) => s.inspectorTab)
   const setTab = useStore((s) => s.setTab)
   return (
-    <div style={{ borderLeft: '1px solid var(--line)', background: 'rgba(8,13,22,.55)', backdropFilter: 'blur(12px)', overflow: 'auto', padding: 14 }}>
+    <div className="inspector" style={{ borderLeft: '1px solid var(--line)', background: 'rgba(8,13,22,.55)', backdropFilter: 'blur(12px)', overflow: 'auto', padding: 14 }}>
       <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
         {TABS.map((t) => (
           <button key={t} className={'tab ' + (t === tab ? 'on' : '')} onClick={() => setTab(t)}>{t}</button>
