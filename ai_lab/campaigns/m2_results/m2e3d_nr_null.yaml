@@ -1,0 +1,75 @@
+# Frontier Campaign M2-E-3D-NR -- machine-readable result (honest NULL / frontier)
+# M2-E-3D delivered a 3D stable single individual (the ball) but it was STATIC (no drift mode). The named next
+# step was: add a slow NON-RECIPROCAL field to push the translation Goldstone positive WITHOUT destroying the
+# ball. This campaign builds that white (mass_conserved_nr_3d: the ball + a slow inhibitor w that chases a on
+# timescale tau via a non-reciprocal a<->w loop = Krischer-Mikhailov drift mechanism) and measures drift
+# DYNAMICALLY (track the spot centroid velocity -- the physical quantity, measured BEFORE naming), with a
+# SPONTANEITY cross-check (drift direction must be seed-random = grown, not placed).
+#
+# RESULT: across the scanned (kappa, tau, Dw) box the M2 'scissors' PERSISTS. The coupling strong enough to move
+# the ball FRAGMENTS it (existence lost, ncomp>1); wherever the ball stays a single individual it is STATIC
+# (terminal centroid speed at the noise floor ~3e-4, i.e. ~0.01 voxel of net motion over the whole run; and
+# across seeds the tiny residual direction is random = pure noise jitter, not propulsion). No single
+# self-propelled 3D individual was found in this box.
+campaign: M2-E-3D-NR
+white: genesis/models/mass_conserved_nr_3d.py       # da=Da lap a + f - kappa w ; db=Db lap b - f + kappa w ; dw=Dw lap w + (a-w)/tau
+mechanism: non_reciprocal_slow_inhibitor            # a<->w loop is non-variational (Krischer-Mikhailov drift)
+numerics: local_7point_np.roll                      # no FFT, no global solve (local x parallel x central-none)
+measurement: dynamical_centroid_velocity            # wrap-aware centroid; early/mid/late speed + late direction
+tests: tests/test_mass_conserved_nr_3d.py
+tier: frontier
+language: spots != life; a settling/jittering field 'ball' is a field structure, not a living thing
+
+conserved: "a+b exactly (kappa*w cancels); w is not part of the conserved total"
+grid: {N: 32, dx: 1.0, safety: 0.2}
+ic: symmetric_bump_plus_tiny_noise                  # motion NOT seeded; law isotropic; direction (if any) chosen by noise
+
+# --- scan (steps=6000) + decisive follow-up (steps=15000, 3 seeds on the candidate) ---
+scan:                                               # kappa (non-reciprocity) x tau (inhibitor timescale), Dw=6
+  - {kappa: 0.0, tau: 5,  ncomp: 1, speed: 0.00004, verdict: static_single}      # baseline == M2-E-3D
+  - {kappa: 0.1, tau: 3,  ncomp: 1, speed: 0.00004, verdict: static_single}
+  - {kappa: 0.1, tau: 8,  ncomp: 1, speed: 0.00004, verdict: static_single}
+  - {kappa: 0.1, tau: 20, ncomp: 1, speed: 0.00004, verdict: static_single}
+  - {kappa: 0.3, tau: 3,  ncomp: 6, speed: 0.01462, verdict: MOVES_but_FRAGMENTS} # existence lost
+  - {kappa: 0.3, tau: 8,  ncomp: 3, speed: 0.00628, verdict: MOVES_but_FRAGMENTS}
+  - {kappa: 0.3, tau: 20, ncomp: 1, speed: 0.00006, verdict: static_single}
+  - {kappa: 0.6, tau: 3,  ncomp: 1, speed: 0.00028, verdict: static_single}
+  - {kappa: 0.6, tau: 8,  ncomp: 1, speed: 0.00077, verdict: static_single}       # largest single-individual speed
+  - {kappa: 0.6, tau: 20, ncomp: 1, speed: 0.00023, verdict: static_single}
+
+candidate_followup:                                 # kappa=0.6 tau=8 Dw=6, steps=15000, speed in thirds
+  seed_0: {speed_early: 0.00019, speed_mid: 0.00008, speed_late: 0.00034, direction_late: [ 0.25, -0.93,  0.29]}
+  seed_1: {speed_early: 0.00008, speed_mid: 0.00008, speed_late: 0.00028, direction_late: [ 0.22,  0.98, -0.03]}
+  seed_2: {speed_early: 0.00021, speed_mid: 0.00015, speed_late: 0.00037, direction_late: [-0.27,  0.05,  0.96]}
+  reading: >
+    speed non-monotonic and pinned at ~3e-4 (net motion ~0.01 voxel); direction random across seeds
+    (-y / +y / +z). This is centroid jitter from the noise IC, NOT sustained self-propulsion.
+
+longrange_probes:                                   # steps=15000, seed 0 -- do longer-range/intermediate windows move?
+  - {kappa: 0.45, tau: 6,  Dw: 10, speed_early: 0.00037, speed_late: 0.00008, verdict: static_decaying}
+  - {kappa: 0.6,  tau: 6,  Dw: 12, speed_early: 0.00031, speed_late: 0.00003, verdict: static_decaying}
+  - {kappa: 0.8,  tau: 10, Dw: 10, speed_early: 0.00035, speed_late: 0.00013, verdict: static_decaying}
+  - {kappa: 0.5,  tau: 8,  Dw: 8,  speed_early: 0.00029, speed_late: 0.00005, verdict: static_decaying}
+
+no_go:
+  stage: N0                                         # not_found_in_scan; drift-before-fragmentation not accessible here
+  level: self_propulsion                            # existence is fine (M2-E-3D); the frontier is sustained drift
+  white_specific: true
+  claim_excludes: [other_coupling_forms, gradient_or_polar_coupling, finer_parameter_scan,
+                   newton_continuation_of_unstable_stationary_branch, higher_resolution, larger_domains]
+  tier: frontier
+
+m2_scissors_update:
+  before: "M2-E-3D: mass conservation buys the stable individual, but it is static (SH-side of the scissors)."
+  after: >
+    Adding a slow non-reciprocal inhibitor does NOT (in this box) buy self-propulsion while keeping the
+    individual: the same coupling that would move it dissolves it. The scissors is not cut here -- moving and
+    single-individual remain mutually exclusive. The honest open frontier: a non-reciprocal coupling whose
+    ANTISYMMETRIC (fore-aft) part drives translation before its ISOTROPIC part dissolves the core -- likely a
+    GRADIENT/POLAR coupling (w advects a) rather than the uniform inhibition tried here, and/or measuring the
+    unstable stationary branch by Newton continuation instead of forward time-stepping.
+
+next:
+  - M2-E-3D-NR-2: replace uniform inhibition (-kappa*w) with a POLAR/gradient coupling (a advected by grad of a
+    slow field) so the non-reciprocity acts on the translation mode directly, not on the amplitude.
+  - Goldstone-detection robustness PR (overlap-primary is_goldstone for lattice-pinned Goldstones).
