@@ -1,0 +1,43 @@
+# H021 frontier campaign 反復2（e052 S2 相当のロバスト性検証）。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。物理・観測器は e052/level3_motion.py をそのまま再利用。
+id: e053
+title: 自己形成±渦ダイポールのLevel3自走・ロバスト性検証（解像度3段×44 seed、role E候補・robust）
+role:
+  primary: E
+  secondary:
+  - V
+confidence: B
+claim_tier:
+- measured
+- observed
+put_in: e052 と完全に同一の damped GPE KZ クエンチ・閾値（FROZEN・事前登録のまま変更せず）。L=64/96/128 の3解像度、
+  各12/24/8 seed（e052 の seed 1-6 とは重複しない新規独立 seed 範囲）
+emerged: Level 3（自己形成 ±渦ダイポールの持続並進）到達率が L=64で50.0%(12中6)・L=96で62.5%(24中15)・
+  L=128で75.0%(8中6)——3解像度すべてで頑健に観測され、有限サイズで消えない（むしろ僅かに増加傾向）。
+  マージン（速度/閾値比）も1.05〜1.70と e052 反復1（10〜12%）より明確に健全。ただし全 seed が到達するわけではない
+  （majority だが universal ではない）——確率的な現象として正直に記録
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: genesis_candidate
+target_encoded: false
+unresolved_audit:
+- primary role を E にした理由：3解像度・44 seed で頑健、有限サイズ効果でない、マージンが健全（1.05超のみ含み
+  境界ぎりぎりの事例なし）。ただし到達率は50〜75%（全run ではない）——「単一連続 run が必ず Level 3 に届く」
+  ではなく「相当割合の run が届く」という正直な統計的主張
+- 【重要な区別】本結果は「渦ペア（2体）の持続並進」（Level 3）であり、docs/WHITE_CEILINGS.md が論じる
+  「単一個体の自走」（Level 4・codimension≥2 ナイフエッジ、SH ソリトンの m=1 Goldstone 問題）とは**別の、より緩い
+  問い**。L4 の「単一に閉じ込め∧drift∧非分裂」問題は本実験では未解決のまま——混同しない
+- 3D 昇格・他の quench 速度 τ_Q での再現性・L4 方向への拡張は次の反復候補（台帳に記録）
+known_match: 点渦の誘導速度 v~1/(2d)（e052 で確認済み、標準的な2D超流体点渦動力学）
+results:
+- experiments/e053_dipole_robustness/results/dipole_robustness.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: passed
+  reproducibility: passed
+  visualization_integrity: not_applicable
