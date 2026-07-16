@@ -18,6 +18,80 @@
 レビュー対応、下記参照）で治癒し、治癒数・未治癒数・多重線曖昧性（>2面貫通、スキップ）を全て
 診断値として報告する（隠蔽しない）。
 
+## H021反復9: dangling-face healingをchain-endpoint-based再接続に再設計（マージ後、新PR）
+
+PR-C（本ファイルが検証する`vortex_lines_3d.py`、マージ済み）の9ラウンドにわたる外部レビューで、
+「dangling面を最近傍距離でペアリングする」というhealingヒューリスティックの**設計そのもの**が
+繰り返しエッジケースを生み出すことが判明していた（同符号ペアリング、重複エッジ、非決定的
+タイブレーク、両側面がプールに残る、等——いずれもその都度パッチで塞いだが、根本原因である
+「線の進行方向という概念を持たない」という設計は変わっていなかった）。個々の面を最近傍距離
+だけでペアリングするのではなく、**healing前にclean-cubeグラフだけを先にトレースし、各open
+chainの端点における接線方向（tangent）を求め、健全化候補が互いに向かって伸びている（かつ
+互いに背を向けていない）ことを要求する**、chain-endpoint-based reconnectionに再設計した。
+
+**実装**（`genesis/diagnostics/vortex_lines_3d.py`）：
+- `_trace_graph(neighbors)`: face_id隣接グラフを閉ループ／開放パスに辿るウォークロジックを
+  独立関数として抽出（旧実装ではhealing後の最終トレースにインラインで書かれていたもの）。
+  healing前のclean-onlyグラフのトレース（接線導出用）と、healing後の最終グラフのトレース
+  （返却する幾何用）の両方で同じロジックを再利用する。
+- `_chain_tangent(face_path, at_end)`: 開放チェーンの一端における単位接線ベクトル（その端点に
+  向かって線がどちらに進んでいるか）を返す。2点未満の退化チェーンは`None`（方向情報なし、
+  距離+符号のみの旧基準にフォールバック）。
+- healingのペア候補生成ループに、両端の接線が既知の場合の追加フィルタを追加：
+  `disp = (b-a)/distance`として、`dot(disp, tangent_a) > 0`（aのチェーンがbに向かっている）
+  かつ`dot(disp, tangent_b) < 0`（bのチェーンがaに向かっている）を両方満たさなければ却下
+  （`n_direction_rejected_pairs`として別途カウント、`n_unhealed_dangling`にも反映）。
+  接線情報がない孤立dangling面（clean chainに属さない）は従来通り距離+符号のみで判定。
+
+**回帰テスト2件を追加**（`tests/test_vortex_lines_3d.py`）：
+1. `test_direction_filter_rejects_parallel_nearby_chains`: 2つの短いclean-pairチェーンが
+   ともに+z方向を向いて並行に並び、dangling先端同士は距離・符号ともhealing条件を満たす
+   （旧の距離のみの基準なら健全化していたはず）が、両先端をつなぐ変位ベクトルが両チェーンの
+   接線と直交しており「互いに向かって伸びていない」ため却下されることを検証
+   （`n_direction_rejected_pairs == 1`、`n_healed_connections == 0`、2つの独立した2点
+   open pathのまま）。
+2. `test_direction_filter_allows_converging_chains_to_heal`: 2つのチェーンが実際に互いに
+   向かって伸びている（一方の先端接線が+z、他方の先端接線が-z、両者の間隔がその軸上）
+   場合は健全化を許可し、4点の連続した1つのopen pathに統合されることを検証
+   （`n_healed_connections == 1`、`n_direction_rejected_pairs == 0`）。
+
+`pytest tests/test_vortex_lines_3d.py tests/test_e059_vortex_line_tracer_validation.py -q`
+で22件（合成16件＋e059系6件）全通過を確認。
+
+**full run再実行での正直な効果測定**（L=64 R=10、21サンプル、パラメータ・IC完全に不変）：
+
+| 指標 | 旧（第4〜8ラウンド最終・distance-based healing） | 新（chain-endpoint-based healing） |
+|---|---|---|
+| マッチしたフレーム数（`n_both_instruments`/`n_samples`） | 10/21 = 47.6% | **12/21 = 57.1%** |
+| `matched_most_frames`（閾値80%） | FAIL | FAIL（依然未達、閾値は変更していない） |
+| `radius_diff_mean` / `median` / `max` | (median 0.6813のみ記録) | 0.4538 / 0.6474 / 0.6813 |
+| マッチしたフレームの大乖離数（radius・axial） | 0/10・0/10 | 0/12・0/12 |
+| `n_loops_bulk_total`（全フレーム合計） | 324 | **46** |
+| `n_loops_outside_bulk_total`（全フレーム合計） | 95 | **7** |
+| STATUS | RED | RED |
+
+**解釈（正直な報告、閾値は事前登録のまま変更していない）**：
+1. **マッチ率が本物の改善を示した**：47.6%→57.1%（+2フレーム、+9.5ポイント）。新たに
+   マッチした2フレームのradius_diffは最大値（0.6813）を上回っておらず（`max`が旧median
+   のままで変化していない）、マッチ数が増えただけで質が落ちたわけではないことを裏付ける。
+   ただし`matched_most_frames`の事前登録閾値（80%）には依然未達——STATUSはRED のまま
+   （結果を見てから閾値を緩めていない）。
+2. **予期しない、しかし明確に望ましい副次効果**：`n_loops_bulk_total`が324→46、
+   `n_loops_outside_bulk_total`が95→7と大幅に減少した。これは主指標（マッチ率）とは別に、
+   旧の距離のみの健全化がリング付近だけでなく場全体のノイズ（音波・数値ノイズ由来の微小
+   dangling面ペア）を無差別に閉じたループへと誤って健全化してしまっていたことを示唆する
+   ——chain-endpoint方式は「近くにあるが互いに向かっていない」ペアを正しく拒否することで、
+   スプリアスな閉ループの生成そのものを大きく抑制した。この副次効果は事前登録された合否
+   基準の一部ではないため合否判定には影響しないが、計測器の内部的な健全性の向上として
+   正直に記録する。
+3. **マッチした時は依然として正確**：新たにマッチした12フレームも、radius・axialとも大きな
+   乖離を出したフレームはゼロのまま——「マッチできた時は常に正確、マッチできない頻度が
+   高い」という第4ラウンド以来の性質評価は変わらず有効。
+4. **リングの自己形成は依然として主張しない**：本実験はseeded ringに対する計測器検証で
+   あり、この再設計はH021-3D（自己形成渦ループ、Evidence Contract v2 §9.3のF1「One-Handle
+   Selection」段階ゲート）に進むための前提条件（=計測器がより信頼できること）を、閾値を
+   満たすところまでは至らないものの、測定可能な形で前進させた。
+
 ## マージ前の外部AIレビュー第8ラウンド（Codex）——自分自身の第6ラウンドの主張の誤りを指摘
 
 第6ラウンドで「両側からdanglingな面（同じ面が両方の隣接立方体からそれぞれ独立にdanglingと
