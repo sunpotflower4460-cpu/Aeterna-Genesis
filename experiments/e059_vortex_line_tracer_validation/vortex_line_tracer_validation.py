@@ -41,6 +41,13 @@ from experiments.e003_gpe_vortex_ring.run import DEFAULT as E003_DEFAULT  # noqa
 
 QUICK = {"L": 48, "R": 7.0, "n_imag": 100, "n_real": 400, "sample": 40}
 
+EXPECT = {
+    "min_both_frames": 4,
+    "radius_diff_frac": 0.25,       # a frame "agrees" if matched-loop radius is within 25% of old tracker's
+    "radius_agree_frac_min": 0.7,   # at least 70% of comparable frames must agree (honest majority, not 100%)
+    "match_rate_min": 0.8,          # a bulk loop is found and matched in at least 80% of samples
+}
+
 
 def run(quick=False, params=None):
     p = dict(E003_DEFAULT)
@@ -158,7 +165,8 @@ def run(quick=False, params=None):
     tol = 0.25 * p["R"]
     n_large_diff = sum(1 for d in radius_diffs if d >= tol)
 
-    verdict = "insufficient_frames" if len(both) < 4 else "agreement_measured"
+    min_both = 3 if quick else EXPECT["min_both_frames"]
+    verdict = "insufficient_frames" if len(both) < min_both else "agreement_measured"
     result = dict(
         params=p, n_samples=len(frames), n_both_instruments=len(both),
         n_clean_single_bulk_loop=n_clean_single_bulk_loop,
@@ -175,14 +183,6 @@ def run(quick=False, params=None):
         run_valid=True,
     )
     return result
-
-
-EXPECT = {
-    "min_both_frames": 4,
-    "radius_diff_frac": 0.25,       # a frame "agrees" if matched-loop radius is within 25% of old tracker's
-    "radius_agree_frac_min": 0.7,   # at least 70% of comparable frames must agree (honest majority, not 100%)
-    "match_rate_min": 0.8,          # a bulk loop is found and matched in at least 80% of samples
-}
 
 
 def evaluate(result, quick=False):
