@@ -96,19 +96,26 @@ def run(quick=False, params=None):
         if step % p["sample"] != 0:
             continue
         old = vortex.track_ring_cross_section(psi[:, jy, :], c, prev_outer, prev_inner, bounds)
-        if old is not None:
-            if old_radii and abs(old["radius"] - old_radii[0]) > p["radius_band"] * old_radii[0]:
-                break
-            if direction != 0 and (old["axial"] - extreme) * direction < -0.5:
-                break
-            prev_outer, prev_inner = old["outer"], old["inner"]
-            old_radii.append(old["radius"])
-            old_axials.append(old["axial"])
-            if len(old_axials) == 4:
-                direction = int(np.sign(old_axials[3] - old_axials[0]))
-                extreme = old_axials[-1]
-            elif direction != 0 and (old["axial"] - extreme) * direction > 0:
-                extreme = old["axial"]
+        if old is None:
+            # ring left the meridional-slice tracker's clean window (e003 convention) -- stop
+            # BEFORE tracing/appending this frame at all, mirroring e003's own termination point
+            # exactly. The previous version appended this out-of-scope frame (with
+            # old_tracker=None) before breaking, silently counting a post-clean-window frame
+            # toward n_samples and lowering matched_most_frames for a reason unrelated to the
+            # instrument being compared (found by external review, 2026-07-16).
+            break
+        if old_radii and abs(old["radius"] - old_radii[0]) > p["radius_band"] * old_radii[0]:
+            break
+        if direction != 0 and (old["axial"] - extreme) * direction < -0.5:
+            break
+        prev_outer, prev_inner = old["outer"], old["inner"]
+        old_radii.append(old["radius"])
+        old_axials.append(old["axial"])
+        if len(old_axials) == 4:
+            direction = int(np.sign(old_axials[3] - old_axials[0]))
+            extreme = old_axials[-1]
+        elif direction != 0 and (old["axial"] - extreme) * direction > 0:
+            extreme = old["axial"]
         new = trace_vortex_lines(psi)
         # e003's OWN honesty floor: the ring imprint is non-periodic across the z boundary and
         # seeds a STATIC vortex sheet near z~0 (see e003 AUDIT.md); e003 excludes it from its own
@@ -126,6 +133,9 @@ def run(quick=False, params=None):
                       if all(bounds[0] <= p[2] <= bounds[1] for p in l["points"])]
         matched = None
         if bulk_loops:
+            # `old` is guaranteed non-None here: the loop now breaks immediately, before this
+            # point, once the meridional tracker loses the ring (see the early-break fix above),
+            # so every frame reaching this line has an old-tracker reading to gate against.
             if prev_matched_centroid is not None:
                 # Temporal continuity is the PRIMARY match criterion once we have a previous
                 # fix: a physical ring moves smoothly between consecutive samples (a few cells),
@@ -137,20 +147,18 @@ def run(quick=False, params=None):
                 # GATED by radius plausibility (external review, 2026-07-16): nearest-centroid
                 # alone can still latch onto a tiny artifact loop that happens to sit close to the
                 # ring's last known position while the real ring is still present elsewhere in the
-                # frame. When the old tracker's own radius reading is available for this frame,
-                # restrict candidates to those within a generous (50%) band of it before picking
-                # the nearest centroid; only fall back to the unfiltered set if nothing qualifies.
+                # frame. Restrict candidates to those within a generous (50%) band of the old
+                # tracker's radius before picking the nearest centroid. NO fallback to the
+                # unfiltered set when nothing passes the gate (external review, 2026-07-16): a
+                # fallback would turn a frame where nothing plausible was found into a matched
+                # comparison anyway, inflating match_rate and letting temporal matching drift onto
+                # an artifact loop instead of leaving the frame honestly unmatched.
                 pmc = np.array(prev_matched_centroid)
-                candidates = bulk_loops
-                if old is not None:
-                    plausible = [l for l in bulk_loops if abs(l["effective_radius"] - old["radius"]) < 0.5 * old["radius"]]
-                    if plausible:
-                        candidates = plausible
-                matched = min(candidates, key=lambda l: np.linalg.norm(np.array(l["centroid"]) - pmc))
-            elif old is not None:
+                plausible = [l for l in bulk_loops if abs(l["effective_radius"] - old["radius"]) < 0.5 * old["radius"]]
+                if plausible:
+                    matched = min(plausible, key=lambda l: np.linalg.norm(np.array(l["centroid"]) - pmc))
+            else:
                 matched = min(bulk_loops, key=lambda l: abs(l["effective_radius"] - old["radius"]))
-            elif len(bulk_loops) == 1:
-                matched = bulk_loops[0]
             if matched is not None:
                 prev_matched_centroid = matched["centroid"]
         frames.append(dict(
@@ -288,8 +296,16 @@ def main(argv=None):
             json.dump(result, f, indent=2)
         print("\nwrote %s" % os.path.join(args.out, "vortex_line_tracer_validation.json"))
 
-    passed, _ = evaluate(result, quick=args.quick)
-    return 0 if passed else 1
+    # Exit code gates on run_valid (did the measurement execute and produce a comparable result),
+    # matching the established eNNN pattern (e057/e058: `return 0 if r["run_valid"] else 1`), NOT
+    # on evaluate()'s statistical GREEN/RED verdict. Those are deliberately different questions --
+    # this experiment's own full-run STATUS is honestly RED (see AUDIT.md), and CI's quick-mode
+    # smoke test must not fail merely because a small, deterministic sample size legitimately
+    # misses the majority-agreement threshold; that would make CI red forever for an intentionally
+    # negative-capable measurement, and would pressure loosening thresholds to make CI pass -- the
+    # opposite of this campaign's discipline (found by external review, 2026-07-16: the previous
+    # version gated on `passed`, so CI's quick run failed deterministically every single time).
+    return 0 if result["run_valid"] else 1
 
 
 if __name__ == "__main__":
