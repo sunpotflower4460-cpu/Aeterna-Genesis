@@ -1,0 +1,43 @@
+# H021 frontier campaign 反復3。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。物理・観測器・閾値は e052/e053 を完全凍結して再利用。
+id: e054
+title: 自己形成±渦ダイポールLevel3到達率のクエンチ速度τ_Q依存性（相図・L=96固定）
+role:
+  primary: V
+  secondary:
+  - E
+confidence: C
+claim_tier:
+- measured
+- observed
+put_in: e052/e053 と完全に同一の damped GPE KZ クエンチ・閾値（FROZEN・変更せず）。L=96 固定、τ_Q∈{100,150,200,300,400}
+  各10 seed（e052/e053 の seed とは重複しない新規独立範囲）
+emerged: 平均トラック数（欠陥密度の代理）はτ_Qとともに単調減少（90.0→56.1→47.1→30.7→25.0、KZ機構と整合）。
+  一方 Level3到達率は 0.70/0.60/0.40/0.10/0.40 と**単調でない**——n=10/点のWilson区間が互いに重なり、
+  この統計量ではτ_Qとの精密な関数形は分からない。ただし**全τ_Qでゼロにならない**（level3_present_across_tauQ_range）
+  ——e053の頑健性主張が特定のτ_Qに限らないことを追加確認
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: measurement_tool
+target_encoded: false
+unresolved_audit:
+- role を V にした理由：新しい発見というより、e053（E候補）の頑健性を τ_Q 軸でも確認する検証実験。
+  傾向（トレンド）自体は n=10/点では解決されない——精密なτ_Q依存性を主張しない
+- 【既知の交絡】sep_max=8.0（e052由来の固定閾値）は τ_Q が大きく欠陥密度が低い点で、真の物理変化ではなく
+  幾何学的な理由（欠陥間隔がそもそも sep_max を超えやすい）でペア検出数を減らしうる。次段では τ_Q に応じて
+  sep_max を欠陥間隔でスケールする設計が必要（本実験では固定閾値のまま・結果依存で変えない）
+- n=10/点は e053（12〜24点）より少ない——精密なトレンド分解には次段でseed数拡大が必要
+known_match: Kibble-Zurek 機構（τ_Q が大きいほど凍結時の欠陥密度が下がる、ξ~τ_Q^σ）——欠陥密度側は本実験でも
+  単調減少として再確認（e010 と整合）
+results:
+- experiments/e054_dipole_tauq_dependence/results/dipole_tauq_dependence.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: passed
+  reproducibility: passed
+  visualization_integrity: not_applicable
