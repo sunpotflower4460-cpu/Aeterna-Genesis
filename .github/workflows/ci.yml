@@ -151,6 +151,8 @@ jobs:
         run: python experiments/e045_field_endogenous/endogenous.py --quick --no-write
       - name: "e047 sphere-to-torus F1 quick (V0 topology check + V1 fixed-shape free-energy crossing, role V)"
         run: python experiments/e047_sphere_to_torus/sphere_to_torus.py --quick --no-write
+      - name: "e048 field/slow-field basin calibration quick (P07/F1 basin-decision instrument, role V)"
+        run: python experiments/e048_field_slow_field_calib/field_slow_field_calib.py --quick --no-write
       - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
         run: python tools/audit_roles.py
       - name: "CI-B schema + registry validation (schemas well-formed, registry validates, refs resolve)"
@@ -275,6 +277,7 @@ jobs:
           test -f experiments/e044_field_unification/results/unification.json
           test -f experiments/e045_field_endogenous/results/endogenous.json
           test -f experiments/e047_sphere_to_torus/results/sphere_to_torus.json
+          test -f experiments/e048_field_slow_field_calib/results/basin_calibration.json
           test -f docs/TRUST_MAP.md
           test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md

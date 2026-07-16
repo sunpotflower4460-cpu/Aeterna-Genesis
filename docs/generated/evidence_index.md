@@ -9,7 +9,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | room-g002-a | g002_boussinesq_convection | 1 | 3 |
 | room-g003-a | g003_model_h_phase_field | 2 | 5 |
 
-## Experiments (43) — role tally: E=23, F=9, N=2, S=5, V=4
+## Experiments (44) — role tally: E=23, F=9, N=2, S=5, V=5
 | id | role | tier | dim | target_encoded | genesis_role | title |
 |---|---|---|---|---|---|---|
 | e001 | E | measured | 2D | False | behavior_dictionary | GPE 渦歳差 |
@@ -55,6 +55,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | e045 | N | measured | 2D | False | negative_constraint | 内生ニッチ（負の結果） |
 | e046 | V+N | measured/established | graph | False | measurement_tool | トポロジカル状態容量（独立ホロノミーチャネル=b₁） |
 | e047 | V+N | measured/established | 3D | False | measurement_tool | 球→トーラス F1（測定器の固定形状検証＋固定形状での自由エネルギー交差） |
+| e048 | V+N | measured | mixed | False | measurement_tool | field/slow-field basin 判定器の校正（P07/F1・置いた既知basin上での測定） |
 
 ## Diagnostics modules (10)
 `angular_modes`, `corroborate`, `coupled_spectrum`, `gauge_aligned_distance`, `higher_levels`, `measures`, `plaquette_ledger`, `topology3d`, `topology_betti`, `winding_reliability`
