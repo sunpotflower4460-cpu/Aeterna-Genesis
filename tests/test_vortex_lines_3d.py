@@ -33,9 +33,6 @@ def _ring_field(n=N, R=R, center=CENTER, charge=1, core_width=CORE_WIDTH):
 
 
 def test_single_ring_traces_as_one_closed_loop_with_correct_radius():
-    # n_divergence_violations is a reported honesty diagnostic (reliability-gated plaquettes can
-    # break the discrete flux-cancellation identity on a cube without affecting which 2 faces are
-    # its real entry/exit -- see module docstring), not asserted to be zero here.
     psi = _ring_field()
     r = trace_vortex_lines(psi)
     assert r["n_cubes_overloaded"] == 0
@@ -48,6 +45,25 @@ def test_single_ring_traces_as_one_closed_loop_with_correct_radius():
     assert abs(cx - CENTER) < 1.0 and abs(cy - CENTER) < 1.0 and abs(cz - CENTER) < 1.0
     assert loop["mean_curvature"] > 0.0                        # a circle has nonzero curvature
     assert loop["n_points"] > 10                               # a R=12 ring must have many piercings
+    # every remaining divergence violation must come from an (inherently unbalanced) 1-pierced
+    # dangling cube, never from a "clean" 2-pierced pair -- this is the regression test for the
+    # zx face sign bug (external review, 2026-07-16): before the fix, cubes mixing a yz-face and a
+    # zx-face (common near a curved ring's tangent regions) had non-canceling flux even though
+    # exactly 2 faces were pierced, inflating this count with false positives.
+    assert r["n_divergence_violations"] == r["n_cubes_dangling"]
+
+
+def test_heal_distance_cap_limits_reconnection():
+    # a tiny max_heal_distance (smaller than the few-cell tangent-region gaps this ring produces)
+    # must leave those gaps unhealed rather than reconnecting them anyway -- regression test for
+    # the healing-radius cap (external review, 2026-07-16: unbounded nearest-neighbor healing
+    # could in principle bridge two unrelated distant defects into a fake closed loop).
+    psi = _ring_field()
+    generous = trace_vortex_lines(psi, max_heal_distance=3.0)
+    strict = trace_vortex_lines(psi, max_heal_distance=0.1)
+    assert generous["n_healed_connections"] > 0
+    assert strict["n_healed_connections"] == 0
+    assert strict["n_unhealed_dangling"] == generous["n_cubes_dangling"]
 
 
 def test_gauge_invariance():

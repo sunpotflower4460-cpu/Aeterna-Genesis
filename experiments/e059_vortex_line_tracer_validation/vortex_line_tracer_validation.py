@@ -121,8 +121,19 @@ def run(quick=False, params=None):
                 # than re-matching cold on radius every frame (found in this validation: cold
                 # radius-matching alone increasingly confuses the ring with same-radius sound
                 # loops as noise accumulates over hundreds of steps).
+                # GATED by radius plausibility (external review, 2026-07-16): nearest-centroid
+                # alone can still latch onto a tiny artifact loop that happens to sit close to the
+                # ring's last known position while the real ring is still present elsewhere in the
+                # frame. When the old tracker's own radius reading is available for this frame,
+                # restrict candidates to those within a generous (50%) band of it before picking
+                # the nearest centroid; only fall back to the unfiltered set if nothing qualifies.
                 pmc = np.array(prev_matched_centroid)
-                matched = min(bulk_loops, key=lambda l: np.linalg.norm(np.array(l["centroid"]) - pmc))
+                candidates = bulk_loops
+                if old is not None:
+                    plausible = [l for l in bulk_loops if abs(l["effective_radius"] - old["radius"]) < 0.5 * old["radius"]]
+                    if plausible:
+                        candidates = plausible
+                matched = min(candidates, key=lambda l: np.linalg.norm(np.array(l["centroid"]) - pmc))
             elif old is not None:
                 matched = min(bulk_loops, key=lambda l: abs(l["effective_radius"] - old["radius"]))
             elif len(bulk_loops) == 1:

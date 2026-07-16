@@ -67,7 +67,16 @@ def face_windings(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=None):
     _s_zx, wmaps_zx = _orientation(psi, (0, 2), thr, near_pi_margin)   # sliced over y
     W_xy = np.stack(wmaps_xy, axis=2).astype(int)   # (L0-1, L1-1, L2)
     W_yz = np.stack(wmaps_yz, axis=0).astype(int)   # (L0, L1-1, L2-1)
-    W_zx = np.stack(wmaps_zx, axis=1).astype(int)   # (L0-1, L1, L2-1)
+    # _orientation's CCW loop for ("zx", (0, 2)) treats its own axis0=x as "horizontal" and
+    # axis1=z as "vertical" (same convention _slice_ledger uses for every orientation), whose
+    # right-hand-rule normal is x_hat x z_hat = -y_hat, NOT +y_hat -- unlike xy (x_hat x y_hat =
+    # +z_hat) and yz (y_hat x z_hat = +x_hat), which DO follow the +axis cyclic pattern directly.
+    # Negate here so W_zx consistently means "+y flux", matching how _cube_faces uses it (found by
+    # external review, 2026-07-16: without this the signed 6-face divergence check was wrong
+    # whenever a cube mixed a yz-face and a zx-face, e.g. near a curved line's tangent regions --
+    # confirmed by re-deriving the convention and empirically on the ring synthetic, where 32 of
+    # 56 "divergence violations" vanished once this sign was corrected).
+    W_zx = -np.stack(wmaps_zx, axis=1).astype(int)   # (L0-1, L1, L2-1)
     return W_xy, W_yz, W_zx, thr
 
 
@@ -93,8 +102,15 @@ def _face_center(face_id):
     return (a + 0.5, float(b), c + 0.5)   # kind == "y"
 
 
-def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=None):
+def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=None, max_heal_distance=3.0):
     """Trace closed vortex-line loops (and report any open/ambiguous paths) in a 3D complex field.
+
+    max_heal_distance: cap on how far apart two dangling half-edges may be to heal via
+    nearest-neighbor reconnection (see the note above the healing loop below for why this exists
+    -- without a cap, sparse/pathological configurations could bridge two UNRELATED distant
+    defects into one artificial loop; found by external review, 2026-07-16). Default 3.0 grid
+    units comfortably covers the local tangent-region gaps this healing targets (observed at
+    1-3 units in this module's own tests) while refusing anything genuinely distant.
 
     Returns a dict:
       loops: list of {points (ordered face-center coords, closed), length, centroid,
@@ -175,11 +191,17 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
     n_healed = 0
     if dangling:
         pts = np.array([_face_center(f) for f in dangling])
-        unpaired = list(range(len(dangling)))
+        # Cap healing to max_heal_distance: without a cutoff, a sparse/noisy field could bridge
+        # two unrelated distant dangling faces (e.g. one near a real gap, one at the non-periodic
+        # seam) into an artificial connection -- turning a genuinely open/separate path into a
+        # fake closed loop, exactly the failure this module promises NOT to silently commit
+        # (found by external review, 2026-07-16). Pairs beyond the cap are left unhealed.
         pairs_dist = []
         for a in range(len(dangling)):
             for b in range(a + 1, len(dangling)):
-                pairs_dist.append((float(np.linalg.norm(pts[a] - pts[b])), a, b))
+                d = float(np.linalg.norm(pts[a] - pts[b]))
+                if d <= max_heal_distance:
+                    pairs_dist.append((d, a, b))
         pairs_dist.sort(key=lambda t: t[0])
         used = set()
         for _dist, a, b in pairs_dist:
@@ -215,7 +237,19 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
             prev, cur = cur, nxt
             nxt = nbrs[0] if nbrs[0] != prev else nbrs[1]
 
-    # closed loops: start from any degree-2 node not yet visited
+    # Open paths FIRST, starting from actual endpoints (degree==1): walking from an endpoint
+    # covers the whole chain (interior degree-2 nodes to the OTHER endpoint) in one pass, marking
+    # every node on it visited. Starting from an arbitrary INTERIOR degree-2 node instead (as an
+    # earlier version of this loop did) only follows ONE of its two directions, splitting a single
+    # open chain into two separate fragments once dict-iteration order later reaches nodes on the
+    # other side -- found by external review, 2026-07-16, before any real run had produced an open
+    # chain to catch it on.
+    for f in list(neighbors.keys()):
+        if f in visited or degree.get(f, 0) != 1:
+            continue
+        path, closed = walk(f, neighbors[f][0])
+        open_paths.append(path)   # degree==1 start can never close back on itself
+    # closed loops: only unvisited degree-2 nodes remain -- any open chain was fully consumed above
     for f in list(neighbors.keys()):
         if f in visited or degree.get(f, 0) != 2:
             continue
@@ -223,14 +257,7 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
         if closed and len(path) >= 3:
             loops.append(path)
         elif not closed:
-            open_paths.append(path)
-    # open paths starting at degree-1 (or >2, shouldn't happen since those cubes were skipped) nodes
-    for f in list(neighbors.keys()):
-        if f in visited or degree.get(f, 0) == 0:
-            continue
-        path, closed = walk(f, neighbors[f][0])
-        if not closed:
-            open_paths.append(path)
+            open_paths.append(path)   # safety net for any residual fragment; honestly reported
 
     def _summarize_loop(face_path):
         pts = np.array([_face_center(f) for f in face_path], dtype=float)
