@@ -1,0 +1,45 @@
+# H021 frontier campaign 反復5。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。e055 の「飽和は未解決」を引き継いで検証。
+id: e056
+title: 渦ダイポール生存時間の飽和検証（観測窓6倍・9倍・独立seed）— 無限持続は不支持
+role:
+  primary: N
+  secondary:
+  - F
+confidence: C
+claim_tier:
+- measured
+- observed
+put_in: e052/e055 と同一の L=96・τ_Q=200 damped GPE KZ クエンチ・FROZEN閾値。観測窓を baseline
+  （e052/e053/e054の1600 step）の6倍(9600)・9倍(14400)に延長。各8 seed（独立新規範囲、e055とも重複なし）。
+  e055 の3倍窓データはそのまま引用（再計算せず、artifact 不変更）
+emerged: 最長持続は 3倍窓358 snapshot（e055引用）／6倍窓202 snapshot／9倍窓268 snapshot——**3つの独立した
+  seed集合にわたり、観測窓を3倍→9倍（3倍の拡大）にしても最長持続は同程度のオーダー（150〜360 snapshot、
+  物理時間60〜145）に留まり、窓の拡大に比例して伸びない**（窓なりの比例なら9倍窓で1000超のはず）。
+  無限に持続する個体という仮説は、テストした範囲（baseline の最大9倍）では支持されない
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: negative_constraint
+target_encoded: false
+unresolved_audit:
+- role N（negative_constraint）とした対象は限定的：「観測窓を延ばせば延ばすほど最長持続も伸び続ける
+  （＝真に無限持続する複合個体）」という仮説のみを不支持とする。**Level3（自走）そのものは e053 で
+  robust に確立済みのまま不変**。「渦ペアは transient（有限の特徴的寿命）」という結論は、baseline の
+  最大9倍というテスト範囲内での話であり、より長い窓（例えば数十倍）で再検証すれば覆る可能性はゼロではない
+  ——「証明した」でなく「テストした範囲では支持されない」という正確な言い回しを維持
+- 各窓点は8〜10 seedのみ（極値統計はサンプルサイズに敏感）。より精密な飽和曲線には次段でseed数拡大が必要
+- Level4（persistent individuality）の本来の判定基準（recovers_after_perturbation）は依然未測定。
+  「ペアの寿命が有限」は Level4 不成立の一つの証拠だが、唯一の証拠ではない
+known_match: 該当なし（本実験は既存法則の生存時間統計の飽和検証）
+results:
+- experiments/e056_dipole_survival_saturation/results/dipole_survival_saturation.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: passed
+  reproducibility: passed
+  visualization_integrity: not_applicable

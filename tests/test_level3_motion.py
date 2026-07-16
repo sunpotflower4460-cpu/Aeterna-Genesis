@@ -10,6 +10,7 @@ import numpy as np
 
 from genesis.diagnostics.level3_motion import (
     link_frames, dipole_events, level3_verdict, track_step_sizes, box_centroid_drift,
+    mutual_neighbor_durations,
 )
 
 L = 64
@@ -75,6 +76,15 @@ def test_box_centroid_drift_is_informational_only():
     d = box_centroid_drift(frames, L)
     assert d.shape[1] == 2
     assert np.all(np.isfinite(d))
+
+
+def test_mutual_neighbor_durations_includes_short_lived_pairs():
+    # dipole_events would drop this pair below persist_min; durations should still see it
+    rng = np.random.default_rng(4)
+    frames = _make_frames(rng, n_decoys=10, bulk=False, dipole_speed=1.5, n_frames=6)
+    tracks = link_frames(frames, L, max_step=3.0)
+    durations = mutual_neighbor_durations(tracks, L, sep_max=6.0)
+    assert any(d >= 5 for d in durations)  # the true pair overlaps for ~the full 6-frame window
 
 
 def test_periodic_wrap_delta_is_shortest_path():

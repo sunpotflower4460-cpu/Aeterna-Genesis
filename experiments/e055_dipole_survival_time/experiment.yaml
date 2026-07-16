@@ -1,0 +1,45 @@
+# H021 frontier campaign 反復4。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。物理・観測は e052 系列を再利用＋新規追加観測器。
+id: e055
+title: 自己形成±渦ダイポールの生存時間分布（Level4方向への第一歩・飽和は未解決）
+role:
+  primary: F
+  secondary:
+  - V
+confidence: C
+claim_tier:
+- measured
+- frontier
+put_in: e052 と同一の L=96・τ_Q=200・hold=150 damped GPE KZ クエンチ。観測窓のみ e052/e053/e054 の3倍
+  （4800 step、600 snapshot）に延長。新規（観測器のみ・物理は不変）：level3_motion.mutual_neighbor_durations
+  で straightness/speed ゲート抜きの生の持続時間を全ての相互最近傍±ペアについて記録
+emerged: 最長持続は 142〜358 snapshot（物理時間 56.8〜143.2）——e052/e053/e054 が使っていた201 snapshotの
+  観測窓を10 seed中2 seedで超える（その窓では「まだ続いていた」ペアを「そこで終わった」と誤認しうる、という
+  観測窓のトランケーション問題を実測で発見）。しかし窓を3倍に延ばしても最長持続は約1.5〜2倍にしか伸びず、
+  単純な線形拡大ではない——**飽和（有限の特徴的寿命）か無限成長（真の持続的複合個体）かは本実験だけでは未解決**
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: measurement_tool
+target_encoded: false
+unresolved_audit:
+- role を F にした理由：Level4（持続的個体性）の直接証拠ではない。測ったのは「±ペアがどれだけ長く相互最近傍で
+  あり続けるか」という前段階の量で、Level4本来の判定基準（`recovers_after_perturbation`・tracked ID を通じた
+  同一性）はまだ何も測っていない
+- 【e052/e053/e054への含意（数値・artifact は no_touch のまま不変）】観測窓201 snapshotは一部ペアの真の寿命を
+  トランケートしていた可能性がある。ただし e052/e053/e054 の「Level3到達」判定（persist_min=15 snapshot 以上の
+  直進的並進）は本結果と矛盾しない——短い窓でも persist_min はゆうに満たされていたため
+- 次段：さらに長い窓（6倍・9倍など）で最長持続時間が飽和するかを見る。もし真に飽和しないなら、摂動後回復
+  （recovers_after_perturbation）の直接テストへ進み、初めてLevel4の可能性を扱う
+known_match: 該当なし（本実験は既存法則の新しい持続時間統計）
+results:
+- experiments/e055_dipole_survival_time/results/dipole_survival_time.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: pending
+  reproducibility: passed
+  visualization_integrity: not_applicable
