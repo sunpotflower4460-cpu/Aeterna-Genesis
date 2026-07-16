@@ -1,0 +1,51 @@
+# H021 frontier campaign 反復7。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。外部監査対応、Observer v2使用。
+id: e058
+title: 渦ダイポールepisodeの打ち切り対応生存時間分析（Observer v2・Kaplan-Meier）— e055/e056を正しい統計手法で再測定
+role:
+  primary: V
+  secondary:
+  - N
+confidence: B
+claim_tier:
+- measured
+- observed
+put_in: e052 と同一の L=96・τ_Q=200・damped GPE KZ クエンチ・FROZEN閾値（観測窓は baseline の1600 step）。
+  Observer v2（vortex_tracking_v2 のグローバル割当＋dipole_episodes のフレーム毎パートナー判定）で
+  全ての ±束縛 episode を検出し、各 episode の開始・終了フレームを記録。観測窓終了時点で束縛中の episode は
+  右側打ち切り（censored）とし、survival_analysis の Kaplan-Meier で生存時間分布を推定。20 seed（独立新規範囲）
+emerged: 393 episode（20 seed 合計）。KM 中央値生存時間 6 frame（物理時間2.4）、制限付き平均生存時間 RMST
+  10.39 frame（tau=89 frameまで）、打ち切り割合わずか3.8%（393中15）。**打ち切りがほぼ無い**——観測窓
+  （201 snapshot）はほぼ全ての episode の完全な生涯を捉えられており、e055/e056 が懸念した「観測窓打ち切り」
+  問題は本測定では小さい。episode 集団は短命なものが大多数（中央値6 frame）で、長寿命の裾（最大89 frame・
+  20超のもの52件）を持つ——**有限の特徴的寿命、無限持続の証拠なし**という e056 の定性的結論を、正しい統計
+  手法（Kaplan-Meier・打ち切り対応）の上で確認する
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: measurement_tool
+target_encoded: false
+unresolved_audit:
+- 【e055/e056との数値差の理由（重要・混同しない）】v1(mutual_neighbor_durations)は「2つのトラックが共存する
+  全期間にわたり相互最近傍であり続けたか」を平均で判定するため、設計上すでに「そこそこ長く共存したペア」に
+  暗黙に選別されている。v2(dipole_episodes)はフレーム毎に判定し、一瞬だけ最近傍になった短命な束縛イベントも
+  全て数える——結果、v2 の母集団は v1 よりずっと広く、中央値は大きく下がる（6 vs 数百 snapshot）。これは
+  矛盾でなく、**異なる（v2の方がより完全な）量を測っている**ことを意味する。「短くなった」でなく
+  「見えていなかった短命イベントが多数見えるようになった」と正確に言う
+- role V（secondary N）とした理由：新しい発見というより、e055/e056 の問い（渦ペアの生存時間・打ち切りの
+  扱い）を正しい統計手法で再測定する検証実験。定性的結論（無限持続の証拠なし）は e056 と整合するため N も
+  secondary で残す
+- e055/e056 の元データ・数値は一切変更していない（no_touch）。本実験は独立した新規測定
+known_match: Kaplan-Meier 推定量・制限付き平均生存時間（RMST）は標準的な打ち切り対応生存時間分析（医学統計等
+  で広く使われる既知手法）——本実験はその標準手法を渦ペアの束縛時間分布に適用した
+results:
+- experiments/e058_dipole_survival_km/results/dipole_survival_km.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: passed
+  reproducibility: passed
+  visualization_integrity: not_applicable

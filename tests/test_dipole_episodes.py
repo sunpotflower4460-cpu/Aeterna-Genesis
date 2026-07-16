@@ -23,10 +23,11 @@ def test_translating_dipole_is_one_episode():
             {"x": 10.0 + 0.5 * t, "y": 24.0, "charge": -1},
         ])
     tracks = link_frames_v2(frames, L, max_step=2.0)
-    episodes = detect_episodes(tracks, L, sep_max=8.0, max_sep_rate=1.0, perp_cos_tol=0.5)
+    episodes = detect_episodes(tracks, L, sep_max=8.0, max_sep_rate=1.0, straight_min=0.5)
     assert len(episodes) == 1
     assert episodes[0]["duration"] == 15
     assert episodes[0]["straightness"] > 0.9
+    assert episodes[0]["kinematics_ok"] is True
 
 
 def test_partner_exchange_splits_episode():
@@ -43,7 +44,7 @@ def test_partner_exchange_splits_episode():
             {"x": bx, "y": by, "charge": -1},
         ])
     tracks = link_frames_v2(frames, L, max_step=3.0)
-    episodes = detect_episodes(tracks, L, sep_max=8.0, max_sep_rate=5.0, perp_cos_tol=1.0)
+    episodes = detect_episodes(tracks, L, sep_max=8.0, max_sep_rate=5.0, straight_min=0.0)
     partners = {(ep["pos_track"], ep["neg_track"]) for ep in episodes}
     # a partner exchange must show up as more than one distinct (pos,neg) pairing across episodes,
     # OR at least the episode list must not silently merge non-adjacent partners into one run
