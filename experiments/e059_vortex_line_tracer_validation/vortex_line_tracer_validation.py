@@ -105,12 +105,18 @@ def run(quick=False, params=None):
         new = trace_vortex_lines(psi)
         # e003's OWN honesty floor: the ring imprint is non-periodic across the z boundary and
         # seeds a STATIC vortex sheet near z~0 (see e003 AUDIT.md); e003 excludes it from its own
-        # meridional tracker via `axial_margin`/`bounds`. The general tracer sees that sheet too
-        # (plus, at later steps, small sound-driven vortex-antivortex loops elsewhere in the bulk
-        # -- also expected, coarse-resolution GPE dynamics, same floor e003 states for late-time
-        # sound). Apply the SAME axial bounds e003 already uses (not a new/invented filter) before
-        # comparing, and report what was excluded, never silently.
-        bulk_loops = [l for l in new["loops"] if bounds[0] <= l["centroid"][2] <= bounds[1]]
+        # meridional tracker via `axial_margin`/`bounds`, applied to each detected core position,
+        # not an aggregate. The general tracer sees that sheet too (plus, at later steps, small
+        # sound-driven vortex-antivortex loops elsewhere in the bulk -- also expected,
+        # coarse-resolution GPE dynamics, same floor e003 states for late-time sound). Apply the
+        # SAME axial bounds e003 already uses (not a new/invented filter) before comparing, and
+        # report what was excluded, never silently. Checked against every point of the loop, not
+        # just its centroid: a loop that straddles the excluded z region (part in the bulk, part
+        # in the boundary sheet) could have a centroid that lands inside bounds while still being
+        # exactly the non-bulk structure this filter exists to exclude (found by external review,
+        # 2026-07-16).
+        bulk_loops = [l for l in new["loops"]
+                      if all(bounds[0] <= p[2] <= bounds[1] for p in l["points"])]
         matched = None
         if bulk_loops:
             if prev_matched_centroid is not None:

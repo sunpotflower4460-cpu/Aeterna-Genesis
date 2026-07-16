@@ -10,6 +10,7 @@ Key claims under test:
 import numpy as np
 
 from genesis.diagnostics.vortex_lines_3d import trace_vortex_lines
+from genesis.diagnostics.plaquette_ledger import _z_vortex_line
 
 N = 48
 CENTER = (N - 1) / 2.0
@@ -86,6 +87,20 @@ def test_translation_invariance():
     delta = c1 - c0
     assert abs(delta[0] - shift) < 0.5 and abs(delta[1]) < 0.5 and abs(delta[2]) < 0.5
     assert abs(r0["loops"][0]["length"] - r1["loops"][0]["length"]) < 1e-6
+
+
+def test_open_chain_at_seam_is_one_path_not_two():
+    # a straight vortex line uniform in z: this module's cube construction does not wrap the
+    # z-direction seam (see module docstring), so this line hits it and must be reported as ONE
+    # open path spanning the full line, not fragmented into two duplicate/reversed fragments --
+    # regression test for the walk() terminal-endpoint-not-marked-visited bug (external review,
+    # 2026-07-16): without the fix, the far endpoint of the first walk was left unvisited and got
+    # walked again (backwards), producing a second spurious fragment.
+    psi = _z_vortex_line(20, +1)
+    r = trace_vortex_lines(psi)
+    assert len(r["loops"]) == 0
+    assert len(r["open_paths"]) == 1
+    assert r["open_paths"][0]["n_points"] == 20
 
 
 def test_no_defects_no_loops():

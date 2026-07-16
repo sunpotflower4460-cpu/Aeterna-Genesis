@@ -169,24 +169,36 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
     n_overloaded = 0
     n_div_violations = 0
     n_pierced = 0
-    dangling = []
+    dangling_raw = []
     for (i, j, k) in candidates:
         faces = _cube_faces(i, j, k, W_xy, W_yz, W_zx)
         total_flux = sum(f for _, f in faces)
         if total_flux != 0:
             n_div_violations += 1
-        pierced = [fid for fid, f in faces if f != 0]
+        pierced = [(fid, f) for fid, f in faces if f != 0]
         if not pierced:
             continue
         n_pierced += 1
-        if len(pierced) == 2:
-            a, b = pierced
+        # A pierced face with |flux| > 1 (a charge>=2 line, or two lines passing through the same
+        # face) is NOT a simple single-line pass-through even when exactly 2 faces are pierced --
+        # treating it as an ordinary clean pair would silently collapse the multiplicity into one
+        # loop instead of flagging the genuine multi-line ambiguity this module promises to report,
+        # not guess at (found by external review, 2026-07-16).
+        if len(pierced) == 2 and all(abs(f) == 1 for _, f in pierced):
+            a, b = (fid for fid, _ in pierced)
             neighbors.setdefault(a, []).append(b)
             neighbors.setdefault(b, []).append(a)
-        elif len(pierced) == 1:
-            dangling.append(pierced[0])
+        elif len(pierced) == 1 and abs(pierced[0][1]) == 1:
+            dangling_raw.append(pierced[0][0])
         else:
             n_overloaded += 1
+
+    # A face can be the sole pierced face of BOTH its neighboring cubes independently, appending
+    # the same face_id to dangling_raw twice; de-duplicate before pairing so a single physical gap
+    # location contributes exactly one half-edge needing reconnection, not two (which could
+    # otherwise self-pair at distance 0, or double-connect that one face to two different partners
+    # -- found by external review, 2026-07-16).
+    dangling = list(dict.fromkeys(dangling_raw))
 
     n_healed = 0
     if dangling:
@@ -230,7 +242,16 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
             path.append(nxt)
             if nxt == start:
                 return path[:-1], True
-            if nxt in visited or degree.get(nxt, 0) != 2:
+            if nxt in visited:
+                return path, False
+            if degree.get(nxt, 0) != 2:
+                # a genuine terminal endpoint (degree 1, e.g. a seam hit) -- mark it visited so the
+                # outer scan doesn't walk the SAME chain a second time (backwards) starting from
+                # here, which would report one open chain as two duplicate/reversed fragments
+                # (found by external review, 2026-07-16: an earlier version of this fix moved
+                # walking to start from endpoints first, but still left the FAR endpoint of that
+                # walk unmarked).
+                visited.add(nxt)
                 return path, False
             visited.add(nxt)
             nbrs = neighbors[nxt]
