@@ -1,0 +1,47 @@
+# H021 frontier campaign 反復6。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。初めての本当のLevel4テスト（recovers_after_perturbation）。
+id: e057
+title: 長寿命渦ペアへの摂動後回復テスト（Level4の recovers_after_perturbation を初めて直接測定）
+role:
+  primary: F
+  secondary:
+  - E
+confidence: C
+claim_tier:
+- measured
+- frontier
+put_in: e052 と同一の L=96・τ_Q=200 damped GPE KZ クエンチ・FROZEN閾値。決定的再現（同一 seed の再実行）で
+  介入直前の psi を厳密に再構築し、(A)無摂動継続と(B)局所複素ノイズ摂動（ペア中点から5グリッド単位オフセット・
+  半径5・振幅1.0、ランダム角度）継続を matched control で比較。10 seed（独立新規範囲）
+emerged: control（無摂動）は10中10で回復（ペアは追跡窓いっぱい持続）——これは統制群として想定通り。
+  perturbed（局所摂動あり）は10中7が回復、10中3は即座に崩壊（摂動後1〜2 snapshotで相互最近傍を喪失）。
+  多数派（70%）は近傍の擾乱から回復するが、有意な少数派（30%）は本当に破壊される——Level4の
+  recovers_after_perturbation に対する、初めての直接的で正直な（部分的）証拠
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: genesis_candidate
+target_encoded: false
+unresolved_audit:
+- 【開発中に発見・修正した座標系バグ】初期実装では core.vortex の (x=行インデックス, y=列インデックス) 規約と
+  逆順にメッシュグリッドを組んでいたため、摂動が意図した場所と異なる場所にかかっていた（回帰テスト
+  `test_perturbation_mask_uses_correct_xy_convention` で固定）。修正前は直接ペアに命中させる操作チェックでも
+  常に「回復」を示しており、これはバグの兆候だった——修正後は直接命中で明確に破壊されることを確認した上で
+  本実験のオフセット摂動（5グリッド単位・半径5）を設計した
+- role を F（secondary E）にした理由：10中7という多数派の回復は励みになるが、10中3の破壊も無視できない。
+  「Level4 到達」と確定させるにはまだ早い——摂動の角度・強度・オフセットへの依存性、より長い追跡窓での
+  再検証が必要
+- Level4の他の2基準（tracked_id_lifetime>τ は e055/e056 で部分的に測定済み、inside_outside_contrast>θ は
+  未測定）と合わせて、Level4全体の判定はまだ完結していない
+known_match: 該当なし（本実験は既存法則の摂動応答の初回測定）
+results:
+- experiments/e057_dipole_perturbation_recovery/results/dipole_perturbation_recovery.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: passed
+  reproducibility: passed
+  visualization_integrity: not_applicable
