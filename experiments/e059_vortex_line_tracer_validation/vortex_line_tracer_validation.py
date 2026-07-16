@@ -46,6 +46,13 @@ EXPECT = {
     "radius_diff_frac": 0.25,       # a frame "agrees" if matched-loop radius is within 25% of old tracker's
     "radius_agree_frac_min": 0.7,   # at least 70% of comparable frames must agree (honest majority, not 100%)
     "match_rate_min": 0.8,          # a bulk loop is found and matched in at least 80% of samples
+    # axial (propagation-direction) tolerance mirrors the radius one -- 25% of R is the same order
+    # as the axial excursions this ring makes over its clean window, and 70% majority is the same
+    # honest-majority bar, chosen up front (not after seeing axial numbers) for consistency with
+    # the radius check (added by external review, 2026-07-16: `run()` already recorded both axial
+    # series but `evaluate()` never compared them, so a same-radius/wrong-z match could pass GREEN).
+    "axial_diff_frac": 0.25,
+    "axial_agree_frac_min": 0.7,
 }
 
 
@@ -177,10 +184,18 @@ def run(quick=False, params=None):
         new_r = f["new_matched_loop"]["effective_radius"]
         old_r = f["old_tracker"]["radius"]
         radius_diffs.append(abs(new_r - old_r))
-        new_axial_series.append(f["new_matched_loop"]["centroid"][2])
-        old_axial_series.append(f["old_tracker"]["axial"])
-    tol = 0.25 * p["R"]
+        new_a = f["new_matched_loop"]["centroid"][2]
+        old_a = f["old_tracker"]["axial"]
+        axial_diffs.append(abs(new_a - old_a))
+        new_axial_series.append(new_a)
+        old_axial_series.append(old_a)
+    tol = EXPECT["radius_diff_frac"] * p["R"]
     n_large_diff = sum(1 for d in radius_diffs if d >= tol)
+    # axial_diffs was previously computed but never actually used by any pass criterion below --
+    # `evaluate()` compared radius only, so a frame could match a same-radius loop at the WRONG z
+    # position and still count as "agreeing" (found by external review, 2026-07-16).
+    axial_tol = EXPECT["axial_diff_frac"] * p["R"]
+    n_large_axial_diff = sum(1 for d in axial_diffs if d >= axial_tol)
 
     min_both = 3 if quick else EXPECT["min_both_frames"]
     verdict = "insufficient_frames" if len(both) < min_both else "agreement_measured"
@@ -193,6 +208,10 @@ def run(quick=False, params=None):
         radius_diff_median=float(np.median(radius_diffs)) if radius_diffs else None,
         radius_diff_max=float(np.max(radius_diffs)) if radius_diffs else None,
         n_frames_large_radius_diff=n_large_diff,
+        axial_diff_mean=float(np.mean(axial_diffs)) if axial_diffs else None,
+        axial_diff_median=float(np.median(axial_diffs)) if axial_diffs else None,
+        axial_diff_max=float(np.max(axial_diffs)) if axial_diffs else None,
+        n_frames_large_axial_diff=n_large_axial_diff,
         new_axial_series=[round(float(a), 3) for a in new_axial_series],
         old_axial_series=[round(float(a), 3) for a in old_axial_series],
         frames=frames,
@@ -207,11 +226,17 @@ def evaluate(result, quick=False):
     n_samples = result["n_samples"]
     match_rate = n_both / n_samples if n_samples else 0.0
     radius_agree_frac = (1.0 - result["n_frames_large_radius_diff"] / n_both) if n_both else 0.0
+    # axial agreement was recorded (new_axial_series/old_axial_series) but never actually checked
+    # here -- a frame with a same-radius, wrong-z match could pass "radius_agrees_majority_of_frames"
+    # and the overall verdict without the axial trajectories ever being compared (found by external
+    # review, 2026-07-16).
+    axial_agree_frac = (1.0 - result["n_frames_large_axial_diff"] / n_both) if n_both else 0.0
     min_both = 3 if quick else EXPECT["min_both_frames"]
     checks = {
         "enough_frames_to_compare": n_both >= min_both,
         "matched_most_frames": match_rate >= EXPECT["match_rate_min"],
         "radius_agrees_majority_of_frames": radius_agree_frac >= EXPECT["radius_agree_frac_min"],
+        "axial_agrees_majority_of_frames": axial_agree_frac >= EXPECT["axial_agree_frac_min"],
         "no_overloaded_cubes": all(f["new_n_overloaded"] == 0 for f in result["frames"]),
     }
     return all(checks.values()), checks
@@ -232,6 +257,11 @@ def _print_report(result, quick=False):
               % (result["radius_diff_mean"], result["radius_diff_median"], result["radius_diff_max"]))
         print("frames with large (>=25%% R) radius diff: %d / %d (known healing-heuristic limitation, see AUDIT.md)"
               % (result["n_frames_large_radius_diff"], result["n_both_instruments"]))
+    if result["axial_diff_mean"] is not None:
+        print("axial diff (new tracer's matched loop vs track_ring_cross_section): mean=%.3f median=%.3f max=%.3f"
+              % (result["axial_diff_mean"], result["axial_diff_median"], result["axial_diff_max"]))
+        print("frames with large (>=25%% R) axial diff: %d / %d"
+              % (result["n_frames_large_axial_diff"], result["n_both_instruments"]))
     print("axial series (new tracer, matched loop): %s" % result["new_axial_series"])
     print("axial series (old tracker):              %s" % result["old_axial_series"])
     passed, checks = evaluate(result, quick=quick)

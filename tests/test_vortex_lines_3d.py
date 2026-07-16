@@ -9,6 +9,7 @@ Key claims under test:
 """
 import numpy as np
 
+import genesis.diagnostics.vortex_lines_3d as vl3d
 from genesis.diagnostics.vortex_lines_3d import trace_vortex_lines
 from genesis.diagnostics.plaquette_ledger import _z_vortex_line
 
@@ -110,3 +111,43 @@ def test_no_defects_no_loops():
     assert r["open_paths"] == []
     assert r["n_cubes_overloaded"] == 0
     assert r["n_unhealed_dangling"] == 0
+
+
+def test_same_sign_two_face_cube_is_overloaded_not_clean(monkeypatch):
+    # a cube with exactly 2 pierced faces whose fluxes have the SAME sign (here, both z-faces
+    # outward-flux +1) cannot be a valid single-line pass-through -- entry and exit must cancel
+    # to zero net divergence. Pairing them anyway (as an earlier version of this module did,
+    # requiring only abs(f)==1 on both faces) would silently wire together two faces that don't
+    # actually connect via one line -- regression test for the same-sign-pair bug (external
+    # review, 2026-07-16). Bypasses face_windings/psi to directly control the single cube's faces.
+    W_xy = np.zeros((1, 1, 2), dtype=int)
+    W_xy[0, 0, 0] = -1   # bottom (z=0) outward flux = -W_xy[0,0,0] = +1
+    W_xy[0, 0, 1] = +1   # top    (z=1) outward flux = +W_xy[0,0,1] = +1  (SAME sign as bottom)
+    W_yz = np.zeros((2, 1, 1), dtype=int)
+    W_zx = np.zeros((1, 2, 1), dtype=int)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((3, 3, 3), dtype=complex))
+    assert r["n_cubes_overloaded"] == 1
+    assert r["n_cubes_dangling"] == 0
+    assert r["loops"] == []
+    assert r["open_paths"] == []
+
+
+def test_isolated_unhealed_dangling_face_is_a_single_point_open_path(monkeypatch):
+    # a single dangling face (1 pierced face in its only candidate cube) with no OTHER dangling
+    # face nearby to heal with, and no clean-cube-side neighbor either, must still be surfaced in
+    # open_paths (as a 1-point entry) rather than silently vanishing from the returned geometry
+    # while only being counted in n_unhealed_dangling -- regression test for the isolated-dangling
+    # bug (external review, 2026-07-16).
+    W_xy = np.zeros((1, 1, 2), dtype=int)
+    W_xy[0, 0, 0] = -1   # the only nonzero face: bottom (z=0) outward flux = +1
+    W_yz = np.zeros((2, 1, 1), dtype=int)
+    W_zx = np.zeros((1, 2, 1), dtype=int)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((3, 3, 3), dtype=complex))
+    assert r["n_cubes_dangling"] == 1
+    assert r["n_healed_connections"] == 0
+    assert r["n_unhealed_dangling"] == 1
+    assert r["loops"] == []
+    assert len(r["open_paths"]) == 1
+    assert r["open_paths"][0]["n_points"] == 1

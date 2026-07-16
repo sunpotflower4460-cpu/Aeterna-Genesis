@@ -26,7 +26,8 @@ WHAT IT IS NOT (responsibility boundaries)
 - NOT a claim about self-formed structure. This is a measurement instrument (role V); it reports
   geometry of whatever line is present, seeded or emergent, without judgment.
 - NOT robust to multiple simultaneous CLOSE or CROSSING lines: a cube with more than 2 pierced
-  faces is reported as `ambiguous_cubes`, never silently paired by heuristic.
+  faces, or with exactly 2 pierced faces whose fluxes don't actually cancel (same sign, or
+  |flux|>1), is reported as `ambiguous_cubes`, never silently paired by heuristic.
 - Does NOT trace across the array's index-0/index-(L-1) seam: `plaquette_ledger` does not compute
   the wraparound plaquette (its winding arrays have L-1 valid entries, not L, along each in-plane
   axis), so a line that approaches the box edge is reported as an OPEN path there, not a closed
@@ -115,12 +116,14 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
     Returns a dict:
       loops: list of {points (ordered face-center coords, closed), length, centroid,
              mean_curvature, effective_radius, n_points, mean_abs_winding}
-      open_paths: list of {points, length} for paths that hit the array seam or a degree!=2 node
-             (never silently dropped)
-      n_cubes_checked, n_cubes_pierced, n_cubes_ambiguous (more than 2 pierced faces -- these
-             cubes are skipped, not guessed at), n_divergence_violations (sum of the 6 face
-             fluxes != 0 -- should be 0 by construction; nonzero only at reliability-gated
-             plaquettes, reported honestly, never hidden)
+      open_paths: list of {points, length} for paths that hit the array seam or a degree!=2 node,
+             including single-point (n_points=1) entries for an isolated unhealed dangling face
+             that has no clean-cube-side connection either (never silently dropped)
+      n_cubes_checked, n_cubes_pierced, n_cubes_overloaded (more than 2 pierced faces, or exactly
+             2 pierced faces whose fluxes don't cancel -- these cubes are skipped, not guessed
+             at), n_divergence_violations (sum of the 6 face fluxes != 0 -- should be 0 by
+             construction; nonzero only at reliability-gated plaquettes, reported honestly, never
+             hidden)
       threshold: the amplitude threshold used (provenance)
     """
     W_xy, W_yz, W_zx, thr = face_windings(psi, amp_frac, near_pi_margin, amp_threshold)
@@ -145,10 +148,11 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
                     if 0 <= jj < n_cubes_j:
                         candidates.add((a, jj, c))
 
-    # A cube is "clean" when exactly 2 of its 6 faces are pierced -- the line enters one, exits
-    # the other, and connecting their centers is unambiguous. A cube with MORE than 2 pierced
-    # faces is a genuine multi-line ambiguity (n_cubes_overloaded) and is skipped, never guessed
-    # at. A cube with EXACTLY 1 pierced face ("dangling") is NOT a multi-line ambiguity -- it is
+    # A cube is "clean" when exactly 2 of its 6 faces are pierced with unit, opposite-sign flux --
+    # the line enters one, exits the other, and connecting their centers is unambiguous. A cube
+    # with MORE than 2 pierced faces, or with 2 pierced faces that don't cancel (same sign, or
+    # |flux|>1), is a genuine multi-line ambiguity (n_cubes_overloaded) and is skipped, never
+    # guessed at. A cube with EXACTLY 1 pierced face ("dangling") is NOT a multi-line ambiguity -- it is
     # the standard discretization gap of this construction near a cube that the line grazes near
     # an edge/corner rather than passing cleanly through two faces (most common where the line
     # runs close to tangent to a coordinate plane, e.g. near a curved ring's widest point). This
@@ -184,7 +188,15 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
         # treating it as an ordinary clean pair would silently collapse the multiplicity into one
         # loop instead of flagging the genuine multi-line ambiguity this module promises to report,
         # not guess at (found by external review, 2026-07-16).
-        if len(pierced) == 2 and all(abs(f) == 1 for _, f in pierced):
+        # A 2-pierced cube with SAME-sign unit fluxes is also not an ordinary pass-through: a
+        # single line entering one face and exiting another has opposite-sign outward flux at the
+        # two faces by construction (their sum must be part of the cube's zero net divergence).
+        # Same-sign faces mean the two visible fluxes don't actually cancel -- pairing them anyway
+        # would silently join what may be two unrelated sources/sinks (e.g. from reliability gating
+        # zeroing a true 3rd/4th face) into a fabricated segment. Routed to n_cubes_overloaded, the
+        # same "ambiguous, skipped, never guessed at" bucket as >2-pierced cubes (found by external
+        # review, 2026-07-16).
+        if len(pierced) == 2 and all(abs(f) == 1 for _, f in pierced) and sum(f for _, f in pierced) == 0:
             a, b = (fid for fid, _ in pierced)
             neighbors.setdefault(a, []).append(b)
             neighbors.setdefault(b, []).append(a)
@@ -229,10 +241,18 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
     else:
         unpaired = []
     n_unhealed_dangling = len(unpaired)
+    # A dangling face that stayed unhealed AND has no connection from the clean-cube-pairing pass
+    # either (i.e. it never became a key of `neighbors` at all -- the neighboring cube across that
+    # face isn't itself part of any clean pair) would otherwise be counted in n_unhealed_dangling
+    # but be entirely invisible in the returned geometry, contradicting the "never silently
+    # dropped" promise for open_paths. Surfaced explicitly as a single-point open path (found by
+    # external review, 2026-07-16). A face that DID get a clean-cube-side connection is already a
+    # degree-1 node in `neighbors` and is picked up naturally by the endpoint walk below.
+    isolated_unhealed = [f for f in unpaired if f not in neighbors]
 
     degree = {f: len(v) for f, v in neighbors.items()}
     visited = set()
-    loops, open_paths = [], []
+    loops, open_paths = [], [[f] for f in isolated_unhealed]
 
     def walk(start, first_next):
         path = [start]
@@ -318,9 +338,10 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
         threshold=thr,
         scope_note=("piecewise-linear line reconstruction from plaquette winding data; does not "
                     "trace across the array's periodic seam (see module docstring); cubes with "
-                    ">2 pierced faces (multi-line ambiguity) are skipped and counted, never "
-                    "guessed at; cubes with exactly 1 pierced face (a standard discretization gap "
-                    "near tangent/grazing regions) are healed via nearest-neighbor reconnection, "
+                    ">2 pierced faces, or 2 pierced faces whose fluxes don't cancel (multi-line "
+                    "ambiguity), are skipped and counted, never guessed at; cubes with exactly 1 "
+                    "pierced face (a standard discretization gap near tangent/grazing regions) are "
+                    "healed via nearest-neighbor reconnection, "
                     "counted in n_healed_connections; any leftover after healing is "
                     "n_unhealed_dangling, never silently dropped."),
     )
