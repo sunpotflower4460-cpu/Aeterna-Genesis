@@ -9,7 +9,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | room-g002-a | g002_boussinesq_convection | 1 | 3 |
 | room-g003-a | g003_model_h_phase_field | 2 | 5 |
 
-## Experiments (48) — role tally: E=23, F=10, N=3, S=7, V=5
+## Experiments (49) — role tally: E=24, F=10, N=3, S=7, V=5
 | id | role | tier | dim | target_encoded | genesis_role | title |
 |---|---|---|---|---|---|---|
 | e001 | E | measured | 2D | False | behavior_dictionary | GPE 渦歳差 |
@@ -60,6 +60,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | e050 | S+N | measured/observed | mixed | False | design_hypothesis | 遅い場 basin 記憶の robustness＋3D昇格（P07/S2・g帯・解像度・seed・2D→3D） |
 | e051 | N+S | measured/observed | mixed | False | negative_constraint | 育つ遅い場は記憶か（P07/E候補）— 未分化 s(t0)=0 の hysteresis 過剰は瞬時コピーで再現＝copy-collapse |
 | e052 | F+E | observed/frontier | 2D | False | genesis_candidate | 自己形成 ±渦ダイポールの Level 3 自走（単一連続 t=0 run・frontier candidate） |
+| e053 | E+V | measured/observed | 2D | False | genesis_candidate | 自己形成±渦ダイポールのLevel3自走・ロバスト性検証（解像度3段×44 seed、role E候補・robust） |
 
 ## Diagnostics modules (11)
 `angular_modes`, `corroborate`, `coupled_spectrum`, `gauge_aligned_distance`, `higher_levels`, `level3_motion`, `measures`, `plaquette_ledger`, `topology3d`, `topology_betti`, `winding_reliability`
