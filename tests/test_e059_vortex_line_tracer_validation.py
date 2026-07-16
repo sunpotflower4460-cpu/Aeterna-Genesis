@@ -1,7 +1,11 @@
 """Tests for e059 (H021 campaign, PR-C, role V): 3D vortex-line tracer validated on the seeded
 ring (e003's setup, unchanged). Not a claim about emergence -- an instrument-validation experiment.
 """
-from experiments.e059_vortex_line_tracer_validation.vortex_line_tracer_validation import run, evaluate
+import json
+import os
+
+import experiments.e059_vortex_line_tracer_validation.vortex_line_tracer_validation as e059mod
+from experiments.e059_vortex_line_tracer_validation.vortex_line_tracer_validation import run, evaluate, main
 
 
 def test_quick_run_produces_comparable_frames():
@@ -34,3 +38,26 @@ def test_evaluate_returns_checks_dict():
     assert isinstance(passed, bool)
     assert "enough_frames_to_compare" in checks
     assert "radius_agrees_majority_of_frames" in checks
+
+
+def test_run_valid_false_when_ring_never_found(monkeypatch):
+    # forces a zero-frame run (the meridional tracker "loses" the ring from the very first sample)
+    # -- run_valid must reflect that nothing was actually measured, not just that no exception was
+    # raised. Regression test for the unconditional run_valid=True bug (external review,
+    # 2026-07-16): a real pipeline regression that broke before tracing a single frame would
+    # previously still report run_valid=True and pass CI silently.
+    monkeypatch.setattr(e059mod.vortex, "track_ring_cross_section", lambda *a, **k: None)
+    r = run(quick=True)
+    assert r["n_samples"] == 0
+    assert r["run_valid"] is False
+
+
+def test_main_persists_passed_and_checks_in_written_json(tmp_path):
+    # downstream audit/evidence tooling reads the JSON artifact directly without re-running this
+    # script; the GREEN/RED verdict must be recoverable from the file itself, not only from stdout
+    # (regression test for the missing passed/checks fields, external review, 2026-07-16).
+    main(["--quick", "--out", str(tmp_path)])
+    with open(os.path.join(str(tmp_path), "vortex_line_tracer_validation.json")) as f:
+        data = json.load(f)
+    assert isinstance(data["passed"], bool)
+    assert "enough_frames_to_compare" in data["checks"]

@@ -129,38 +129,47 @@ def run(quick=False, params=None):
         # in the boundary sheet) could have a centroid that lands inside bounds while still being
         # exactly the non-bulk structure this filter exists to exclude (found by external review,
         # 2026-07-16).
-        bulk_loops = [l for l in new["loops"]
-                      if all(bounds[0] <= p[2] <= bounds[1] for p in l["points"])]
+        bulk_loops = [loop for loop in new["loops"]
+                      if all(bounds[0] <= pt[2] <= bounds[1] for pt in loop["points"])]
         matched = None
         if bulk_loops:
-            # `old` is guaranteed non-None here: the loop now breaks immediately, before this
-            # point, once the meridional tracker loses the ring (see the early-break fix above),
-            # so every frame reaching this line has an old-tracker reading to gate against.
-            if prev_matched_centroid is not None:
-                # Temporal continuity is the PRIMARY match criterion once we have a previous
-                # fix: a physical ring moves smoothly between consecutive samples (a few cells),
-                # while sound-driven artifact loops appear/disappear transiently and are unlikely
-                # to sit exactly where the ring just was. This is far more robust over a long run
-                # than re-matching cold on radius every frame (found in this validation: cold
-                # radius-matching alone increasingly confuses the ring with same-radius sound
-                # loops as noise accumulates over hundreds of steps).
-                # GATED by radius plausibility (external review, 2026-07-16): nearest-centroid
-                # alone can still latch onto a tiny artifact loop that happens to sit close to the
-                # ring's last known position while the real ring is still present elsewhere in the
-                # frame. Restrict candidates to those within a generous (50%) band of the old
-                # tracker's radius before picking the nearest centroid. NO fallback to the
-                # unfiltered set when nothing passes the gate (external review, 2026-07-16): a
-                # fallback would turn a frame where nothing plausible was found into a matched
-                # comparison anyway, inflating match_rate and letting temporal matching drift onto
-                # an artifact loop instead of leaving the frame honestly unmatched.
+            # `old` is guaranteed non-None here: the loop breaks immediately, before this point,
+            # once the meridional tracker loses the ring (see the early-break above), so every
+            # frame reaching this line has an old-tracker reading to gate against.
+            plausible = [loop for loop in bulk_loops
+                         if abs(loop["effective_radius"] - old["radius"]) < 0.5 * old["radius"]]
+            if prev_matched_centroid is not None and plausible:
+                # Temporal continuity is the PRIMARY match criterion once we have a previous fix:
+                # a physical ring moves smoothly between consecutive samples (a few cells), while
+                # sound-driven artifact loops appear/disappear transiently and are unlikely to sit
+                # exactly where the ring just was. This is far more robust over a long run than
+                # re-matching cold on radius every frame (found in this validation: cold
+                # radius-matching alone increasingly confuses the ring with same-radius sound loops
+                # as noise accumulates over hundreds of steps). Still GATED by radius plausibility
+                # (external review, 2026-07-16): nearest-centroid alone can latch onto a tiny
+                # artifact loop close to the ring's last known position while the real ring sits
+                # elsewhere in the frame.
                 pmc = np.array(prev_matched_centroid)
-                plausible = [l for l in bulk_loops if abs(l["effective_radius"] - old["radius"]) < 0.5 * old["radius"]]
-                if plausible:
-                    matched = min(plausible, key=lambda l: np.linalg.norm(np.array(l["centroid"]) - pmc))
-            else:
-                matched = min(bulk_loops, key=lambda l: abs(l["effective_radius"] - old["radius"]))
-            if matched is not None:
-                prev_matched_centroid = matched["centroid"]
+                matched = min(plausible, key=lambda loop: np.linalg.norm(np.array(loop["centroid"]) - pmc))
+            elif plausible:
+                # Cold start (no continuity anchor yet) OR the anchor was just reset by a miss:
+                # fall back to radius-only matching, but still gated by the SAME plausibility band
+                # -- an earlier version of this branch picked the nearest-radius candidate
+                # unconditionally, with no threshold, which could "match" an arbitrarily wrong
+                # candidate whenever it was the only one available (found by external review,
+                # 2026-07-16; the same "no fallback to implausible candidates" discipline used
+                # everywhere else in this module).
+                matched = min(plausible, key=lambda loop: abs(loop["effective_radius"] - old["radius"]))
+            # No fallback to the unfiltered set when nothing passes the gate (external review,
+            # 2026-07-16): a fallback would turn a frame where nothing plausible was found into a
+            # matched comparison anyway, inflating match_rate and letting temporal matching drift
+            # onto an artifact loop instead of leaving the frame honestly unmatched.
+        # Reset the temporal anchor whenever this frame produced no confident match (external
+        # review, 2026-07-16): leaving `prev_matched_centroid` pointing at a stale position would
+        # let a LATER frame's continuity-matching latch onto a coincidentally-nearby artifact loop
+        # near where the ring used to be, instead of correctly reverting to cold radius-gated
+        # matching once continuity is lost.
+        prev_matched_centroid = matched["centroid"] if matched is not None else None
         frames.append(dict(
             step=step,
             new_n_loops_total=len(new["loops"]),
@@ -172,8 +181,6 @@ def run(quick=False, params=None):
             new_matched_loop=matched,
             old_tracker=old,
         ))
-        if old is None:
-            break   # ring left the meridional-slice tracker's clean window (e003 convention)
 
     # honest agreement summary -- only over frames where BOTH instruments found something to compare.
     # Known limitation (found in this validation, not hidden): the nearest-neighbor dangling-face
@@ -224,7 +231,16 @@ def run(quick=False, params=None):
         old_axial_series=[round(float(a), 3) for a in old_axial_series],
         frames=frames,
         verdict=verdict,
-        run_valid=True,
+        # True iff the measurement actually executed and produced at least one traced frame --
+        # NOT whether the statistical verdict is favorable (see main()'s exit-code discipline,
+        # which deliberately gates on this field, not on evaluate()'s GREEN/RED). Unconditionally
+        # True was a bug: a real regression that broke the pipeline before a single frame was
+        # traced (e.g. an exception-free but empty run) would still report run_valid=True and pass
+        # CI silently (found by external review, 2026-07-16). Deliberately NOT len(both) > 0--
+        # that would couple CI's basic "did it run" gate to the same matching-heuristic success
+        # rate this experiment honestly reports as imperfect, reintroducing exactly the coupling
+        # between run success and statistical luck that the round-4 fix removed.
+        run_valid=len(frames) > 0,
     )
     return result
 
@@ -289,6 +305,15 @@ def main(argv=None):
 
     result = run(quick=args.quick)
     _print_report(result, quick=args.quick)
+
+    # Persist the evaluated GREEN/RED checks in the written artifact itself, not just print them
+    # -- otherwise downstream audit/evidence tooling that reads the JSON without re-running this
+    # exact code (with the exact same EXPECT thresholds) can't see that the validation failed its
+    # own threshold; `verdict` alone only distinguishes "insufficient_frames" from
+    # "agreement_measured", not GREEN vs RED (found by external review, 2026-07-16).
+    passed, checks = evaluate(result, quick=args.quick)
+    result["passed"] = passed
+    result["checks"] = checks
 
     if not args.no_write:
         os.makedirs(args.out, exist_ok=True)

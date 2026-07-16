@@ -29,6 +29,32 @@ dimension:
 genesis_role: measurement_tool
 target_encoded: false
 unresolved_audit:
+- 【マージ前の外部AIレビュー第5ラウンド（CodeRabbit＋Codex）で発見・修正した6件】第4ラウンド後、
+  ようやくレート制限が解除されたCodeRabbitの初回レビューとCodexの追加レビューが同時に届いた。
+  マージ前に検証・修正した：(1) `run_valid`が無条件`True`だった——測定パイプラインが1フレームも
+  トレースせずに終わった場合（例外なしの空実行）でもCIが静かに成功していたはずのバグ
+  （CodeRabbit、Major）。`len(frames) > 0`ベースに修正（`len(both) > 0`ではなく——後者は
+  マッチングヒューリスティックの成功率とCIの基本疎通確認を再び結合させてしまい、第4ラウンドで
+  除去したばかりの結合を再導入することになる）、(2) コールドスタート時（`prev_matched_centroid`
+  未確立）のマッチングに半径妥当性ゲートがなく、他の箇所で確立した「妥当でない候補にはフォール
+  バックしない」規律から外れていた（CodeRabbit）。同じ50%帯ゲートを適用、(3) 二重になっていた
+  `if old is None: break`（第4ラウンドの修正で早期breakを追加した際、末尾の元の同等チェックを
+  消し忘れていた——到達不能な死んだコード、CodeRabbit）。削除、(4) AUDIT.mdの誤字
+  （`n_frames_large_radius_diff`を2回記載、2つ目は`n_frames_large_axial_diff`のはず、
+  CodeRabbit）。修正、(5) マッチに失敗したフレームの後も`prev_matched_centroid`（時間的連続性の
+  アンカー）が古い位置を指したまま残っていた——次のフレームがその古いアンカーに最も近い妥当な
+  候補（実際にはリングが移動した後に残った無関係な音波ループかもしれない）に誤ってロックオンし
+  得た（Codex）。マッチ失敗時にアンカーを`None`にリセットするよう修正（コールドスタートと同じ
+  ゲート付きロジックに戻る）、(6) full runで`evaluate()`がRED判定でも、書き出すJSON成果物には
+  `verdict`（insufficient_frames/agreement_measuredの粗い区別のみ）しか含まれず、GREEN/RED
+  そのものが含まれていなかった——このスクリプトを再実行せずにJSONだけを読む下流の監査ツールが
+  合否を復元できないバグ（Codex）。`main()`で`passed`/`checks`をJSONに永続化するよう修正。
+  回帰テスト2件を追加（`run_valid`が実際に測定なしを検出すること、`main()`が書き出すJSONに
+  `passed`/`checks`が含まれること）。修正後、`pytest tests/test_vortex_lines_3d.py
+  tests/test_e059_vortex_line_tracer_validation.py -q`で14件全通過を確認。full run再実行の結果、
+  数値は完全に変化なし（一致フレーム10/21、半径・軸方向とも乖離ゼロのまま）——この6件のバグは
+  本データセットでは実際にはトリガーされなかったが、計測器と検証パイプラインの堅牢性は
+  より正しくなった
 - 【マージ前の外部AIレビュー第4ラウンド（Codex）で発見・修正した3件・数値が大きく変化した重要な
   修正】(1) `run()`のCI終了コードが`evaluate()`の統計的合否判定（GREEN/RED）に基づいていた
   （`return 0 if passed else 1`）——e057/e058など既存のeNNN実験は`run_valid`（測定が実行できた
