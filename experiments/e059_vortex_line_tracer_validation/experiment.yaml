@@ -29,6 +29,24 @@ dimension:
 genesis_role: measurement_tool
 target_encoded: false
 unresolved_audit:
+- 【マージ前の外部AIレビュー第8ラウンド（Codex）——自分自身の第6ラウンドの主張の誤りを指摘】
+  第6ラウンドで「両側からdanglingな面（tangent pass-through）は重複除去して1エントリに
+  まとめれば、どちらの符号を残しても実際の結果には影響しない」と主張し修正したが、この主張
+  自体が誤りだったとCodexに指摘された。実際には、重複除去後の1エントリはhealingの
+  ペアリング候補プールに残ったままであり、近くに別の（無関係な）genuinely single-sidedな
+  dangling面があれば、たまたま残った符号次第でそれと誤ってhealingされ得た——「両側dangling
+  なら外部接続不要」という自分のコメントと矛盾する挙動。検証の結果、指摘は正しいと判断し、
+  重複face（両側からdanglingな面）をペアリングプール自体から完全に除外するよう修正
+  （1点のopen pathとして直接報告、isolated_unhealedと同じ扱い）。回帰テスト1件を追加
+  （両側dangling面の近くに別の単独dangling面がある状況で、両者が決して誤ってhealingされ
+  ないことの検証）。修正後、`pytest tests/test_vortex_lines_3d.py
+  tests/test_e059_vortex_line_tracer_validation.py -q`で20件全通過を確認。full run再実行の
+  結果、3ラウンド連続で実際に観測可能な効果があった——`n_loops_bulk_total`が299から324
+  （+25ループ）に、`n_loops_outside_bulk_total`が88から95に、それぞれ増加した。ただし今回も
+  最終比較対象には影響なし（`n_both_instruments`=10、`radius_diff_median`=0.6813...のまま）。
+  外部レビューに対して「見送る」と判断した箇所も、後続ラウンドで別の角度から再指摘されれば
+  再検証する——このケースは「見送り」ではなく自分自身の以前の修正の不完全さを外部レビューが
+  正しく指摘したものであり、盲目的な信頼も盲目的な却下もしない規律が機能した例として記録する
 - 【マージ前の外部AIレビュー第7ラウンド（Codex）で発見・修正した2件・検討の上見送った1件】
   Codexからさらに3件届いた。(1) healingが面のsign（外向きflux符号）を無視して距離のみで
   ペアリングしており、同符号（両方「出口」または両方「入口」）の2つのdangling面を結合し得た

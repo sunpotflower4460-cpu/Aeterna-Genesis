@@ -212,20 +212,30 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
         else:
             n_overloaded += 1
 
-    # A face can be the sole pierced face of BOTH its neighboring cubes independently, appending
-    # the same face_id to dangling_raw twice (with opposite signs, by construction -- adjacent
-    # cubes' outward normals at a shared face are opposite); de-duplicate to one entry per unique
-    # face before pairing so a single physical gap location contributes exactly one half-edge
-    # needing reconnection, not two (which could otherwise self-pair at distance 0, or
-    # double-connect that one face to two different partners -- found by external review,
-    # 2026-07-16). The two-sided case never actually needs pairing (it already represents a
-    # complete tangent pass-through seen from both neighbors), so which of the two opposite signs
-    # is kept for the single deduped entry doesn't affect any real outcome; keep the first seen.
+    # A face can be the sole pierced face of BOTH its neighboring cubes independently (a shared
+    # face is at most 2-sided, so this happens at most once per face), appending it to
+    # dangling_raw twice with opposite signs, by construction -- adjacent cubes' outward normals
+    # at a shared face are opposite. This two-sided case already represents a complete tangent
+    # pass-through seen from both neighbors and needs no external connection at all -- it is
+    # EXCLUDED from the pairing pool entirely (not merely deduplicated to one arbitrarily-signed
+    # entry, which an earlier version of this fix did: that still left the face eligible for the
+    # distance-based healing pass, so it could be healed to an unrelated nearby endpoint, or not,
+    # purely depending on which of the two opposite signs happened to survive dedup -- found by
+    # external review, 2026-07-16). Reported directly as its own isolated 1-point open path,
+    # alongside genuinely-unhealed single-sided dangling faces (below).
+    face_counts = {}
+    for fid, _sign in dangling_raw:
+        face_counts[fid] = face_counts.get(fid, 0) + 1
     seen_faces = set()
     dangling = []
+    two_sided_isolated = []
     for fid, sign in dangling_raw:
-        if fid not in seen_faces:
-            seen_faces.add(fid)
+        if fid in seen_faces:
+            continue
+        seen_faces.add(fid)
+        if face_counts[fid] > 1:
+            two_sided_isolated.append(fid)
+        else:
             dangling.append((fid, sign))
     # Sort by face_id for a well-defined, reviewable tie-break rule: `dangling_raw`'s order
     # otherwise depends on iteration order of `candidates` (a set), so two equal-distance healing
@@ -294,7 +304,11 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
 
     degree = {f: len(v) for f, v in neighbors.items()}
     visited = set()
-    loops, open_paths = [], [[f] for f in isolated_unhealed]
+    # two_sided_isolated faces were excluded from the pairing pool entirely (see above) and can
+    # never be a clean-cube-side neighbor either (a cube is either "dangling" with exactly 1
+    # pierced face or part of a "clean pair" with exactly 2 -- never both), so they are always
+    # structurally isolated; surfaced the same way as isolated_unhealed, never silently dropped.
+    loops, open_paths = [], [[f] for f in isolated_unhealed + two_sided_isolated]
 
     def walk(start, first_next):
         path = [start]

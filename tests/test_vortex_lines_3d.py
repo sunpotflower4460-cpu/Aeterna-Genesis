@@ -248,3 +248,26 @@ def test_opposite_sign_dangling_faces_are_healed(monkeypatch):
     assert r["loops"] == []
     assert len(r["open_paths"]) == 1
     assert r["open_paths"][0]["n_points"] == 2
+
+
+def test_two_sided_dangling_face_is_excluded_from_healing_pool(monkeypatch):
+    # A face that is dangling from BOTH its neighboring cubes (a complete tangent pass-through,
+    # needing no external connection) must be excluded from the healing PAIRING POOL entirely --
+    # not merely deduplicated to one arbitrarily-signed entry (an earlier version of this fix did
+    # only that), which left it eligible to be healed to an unrelated nearby endpoint purely
+    # depending on which of its two opposite signs happened to survive dedup. Here a genuinely
+    # single-sided dangling face (cube R) sits within healing range of the two-sided face (shared
+    # by cubes P and Q) but must NEVER be paired to it (found by external review, 2026-07-16).
+    W_xy = np.zeros((3, 1, 3), dtype=int)
+    W_xy[0, 0, 1] = 1    # shared face between cube (0,0,0) [sign +1] and cube (0,0,1) [sign -1]
+    W_xy[2, 0, 0] = -1   # cube (2,0,0)'s only pierced face, sign +1 -- genuinely single-sided
+    W_yz = np.zeros((4, 1, 2), dtype=int)
+    W_zx = np.zeros((3, 2, 2), dtype=int)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((4, 4, 4), dtype=complex))
+    assert r["n_cubes_dangling"] == 3          # cubes (0,0,0), (0,0,1), (2,0,0)
+    assert r["n_healed_connections"] == 0      # the two-sided face must never be healed to R
+    assert r["n_unhealed_dangling"] == 1       # only R's genuinely single-sided face
+    assert r["loops"] == []
+    assert len(r["open_paths"]) == 2           # the two-sided face, and R's face, both isolated
+    assert all(p["n_points"] == 1 for p in r["open_paths"])
