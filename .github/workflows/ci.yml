@@ -157,6 +157,8 @@ jobs:
         run: python tools/validate_schemas.py
       - name: "Result integrity (G4): committed result artifacts unchanged vs tools/result_integrity.json"
         run: python tools/verify_result_integrity.py
+      - name: "Evidence index (G2/G6): generated index matches experiment.yaml + emergence.json sources"
+        run: python tools/build_evidence_index.py --check
       - name: "Genesis Runner 2D smoke (TDGL quench from t=0; --no-write actually simulates)"
         run: python genesis/runners/runner.py --mode 2d-screen --quick --no-write
       - name: "Genesis Runner 3D-local smoke (order parameter emerges in 3D from a uniform start)"
