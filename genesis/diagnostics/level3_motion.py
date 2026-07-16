@@ -180,6 +180,45 @@ def dipole_events(tracks, L, persist_min, sep_max, straight_min):
     return candidates, other_speeds
 
 
+def mutual_neighbor_durations(tracks, L, sep_max):
+    """For EVERY mutual-nearest-neighbor opposite-charge pairing (same geometric test as dipole_events, but
+    WITHOUT the persist_min/straightness gates), return its raw persist duration (frames) and mean_sep.
+
+    This is the building block for a survival-TIME distribution (Level-4 direction: is there a long-lived
+    bound compound, not just a pair that clears a fixed threshold?) -- dipole_events answers "did >=
+    persist_min frames of coherent motion occur"; this answers "how long did a bound pair exist at all,
+    including short-lived ones", which dipole_events' persist_min cutoff would otherwise discard."""
+    pos_tracks = [t for t in tracks if t["charge"] > 0]
+    neg_tracks = [t for t in tracks if t["charge"] < 0]
+
+    def overlap(ta, tb):
+        fa = {p[0] for p in ta["points"]}
+        fb = {p[0] for p in tb["points"]}
+        return sorted(fa & fb)
+
+    all_pairs = []
+    for ta in pos_tracks:
+        for tb in neg_tracks:
+            common = overlap(ta, tb)
+            if not common:
+                continue
+            pa = [p for p in ta["points"] if p[0] in common]
+            pb = [p for p in tb["points"] if p[0] in common]
+            _com, sep = _unwrap_pair_positions(pa, pb, L)
+            mean_sep = float(np.mean(np.linalg.norm(sep, axis=1)))
+            all_pairs.append((ta, tb, dict(persist=len(common), mean_sep=mean_sep)))
+
+    durations = []
+    for ta, tb, m in all_pairs:
+        ta_best = min((mm["mean_sep"] for (a2, b2, mm) in all_pairs if a2 is ta), default=None)
+        tb_best = min((mm["mean_sep"] for (a2, b2, mm) in all_pairs if b2 is tb), default=None)
+        is_mutual = (ta_best is not None and abs(m["mean_sep"] - ta_best) < 1e-9 and
+                     tb_best is not None and abs(m["mean_sep"] - tb_best) < 1e-9)
+        if is_mutual and m["mean_sep"] <= sep_max:
+            durations.append(m["persist"])
+    return durations
+
+
 def level3_verdict(candidates, step_sizes, persist_min, speed_margin=3.0, straight_margin=2.0, min_steps=8):
     """Honest classification against the two self-calibrating floors (see module docstring).
 
