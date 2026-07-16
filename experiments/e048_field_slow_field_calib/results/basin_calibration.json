@@ -1,0 +1,122 @@
+{
+  "experiment": "e048_field_slow_field_calib",
+  "frontier": "P07",
+  "rung": "F1",
+  "role": "V",
+  "status": "GREEN",
+  "config": {
+    "L": 48,
+    "noise_ladder": [
+      0.0,
+      0.2,
+      0.5,
+      0.9,
+      1.4
+    ],
+    "L3": 24
+  },
+  "separability": [
+    {
+      "basin": 0,
+      "dominant": 0,
+      "fraction": 1.0,
+      "invalid": 0.0
+    },
+    {
+      "basin": 1,
+      "dominant": 1,
+      "fraction": 1.0,
+      "invalid": 0.0
+    },
+    {
+      "basin": 2,
+      "dominant": 2,
+      "fraction": 1.0,
+      "invalid": 0.0
+    }
+  ],
+  "clean_assign": [
+    [
+      0,
+      1.414213562373095,
+      [
+        0.0,
+        1.414213562373095,
+        1.414213562373095
+      ]
+    ],
+    [
+      1,
+      1.414213562373095,
+      [
+        1.414213562373095,
+        0.0,
+        1.414213562373095
+      ]
+    ],
+    [
+      2,
+      1.414213562373095,
+      [
+        1.414213562373095,
+        1.414213562373095,
+        0.0
+      ]
+    ]
+  ],
+  "morph": {
+    "basin": 1,
+    "margin": 0.039
+  },
+  "degradation": [
+    {
+      "noise": 0.0,
+      "invalid_fraction": 0.0,
+      "margin": 1.4142
+    },
+    {
+      "noise": 0.2,
+      "invalid_fraction": 0.0,
+      "margin": 1.1574
+    },
+    {
+      "noise": 0.5,
+      "invalid_fraction": 0.5938,
+      "margin": 0.8688
+    },
+    {
+      "noise": 0.9,
+      "invalid_fraction": 0.8542,
+      "margin": 0.621
+    },
+    {
+      "noise": 1.4,
+      "invalid_fraction": 0.9427,
+      "margin": 0.4416
+    }
+  ],
+  "scales": {
+    "d_identical": 0.0,
+    "d_same_basin": 0.2992,
+    "d_different_basin": 1.4142,
+    "separation_ratio": 4.73
+  },
+  "calibrated_bands": {
+    "copy_band": 0.1496,
+    "detachment_band": 0.8567,
+    "note": "dimensionless S1 bands derived from THIS repo's known states; Loop 0.05/0.35 NOT used"
+  },
+  "lt3_basin": {
+    "net_present": 24,
+    "abs_absent": 0
+  },
+  "checks": {
+    "LT-2 separates W0/W1/W2 basins (dominant winding, fraction>0.99, 0 invalid)": true,
+    "LT-1 basin-decision: clean assigns to own basin with margin": true,
+    "LT-1 ambiguity: 50/50 morph margin << clean margin": true,
+    "degradation monotone: noise raises invalid_fraction and shrinks margin": true,
+    "distance scale separated: d_id < d_same < d_diff, ratio>2.5": true,
+    "LT-3 local-vortex basin present vs absent separated": true
+  },
+  "all_ok": true
+}

@@ -1,0 +1,33 @@
+# P07 / F1 (role V). Hand-authored to match schemas/experiment.schema.json. 物理コード追加、既存 results は不変更。
+# 一次情報は docs/frontier/F0_P07_field_slow_field_basin.md。S1（fast/slow 動力学）は未実施（本実験は判定器校正のみ）。
+id: e048
+title: field/slow-field basin 判定器の校正（P07/F1・置いた既知basin上での測定）
+role:
+  primary: V
+  secondary:
+  - N
+confidence: B
+claim_tier:
+- measured
+put_in: 既知の巻き basin（W0/W1/W2 の位相ランプ）と 3D 渦線あり/なしを置く。判定器 LT-1/2/3 を適用（動力学は回さない）
+emerged: basin を曖昧さなく判別できる（LT-2 dominant winding／LT-1 距離割当＋ambiguity／LT-3 net）。ノイズで信頼度が単調悪化。距離尺度が分離し S1 の copy/detachment 帯を無次元校正（Loop値は不使用）
+seeded_structure: true
+dimension:
+  computed: mixed
+  official_3d: false
+  transfer_risk: low
+genesis_role: measurement_tool
+target_encoded: false
+unresolved_audit:
+- これは判定器の校正（role V・basin は置く）。basin 選択が遅い場で変わるか（S1）はここでは測っていない
+- copy/detachment 帯は F1 の既知状態からの無次元推定。S1 実装時に seed/解像度で再確認する
+known_match: 位相ランプの大域巻き（line winding）／Kibble-Zurek 欠陥／gauge-invariant 距離（cellular H^1）
+results:
+- experiments/e048_field_slow_field_calib/results/basin_calibration.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: pending
+  reproducibility: passed
+  visualization_integrity: not_applicable
