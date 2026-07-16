@@ -155,6 +155,8 @@ jobs:
         run: python experiments/e048_field_slow_field_calib/field_slow_field_calib.py --quick --no-write
       - name: "e049 field/slow-field basin memory quick (P07/S1 hysteresis ON vs matched OFF, role S)"
         run: python experiments/e049_field_slow_field_basin/field_slow_field_basin.py --quick --no-write
+      - name: "e050 field/slow-field basin robustness quick (P07/S2 g-band + resolution + 3D, role S)"
+        run: python experiments/e050_field_slow_field_basin_s2/field_slow_field_basin_s2.py --quick --no-write
       - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
         run: python tools/audit_roles.py
       - name: "CI-B schema + registry validation (schemas well-formed, registry validates, refs resolve)"
@@ -281,6 +283,7 @@ jobs:
           test -f experiments/e047_sphere_to_torus/results/sphere_to_torus.json
           test -f experiments/e048_field_slow_field_calib/results/basin_calibration.json
           test -f experiments/e049_field_slow_field_basin/results/basin_memory.json
+          test -f experiments/e050_field_slow_field_basin_s2/results/basin_memory_robustness.json
           test -f docs/TRUST_MAP.md
           test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md

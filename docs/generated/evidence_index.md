@@ -9,7 +9,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | room-g002-a | g002_boussinesq_convection | 1 | 3 |
 | room-g003-a | g003_model_h_phase_field | 2 | 5 |
 
-## Experiments (45) — role tally: E=23, F=9, N=2, S=6, V=5
+## Experiments (46) — role tally: E=23, F=9, N=2, S=7, V=5
 | id | role | tier | dim | target_encoded | genesis_role | title |
 |---|---|---|---|---|---|---|
 | e001 | E | measured | 2D | False | behavior_dictionary | GPE 渦歳差 |
@@ -57,6 +57,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | e047 | V+N | measured/established | 3D | False | measurement_tool | 球→トーラス F1（測定器の固定形状検証＋固定形状での自由エネルギー交差） |
 | e048 | V+N | measured | mixed | False | measurement_tool | field/slow-field basin 判定器の校正（P07/F1・置いた既知basin上での測定） |
 | e049 | S+N | measured/observed | 2D | False | design_hypothesis | 遅い履歴場による basin 記憶（P07/S1・ON vs matched OFF・2D） |
+| e050 | S+N | measured/observed | mixed | False | design_hypothesis | 遅い場 basin 記憶の robustness＋3D昇格（P07/S2・g帯・解像度・seed・2D→3D） |
 
 ## Diagnostics modules (10)
 `angular_modes`, `corroborate`, `coupled_spectrum`, `gauge_aligned_distance`, `higher_levels`, `measures`, `plaquette_ledger`, `topology3d`, `topology_betti`, `winding_reliability`

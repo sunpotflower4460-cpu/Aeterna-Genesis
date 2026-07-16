@@ -1,0 +1,103 @@
+{
+  "experiment": "e050_field_slow_field_basin_s2",
+  "frontier": "P07",
+  "rung": "S2",
+  "role": "S",
+  "status": "GREEN",
+  "frozen": {
+    "tau": 10.0,
+    "Ds": 0.5,
+    "dt": 0.05,
+    "alpha_hi": 0.6,
+    "alpha_lo": -0.6,
+    "n_alpha": 13,
+    "settle": 400,
+    "g_ref": 0.6
+  },
+  "config": {
+    "L2": 40,
+    "K": 180,
+    "gs": [
+      0.0,
+      0.15,
+      0.3,
+      0.45,
+      0.6,
+      0.75
+    ],
+    "Ls": [
+      32,
+      48,
+      64
+    ],
+    "L3": 24,
+    "K3": 120
+  },
+  "g_band": [
+    {
+      "g": 0.0,
+      "area": 0.2135,
+      "excess": 0.0
+    },
+    {
+      "g": 0.15,
+      "area": 0.2556,
+      "excess": 0.0422
+    },
+    {
+      "g": 0.3,
+      "area": 0.315,
+      "excess": 0.1015
+    },
+    {
+      "g": 0.45,
+      "area": 0.4034,
+      "excess": 0.1899
+    },
+    {
+      "g": 0.6,
+      "area": 0.5455,
+      "excess": 0.332
+    },
+    {
+      "g": 0.75,
+      "area": 0.8025,
+      "excess": 0.589
+    }
+  ],
+  "onset_g": 0.3,
+  "resolution": [
+    {
+      "L": 32,
+      "excess": 0.3102
+    },
+    {
+      "L": 48,
+      "excess": 0.304
+    },
+    {
+      "L": 64,
+      "excess": 0.2975
+    }
+  ],
+  "seed_excess": [
+    0.332,
+    0.3191,
+    0.3249,
+    0.2967
+  ],
+  "seed_mean": 0.3182,
+  "seed_std": 0.0132,
+  "excess_3d": 0.2567,
+  "energy_max_3d": 0.6492678026994825,
+  "verdict": "robust_slow_field_basin_memory_candidate",
+  "checks": {
+    "g-band has an onset and is ~monotone (excess grows with coupling)": true,
+    "resolution robust: excess>margin at all L (not finite-size)": true,
+    "seed robust: mean-std excess > margin": true,
+    "3D promotion: excess>margin in 3D (survives dimension)": true
+  },
+  "all_ok": true,
+  "margin": 0.06,
+  "matched_control": "excess = area(g) - area(g=0), same grid/seed/steps/dt at every point"
+}
