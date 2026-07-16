@@ -55,6 +55,20 @@ def test_single_ring_traces_as_one_closed_loop_with_correct_radius():
     assert r["n_divergence_violations"] == r["n_cubes_dangling"]
 
 
+def test_ring_radius_robustness():
+    # AUDIT.md/experiment.yaml claim robustness across R=6..18, but until now that claim was
+    # backed by nothing beyond this module-level R=12 constant -- no parametrized test or
+    # persisted artifact actually exercised other radii (found by external review, 2026-07-16).
+    # Verify the claim directly rather than asserting it only in prose.
+    for R_test in (6.0, 9.0, 12.0, 15.0, 18.0):
+        psi = _ring_field(R=R_test)
+        r = trace_vortex_lines(psi)
+        assert len(r["loops"]) == 1, "R=%g: expected exactly 1 loop, got %d" % (R_test, len(r["loops"]))
+        loop = r["loops"][0]
+        assert abs(loop["effective_radius"] - R_test) < max(0.75, 0.1 * R_test), \
+            "R=%g: effective_radius=%g" % (R_test, loop["effective_radius"])
+
+
 def test_heal_distance_cap_limits_reconnection():
     # a tiny max_heal_distance (smaller than the few-cell tangent-region gaps this ring produces)
     # must leave those gaps unhealed rather than reconnecting them anyway -- regression test for
@@ -151,3 +165,43 @@ def test_isolated_unhealed_dangling_face_is_a_single_point_open_path(monkeypatch
     assert r["loops"] == []
     assert len(r["open_paths"]) == 1
     assert r["open_paths"][0]["n_points"] == 1
+
+
+def test_duplicate_healing_edge_is_skipped_not_double_counted(monkeypatch):
+    # Two faces of the SAME clean 2-pierced cube can each also be the sole pierced face of their
+    # OTHER neighboring cube (making them "dangling" too) and are geometrically close enough for
+    # the healing pass to reconsider pairing them -- adding a second edge on top of the existing
+    # clean-pairing edge would create a duplicate degree-2 connection that collapses into a
+    # spurious 2-node closed loop and gets silently dropped by the len(path)>=3 filter, instead of
+    # being reported as the small open fragment it actually is (found by external review,
+    # 2026-07-16).
+    W_xy = np.zeros((3, 3, 4), dtype=int)
+    W_xy[1, 1, 1] = -1   # cube (1,1,1)'s bottom z-face outward flux = +1
+    W_xy[1, 1, 2] = -1   # cube (1,1,1)'s top z-face outward flux = -1 -- clean pair (sum=0)
+    # cube (1,1,0)'s only pierced face is the shared face with (1,1,1) -> dangling
+    # cube (1,1,2)'s only pierced face is the shared face with (1,1,1) -> dangling
+    W_yz = np.zeros((4, 3, 3), dtype=int)
+    W_zx = np.zeros((3, 4, 3), dtype=int)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((4, 4, 4), dtype=complex))
+    assert r["loops"] == []
+    assert len(r["open_paths"]) == 1
+    assert r["open_paths"][0]["n_points"] == 2
+    assert r["n_healed_connections"] == 0   # already-connected pair must not be double-counted
+
+
+def test_n_cubes_dangling_counts_cubes_not_unique_faces(monkeypatch):
+    # A single face can be the sole pierced face of BOTH its neighboring cubes independently --
+    # that's 2 dangling CUBES (matching n_divergence_violations, which counts per-cube) sharing 1
+    # unique face (deduplicated for pairing purposes only). n_cubes_dangling must report the cube
+    # count its name promises, not the deduplicated face count (found by external review,
+    # 2026-07-16).
+    W_xy = np.zeros((1, 1, 3), dtype=int)
+    W_xy[0, 0, 1] = 1   # the only nonzero face: shared between cube (0,0,0) and cube (0,0,1)
+    W_yz = np.zeros((2, 1, 2), dtype=int)
+    W_zx = np.zeros((1, 2, 2), dtype=int)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((3, 3, 3), dtype=complex))
+    assert r["n_cubes_dangling"] == 2
+    assert r["n_divergence_violations"] == 2
+    assert r["n_cubes_dangling"] == r["n_divergence_violations"]

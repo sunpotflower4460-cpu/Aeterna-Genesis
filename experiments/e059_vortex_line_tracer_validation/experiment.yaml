@@ -29,6 +29,36 @@ dimension:
 genesis_role: measurement_tool
 target_encoded: false
 unresolved_audit:
+- 【マージ前の外部AIレビュー第6ラウンド（Codex）で発見・修正した3件＋自己発見のYAML構文バグ1件】
+  第5ラウンド後、Codexからさらに3件の指摘が届いた。マージ前に検証・修正した：(1)
+  `vortex_lines_3d.py`の最近傍再接続（healing）が、既にclean-cubeペアリングで直接接続済みの
+  2つのdangling面を再度ペアリングしてしまい得た——同じclean立方体の2面がそれぞれ別の隣接
+  立方体でもdanglingになっていて、かつ幾何的に近い場合。二重エッジができると
+  `degree`が2になり、`len(path)>=3`フィルタで2ノードの偽の閉ループとして黙って消える
+  （既存の「never silently dropped」という約束に反する）。修正後、full run再実行で実際に
+  この効果を確認した——正直な報告として記録する：`new_n_open_paths`の全フレーム合計が
+  528から844に増加した（以前は黙って消えていた316件の小さな断片が、正しく報告されるように
+  なった）。最終的な比較対象（bulk loopsとマッチング統計）には影響なし
+  （`n_loops_bulk_total`・`n_both_instruments`・`radius_diff_median`は完全に不変）——このバグは
+  「見えている構造の正直さ」にのみ影響し、リング検出・比較の結果には影響しなかった、
+  (2) `n_cubes_dangling`が実際にはユニークな面の数（重複除去後）を返しており、フィールド名
+  （「cubes」であって「faces」ではない）が約束する立方体数と一致していなかった——1つの面が
+  両側の立方体からそれぞれ独立してdanglingと見なされる場合、それは2つのdangling立方体
+  （`n_divergence_violations`にも2件計上される）だが重複除去後は1つの面としてカウントされ、
+  この既存モジュール自身の回帰テスト（`n_divergence_violations == n_cubes_dangling`）が成立
+  しなくなる潜在的な不整合だった。`len(dangling_raw)`（重複除去前）ベースに修正、(3)
+  AUDIT.md/experiment.yamlが「R=6〜18でロバスト性確認済み」と主張していたが、実際にコミット
+  されているテストはR=12.0の単一定数のみで、この主張を裏付けるパラメータ化テストや永続化
+  artifactが存在しなかった——科学的誠実性の観点から実際にR=6/9/12/15/18の5点をカバーする
+  回帰テストを新規追加し、主張を裏付けた。加えて、この修正作業中に本PR自身が導入していた
+  未発見のバグ——**このexperiment.yaml自身のYAML構文エラー**（第5ラウンドの`unresolved_audit`
+  記述で、バッククォート内にコロン+空白を含む`if old is None` の `break` という文字列を含めており、
+  YAMLパーサがマッピング区切りと誤認してパースエラーになっていた）——をCI失敗のログから発見・
+  修正した。このバグは`tests/test_catalog.py`の6テストを継続的に失敗させており、外部AI
+  レビューではなく自分自身のCIログ確認で発見した。回帰テスト3件を追加（重複ヒーリングエッジの
+  スキップ検証、n_cubes_dangling の立方体数カウント検証、R=6〜18ロバスト性の実測）。修正後、
+  `pytest tests/test_vortex_lines_3d.py tests/test_e059_vortex_line_tracer_validation.py -q`で
+  17件全通過、`tests/test_catalog.py`の6件も回復して全通過を確認
 - 【マージ前の外部AIレビュー第5ラウンド（CodeRabbit＋Codex）で発見・修正した6件】第4ラウンド後、
   ようやくレート制限が解除されたCodeRabbitの初回レビューとCodexの追加レビューが同時に届いた。
   マージ前に検証・修正した：(1) `run_valid`が無条件`True`だった——測定パイプラインが1フレームも
@@ -38,7 +68,7 @@ unresolved_audit:
   除去したばかりの結合を再導入することになる）、(2) コールドスタート時（`prev_matched_centroid`
   未確立）のマッチングに半径妥当性ゲートがなく、他の箇所で確立した「妥当でない候補にはフォール
   バックしない」規律から外れていた（CodeRabbit）。同じ50%帯ゲートを適用、(3) 二重になっていた
-  `if old is None: break`（第4ラウンドの修正で早期breakを追加した際、末尾の元の同等チェックを
+  `if old is None`ブロックの`break`（第4ラウンドの修正で早期breakを追加した際、末尾の元の同等チェックを
   消し忘れていた——到達不能な死んだコード、CodeRabbit）。削除、(4) AUDIT.mdの誤字
   （`n_frames_large_radius_diff`を2回記載、2つ目は`n_frames_large_axial_diff`のはず、
   CodeRabbit）。修正、(5) マッチに失敗したフレームの後も`prev_matched_centroid`（時間的連続性の

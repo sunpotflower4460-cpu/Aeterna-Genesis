@@ -232,6 +232,18 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
             if a in used or b in used:
                 continue
             fa, fb = dangling[a], dangling[b]
+            if fb in neighbors.get(fa, ()):
+                # Already directly connected via a clean-cube pairing -- e.g. both faces of the
+                # SAME clean 2-pierced cube happen to also be the sole pierced face of their OTHER
+                # respective neighbors, making them both "dangling" and geometrically close enough
+                # for this healing pass to reconsider them. Adding a second identical edge would
+                # create a duplicate degree-2 pair that collapses into a spurious 2-node closed
+                # component, silently dropped by the len(path)>=3 filter downstream instead of
+                # being reported (found by external review, 2026-07-16). Already resolved: mark
+                # used, but do not add a redundant edge or count a healing.
+                used.add(a)
+                used.add(b)
+                continue
             neighbors.setdefault(fa, []).append(fb)
             neighbors.setdefault(fb, []).append(fa)
             used.add(a)
@@ -332,7 +344,14 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
         loops=[_summarize_loop(p) for p in loops],
         open_paths=[_summarize_open(p) for p in open_paths],
         n_cubes_checked=len(candidates), n_cubes_pierced=n_pierced,
-        n_cubes_overloaded=n_overloaded, n_cubes_dangling=len(dangling),
+        n_cubes_overloaded=n_overloaded,
+        # n_cubes_dangling counts CUBES (matching its name), not unique faces: when a face is the
+        # sole pierced face of BOTH its neighboring cubes, that's 2 dangling cubes contributing 2
+        # separate divergence violations, even though they share one unique face and are
+        # deduplicated to one pairing target in `dangling`. Using len(dangling) here undercounted
+        # exactly this case, breaking the n_divergence_violations == n_cubes_dangling invariant
+        # this module's own regression test checks (found by external review, 2026-07-16).
+        n_cubes_dangling=len(dangling_raw),
         n_healed_connections=n_healed, n_unhealed_dangling=n_unhealed_dangling,
         n_divergence_violations=n_div_violations,
         threshold=thr,
