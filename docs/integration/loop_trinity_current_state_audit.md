@@ -25,8 +25,8 @@ integration pack only (see Limitations).
 | Loop observer | Status in Genesis HEAD | Evidence / gap |
 |---|---|---|
 | **(a) Gauge-aligned complex-field distance** (raw L2, global-phase-aligned L2, `θ*`, invariant `D_inv`, gauge overlap) | **DONE this PR** | New `genesis/diagnostics/gauge_aligned_distance.py` + `tests/test_gauge_aligned_distance.py`. Confirmed **no prior** `theta_star`/aligned/`D_inv` existed anywhere in `genesis/ core/ tools/`. |
-| **(b) Phase/winding reliability observer** (per-line min amplitude, wrapped-step max/mean, near-π edge count, invalid-line flag, dominant winding + fraction) | **PARTIAL → missing as a report** | Amplitude/density **gating exists only as a scalar count** inside `core/vortex.count_defects` and `measures._plaquette_defects`; there is no per-line reliability record. **Recommended next PR (LT-2).** |
-| **(c) Orientation-complete plaquette ledger** (XY/YZ/ZX signed +/−/net/invalid) | **MISSING** | `core/vortex.winding_field` is 2D single-orientation; `measures.py` 3D winding sums **XY faces over z only**. `topology_betti`/`topology3d` are **material-region/volume** tools (Betti, χ, genus, percolation, helicity) — a *different* quantity from a complex-phase-defect ledger. **Later PR (LT-3).** |
+| **(b) Phase/winding reliability observer** (per-line min amplitude, wrapped-step max/mean, near-π edge count, invalid-line flag, dominant winding + fraction) | **DONE (LT-2)** | New `genesis/diagnostics/winding_reliability.py` + tests. Turns the amplitude gate that was buried inside `count_defects`/`_plaquette_defects` into a first-class per-line report; dominant_fraction is over VALID lines only; closed-loop residual is float-sanity only. |
+| **(c) Orientation-complete plaquette ledger** (XY/YZ/ZX signed +/−/net/invalid) | **DONE (LT-3)** | New `genesis/diagnostics/plaquette_ledger.py` + tests. 3-orientation signed plaquette winding, per-slice tallies, gauge-invariant map hash, A/B map distance. Documented DISTINCT from volume Betti (`topology_betti`) and from global line winding (`winding_reliability`); tests pin both boundaries. Not an exact 3D topology proof (no vortex-core graph yet). |
 
 ## Duplication / conflict guard (do NOT rebuild)
 - **Volume Betti ≠ phase-defect ledger.** `topology_betti.betti3d` measures the material region's `b0/b1/b2/χ/genus`; a Loop plaquette ledger measures complex-phase winding. Keep them **separate** (LT-3 must document the boundary), as the pack itself requires.
@@ -51,16 +51,18 @@ integration pack only (see Limitations).
 (fields, `emergence.json`, `manifest.json`, checksums), all `schemas/`, `genesis/registry/*`, `.github/workflows/ci.yml`,
 `app/**`. Only **two new files** were added.
 
-## Recommended PR split (numbers assigned at creation, not reserved here)
-1. **LT-1 (this PR):** gauge-aligned distance observer + tests. *Done.*
-2. **LT-2 (next, smallest):** phase/winding **reliability** observer (per-line min amp, wrapped-step stats,
-   near-π count, invalid flag, dominant winding + fraction) — additive, reuses existing wrap/gate logic.
+## PR split (numbers assigned at creation, not reserved here)
+1. **LT-1:** gauge-aligned distance observer + tests. **Done.**
+2. **LT-2:** phase/winding **reliability** observer (per-line min amp, wrapped-step stats, near-π count,
+   invalid flag, dominant winding + fraction over valid lines). **Done.**
 3. **LT-3:** 3-orientation XY/YZ/ZX **plaquette ledger** (signed +/−/net/invalid), explicitly distinct from
-   volume Betti; synthetic ± / filament / ring / periodic-wrap fixtures.
-4. **LT-4 (docs→schema):** phenomenon-vocabulary (phase_slip, common_attractor_relaxation_candidate, …) as an
-   **additive** metadata axis; docs-only first, schema PR separate.
-5. **Only after V observers land:** the memory / slow-field / coupling **physics** phases — and only as
-   preregistered S experiments with matched OFF controls. **Not this round.**
+   volume Betti and global line winding. **Done.**
+4. **G4 (continuity):** result-integrity guard — `tools/verify_result_integrity.py` + `tools/result_integrity.json`
+   hash-ledger, CI-verified, so a past result cannot be silently overwritten. **Done.**
+5. **LT-4 (next, docs→schema):** phenomenon-vocabulary (phase_slip, common_attractor_relaxation_candidate, …)
+   as an **additive** metadata axis; docs-only first, schema PR separate.
+6. **Only after the V-observer stack:** the memory / slow-field / coupling **physics** phases — only as
+   preregistered S experiments with matched OFF controls.
 
 ## Not implemented this round (by directive)
 New physics, slow-field/memory/trace/coupling experiments, schema migrations, Room changes, experiment-number
