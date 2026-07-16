@@ -66,6 +66,6 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | e056 | N+F | measured/observed | 2D | False | negative_constraint | 渦ダイポール生存時間の飽和検証（観測窓6倍・9倍・独立seed）— 無限持続は不支持 |
 | e057 | F+E | measured/frontier | 2D | False | genesis_candidate | 長寿命渦ペアへの摂動後回復テスト（Level4の recovers_after_perturbation を初めて直接測定） |
 
-## Diagnostics modules (11)
-`angular_modes`, `corroborate`, `coupled_spectrum`, `gauge_aligned_distance`, `higher_levels`, `level3_motion`, `measures`, `plaquette_ledger`, `topology3d`, `topology_betti`, `winding_reliability`
+## Diagnostics modules (14)
+`angular_modes`, `corroborate`, `coupled_spectrum`, `dipole_episodes`, `gauge_aligned_distance`, `higher_levels`, `level3_motion`, `measures`, `plaquette_ledger`, `survival_analysis`, `topology3d`, `topology_betti`, `vortex_tracking_v2`, `winding_reliability`
 
