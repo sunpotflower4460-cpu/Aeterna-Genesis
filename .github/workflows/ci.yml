@@ -167,6 +167,8 @@ jobs:
         run: python experiments/e054_dipole_tauq_dependence/dipole_tauq_dependence.py --quick --no-write
       - name: "e055 dipole survival-time quick (H021 campaign, Level-4 direction, role F frontier)"
         run: python experiments/e055_dipole_survival_time/dipole_survival_time.py --quick --no-write
+      - name: "e056 dipole survival saturation quick (H021 campaign, unbounded persistence not supported, role N)"
+        run: python experiments/e056_dipole_survival_saturation/dipole_survival_saturation.py --quick --no-write
       - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
         run: python tools/audit_roles.py
       - name: "CI-B schema + registry validation (schemas well-formed, registry validates, refs resolve)"
@@ -299,6 +301,7 @@ jobs:
           test -f experiments/e053_dipole_robustness/results/dipole_robustness.json
           test -f experiments/e054_dipole_tauq_dependence/results/dipole_tauq_dependence.json
           test -f experiments/e055_dipole_survival_time/results/dipole_survival_time.json
+          test -f experiments/e056_dipole_survival_saturation/results/dipole_survival_saturation.json
           test -f docs/TRUST_MAP.md
           test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md
