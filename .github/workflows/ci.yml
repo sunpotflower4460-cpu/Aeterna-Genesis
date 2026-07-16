@@ -159,6 +159,8 @@ jobs:
         run: python experiments/e050_field_slow_field_basin_s2/field_slow_field_basin_s2.py --quick --no-write
       - name: "e051 grown slow-field E-candidate quick (P07 copy-collapse: excess is coupling-renorm, role N)"
         run: python experiments/e051_grown_slow_field/grown_slow_field.py --quick --no-write
+      - name: "e052 self-formed vortex-dipole Level-3 quick (H021 frontier campaign, role F candidate)"
+        run: python experiments/e052_dipole_self_propulsion/dipole_self_propulsion.py --quick --no-write
       - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
         run: python tools/audit_roles.py
       - name: "CI-B schema + registry validation (schemas well-formed, registry validates, refs resolve)"
@@ -287,6 +289,7 @@ jobs:
           test -f experiments/e049_field_slow_field_basin/results/basin_memory.json
           test -f experiments/e050_field_slow_field_basin_s2/results/basin_memory_robustness.json
           test -f experiments/e051_grown_slow_field/results/grown_slow_field_memory.json
+          test -f experiments/e052_dipole_self_propulsion/results/dipole_self_propulsion.json
           test -f docs/TRUST_MAP.md
           test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md

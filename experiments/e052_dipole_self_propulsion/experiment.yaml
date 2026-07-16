@@ -1,0 +1,41 @@
+# H021 frontier campaign iteration 1. Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。物理は e010 の damped-GPE KZ クエンチをそのまま再利用。
+# 新規は観測器 genesis/diagnostics/level3_motion.py のみ（measures.py 非touch）。
+id: e052
+title: 自己形成 ±渦ダイポールの Level 3 自走（単一連続 t=0 run・frontier candidate）
+role:
+  primary: F
+  secondary:
+  - E
+confidence: C
+claim_tier:
+- observed
+- frontier
+put_in: e010 と同一の damped GPE KZ クエンチ（一様+ノイズ IC・局所法則・μ ランプ）。渦・ペア・運動は一切指定しない。クエンチ後も同じ局所法則で追加発展させ、渦位置を追跡するのみ
+emerged: 6 seed 中 3 seed で、自己形成した ±渦ペアが持続的に並進（level3_dipole_candidate）。速度は点渦誘導速度 v〜1/(2d) と同程度（比 0.74〜1.16、定性的に一致）——物理的に妥当な兆候。ただし jitter 床超過は約10〜12%とマージン薄く、seed 依存（3/6）。Level 3（単一連続 run での自走）は robust ではなく **frontier candidate**
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: genesis_candidate
+target_encoded: false
+unresolved_audit:
+- primary role を F（frontier）にした理由：Level 3 の定義（COM velocity≠0 AND circulation≠0・非 seeded）は満たすが、
+  統計的頑健性（6 seed 中 3、マージン約10〜12%）が e050(S2) 相当のロバスト性検証を経ていない。次のキャンペーン反復で
+  seed 数拡大・解像度・track_every 感度・margin 感度を検証する（S2 スタイル follow-up）
+- level3_motion.py の判定は 2 つの自己較正床（解析的ランダムウォーク直進性・母集団内欠陥ジッター中央値）に依る。
+  合成データ3ケース（真ダイポール／全体一様ドリフト／純ジッター）で判別を検証済み（tests/test_level3_motion.py）
+- box_drift_rms（箱重心ドリフム）は情報提供のみで判定に不使用（少数欠陥時の自己汚染を避けるため、設計変更履歴は
+  level3_motion.py のモジュール docstring 参照）
+known_match: 点渦の誘導速度 v ~ 1/(2d)（2D超流体点渦動力学の標準結果）。e002（PLACED ±ペアの並進、role E/analogy）の
+  自然拡張——ここでは pair 自体が置かれていない
+results:
+- experiments/e052_dipole_self_propulsion/results/dipole_self_propulsion.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: pending
+  reproducibility: passed
+  visualization_integrity: not_applicable
