@@ -9,7 +9,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | room-g002-a | g002_boussinesq_convection | 1 | 3 |
 | room-g003-a | g003_model_h_phase_field | 2 | 5 |
 
-## Experiments (46) — role tally: E=23, F=9, N=2, S=7, V=5
+## Experiments (47) — role tally: E=23, F=9, N=3, S=7, V=5
 | id | role | tier | dim | target_encoded | genesis_role | title |
 |---|---|---|---|---|---|---|
 | e001 | E | measured | 2D | False | behavior_dictionary | GPE 渦歳差 |
@@ -58,6 +58,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | e048 | V+N | measured | mixed | False | measurement_tool | field/slow-field basin 判定器の校正（P07/F1・置いた既知basin上での測定） |
 | e049 | S+N | measured/observed | 2D | False | design_hypothesis | 遅い履歴場による basin 記憶（P07/S1・ON vs matched OFF・2D） |
 | e050 | S+N | measured/observed | mixed | False | design_hypothesis | 遅い場 basin 記憶の robustness＋3D昇格（P07/S2・g帯・解像度・seed・2D→3D） |
+| e051 | N+S | measured/observed | mixed | False | negative_constraint | 育つ遅い場は記憶か（P07/E候補）— 未分化 s(t0)=0 の hysteresis 過剰は瞬時コピーで再現＝copy-collapse |
 
 ## Diagnostics modules (10)
 `angular_modes`, `corroborate`, `coupled_spectrum`, `gauge_aligned_distance`, `higher_levels`, `measures`, `plaquette_ledger`, `topology3d`, `topology_betti`, `winding_reliability`

@@ -1,0 +1,60 @@
+{
+  "experiment": "e051_grown_slow_field",
+  "frontier": "P07",
+  "rung": "E-candidate",
+  "role": "N",
+  "status": "GREEN",
+  "frozen": {
+    "tau": 10.0,
+    "Ds": 0.5,
+    "dt": 0.05,
+    "alpha_hi": 0.6,
+    "alpha_lo": -0.6,
+    "n_alpha": 13,
+    "settle": 400,
+    "g_ref": 0.6
+  },
+  "config": {
+    "L2": 40,
+    "K": 180,
+    "L3": 24,
+    "K3": 120
+  },
+  "verdict": "memory_copy_collapse",
+  "e_candidate": false,
+  "run_valid": true,
+  "energy_ok": true,
+  "excess_grown": 0.332,
+  "excess_placed": 0.3678,
+  "excess_off": 0.0,
+  "excess_copy": 0.3202,
+  "history_gain": 0.0117,
+  "ratio_grown_to_placed": 0.903,
+  "grown_struct_t0": 0.0,
+  "grown_struct_settle": 0.0469,
+  "placed_struct_t0": 0.0591,
+  "mem_hold_grown": 0.0038,
+  "field_end_grown": 0.0,
+  "seed_excess": [
+    0.332,
+    0.3191,
+    0.3249,
+    0.2967
+  ],
+  "seed_mean": 0.3182,
+  "seed_std": 0.0132,
+  "excess_3d_grown": 0.2567,
+  "energy_max_2d": 1.355,
+  "energy_max_3d": 0.6493,
+  "checks": {
+    "E1 grown memory: excess(grown) > margin (memory from undifferentiated s=0)": true,
+    "E2 not a shadow: excess(grown)/excess(placed) > 0.5": true,
+    "E3 structure GREW: struct(s;t0)=0 -> struct(s;settle)>0": true,
+    "E4 holds history: excess(grown) - excess(instantaneous copy) > margin (lag adds memory)": false,
+    "seed robust: mean-std excess(grown) > margin": true,
+    "3D grown: excess(grown,3D) > margin (survives dimension)": true
+  },
+  "all_ok": false,
+  "margin": 0.06,
+  "matched_control": "excess = area(system) - area(g=0 OFF), same grid/seed/schedule/dt"
+}
