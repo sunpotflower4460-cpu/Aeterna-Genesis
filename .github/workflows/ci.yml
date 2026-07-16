@@ -173,6 +173,8 @@ jobs:
         run: python experiments/e057_dipole_perturbation_recovery/dipole_perturbation_recovery.py --quick --no-write
       - name: "e058 dipole survival Kaplan-Meier quick (H021 campaign, Observer v2 censoring-aware re-audit, role V/N)"
         run: python experiments/e058_dipole_survival_km/dipole_survival_km.py --quick --no-write
+      - name: "e059 3D vortex-line tracer validation quick (H021 campaign PR-C, seeded ring e003 cross-check, role V)"
+        run: python experiments/e059_vortex_line_tracer_validation/vortex_line_tracer_validation.py --quick --no-write
       - name: "8th-audit role guard (no target_encoded result may claim an E/V GREEN role)"
         run: python tools/audit_roles.py
       - name: "CI-B schema + registry validation (schemas well-formed, registry validates, refs resolve)"
@@ -308,6 +310,7 @@ jobs:
           test -f experiments/e056_dipole_survival_saturation/results/dipole_survival_saturation.json
           test -f experiments/e057_dipole_perturbation_recovery/results/dipole_perturbation_recovery.json
           test -f experiments/e058_dipole_survival_km/results/dipole_survival_km.json
+          test -f experiments/e059_vortex_line_tracer_validation/results/vortex_line_tracer_validation.json
           test -f docs/TRUST_MAP.md
           test -f tools/audit_roles.py
           test -f docs/working_ledger/H017_openended_frontier.md

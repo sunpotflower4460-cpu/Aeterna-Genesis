@@ -1,0 +1,58 @@
+# H021 frontier campaign PR-C（3D渦線計測器のV階層検証）。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。外部監査（GPT・別Claude）が推奨した
+# 3D-native計測器（渦線・閉ループ抽出）の第一弾。既存の seeded vortex ring（e003）で検証する。
+id: e059
+title: 3D渦線トレーサーの検証（既存seeded vortex ring e003で既存計測器と相互確認、role V）
+role:
+  primary: V
+confidence: C
+claim_tier:
+- measured
+put_in: e003 と完全に同一の damped-free 3D GPE seeded vortex ring セットアップ（一様背景＋imprint済み
+  渦リング、虚時間緩和後に実時間伝播）。物理は不変更・再利用のみ。新規追加は診断側のみ
+  （genesis/diagnostics/vortex_lines_3d.py の一般用途プラケット磁束渦線トレーサー）
+emerged: 合成テスト（既知半径の円環・ゲージ不変性・並進不変性・R=6〜18のロバスト性）は全てPASS。実際に
+  e003のGPE緩和済みリングに適用すると、e003自身の自己検出「clean window」（半径バンド逸脱・方向反転で
+  自己終了）の前半では新旧2計測器が良く一致する（中央値差0.68、前半70%のフレームがtolerance内）。
+  ただしclean window後半（音波・ノイズが蓄積する領域）では一致率が悪化する（後半36%）——
+  近傍ダングリング半辺の最近傍再接続ヒューリスティックが、接線領域の局所ギャップを誤って自己閉合
+  させることがあるという既知の限界（AUDIT.md参照）。STATUS はこの理由で厳密には RED
+  （全区間一致率の閾値70%を満たさない）だが、合成テスト・early clean window での高い一致という
+  正の結果自体は正直に確立している
+seeded_structure: false
+dimension:
+  computed: 3D
+  official_3d: false
+  transfer_risk: low
+genesis_role: measurement_tool
+target_encoded: false
+unresolved_audit:
+- 【重要】本実験は「渦リングが自己形成するか」を主張しない。リングは e003 と同様に imprint された
+  seeded structure——本実験が検証するのは新しい計測器（vortex_lines_3d）が既知のリングを正しく
+  検出・追跡できるかのみ
+- 【既知の限界（正直に報告、隠蔽しない）】dangling half-edge の最近傍ヒューリスティック的再接続は、
+  静的で完全対称な合成リングでは常に正しく機能する（4件の合成テスト全てPASS）が、実時間発展した
+  実際のGPE場では、接線領域の局所ギャップを誤って小さな自己閉合ループとして「治癒」してしまうことが
+  ある。時間的連続性マッチング（前フレームの重心に最も近いループを選ぶ）でこの問題はかなり緩和される
+  （cold radius-matching単独よりずっと良い）が、完全には解決しない——特にclean windowの終盤
+  （音波・ノイズ蓄積域）で悪化する。次の反復候補：チェーン端点単位での再接続（個々の面ではなく）、
+  またはKalman的な時間平滑化
+- 【e003との関係（no_touch）】e003 の物理コード・experiment.yaml・results は一切変更していない。
+  本実験は e003 と同一の物理パラメータを再利用する独立した新規計測（vortex_lines_3d.py と
+  core.vortex.track_ring_cross_section を同一フレームに両方適用し相互確認する）
+- 【次の反復候補】(a) チェーン端点単位の再接続で healing heuristic を改善、(b) 改善後に
+  H021-3D（自己形成渦ループ、torus創発の入口、Evidence Contract v2 の F1「One-Handle Selection」
+  段階ゲート）へ進む——本実験はその前提条件（計測器がまず動く）を確立する
+known_match: 渦リング自己誘導速度（e003で既に確認済み、本実験は新規に再導出しない）。本実験が新規に
+  確認したのは、独立に設計された2つの計測器（フレーム毎の相互最近傍ペア検出による渦線トレーサー、
+  および既存の子午面2コア追跡器）が同一リングの半径・軸方向位置について（early clean windowでは）
+  一致すること
+results:
+- experiments/e059_vortex_line_tracer_validation/results/vortex_line_tracer_validation.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: passed
+  reproducibility: passed
+  visualization_integrity: not_applicable
