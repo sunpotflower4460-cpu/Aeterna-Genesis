@@ -33,6 +33,13 @@ unresolved_audit:
 - 各窓点は8〜10 seedのみ（極値統計はサンプルサイズに敏感）。より精密な飽和曲線には次段でseed数拡大が必要
 - Level4（persistent individuality）の本来の判定基準（recovers_after_perturbation）は依然未測定。
   「ペアの寿命が有限」は Level4 不成立の一つの証拠だが、唯一の証拠ではない
+- 【外部監査による訂正・2026-07-16、docs/integration/observer_v2_audit.md 参照】本実験の「飽和」判定は
+  独立seed集合の**最大値**比較に基づいており、(a) 極値統計は標本サイズ・偶然に強く左右される、
+  (b) 観測窓終了時点で束縛中のペアは右側打ち切り（censored）であり「死亡」ではないのに、そう扱っていた
+  という2つの統計的弱点を持つ。**この訂正は本実験の数値・role Nを上書きしない**（結果を見てから変えない
+  規律）——e058（Observer v2・Kaplan-Meier・打ち切り対応）が正しい手法で再測定し、本実験の定性的結論
+  （無限持続の証拠なし）を裏付けている。role は e058 の完了後 "F/N-provisional" として読み替えるのが
+  正確だが、experiment.yaml の role フィールド自体は歴史的記録として不変更とする
 known_match: 該当なし（本実験は既存法則の生存時間統計の飽和検証）
 results:
 - experiments/e056_dipole_survival_saturation/results/dipole_survival_saturation.json

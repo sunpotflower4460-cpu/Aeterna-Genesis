@@ -1,0 +1,62 @@
+# H021 frontier campaign 反復7。Hand-authored to match schemas/experiment.schema.json.
+# 一次情報: docs/working_ledger/H021_frontier_campaign_0_to_far.md。外部監査対応、Observer v2使用。
+id: e058
+title: 渦ダイポールepisodeの打ち切り対応生存時間分析（Observer v2・Kaplan-Meier）— e055/e056を正しい統計手法で再測定
+role:
+  primary: V
+confidence: B
+claim_tier:
+- measured
+- observed
+put_in: e052 と同一の L=96・τ_Q=200・damped GPE KZ クエンチ・FROZEN閾値（観測窓は baseline の1600 step）。
+  Observer v2（vortex_tracking_v2 のグローバル割当＋dipole_episodes のフレーム毎の全相互最近傍ペア検出、
+  frame 0 で既に束縛済みの episode は左側打ち切り＝真の開始時刻不明として除外）で全ての ±束縛 episode を
+  検出し、各 episode の開始・終了フレームを記録。観測窓終了時点で束縛中の episode は右側打ち切り（censored）
+  とし、survival_analysis の Kaplan-Meier で生存時間分布を推定。20 seed（独立新規範囲）
+emerged: 182 episode（20 seed 合計、frame 0 で既に束縛済みだった209件は左側打ち切り扱いで除外）。KM 中央値
+  生存時間 62 frame（物理時間24.8）、制限付き平均生存時間 RMST 57.84 frame（tau=170 frameまで）、打ち切り
+  割合14.8%（182中27）。観測窓（201 snapshot）は大半の episode の生涯を捉えるが、7件に1件強はまだ束縛中に
+  窓が終わっており、e055/e056 が懸念した「観測窓打ち切り」問題は無視できるほど小さくはない。episode 集団は
+  中央値62 frame・最長170 frame（打ち切り）という幅を持つ分布——**「無限持続の証拠なし」と強く言い切るには
+  打ち切り率（14.8%）がやや高すぎ、baseline 窓1本だけでは e055/e056 型の飽和問題（窓を延ばしても最長は
+  伸びないか）に直接答えられない**。正確には「baseline 窓内では有限の中央値・RMSTが得られたが、長い裾の
+  完全な形は未確定」という限定的な言い方に留める
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: medium
+genesis_role: measurement_tool
+target_encoded: false
+unresolved_audit:
+- 【マージ前の外部AIレビューで発見・修正された4件のバグ（重要）】本PR（未マージ時点）にCodex・CodeRabbitの
+  2つの独立した外部AIレビューが届き、Observer v2の実装に4件の具体的な統計・アルゴリズムバグを指摘した——
+  (1) dipole_episodes.py がフレーム毎に「その時点で一番近い1組」しか記録しておらず、同時に複数の±束縛ペアが
+  存在する場合に他のペアを黙って見落としていた（相互最近傍ペアを全て検出するよう修正）、(2) survival_analysis.py
+  のRMST計算が最後の観測時刻からtauまでのKM平坦区間を積分し忘れていた（tauまで正しく延長するよう修正）、
+  (3) 本ファイルの元実装がframe 0で既に束縛済みのepisodeを「観測開始時点が既知の完全な生涯」として扱っており、
+  真の開始時刻不明（左側打ち切り）を無視していた（frame 0開始のepisodeを除外するよう修正）、
+  (4) vortex_tracking_v2.py のHungarian割当がmax_step超過ペアをマスクせずに解いており、大域最適解が
+  本来ならmax_step内で成立する別ペアの枠を奪い得た（解く前にmax_step超過ペアを大きな値でマスクするよう修正）。
+  **4件とも本PRでの初回実装のバグであり、マージ前に見つけて直した——マージ済みの数値を後から訂正したのでは
+  ない**。この experiment.yaml の数値は修正後のコードによる最初で唯一の測定値
+- 【e055/e056との数値差の理由（重要・混同しない）】v1(mutual_neighbor_durations)は「2つのトラックが共存する
+  全期間にわたり相互最近傍であり続けたか」を平均で判定するため、設計上すでに「そこそこ長く共存したペア」に
+  暗黙に選別されている。v2(dipole_episodes)はフレーム毎に判定し、一瞬だけ最近傍になった短命な束縛イベントも
+  全て数える——結果、v2 の母集団は v1 よりずっと広く、中央値は下がりやすい方向にバイアスがかかる。これは
+  矛盾でなく、**異なる（v2の方がより完全な）量を測っている**ことを意味する
+- role を V 単独（secondary N を外す）とした理由：打ち切り率14.8%は無視できる小ささではなく、「無限持続の
+  証拠なし」という negative_constraint 主張をこの1実験だけで確定させるのは正確でない。e055/e056 スタイルの
+  窓長スイープ（3倍・6倍・9倍）を Observer v2 で正しくやり直すのが、飽和問題に答える次の適切な反復
+- e055/e056 の元データ・数値は一切変更していない（no_touch）。本実験は独立した新規測定
+known_match: Kaplan-Meier 推定量・制限付き平均生存時間（RMST）は標準的な打ち切り対応生存時間分析（医学統計等
+  で広く使われる既知手法）——本実験はその標準手法を渦ペアの束縛時間分布に適用した
+results:
+- experiments/e058_dipole_survival_km/results/dipole_survival_km.json
+audit:
+  physics_integrity: passed
+  no_target_encoding: passed
+  conservation: not_applicable
+  convergence: passed
+  reproducibility: passed
+  visualization_integrity: not_applicable
