@@ -378,8 +378,23 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
                 d = float(np.linalg.norm(pts[a] - pts[b]))
                 if d > max_heal_distance:
                     continue
-                ta = endpoint_tangent.get(dangling[a][0])
-                tb = endpoint_tangent.get(dangling[b][0])
+                fa, fb = dangling[a][0], dangling[b][0]
+                if fb in neighbors.get(fa, ()):
+                    # Already directly connected via a clean-cube pairing (e.g. both faces of the
+                    # SAME clean 2-pierced cube are also each the sole pierced face of their OTHER
+                    # respective neighbor). Such a pair's own chain tangents necessarily point
+                    # AWAY from each other (they are the two ends of the very same 2-node chain),
+                    # so the direction filter below would always reject it -- never reaching the
+                    # existing-edge handling downstream, and wrongly counting both faces as
+                    # unhealed even though they are already fully resolved. Skip direction
+                    # filtering for already-connected pairs and let the downstream loop's
+                    # already-connected check (matching on `fb in neighbors.get(fa, ())` again)
+                    # mark them resolved, exactly as it does for such pairs found by distance
+                    # alone (found by external review, 2026-07-16).
+                    pairs_dist.append((d, a, b))
+                    continue
+                ta = endpoint_tangent.get(fa)
+                tb = endpoint_tangent.get(fb)
                 if ta is not None and tb is not None:
                     disp = (pts[b] - pts[a]) / d if d > 1e-12 else (pts[b] - pts[a])
                     # chain a must head toward b (positive dot with a's outward tangent), and
@@ -482,7 +497,8 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
         # this module's own regression test checks (found by external review, 2026-07-16).
         n_cubes_dangling=len(dangling_raw),
         n_healed_connections=n_healed, n_unhealed_dangling=n_unhealed_dangling,
-        # A same-sign-and-within-distance candidate pair that was rejected specifically because
+        # An opposite-sign-and-within-distance candidate pair (same-sign pairs are already
+        # filtered out above and never reach this check) that was rejected specifically because
         # its two chains point away from (or sideways to) each other, not toward each other --
         # i.e. a pair the OLD pure-distance heuristic would have healed but chain-endpoint
         # reconnection judged geometrically implausible. Reported separately from

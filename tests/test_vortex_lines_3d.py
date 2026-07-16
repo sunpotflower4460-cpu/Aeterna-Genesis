@@ -175,6 +175,14 @@ def test_duplicate_healing_edge_is_skipped_not_double_counted(monkeypatch):
     # spurious 2-node closed loop and gets silently dropped by the len(path)>=3 filter, instead of
     # being reported as the small open fragment it actually is (found by external review,
     # 2026-07-16).
+    #
+    # This pair's two chain-endpoint tangents necessarily point directly AWAY from each other
+    # (they are the two ends of the very same 2-node clean-pair chain) -- chain-endpoint-based
+    # reconnection (H021 campaign) would always reject this pair on direction alone, skipping the
+    # already-connected check below it entirely and wrongly counting BOTH faces as unhealed even
+    # though they are already fully resolved via the clean pairing. Already-connected pairs must
+    # bypass direction filtering and go straight to the existing-edge handling (found by external
+    # review, 2026-07-16).
     W_xy = np.zeros((3, 3, 4), dtype=int)
     W_xy[1, 1, 1] = -1   # cube (1,1,1)'s bottom z-face outward flux = +1
     W_xy[1, 1, 2] = -1   # cube (1,1,1)'s top z-face outward flux = -1 -- clean pair (sum=0)
@@ -188,6 +196,8 @@ def test_duplicate_healing_edge_is_skipped_not_double_counted(monkeypatch):
     assert len(r["open_paths"]) == 1
     assert r["open_paths"][0]["n_points"] == 2
     assert r["n_healed_connections"] == 0   # already-connected pair must not be double-counted
+    assert r["n_unhealed_dangling"] == 0    # already resolved via the clean pair, not unresolved
+    assert r["n_direction_rejected_pairs"] == 0   # bypassed direction filtering entirely
 
 
 def test_n_cubes_dangling_counts_cubes_not_unique_faces(monkeypatch):
