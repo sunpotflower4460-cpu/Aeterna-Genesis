@@ -68,3 +68,23 @@ def test_no_dipole_no_episodes():
     tracks = link_frames_v2(frames, L, max_step=2.0)
     episodes = detect_episodes(tracks, L)
     assert episodes == []
+
+
+def test_two_simultaneous_independent_dipoles_are_both_counted():
+    # two spatially separate +/- pairs are bound at the SAME TIME, far apart in the box. A single
+    # global-closest-pair-per-frame design would report only one dipole and silently drop the other
+    # (external review, 2026-07-16) -- both must show up as episodes.
+    frames = []
+    for t in range(10):
+        frames.append([
+            {"x": 10.0, "y": 10.0, "charge": 1},
+            {"x": 10.0, "y": 13.0, "charge": -1},   # pair A, near (10,10)-(10,13)
+            {"x": 50.0, "y": 50.0, "charge": 1},
+            {"x": 50.0, "y": 53.0, "charge": -1},   # pair B, near (50,50)-(50,53), far from A
+        ])
+    tracks = link_frames_v2(frames, L, max_step=2.0)
+    episodes = detect_episodes(tracks, L, sep_max=8.0, max_sep_rate=5.0, straight_min=0.0)
+    partners = {(ep["pos_track"], ep["neg_track"]) for ep in episodes}
+    assert len(partners) == 2   # both dipoles must be tracked, not just the (arbitrary) closer one
+    for ep in episodes:
+        assert ep["duration"] == 10   # both fully persist for the whole window, uninterrupted

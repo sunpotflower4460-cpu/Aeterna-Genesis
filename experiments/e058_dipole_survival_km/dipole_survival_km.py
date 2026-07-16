@@ -61,10 +61,18 @@ def run_one_seed(seed, post_track_steps, p=FROZEN):
 
     last_frame = len(frames) - 1
     tracks = link_frames_v2(frames, L_FIXED, max_step=p["max_step"])
-    episodes = detect_episodes(tracks, L_FIXED, sep_max=p["sep_max"], max_sep_rate=2.0, straight_min=0.5)
+    all_episodes = detect_episodes(tracks, L_FIXED, sep_max=p["sep_max"], max_sep_rate=2.0, straight_min=0.5)
+    # Episodes already bound at frame 0 (the first tracked snapshot, right after quench+hold) may have
+    # formed BEFORE tracking started -- their true start time is unknown (left-truncated), so counting the
+    # observed portion as if it were the complete lifetime biases durations downward (external review,
+    # 2026-07-16). Exclude them from the duration/censoring inputs rather than mis-model them; report the
+    # exclusion count explicitly so it is never silently absorbed into "the" duration distribution.
+    episodes = [ep for ep in all_episodes if ep["start_frame"] > 0]
+    n_left_truncated_excluded = len(all_episodes) - len(episodes)
     durations = [ep["duration"] for ep in episodes]
     censored = [ep["end_frame"] >= last_frame for ep in episodes]
     return dict(seed=seed, n_frames=len(frames), n_episodes=len(episodes),
+                n_left_truncated_excluded=n_left_truncated_excluded,
                 durations=durations, censored=censored)
 
 
@@ -74,9 +82,11 @@ def run(cfg, p=FROZEN):
     all_durations = [d for r in rows for d in r["durations"]]
     all_censored = [c for r in rows for c in r["censored"]]
     n_episodes_total = len(all_durations)
+    n_left_truncated_excluded_total = sum(r["n_left_truncated_excluded"] for r in rows)
     km = summarize(all_durations, all_censored) if n_episodes_total > 0 else None
     verdict = "insufficient_episodes" if n_episodes_total < 5 else "km_summary_computed"
     return dict(per_seed=rows, n_seeds=len(rows), n_episodes_total=n_episodes_total,
+                n_left_truncated_excluded_total=n_left_truncated_excluded_total,
                 km_summary=km, verdict=verdict, run_valid=True)
 
 
@@ -91,7 +101,8 @@ def main(argv=None):
     for row in r["per_seed"]:
         print("  seed=%-5d n_episodes=%-3d durations=%s censored=%s"
               % (row["seed"], row["n_episodes"], row["durations"], row["censored"]))
-    print("  total episodes: %d" % r["n_episodes_total"])
+    print("  total episodes: %d  (excluded as left-truncated at frame 0: %d)"
+          % (r["n_episodes_total"], r["n_left_truncated_excluded_total"]))
     if r["km_summary"]:
         km = r["km_summary"]
         print("  KM median survival: %s   RMST(tau=%.1f): %.3f   censoring_fraction: %.3f  (n=%d, events=%d, censored=%d)"

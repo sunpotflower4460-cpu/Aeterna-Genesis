@@ -58,3 +58,16 @@ def test_mixing_censored_and_observed_at_same_time_is_handled():
     censored = [False, True]
     times, surv = kaplan_meier(durations, censored)
     assert surv[-1] < 1.0   # the one observed death must register as a drop
+
+
+def test_rmst_integrates_final_plateau_out_to_tau():
+    # everyone censored, last observed timestamp is 10, but tau=20 is requested: the KM curve stays flat
+    # at survival=1.0 all the way to tau (no events observed anywhere), so RMST must equal tau exactly --
+    # NOT stop accruing area at the last observed timestamp (external review, 2026-07-16: the naive loop
+    # silently dropped the final surv[-1] * (tau - times[-1]) plateau contribution, understating RMST for
+    # any tau beyond the last KM step).
+    durations = [0, 10]
+    censored = [True, True]
+    times, surv = kaplan_meier(durations, censored)
+    rmst = restricted_mean_survival(times, surv, tau=20)
+    assert abs(rmst - 20.0) < 1e-9

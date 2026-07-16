@@ -60,7 +60,14 @@ def link_frames_v2(frames, L, max_step, velocity_predict=True):
                         dx = _wrap_delta(c["x"] - px, L)
                         dy = _wrap_delta(c["y"] - py, L)
                         cost[i, j] = dx * dx + dy * dy
-                row_ind, col_ind = linear_sum_assignment(cost)
+                # Mask infeasible (> max_step) pairs with a large sentinel before solving: otherwise the
+                # global minimum-cost assignment can spend an optimal slot on a pair that will be rejected
+                # by the max_step check below, starving a DIFFERENT pair that was itself within max_step
+                # (e.g. costs [[10,9],[9,0]] with max_step**2==9: unmasked Hungarian picks (10,0)=10 over
+                # the fully-valid (9,9)=18 pairing, fragmenting a track that had a feasible continuation).
+                feasible = cost <= max_step ** 2
+                cost_solve = np.where(feasible, cost, cost.max(initial=0.0) + 1e6)
+                row_ind, col_ind = linear_sum_assignment(cost_solve)
                 matched_rows, matched_cols = set(), set()
                 new_active = []
                 for ri, ci in zip(row_ind, col_ind):

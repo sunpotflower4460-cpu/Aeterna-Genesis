@@ -69,22 +69,39 @@ def detect_episodes(tracks, L, sep_max=8.0, max_sep_rate=2.0, straight_min=0.5, 
             by_frame.setdefault(f, {})[idx] = (x, y)
     all_frames = sorted(by_frame.keys())
 
-    frame_partner = {}
+    # Per frame, find ALL reciprocal (mutual) nearest-neighbor +/- pairs, not just the single globally
+    # closest one (external review, 2026-07-16: a single `best` pair per frame silently drops every OTHER
+    # simultaneous bound dipole, undercounting episodes -- e.g. two independent pairs nucleate in the same
+    # box, only the closer one was ever counted). A positive track's nearest negative partner (within
+    # sep_max) and that negative track's nearest positive partner must point back at each other; each track
+    # can appear in at most one such pair per frame (it has only one "nearest"), so this is a proper
+    # (non-overlapping) matching, just no longer capped at one pair per frame.
+    frame_pairs = {}
     for f in all_frames:
         pres = by_frame[f]
         p_here = [i for i in pres if i in pos_tracks]
         n_here = [i for i in pres if i in neg_tracks]
-        best = None
-        for pi in p_here:
-            px, py = pres[pi]
-            for ni in n_here:
-                nx, ny = pres[ni]
-                dx = _wrap_delta(nx - px, L)
-                dy = _wrap_delta(ny - py, L)
-                d = float(np.hypot(dx, dy))
-                if best is None or d < best[2]:
-                    best = (pi, ni, d)
-        frame_partner[f] = best if (best and best[2] <= sep_max) else None
+
+        def _nearest(src, dst):
+            out = {}
+            for si in src:
+                sx, sy = pres[si]
+                best = None
+                for di in dst:
+                    dxp, dyp = pres[di]
+                    dx = _wrap_delta(dxp - sx, L)
+                    dy = _wrap_delta(dyp - sy, L)
+                    d = float(np.hypot(dx, dy))
+                    if best is None or d < best[1]:
+                        best = (di, d)
+                if best is not None and best[1] <= sep_max:
+                    out[si] = best
+            return out
+
+        pos_nearest = _nearest(p_here, n_here)
+        neg_nearest = _nearest(n_here, p_here)
+        frame_pairs[f] = [(pi, ni, d) for pi, (ni, d) in pos_nearest.items()
+                           if ni in neg_nearest and neg_nearest[ni][0] == pi]
 
     # Episode continuation is governed ONLY by (a) partner identity (same pos/neg track pair) and
     # (b) the separation bound -- both checked every frame. This is the real fix for v1's partner-exchange
@@ -96,33 +113,28 @@ def detect_episodes(tracks, L, sep_max=8.0, max_sep_rate=2.0, straight_min=0.5, 
     # 1-2 frame ones. Kinematic quality is instead reported as a WHOLE-EPISODE summary (straightness over
     # the full unwrapped trajectory, exactly the quantity that is robust to single-step noise) so callers
     # can filter on it themselves (e.g. straightness > 0.5) without contaminating the episode boundaries.
+    # Multiple pairs can be concurrently "open" (different simultaneous dipoles), tracked by (pi, ni) key.
     episodes = []
-    cur = None
+    open_eps = {}
     for f in all_frames:
-        partner = frame_partner[f]
-        if partner is None:
-            if cur is not None:
-                episodes.append(cur)
-                cur = None
-            continue
-        pi, ni, sep = partner
-        px, py = by_frame[f][pi]
-        nx, ny = by_frame[f][ni]
-        dx = _wrap_delta(nx - px, L)
-        dy = _wrap_delta(ny - py, L)
-        comx, comy = px + 0.5 * dx, py + 0.5 * dy
-
-        same_pair = cur is not None and cur["pair"] == (pi, ni)
-        if not same_pair:
-            if cur is not None:
-                episodes.append(cur)
-            cur = dict(pair=(pi, ni), frames=[f], seps=[sep], com=[(comx, comy)])
-        else:
-            cur["frames"].append(f)
-            cur["seps"].append(sep)
-            cur["com"].append((comx, comy))
-    if cur is not None:
-        episodes.append(cur)
+        pairs_here = {(pi, ni): sep for (pi, ni, sep) in frame_pairs[f]}
+        for key in list(open_eps.keys()):
+            if key not in pairs_here:
+                episodes.append(open_eps.pop(key))
+        for (pi, ni), sep in pairs_here.items():
+            px, py = by_frame[f][pi]
+            nx, ny = by_frame[f][ni]
+            dx = _wrap_delta(nx - px, L)
+            dy = _wrap_delta(ny - py, L)
+            comx, comy = px + 0.5 * dx, py + 0.5 * dy
+            if (pi, ni) in open_eps:
+                cur = open_eps[(pi, ni)]
+                cur["frames"].append(f)
+                cur["seps"].append(sep)
+                cur["com"].append((comx, comy))
+            else:
+                open_eps[(pi, ni)] = dict(pair=(pi, ni), frames=[f], seps=[sep], com=[(comx, comy)])
+    episodes.extend(open_eps.values())
 
     out = []
     for ep in episodes:

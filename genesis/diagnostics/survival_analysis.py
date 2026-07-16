@@ -70,6 +70,8 @@ def restricted_mean_survival(times, surv, tau):
         if t[i] >= tau:
             break
         area += surv[i] * (min(t[i + 1], tau) - t[i])
+    if t[-1] < tau:
+        area += surv[-1] * (tau - t[-1])
     return float(area)
 
 
