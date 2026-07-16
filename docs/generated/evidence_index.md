@@ -9,7 +9,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | room-g002-a | g002_boussinesq_convection | 1 | 3 |
 | room-g003-a | g003_model_h_phase_field | 2 | 5 |
 
-## Experiments (53) — role tally: E=24, F=12, N=4, S=7, V=6
+## Experiments (54) — role tally: E=24, F=12, N=4, S=7, V=7
 | id | role | tier | dim | target_encoded | genesis_role | title |
 |---|---|---|---|---|---|---|
 | e001 | E | measured | 2D | False | behavior_dictionary | GPE 渦歳差 |
@@ -65,6 +65,7 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | e055 | F+V | measured/frontier | 2D | False | measurement_tool | 自己形成±渦ダイポールの生存時間分布（Level4方向への第一歩・飽和は未解決） |
 | e056 | N+F | measured/observed | 2D | False | negative_constraint | 渦ダイポール生存時間の飽和検証（観測窓6倍・9倍・独立seed）— 無限持続は不支持 |
 | e057 | F+E | measured/frontier | 2D | False | genesis_candidate | 長寿命渦ペアへの摂動後回復テスト（Level4の recovers_after_perturbation を初めて直接測定） |
+| e058 | V+N | measured/observed | 2D | False | measurement_tool | 渦ダイポールepisodeの打ち切り対応生存時間分析（Observer v2・Kaplan-Meier）— e055/e056を正しい統計手法で再測定 |
 
 ## Diagnostics modules (14)
 `angular_modes`, `corroborate`, `coupled_spectrum`, `dipole_episodes`, `gauge_aligned_distance`, `higher_levels`, `level3_motion`, `measures`, `plaquette_ledger`, `survival_analysis`, `topology3d`, `topology_betti`, `vortex_tracking_v2`, `winding_reliability`
