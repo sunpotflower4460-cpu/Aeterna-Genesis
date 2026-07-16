@@ -205,3 +205,46 @@ def test_n_cubes_dangling_counts_cubes_not_unique_faces(monkeypatch):
     assert r["n_cubes_dangling"] == 2
     assert r["n_divergence_violations"] == 2
     assert r["n_cubes_dangling"] == r["n_divergence_violations"]
+
+
+def _two_isolated_dangling_cubes(sign_a, sign_b):
+    # Two separate, single-pierced-face cubes a few cells apart along x, each with no OTHER
+    # pierced face (no clean pair anywhere) -- their bottom z-face outward-flux sign is controlled
+    # independently via W_xy[i,0,0] = -sign (bottom face flux = -W_xy[i,0,0]).
+    W_xy = np.zeros((3, 1, 2), dtype=int)
+    W_xy[0, 0, 0] = -sign_a
+    W_xy[2, 0, 0] = -sign_b
+    W_yz = np.zeros((4, 1, 1), dtype=int)
+    W_zx = np.zeros((3, 2, 1), dtype=int)
+    return W_xy, W_yz, W_zx
+
+
+def test_same_sign_dangling_faces_are_not_healed(monkeypatch):
+    # Two dangling half-edges with the SAME outward-flux sign (both "entries" or both "exits")
+    # cannot represent one continuous line crossing the gap between them -- pairing them anyway
+    # (as an earlier version of this module's healing pass did, ignoring sign and pairing purely
+    # by distance) would fabricate a segment joining two unrelated sources/sinks, the same
+    # physical inconsistency the same-sign clean-pair fix addresses for a single cube (found by
+    # external review, 2026-07-16).
+    W_xy, W_yz, W_zx = _two_isolated_dangling_cubes(+1, +1)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((4, 4, 4), dtype=complex))
+    assert r["n_healed_connections"] == 0
+    assert r["n_unhealed_dangling"] == 2
+    assert r["loops"] == []
+    assert len(r["open_paths"]) == 2
+    assert all(p["n_points"] == 1 for p in r["open_paths"])
+
+
+def test_opposite_sign_dangling_faces_are_healed(monkeypatch):
+    # Same geometry as test_same_sign_dangling_faces_are_not_healed but with opposite signs (one
+    # "exit", one "entry") -- this DOES represent a single continuous line crossing the gap and
+    # must be healed.
+    W_xy, W_yz, W_zx = _two_isolated_dangling_cubes(+1, -1)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((4, 4, 4), dtype=complex))
+    assert r["n_healed_connections"] == 1
+    assert r["n_unhealed_dangling"] == 0
+    assert r["loops"] == []
+    assert len(r["open_paths"]) == 1
+    assert r["open_paths"][0]["n_points"] == 2

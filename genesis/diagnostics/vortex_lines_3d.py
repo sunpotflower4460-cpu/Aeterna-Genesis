@@ -201,20 +201,42 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
             neighbors.setdefault(a, []).append(b)
             neighbors.setdefault(b, []).append(a)
         elif len(pierced) == 1 and abs(pierced[0][1]) == 1:
-            dangling_raw.append(pierced[0][0])
+            # Keep the sign, not just the face_id: a dangling half-edge's outward-flux sign
+            # records whether the (reliability-gated-out) line enters or exits its cube through
+            # this face, exactly like a clean pair's two faces. Discarding it and healing purely
+            # by distance could pair two same-sign endpoints (two exits, or two entries) into an
+            # artificial segment instead of leaving them ambiguous -- the same physical
+            # inconsistency the same-sign clean-pair fix above addresses, just not yet applied to
+            # healing (found by external review, 2026-07-16).
+            dangling_raw.append((pierced[0][0], int(pierced[0][1])))
         else:
             n_overloaded += 1
 
     # A face can be the sole pierced face of BOTH its neighboring cubes independently, appending
-    # the same face_id to dangling_raw twice; de-duplicate before pairing so a single physical gap
-    # location contributes exactly one half-edge needing reconnection, not two (which could
-    # otherwise self-pair at distance 0, or double-connect that one face to two different partners
-    # -- found by external review, 2026-07-16).
-    dangling = list(dict.fromkeys(dangling_raw))
+    # the same face_id to dangling_raw twice (with opposite signs, by construction -- adjacent
+    # cubes' outward normals at a shared face are opposite); de-duplicate to one entry per unique
+    # face before pairing so a single physical gap location contributes exactly one half-edge
+    # needing reconnection, not two (which could otherwise self-pair at distance 0, or
+    # double-connect that one face to two different partners -- found by external review,
+    # 2026-07-16). The two-sided case never actually needs pairing (it already represents a
+    # complete tangent pass-through seen from both neighbors), so which of the two opposite signs
+    # is kept for the single deduped entry doesn't affect any real outcome; keep the first seen.
+    seen_faces = set()
+    dangling = []
+    for fid, sign in dangling_raw:
+        if fid not in seen_faces:
+            seen_faces.add(fid)
+            dangling.append((fid, sign))
+    # Sort by face_id for a well-defined, reviewable tie-break rule: `dangling_raw`'s order
+    # otherwise depends on iteration order of `candidates` (a set), so two equal-distance healing
+    # candidates -- not uncommon for lattice-symmetric synthetic fields -- could be resolved by
+    # incidental set-construction order rather than any deliberate geometric rule (found by
+    # external review, 2026-07-16).
+    dangling.sort(key=lambda t: t[0])
 
     n_healed = 0
     if dangling:
-        pts = np.array([_face_center(f) for f in dangling])
+        pts = np.array([_face_center(fid) for fid, _ in dangling])
         # Cap healing to max_heal_distance: without a cutoff, a sparse/noisy field could bridge
         # two unrelated distant dangling faces (e.g. one near a real gap, one at the non-periodic
         # seam) into an artificial connection -- turning a genuinely open/separate path into a
@@ -223,15 +245,19 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
         pairs_dist = []
         for a in range(len(dangling)):
             for b in range(a + 1, len(dangling)):
+                if dangling[a][1] == dangling[b][1]:
+                    # same sign: both "entries" or both "exits" -- cannot represent one continuous
+                    # line crossing the gap (found by external review, 2026-07-16).
+                    continue
                 d = float(np.linalg.norm(pts[a] - pts[b]))
                 if d <= max_heal_distance:
                     pairs_dist.append((d, a, b))
-        pairs_dist.sort(key=lambda t: t[0])
+        pairs_dist.sort(key=lambda t: (t[0], t[1], t[2]))
         used = set()
         for _dist, a, b in pairs_dist:
             if a in used or b in used:
                 continue
-            fa, fb = dangling[a], dangling[b]
+            fa, fb = dangling[a][0], dangling[b][0]
             if fb in neighbors.get(fa, ()):
                 # Already directly connected via a clean-cube pairing -- e.g. both faces of the
                 # SAME clean 2-pierced cube happen to also be the sole pierced face of their OTHER
@@ -240,7 +266,11 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
                 # create a duplicate degree-2 pair that collapses into a spurious 2-node closed
                 # component, silently dropped by the len(path)>=3 filter downstream instead of
                 # being reported (found by external review, 2026-07-16). Already resolved: mark
-                # used, but do not add a redundant edge or count a healing.
+                # used, but do not add a redundant edge or count a healing. Not counted as
+                # unhealed either -- this endpoint already has its one legitimate connection (a
+                # dangling cube has exactly one pierced face, so it can only ever need exactly one
+                # connection; it already has it via the clean pair), so it is not actually
+                # unresolved (considered and consciously skipped, external review, 2026-07-16).
                 used.add(a)
                 used.add(b)
                 continue
@@ -249,7 +279,7 @@ def trace_vortex_lines(psi, amp_frac=0.2, near_pi_margin=0.15, amp_threshold=Non
             used.add(a)
             used.add(b)
             n_healed += 1
-        unpaired = [dangling[a] for a in range(len(dangling)) if a not in used]
+        unpaired = [dangling[a][0] for a in range(len(dangling)) if a not in used]
     else:
         unpaired = []
     n_unhealed_dangling = len(unpaired)

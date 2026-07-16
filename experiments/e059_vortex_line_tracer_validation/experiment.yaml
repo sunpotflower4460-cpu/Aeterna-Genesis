@@ -29,6 +29,24 @@ dimension:
 genesis_role: measurement_tool
 target_encoded: false
 unresolved_audit:
+- 【マージ前の外部AIレビュー第7ラウンド（Codex）で発見・修正した2件・検討の上見送った1件】
+  Codexからさらに3件届いた。(1) healingが面のsign（外向きflux符号）を無視して距離のみで
+  ペアリングしており、同符号（両方「出口」または両方「入口」）の2つのdangling面を結合し得た
+  ——round3で修正した同符号clean pairと全く同じ物理的不整合であり、healingにも同じ規律を
+  適用していなかった見落とし。dangling_rawに符号も保持し、opposite signのペアのみhealingを
+  許可するよう修正——検証したところ、実際に本データセットへの実質的な効果があった（下記）。
+  (2) healingのタイブレーク（同距離のペアが複数ある場合の選択）が`candidates`（set）の
+  反復順序という non-principled な要因に依存していた——決定的な再現性の観点から`dangling`を
+  face_idでソートし、`pairs_dist`のソートキーにも(distance, a, b)のタイブレークを追加。
+  (3)【検討した上で見送った】「既に接続済みのdangling面ペアをhealingでスキップする際、
+  n_unhealed_danglingにもカウントすべき」という指摘——検証の結果、これは誤り（実際には
+  正しい挙動）と判断した：danglingな立方体は定義上ちょうど1面しか貫通されておらず、
+  半健全化1回分の接続しか本来必要としない。既にclean pairで接続済みということは、その
+  1回分の接続を既に持っているということであり、「未治癒」ではない——実際に正しく解決済み
+  である。PRコメントで理由を説明し、修正は行わなかった。回帰テスト2件を追加（同符号ペアは
+  healingされないこと、opposite signペアは正しくhealingされること）。修正後、`pytest
+  tests/test_vortex_lines_3d.py tests/test_e059_vortex_line_tracer_validation.py -q`で
+  19件全通過を確認
 - 【マージ前の外部AIレビュー第6ラウンド（Codex）で発見・修正した3件＋自己発見のYAML構文バグ1件】
   第5ラウンド後、Codexからさらに3件の指摘が届いた。マージ前に検証・修正した：(1)
   `vortex_lines_3d.py`の最近傍再接続（healing）が、既にclean-cubeペアリングで直接接続済みの
