@@ -4,6 +4,7 @@ pattern; the F0's guard is that R is never assumed localized, so these tests exp
 UNIFORM rate (ratio must be 1.0) as well as patterned rates.
 """
 import numpy as np
+import pytest
 
 import genesis.diagnostics.reaction_localization as rl
 import genesis.diagnostics.vessel_permeability as vp
@@ -62,11 +63,8 @@ def test_band_vs_bulk_ratio_nan_for_empty_region_or_zero_bulk():
 def test_band_vs_bulk_ratio_rejects_invalid_region():
     phi = _sphere()
     rate = np.ones_like(phi)
-    try:
+    with pytest.raises(ValueError):
         rl.band_vs_bulk_ratio(rate, phi, bulk_region="nowhere")
-        assert False, "expected ValueError"
-    except ValueError:
-        pass
 
 
 def test_radial_reaction_profile_monotonic_for_monotonic_concentration():
@@ -76,7 +74,7 @@ def test_radial_reaction_profile_monotonic_for_monotonic_concentration():
     c, converged, _ = vp.equilibrate(phi, chi=-0.5, n_steps=4000)
     assert converged
     rate = rl.reaction_rate_field(c, k=1.0)
-    centers, means = rl.radial_reaction_profile(rate, phi, n_bins=10)
+    _, means = rl.radial_reaction_profile(rate, phi, n_bins=10)
     valid = ~np.isnan(means)
     m = means[valid]
     assert np.all(np.diff(m) >= -1e-9)   # non-decreasing (allow float noise)
@@ -85,6 +83,24 @@ def test_radial_reaction_profile_monotonic_for_monotonic_concentration():
 def test_radial_reaction_profile_empty_bins_are_nan_not_zero():
     phi = np.full((6, 6, 6), 1.0)   # all phi=1 -> only the top bin is populated
     rate = np.ones_like(phi)
-    centers, means = rl.radial_reaction_profile(rate, phi, n_bins=5, phi_range=(-1.0, 1.0))
+    _, means = rl.radial_reaction_profile(rate, phi, n_bins=5, phi_range=(-1.0, 1.0))
     assert np.isnan(means[0])        # bottom bin (phi near -1) has no data
     assert not np.isnan(means[-1])   # top bin has data
+
+
+def test_radial_reaction_profile_excludes_out_of_range_phi_instead_of_clipping_into_edge_bins():
+    # a narrowed phi_range that excludes the true interior (phi up to 1.0) must NOT fold those
+    # cells into the top bin -- they must be excluded entirely (Codex #10: clip-based binning
+    # silently mixes out-of-range cells into edge bins, corrupting a narrowed-range inspection).
+    phi = _sphere()
+    rate = np.full(phi.shape, 5.0)   # uniform rate everywhere, including phi>0.5
+    _, means_full = rl.radial_reaction_profile(rate, phi, n_bins=4, phi_range=(-1.0, 1.0))
+    _, means_narrow = rl.radial_reaction_profile(rate, phi, n_bins=4, phi_range=(-0.5, 0.5))
+    # uniform rate -> every populated bin reads exactly 5.0 in both cases (excluding, not
+    # clipping, out-of-range cells does not change the MEAN for a spatially uniform rate, but it
+    # does mean cells with phi>0.5 must not count toward the narrow profile's top bin at all).
+    assert np.allclose(means_full[~np.isnan(means_full)], 5.0)
+    assert np.allclose(means_narrow[~np.isnan(means_narrow)], 5.0)
+    out_of_range_count = int(((phi < -0.5) | (phi > 0.5)).sum())
+    in_range_count = int(((phi >= -0.5) & (phi <= 0.5)).sum())
+    assert out_of_range_count > 0 and in_range_count > 0   # sanity: the narrowing is non-trivial

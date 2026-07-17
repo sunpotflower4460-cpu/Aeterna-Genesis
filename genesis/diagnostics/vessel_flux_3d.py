@@ -29,27 +29,39 @@ def species_partition_ratio(c, phi, thresh=0.5):
     return float(c[inside].mean() / c[outside].mean())
 
 
-def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0):
+def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0, RT=1.0):
     """Scharfetter-Gummel flux across the face between cell i and i+1 along `axis`, reusing the
     exact Boltzmann-balanced instrument validated in F1 V0 (`vessel_permeability._bernoulli`).
     `D` may be a scalar or a field (face-averaged automatically, matching F1 V0's fix for
-    orientation-dependent transient flux with a spatial mobility)."""
+    orientation-dependent transient flux with a spatial mobility). `RT` divides `chi` exactly as
+    in `vessel_permeability.relax_step` (`beta = chi/RT`) -- the two instruments must scale the
+    interface potential jump identically, or they silently disagree away from RT=1.
+
+    The domain-boundary face along `axis` (index `c.shape[axis]-1`, which `np.roll(..., -1)` would
+    otherwise wrap to a nonexistent periodic neighbour) is always zeroed, matching `relax_step`'s
+    Neumann (no-flux) domain boundary -- this instrument reports the SAME flux law `relax_step`
+    integrates, not a periodic variant of it."""
     D_arr = np.asarray(D, dtype=float)
     cp = np.roll(c, -1, axis=axis)
     pp = np.roll(phi, -1, axis=axis)
-    dpsi = chi * (pp - phi)
+    beta = chi / RT
+    dpsi = beta * (pp - phi)
     D_face = D_arr if D_arr.ndim == 0 else 0.5 * (D_arr + np.roll(D_arr, -1, axis=axis))
-    return D_face * (_bernoulli(dpsi) * c - _bernoulli(-dpsi) * cp)
+    J = D_face * (_bernoulli(dpsi) * c - _bernoulli(-dpsi) * cp)
+    sl = [slice(None)] * c.ndim
+    sl[axis] = c.shape[axis] - 1
+    J[tuple(sl)] = 0.0
+    return J
 
 
-def net_boundary_flux(c, phi, chi, D=1.0, thresh=0.5):
+def net_boundary_flux(c, phi, chi, D=1.0, thresh=0.5, RT=1.0):
     """Net instantaneous flux crossing INTO the vessel interior across the |phi|=thresh shell:
     summed, over all axes, at faces where an outside cell borders an inside cell. Positive means
     net inward transport at this instant."""
     inside = phi > thresh
     total = 0.0
     for ax in range(c.ndim):
-        J = instantaneous_face_flux(c, phi, chi, D=D, axis=ax)
+        J = instantaneous_face_flux(c, phi, chi, D=D, axis=ax, RT=RT)
         nb_inside = np.roll(inside, -1, axis=ax)
         crossing_in = (~inside) & nb_inside     # face i(outside)|i+1(inside): +ax flux enters
         crossing_out = inside & (~nb_inside)    # face i(inside)|i+1(outside): +ax flux exits

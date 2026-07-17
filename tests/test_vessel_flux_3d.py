@@ -65,6 +65,29 @@ def test_instantaneous_face_flux_matches_vessel_permeability_relax_step_directio
     assert np.allclose(dc_measured, dc_expected, atol=1e-10)
 
 
+def test_instantaneous_face_flux_zeroes_the_domain_boundary_face():
+    # the last face along an axis (which np.roll(-1) would otherwise wrap to a nonexistent
+    # periodic neighbour) must read zero, matching vessel_permeability.relax_step's Neumann
+    # (no-flux) domain boundary -- this instrument must not silently report a periodic variant.
+    phi = _sphere()
+    c = np.full(phi.shape, 1.0)
+    for ax in range(3):
+        J = vf.instantaneous_face_flux(c, phi, chi=0.5, D=1.0, axis=ax)
+        sl = [slice(None)] * 3
+        sl[ax] = phi.shape[ax] - 1
+        assert np.allclose(J[tuple(sl)], 0.0)
+
+
+def test_instantaneous_face_flux_rt_scaling_matches_beta_convention():
+    # RT must divide chi exactly as vessel_permeability.relax_step's beta = chi/RT -- doubling RT
+    # while doubling chi must reproduce the RT=1 flux exactly (same beta).
+    phi = _sphere()
+    c = np.full(phi.shape, 1.0)
+    J1 = vf.instantaneous_face_flux(c, phi, chi=0.5, D=1.0, axis=0, RT=1.0)
+    J2 = vf.instantaneous_face_flux(c, phi, chi=1.0, D=1.0, axis=0, RT=2.0)
+    assert np.allclose(J1, J2)
+
+
 def test_total_mass_matches_sum():
     c = np.random.default_rng(0).uniform(0, 1, (6, 6, 6))
     assert abs(vf.total_mass(c) - float(c.sum())) < 1e-9

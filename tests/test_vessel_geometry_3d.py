@@ -101,6 +101,19 @@ def test_detect_split_fusion_none_when_component_count_unchanged():
     assert ev == dict(n_prev=1, n_curr=1, event="none")
 
 
+def test_detect_split_fusion_ambiguous_when_count_unchanged_but_mask_actually_moved():
+    # same component COUNT (1 -> 1) but the mask itself changed (the sphere moved) -- must read
+    # 'ambiguous', not silently 'none', per this function's own documented contract.
+    L = 40
+    mask_prev = vg.vessel_mask(_sphere(L=L, R=10.0))
+    mask_curr = vg.vessel_mask(vp.radial_phi(L, 10.0, 1.5, center=(L - 1) / 2.0 + 2.0))
+    n_prev, _ = vg.connected_components(mask_prev)
+    n_curr, _ = vg.connected_components(mask_curr)
+    assert n_prev == n_curr == 1
+    ev = vg.detect_split_fusion(mask_prev, mask_curr)
+    assert ev["event"] == "ambiguous"
+
+
 def test_detect_split_fusion_appear_from_empty():
     empty = np.zeros((16, 16, 16), dtype=bool)
     phi = _sphere(L=16, R=4.0)

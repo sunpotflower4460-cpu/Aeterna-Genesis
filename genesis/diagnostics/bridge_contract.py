@@ -25,37 +25,42 @@ any, failed.
 """
 import numpy as np
 
-# Frozen defaults (VERTICAL_EMERGENCE_CONTRACT.md Section 2, Gate II). Do not loosen after seeing
-# results -- override only via an explicit, documented `thresholds` argument, per-run.
+# Frozen thresholds (VERTICAL_EMERGENCE_CONTRACT.md Section 2, Gate II). Not overridable at
+# call-time by design -- see gate_ii_effective_law's docstring.
 GATE_II_DEFAULTS = dict(r_pred_max=0.10, min_seeds=5, coeff_cv_max=0.15,
                          closure_residual_max=0.20, min_scales=3, min_scale_ratio=4.0)
 
 
 def gate_i_derivation(is_target_encoded):
     """Gate I: PASS iff the upper variable was derived from lower state (target_encoded=False) --
-    the 8th-audit `target_encoded` discipline generalized across scales (contract Section 2, I)."""
+    the 8th-audit `target_encoded` discipline generalized across scales (contract Section 2, I).
+    Fails CLOSED on anything but an explicit bool: a missing/None measurement must never read as
+    PASS by a falsy-value accident (this module's own no-silent-pass principle, Section headline)."""
+    if not isinstance(is_target_encoded, bool):
+        return "FAIL"
     return "FAIL" if is_target_encoded else "PASS"
 
 
-def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_scales, scale_ratio,
-                           thresholds=None):
+def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_scales, scale_ratio):
     """Gate II: PASS iff ALL FOUR frozen criteria hold simultaneously (contract Section 2, II).
     Returns (status, detail) where `detail` is a dict of {criterion: bool} -- callers always see
-    exactly which criterion failed, never a bare boolean that hides partial credit."""
-    t = dict(GATE_II_DEFAULTS)
-    if thresholds:
-        t.update(thresholds)
+    exactly which criterion failed, never a bare boolean that hides partial credit. Thresholds are
+    NOT overridable by callers (no `thresholds` parameter): a per-call override would let a result
+    seen after the fact quietly loosen the frozen decision criteria, defeating the exact discipline
+    this module exists to enforce ("結果を見た後の成功条件変更を禁止する"). Comparisons use the
+    frozen contract's strict `<` (not `<=`) at every boundary."""
+    t = GATE_II_DEFAULTS
     checks = dict(
-        prediction=bool(r_pred <= t["r_pred_max"]),
-        reproducibility=bool(n_seeds >= t["min_seeds"] and seed_coeff_cv <= t["coeff_cv_max"]),
-        closure=bool(closure_residual <= t["closure_residual_max"]),
+        prediction=bool(r_pred < t["r_pred_max"]),
+        reproducibility=bool(n_seeds >= t["min_seeds"] and seed_coeff_cv < t["coeff_cv_max"]),
+        closure=bool(closure_residual < t["closure_residual_max"]),
         scale_robustness=bool(n_scales >= t["min_scales"] and scale_ratio >= t["min_scale_ratio"]),
     )
     status = "PASS" if all(checks.values()) else "FAIL"
     return status, checks
 
 
-def gate_iii_downward(effect_full, effect_matched_control, control_removes_downward_path=True,
+def gate_iii_downward(effect_full, effect_matched_control, control_removes_downward_path=False,
                        tol=1e-9):
     """Gate III: PASS iff the claimed downward (upper-state -> lower-level) effect is present in
     the Full run AND ABSENT under the matched control that removes the U->lower-level pathway

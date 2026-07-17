@@ -110,7 +110,11 @@ def detect_split_fusion(mask_prev, mask_curr):
     n_prev, _ = connected_components(mask_prev)
     n_curr, _ = connected_components(mask_curr)
     if n_prev == n_curr:
-        event = "none"
+        # same component COUNT does not mean nothing happened -- a simultaneous split+fusion
+        # elsewhere leaves the count unchanged but the mask itself differs; only report 'none'
+        # when the mask is actually unchanged, per this function's own documented 'ambiguous'
+        # outcome (Codex finding: the count-only check never actually reached 'ambiguous').
+        event = "none" if np.array_equal(mask_prev, mask_curr) else "ambiguous"
     elif n_prev == 0 and n_curr > 0:
         event = "appear"
     elif n_curr == 0 and n_prev > 0:

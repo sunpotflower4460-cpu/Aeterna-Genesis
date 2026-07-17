@@ -47,10 +47,16 @@ def band_vs_bulk_ratio(rate, phi, band_thresh=0.5, bulk_region="outside"):
 def radial_reaction_profile(rate, phi, n_bins=20, phi_range=(-1.0, 1.0)):
     """Mean reaction rate binned by phi value -- a full inside/interface/outside profile rather
     than a single ratio, for seeing exactly where (in phi-space) the reaction sits. Returns
-    (bin_centers, mean_rate_per_bin); empty bins report NaN, never a silently-dropped zero."""
+    (bin_centers, mean_rate_per_bin); empty bins report NaN, never a silently-dropped zero.
+    Values of `phi` OUTSIDE `phi_range` are EXCLUDED, not folded into the edge bins -- clipping
+    them in would let out-of-range cells masquerade as edge-bin data when a caller narrows
+    `phi_range` to inspect the interface region specifically."""
     edges = np.linspace(phi_range[0], phi_range[1], n_bins + 1)
-    idx = np.clip(np.digitize(phi.ravel(), edges) - 1, 0, n_bins - 1)
+    phi_flat = phi.ravel()
     flat = np.asarray(rate).ravel()
-    means = np.array([flat[idx == b].mean() if np.any(idx == b) else np.nan for b in range(n_bins)])
+    in_range = (phi_flat >= phi_range[0]) & (phi_flat <= phi_range[1])
+    idx = np.clip(np.digitize(phi_flat[in_range], edges) - 1, 0, n_bins - 1)
+    vals = flat[in_range]
+    means = np.array([vals[idx == b].mean() if np.any(idx == b) else np.nan for b in range(n_bins)])
     centers = 0.5 * (edges[:-1] + edges[1:])
     return centers, means
