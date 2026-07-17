@@ -47,6 +47,16 @@ def test_uniform_rate_gives_ratio_one_regardless_of_geometry():
     assert abs(rl.band_vs_bulk_ratio(rate, phi, bulk_region="inside") - 1.0) < 1e-12
 
 
+def test_band_vs_bulk_ratio_rejects_a_stacked_extra_dimensional_rate():
+    # a stacked (L, L, L, n_species) rate would otherwise still be accepted by the phi-derived
+    # boolean masks (broadcast across the trailing axis), and .mean() would silently average
+    # over the remaining species axis, reporting a ratio for a MIXTURE of rates (Codex).
+    phi = _sphere()
+    rate_stacked = np.random.default_rng(2).uniform(0, 1, phi.shape + (2,))
+    with pytest.raises(ValueError):
+        rl.band_vs_bulk_ratio(rate_stacked, phi)
+
+
 def test_ratio_reflects_where_concentration_actually_sits():
     # concentration depleted near the interface (chi>0, fuel prefers outside) -> band/outside
     # ratio < 1; concentration enriched near the interface (chi<0) -> band/outside ratio > 1.

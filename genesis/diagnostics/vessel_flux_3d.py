@@ -30,7 +30,20 @@ def species_partition_ratio(c, phi, thresh=0.5):
     This intentionally diverges from the raw `vessel_permeability.partition_ratio` formula for
     this edge case (as this function already does for the empty-region case above) -- the two are
     required to agree bit-for-bit only on well-posed inputs (see
-    `test_species_partition_ratio_matches_f1_v0_instrument`), not on undefined ones."""
+    `test_species_partition_ratio_matches_f1_v0_instrument`), not on undefined ones.
+
+    `c` must have EXACTLY `phi`'s shape (Codex): a stacked/extra-dimensional `c` (e.g.
+    `phi.shape + (n_species,)`) is otherwise still accepted by the `phi > thresh` boolean mask
+    (NumPy broadcasts the mask across the trailing axis), and `.mean()` then silently averages
+    over the trailing species axis too, reporting a ratio for a MIXTURE of species rather than the
+    single field this function documents."""
+    c_arr = np.asarray(c)
+    phi_arr = np.asarray(phi)
+    if c_arr.shape != phi_arr.shape:
+        raise ValueError(
+            "species_partition_ratio: c shape %r does not match phi's shape %r -- a real "
+            "single-species field must match exactly, not merely be mask-broadcast-compatible" %
+            (c_arr.shape, phi_arr.shape))
     inside, outside = phi > thresh, phi < -thresh
     if not inside.any() or not outside.any():
         return float("nan")
@@ -57,9 +70,37 @@ def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0, RT=1.0):
     the documented alternatives are a scalar mobility or a real per-cell field, so a
     broadcast-compatible-but-incomplete `D` (e.g. a 1-element array or a one-axis profile) would
     otherwise silently broadcast across the whole 3-D flux calculation, letting
-    `net_boundary_flux` report a valid-looking permeability from incomplete mobility metadata."""
+    `net_boundary_flux` report a valid-looking permeability from incomplete mobility metadata.
+
+    `c` and `phi` must also match each other's shape EXACTLY (Codex, second finding): a
+    broadcast-compatible-but-different grid for one of them (e.g. a one-slice `(L, L, 1)`
+    concentration field against a full `(L, L, L)` interface) would otherwise silently broadcast
+    together in the roll/Bernoulli arithmetic and produce a full 3-D flux that `net_boundary_flux`
+    can treat as measured permeability, even though the two fields never described the same
+    snapshot.
+
+    `D` (scalar or field) must be finite, non-negative, and non-boolean (Codex, third finding): a
+    negative mobility makes the SG flux anti-diffusive, a boolean `D` is silently cast to
+    `1.0`/`0.0`, and a non-finite `D` propagates to an infinite flux -- all invalid as a physical
+    mobility, and all would otherwise be summed by `net_boundary_flux` as if they were real
+    measured permeability evidence."""
+    c_arr0 = np.asarray(c)
+    phi_arr0 = np.asarray(phi)
+    if c_arr0.shape != phi_arr0.shape:
+        raise ValueError(
+            "instantaneous_face_flux: c shape %r does not match phi's shape %r -- both must "
+            "describe the SAME snapshot's grid, not merely be broadcast-compatible" %
+            (c_arr0.shape, phi_arr0.shape))
+    if isinstance(D, (bool, np.bool_)) or (isinstance(D, np.ndarray) and D.dtype == np.bool_):
+        raise ValueError("instantaneous_face_flux: D must be real-valued, not boolean")
     D_arr = np.asarray(D, dtype=float)
-    c_shape = np.asarray(c).shape
+    if not np.all(np.isfinite(D_arr)):
+        raise ValueError("instantaneous_face_flux: D contains non-finite values (inf/nan)")
+    if np.any(D_arr < 0.0):
+        raise ValueError(
+            "instantaneous_face_flux: D contains negative values -- a mobility can never be "
+            "negative (the SG flux law would become anti-diffusive)")
+    c_shape = c_arr0.shape
     if D_arr.ndim != 0 and D_arr.shape != c_shape:
         raise ValueError(
             "instantaneous_face_flux: non-scalar D has shape %r, which does not match c's shape "
@@ -131,5 +172,16 @@ def stoichiometric_invariant(species_masses, coeffs):
 def mass_balance_residual(mass_before, mass_after, sources=0.0, sinks=0.0):
     """|Δmass - (sources - sinks)| -- should be ~0 to numerical precision for a correctly
     integrated finite-volume scheme; a nonzero residual flags an accounting bug in the caller's
-    solver, not a physics result to interpret."""
+    solver, not a physics result to interpret.
+
+    All four inputs are validated as finite, non-negative, non-boolean real numbers via
+    `_reject_invalid_mass` (Codex: this module already validates species masses before computing
+    `stoichiometric_invariant`'s residual -- this mass-balance residual must not be a weaker
+    sibling. Without validation, invalid totals or source/sink magnitudes can still arithmetically
+    balance to a coincidental zero, e.g. `mass_before=-1, mass_after=0, sources=1`, hiding
+    corrupted accounting instead of surfacing it)."""
+    mass_before = _reject_invalid_mass(mass_before, "mass_before")
+    mass_after = _reject_invalid_mass(mass_after, "mass_after")
+    sources = _reject_invalid_mass(sources, "sources")
+    sinks = _reject_invalid_mass(sinks, "sinks")
     return float(abs((mass_after - mass_before) - (sources - sinks)))

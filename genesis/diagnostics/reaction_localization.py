@@ -39,7 +39,20 @@ def band_vs_bulk_ratio(rate, phi, band_thresh=0.5, bulk_region="outside"):
     (bulk_region='outside': phi<-band_thresh, or 'inside': phi>band_thresh). A ratio > 1 means
     reaction concentrates near the vessel boundary -- an EMERGENT readout of species partitioning,
     not something placed by construction (R itself may be perfectly uniform). NaN if either
-    region is empty or the bulk mean is ~0 (undefined ratio, not silently reported as inf)."""
+    region is empty or the bulk mean is ~0 (undefined ratio, not silently reported as inf).
+
+    `rate` must have EXACTLY `phi`'s shape (Codex): a stacked extra-dimensional `rate` (e.g. a
+    `(L, L, L, n_species)` array) is otherwise still accepted by the `phi`-derived boolean masks
+    (NumPy broadcasts the 3-D mask across the trailing axis), and `.mean()` then silently averages
+    over the remaining species axis too, reporting a plausible-looking localization ratio for a
+    MIXTURE of rates rather than the single per-cell reaction field this diagnostic audits."""
+    rate_arr = np.asarray(rate)
+    phi_arr = np.asarray(phi)
+    if rate_arr.shape != phi_arr.shape:
+        raise ValueError(
+            "band_vs_bulk_ratio: rate shape %r does not match phi's shape %r -- a real "
+            "single-field measurement must match exactly, not merely be mask-broadcast-compatible"
+            % (rate_arr.shape, phi_arr.shape))
     band = np.abs(phi) < band_thresh
     if bulk_region == "outside":
         bulk = phi < -band_thresh

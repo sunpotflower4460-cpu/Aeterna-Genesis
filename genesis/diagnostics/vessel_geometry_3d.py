@@ -22,7 +22,20 @@ from genesis.diagnostics.topology_betti import betti3d
 
 
 def vessel_mask(phi, thresh=0.0):
-    """The vessel interior as a boolean mask: phi > thresh."""
+    """The vessel interior as a boolean mask: phi > thresh.
+
+    `phi` must be entirely finite (Codex): a solver blow-up leaving `NaN`/`inf` cells would
+    otherwise be silently classified as outside/inside by the bare `>` comparison (`nan > thresh`
+    is always False, `inf > thresh` is always True), letting downstream geometry
+    (`connected_components`, `boundary_topology`, `surface_area`, `volume`, split/fusion
+    detection -- everything in this module that consumes a mask) report a plausible-looking
+    finite result computed from a corrupted interface field instead of failing closed."""
+    phi = np.asarray(phi)
+    if not np.all(np.isfinite(phi)):
+        raise ValueError(
+            "vessel_mask: phi contains non-finite values (inf/nan) -- indicates a solver "
+            "blow-up, not a valid interface field; must fail closed rather than being silently "
+            "classified as inside/outside by the > comparison")
     return phi > thresh
 
 
@@ -198,7 +211,20 @@ def detect_split_fusion(mask_prev, mask_curr):
     'split', 'fusion', 'appear', 'vanish', or 'ambiguous' (component count unchanged but not
     trivially 'none' -- e.g. a simultaneous split+fusion elsewhere). This is a cheap screening
     signal for automated runs, NOT a definitive topological proof; callers needing certainty
-    should inspect the labeled components directly (e.g. via `connected_components`)."""
+    should inspect the labeled components directly (e.g. via `connected_components`).
+
+    `mask_prev`/`mask_curr` must have the SAME shape (Codex): a split/fusion event is a same-grid
+    temporal change, so frames accidentally taken from different grid sizes or cropped domains
+    must fail closed rather than being compared by component COUNT alone (which `connected_
+    components` can still compute on either shape independently, silently reporting a plausible
+    but meaningless 'split'/'fusion'/'ambiguous' classification)."""
+    mask_prev = np.asarray(mask_prev)
+    mask_curr = np.asarray(mask_curr)
+    if mask_prev.shape != mask_curr.shape:
+        raise ValueError(
+            "detect_split_fusion: mask_prev shape %r does not match mask_curr shape %r -- a "
+            "split/fusion event can only be measured between two snapshots of the SAME grid" %
+            (mask_prev.shape, mask_curr.shape))
     n_prev, _ = connected_components(mask_prev)
     n_curr, _ = connected_components(mask_curr)
     if n_prev == n_curr:

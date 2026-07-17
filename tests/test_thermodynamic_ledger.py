@@ -43,6 +43,18 @@ def test_matter_in_scales_by_dx_cubed():
     assert abs(scaled - base * 8.0) < 1e-9   # dx=2 -> cell volume x8
 
 
+def test_matter_in_rejects_a_wrong_shaped_outer_mask():
+    # a scalar or wrong-shaped-but-broadcast-compatible mask must never silently integrate the
+    # WRONG region -- e.g. outer_mask=True would integrate fuel exchange over the ENTIRE domain
+    # instead of the fixed outer shell (Codex).
+    shape = (4, 4, 4)
+    f = np.full(shape, 0.5)
+    with pytest.raises(ValueError):
+        tl.matter_in(f, True, k_res=0.3, f_res=1.0)
+    with pytest.raises(ValueError):
+        tl.matter_in(f, np.ones((2, 2, 2), dtype=bool), k_res=0.3, f_res=1.0)
+
+
 def test_chemical_potential_dilute_ideal_known_values():
     c = np.array([1.0, np.e, np.e ** 2])
     mu = tl.chemical_potential(c, mu0=0.0, RT=1.0)
@@ -66,6 +78,15 @@ def test_chemical_potential_tolerates_tiny_negative_floating_noise():
     # to eps rather than raise.
     mu = tl.chemical_potential(np.array([-1e-13]), mu0=0.0, RT=1.0, eps=1e-12)
     assert np.isfinite(mu[0])
+
+
+def test_chemical_potential_rejects_boolean_concentration():
+    # an accidentally-passed occupancy/mask array must not have its True/False cells silently
+    # cast to 1.0/0.0 and be treated as a real measured concentration (Codex).
+    with pytest.raises(ValueError):
+        tl.chemical_potential(np.array([True, False]))
+    with pytest.raises(ValueError):
+        tl.chemical_potential(True)
 
 
 def test_chemical_potential_rejects_non_finite_concentration():
@@ -223,6 +244,21 @@ def test_waste_out_scales_by_dx_cubed():
     assert abs(scaled - base * 8.0) < 1e-9
 
 
+def test_waste_out_rejects_negative_w_overshoot():
+    # the frozen ledger treats waste removal as a positive sink magnitude -- a negative
+    # concentration overshoot in w must fail closed, not silently produce a negative waste_out
+    # that could offset a real mass change in mass_balance_error (Codex).
+    with pytest.raises(ValueError):
+        tl.waste_out(np.array([-5.0, 1.0]), k_out=1.0)
+
+
+def test_waste_out_rejects_negative_or_non_finite_k_out():
+    with pytest.raises(ValueError):
+        tl.waste_out(np.array([1.0, 1.0]), k_out=-1.0)
+    with pytest.raises(ValueError):
+        tl.waste_out(np.array([1.0, 1.0]), k_out=float("inf"))
+
+
 def test_entropy_production_matches_analytic_value_and_is_nonnegative_for_spontaneous_reaction():
     shape = (2, 2, 2)
     conc = {"f": np.full(shape, 2.0), "m": np.full(shape, 1.0)}
@@ -242,6 +278,29 @@ def test_entropy_production_scales_by_dx_cubed():
     base = tl.entropy_production_reaction(rate, -delta_g, RT=1.0, dx=1.0)
     scaled = tl.entropy_production_reaction(rate, -delta_g, RT=1.0, dx=2.0)
     assert abs(scaled - base * 8.0) < 1e-9
+
+
+def test_entropy_production_rejects_boolean_rate_or_affinity():
+    # a boolean mask must not be silently cast (True -> 1.0) and treated as a real measured
+    # rate/affinity, satisfying the preregistered entropy_production>0 maintenance check (Codex).
+    with pytest.raises(ValueError):
+        tl.entropy_production_reaction(True, 2.0)
+    with pytest.raises(ValueError):
+        tl.entropy_production_reaction(1.0, False)
+
+
+def test_entropy_production_rejects_non_finite_rate_or_affinity():
+    with pytest.raises(ValueError):
+        tl.entropy_production_reaction(1.0, float("inf"))
+    with pytest.raises(ValueError):
+        tl.entropy_production_reaction(float("nan"), 2.0)
+
+
+def test_entropy_production_allows_a_genuinely_negative_affinity():
+    # a negative rate*affinity combination is a real, reportable inconsistent-rate-law finding --
+    # sign itself must not be rejected, only booleans and non-finite values.
+    ep = tl.entropy_production_reaction(1.0, -2.0)
+    assert ep == -2.0
 
 
 def test_entropy_production_rejects_mismatched_rate_affinity_shapes():

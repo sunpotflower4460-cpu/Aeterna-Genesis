@@ -43,6 +43,16 @@ def test_species_partition_ratio_nan_not_inf_when_outside_concentration_is_zero(
     assert np.isnan(vf.species_partition_ratio(c, phi))
 
 
+def test_species_partition_ratio_rejects_a_stacked_extra_dimensional_c():
+    # a stacked (phi.shape + (n_species,)) c would otherwise still be accepted by the phi-derived
+    # boolean mask (broadcast across the trailing axis), and .mean() would silently average over
+    # the trailing species axis, reporting a ratio for a MIXTURE of species (Codex).
+    phi = _sphere()
+    c_stacked = np.random.default_rng(0).uniform(0, 1, phi.shape + (2,))
+    with pytest.raises(ValueError):
+        vf.species_partition_ratio(c_stacked, phi)
+
+
 def test_net_boundary_flux_vanishes_at_equilibrium_but_not_in_transient():
     phi = _sphere()
     c_eq, converged, _ = vp.equilibrate(phi, chi=0.5, n_steps=4000)
@@ -107,6 +117,31 @@ def test_instantaneous_face_flux_accepts_a_full_field_mobility():
     assert J.shape == phi.shape
 
 
+def test_instantaneous_face_flux_rejects_mismatched_c_phi_shapes():
+    # a broadcast-compatible-but-different grid for c (e.g. a one-slice field against a full
+    # 3-D interface) must not silently broadcast together in the roll/Bernoulli arithmetic and
+    # produce a flux net_boundary_flux can treat as measured permeability (Codex).
+    phi = np.full((4, 4, 4), 1.0)
+    c_bad = np.full((4, 4, 1), 1.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c_bad, phi, chi=0.5, axis=0)
+
+
+def test_instantaneous_face_flux_rejects_invalid_mobility():
+    # D is a physical mobility -- negative makes the SG flux anti-diffusive, boolean silently
+    # casts to 1.0/0.0, non-finite propagates to an infinite flux; all invalid measurements
+    # that net_boundary_flux would otherwise sum as if they were real permeability evidence
+    # (Codex).
+    phi = np.full((4, 4, 4), 1.0)
+    c = np.full((4, 4, 4), 1.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi, chi=0.5, D=-1.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi, chi=0.5, D=True)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi, chi=0.5, D=float("inf"))
+
+
 def test_instantaneous_face_flux_rt_scaling_matches_beta_convention():
     # RT must divide chi exactly as vessel_permeability.relax_step's beta = chi/RT -- doubling RT
     # while doubling chi must reproduce the RT=1 flux exactly (same beta).
@@ -164,3 +199,13 @@ def test_mass_balance_residual_nonzero_flags_inconsistent_accounting():
     # an actual mass jump of 5 but claimed sources/sinks explaining only 2 -> nonzero residual.
     r = vf.mass_balance_residual(10.0, 15.0, sources=2.0, sinks=0.0)
     assert abs(r - 3.0) < 1e-9
+
+
+def test_mass_balance_residual_rejects_invalid_totals():
+    # an impossible negative/boolean total or source/sink magnitude must fail closed, not
+    # arithmetically balance to a coincidental zero (e.g. mass_before=-1, mass_after=0,
+    # sources=1) and hide corrupted accounting instead of surfacing it (Codex).
+    with pytest.raises(ValueError):
+        vf.mass_balance_residual(-1.0, 0.0, sources=1.0)
+    with pytest.raises(ValueError):
+        vf.mass_balance_residual(1.0, 2.0, sources=True)

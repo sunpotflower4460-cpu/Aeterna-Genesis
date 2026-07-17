@@ -68,8 +68,20 @@ def matter_in(f, outer_mask, k_res, f_res, dx=1.0):
     a bare per-cell sum scales with the number of boundary cells, not the physical fuel-exchange
     rate, so refining 48^3 -> 96^3 would silently change the apparent fuel input); it also keeps
     `matter_in` in the same physical units as `mass_balance_error`'s `mass_before`/`mass_after`
-    (both computed via `vessel_flux_3d.total_mass`'s identical `dx^3` convention)."""
-    return float((k_res * (f_res - f) * outer_mask).sum()) * dx ** 3
+    (both computed via `vessel_flux_3d.total_mass`'s identical `dx^3` convention).
+
+    `outer_mask` must have EXACTLY `f`'s shape (Codex): a scalar or wrong-shaped-but-broadcast-
+    compatible mask would otherwise silently broadcast and integrate the WRONG region -- e.g. a
+    bare `outer_mask=True` integrates fuel exchange over the ENTIRE domain instead of the fixed
+    outer shell, corrupting the stop/restart mass/energy ledger this function feeds."""
+    f_arr = np.asarray(f)
+    mask_arr = np.asarray(outer_mask)
+    if mask_arr.shape != f_arr.shape:
+        raise ValueError(
+            "matter_in: outer_mask shape %r does not match f's shape %r -- a malformed mask "
+            "must fail closed rather than silently broadcast over the wrong region" %
+            (mask_arr.shape, f_arr.shape))
+    return float((k_res * (f_res - f_arr) * mask_arr).sum()) * dx ** 3
 
 
 def _reject_negative_concentration(c, eps):
@@ -79,7 +91,16 @@ def _reject_negative_concentration(c, eps):
     `log(0)`; a real negative value must surface as an error, not be silently floored to look
     like a tiny-but-valid concentration (Codex: clipping c<0 straight to eps let a solver
     overshoot pass a downstream reaction_delta_g/entropy_production check as if nothing were
-    wrong)."""
+    wrong). A boolean `c` (scalar or array) is rejected before the float cast (Codex, third
+    finding): an accidentally-passed occupancy/mask array would otherwise have its `True`/`False`
+    cells silently cast to `1.0`/`0.0` by `np.asarray(c, dtype=float)` and flow through
+    `chemical_potential`/`reaction_delta_g`/`chemical_free_energy_change` as if it were a real
+    measured concentration."""
+    if isinstance(c, (bool, np.bool_)) or (isinstance(c, np.ndarray) and c.dtype == np.bool_):
+        raise ValueError(
+            "concentration must be a real-valued field/scalar, not a boolean array/value -- "
+            "True/False must never silently convert to 1.0/0.0 and be treated as a measured "
+            "concentration")
     c = np.asarray(c, dtype=float)
     if not np.all(np.isfinite(c)):
         raise ValueError(
@@ -215,8 +236,18 @@ def waste_out(w, k_out, region_mask=None, dx=1.0):
     must match the frozen PDE exactly. `dx^3` cell-volume weighting keeps this in the same units
     as `matter_in`/`mass_balance_error`'s before/after mass (`vessel_flux_3d.total_mass`'s `dx^3`
     convention); without it the two terms in `mass_balance_error` would be dimensionally
-    inconsistent whenever `dx != 1`."""
-    arr = k_out * np.asarray(w)
+    inconsistent whenever `dx != 1`.
+
+    `w` and `k_out` are validated as finite and non-negative (Codex): the frozen ledger treats
+    waste removal as a positive sink magnitude, so a negative concentration overshoot in `w` or a
+    negative/non-finite `k_out` -- either of which would otherwise silently produce a negative or
+    infinite `waste_out` -- must fail closed instead of letting a corrupted sink measurement flow
+    into `mass_balance_error`'s accounting and coincidentally offset a real mass change."""
+    w_arr = _reject_negative_concentration(w, eps=1e-12)
+    if isinstance(k_out, (bool, np.bool_)) or not np.isfinite(k_out) or k_out < 0.0:
+        raise ValueError(
+            "waste_out: k_out must be a finite, non-negative rate constant, got %r" % (k_out,))
+    arr = k_out * w_arr
     if region_mask is not None:
         arr = arr * region_mask
     return float(arr.sum()) * dx ** 3
@@ -239,9 +270,25 @@ def entropy_production_reaction(rate, affinity, RT=1.0, dx=1.0):
     the whole domain and report a finite entropy-production total from malformed per-cell
     reaction metadata, satisfying a downstream `entropy_production>0` ledger check without a real
     measured rate/affinity field. A scalar `rate` or `affinity` (a caller's deliberate uniform
-    value) remains a legitimate broadcast against the other."""
+    value) remains a legitimate broadcast against the other.
+
+    `rate` and `affinity` are each rejected outright if boolean (scalar or array) or non-finite
+    (Codex, third finding): `np.asarray(x, dtype=float)` would otherwise silently cast a boolean
+    mask's `True`/`False` to `1.0`/`0.0`, and an unchecked `inf` would propagate to a positive-
+    infinite entropy-production total -- either way letting corrupted/unmeasured reaction
+    metadata satisfy the preregistered `entropy_production > 0` maintenance-evidence check instead
+    of failing closed. Sign itself is NOT restricted (a negative rate*affinity combination is a
+    real, reportable inconsistent-rate-law finding, per this function's own documented behavior)."""
+    if isinstance(rate, (bool, np.bool_)) or (isinstance(rate, np.ndarray) and rate.dtype == np.bool_):
+        raise ValueError("entropy_production_reaction: rate must be real-valued, not boolean")
+    if isinstance(affinity, (bool, np.bool_)) or (isinstance(affinity, np.ndarray) and affinity.dtype == np.bool_):
+        raise ValueError("entropy_production_reaction: affinity must be real-valued, not boolean")
     rate_arr = np.asarray(rate, dtype=float)
     affinity_arr = np.asarray(affinity, dtype=float)
+    if not np.all(np.isfinite(rate_arr)):
+        raise ValueError("entropy_production_reaction: rate contains non-finite values (inf/nan)")
+    if not np.all(np.isfinite(affinity_arr)):
+        raise ValueError("entropy_production_reaction: affinity contains non-finite values (inf/nan)")
     if rate_arr.ndim != 0 and affinity_arr.ndim != 0 and rate_arr.shape != affinity_arr.shape:
         raise ValueError(
             "entropy_production_reaction: non-scalar rate has shape %r but non-scalar affinity "

@@ -4,6 +4,7 @@ No physics claims -- every check here is against an ANALYTICALLY KNOWN synthetic
 (reusing F1 V0's validated `vessel_permeability.radial_phi`), not P10 physics run data.
 """
 import numpy as np
+import pytest
 
 import genesis.diagnostics.vessel_geometry_3d as vg
 import genesis.diagnostics.vessel_permeability as vp
@@ -173,6 +174,32 @@ def test_no_defect_field_has_zero_components():
     assert sizes == []
     assert vg.volume(mask) == 0.0
     assert vg.volume_fraction(mask) == 0.0
+
+
+def test_vessel_mask_rejects_non_finite_phi():
+    # a solver blow-up leaving NaN/inf cells must fail closed, not be silently classified as
+    # outside/inside by the bare > comparison (nan > thresh is always False, inf > thresh is
+    # always True) -- this would otherwise corrupt every downstream mask-consuming diagnostic
+    # (connected_components, boundary_topology, surface_area, volume, split/fusion) (Codex).
+    phi = np.array([1.0, np.nan, -1.0])
+    with pytest.raises(ValueError):
+        vg.vessel_mask(phi)
+    phi2 = np.array([1.0, np.inf, -1.0])
+    with pytest.raises(ValueError):
+        vg.vessel_mask(phi2)
+
+
+def test_detect_split_fusion_rejects_mismatched_frame_shapes():
+    # a split/fusion event is a same-grid temporal change -- frames accidentally taken from
+    # different grid sizes or cropped domains must fail closed rather than being compared by
+    # component count alone, which connected_components can still compute independently on
+    # either shape and report a plausible but meaningless classification (Codex).
+    mask_prev = np.zeros((8, 8, 8), dtype=bool)
+    mask_prev[1, 1, 1] = True
+    mask_curr = np.zeros((4, 4, 4), dtype=bool)
+    mask_curr[1, 1, 1] = True
+    with pytest.raises(ValueError):
+        vg.detect_split_fusion(mask_prev, mask_curr)
 
 
 def test_detect_split_fusion_none_when_component_count_unchanged():
