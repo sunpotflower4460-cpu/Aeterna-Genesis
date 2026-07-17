@@ -89,6 +89,28 @@ def test_chemical_free_energy_change_rejects_negative_concentration():
         tl.chemical_free_energy_change(before, after, mu0={"a": 0.0}, RT=1.0)
 
 
+def test_chemical_free_energy_change_includes_species_present_only_after_the_window():
+    # a species genuinely absent before the window (e.g. a waste/product field introduced by a
+    # stop/restart run) must NOT be silently dropped just because it's missing from
+    # species_before -- Codex: iterating only species_before's keys underreported Delta G.
+    shape = (2, 2, 2)
+    before = {"a": np.full(shape, 1.0)}                                  # a unchanged: f(1)-f(1)=0
+    after = {"a": np.full(shape, 1.0), "b": np.full(shape, np.e)}        # b appears from nothing
+    dG = tl.chemical_free_energy_change(before, after, mu0={"a": 0.0, "b": 2.0}, RT=1.0)
+    # f_b(0) = 2*0 + (0*ln(eps)-0) = 0 ; f_b(e) = 2*e + (e*1-e) = 2e
+    expected = 8.0 * (2.0 * np.e - 0.0)
+    assert abs(dG - expected) < 1e-6
+
+
+def test_chemical_free_energy_change_includes_species_present_only_before_the_window():
+    shape = (2, 2, 2)
+    before = {"a": np.full(shape, 1.0), "b": np.full(shape, np.e)}       # b disappears
+    after = {"a": np.full(shape, 1.0)}
+    dG = tl.chemical_free_energy_change(before, after, mu0={"a": 0.0, "b": 2.0}, RT=1.0)
+    expected = 8.0 * (0.0 - 2.0 * np.e)
+    assert abs(dG - expected) < 1e-6
+
+
 def test_chemical_free_energy_change_scales_by_dx_cubed():
     shape = (2, 2, 2)
     before = {"a": np.full(shape, 1.0)}

@@ -22,11 +22,22 @@ from genesis.diagnostics.vessel_permeability import _bernoulli
 
 def species_partition_ratio(c, phi, thresh=0.5):
     """Inside/outside mean-concentration ratio (the F1 V0 selective-boundary readout, generalized
-    to any species field `c`). NaN if either region is empty."""
+    to any species field `c`). NaN if either region is empty, OR if the outside mean is ~0 (a
+    depleted/never-present species) -- an undefined partition must never silently read back as
+    `inf` (Codex: `inf` can pass a downstream `ratio>=2` selectivity/Gate-I threshold check as
+    "infinitely selective" instead of failing closed on an unmeasurable ratio, unlike
+    `reaction_localization.band_vs_bulk_ratio`, which already guards this same zero-bulk case).
+    This intentionally diverges from the raw `vessel_permeability.partition_ratio` formula for
+    this edge case (as this function already does for the empty-region case above) -- the two are
+    required to agree bit-for-bit only on well-posed inputs (see
+    `test_species_partition_ratio_matches_f1_v0_instrument`), not on undefined ones."""
     inside, outside = phi > thresh, phi < -thresh
     if not inside.any() or not outside.any():
         return float("nan")
-    return float(c[inside].mean() / c[outside].mean())
+    outside_mean = float(c[outside].mean())
+    if abs(outside_mean) < 1e-12:
+        return float("nan")
+    return float(c[inside].mean() / outside_mean)
 
 
 def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0, RT=1.0):

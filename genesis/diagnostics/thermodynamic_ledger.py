@@ -105,10 +105,14 @@ def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
     `chemical_free_energy_change` used the bare `c*mu(c)` product, which overstates the true
     free-energy change by `RT*Delta(c)` whenever the total amount of material changes, e.g.
     across a fuel-in/waste-out window -- silently wrong even though `c*mu` LOOKS extensive).
-    A genuinely negative `c` raises, matching `chemical_potential`'s discipline."""
+    A genuinely negative `c` raises, matching `chemical_potential`'s discipline. The `eps` floor
+    applies ONLY inside the log argument (CodeRabbit): clipping `c` itself before the linear/
+    multiplicative terms would give an exact-zero cell a spurious `eps*ln(eps)-eps` contribution
+    (~-2.9e-11 at the default eps) instead of exactly 0, which accumulates into a nonzero baseline
+    offset when integrated over a large grid with many empty cells."""
     c = _reject_negative_concentration(c, eps)
-    c = np.clip(c, eps, None)
-    return mu0 * c + RT * (c * np.log(c) - c)
+    c_log = np.clip(c, eps, None)
+    return mu0 * c + RT * (c * np.log(c_log) - c)
 
 
 def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1.0):
@@ -120,12 +124,22 @@ def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1
     field. `mu0`: dict or scalar. `dx^3` cell-volume weighting converts the free-energy DENSITY
     sum into the extensive integral (Codex: a bare per-cell sum would make this change with grid
     resolution relative to the rest of the ledger -- `matter_in`/`waste_out`/`total_mass` already
-    use `dx^3`)."""
+    use `dx^3`).
+
+    Iterates the UNION of `species_before`/`species_after` keys (sorted, for run-to-run
+    deterministic summation order regardless of Python's hash-randomized set iteration), treating
+    a species missing on one side as concentration 0 there -- e.g. a waste/product species that
+    is genuinely absent before the window and appears after it (Codex: iterating only
+    `species_before`'s keys silently dropped that species' free-energy contribution entirely,
+    underreporting Delta G for exactly the stop/restart reaction-chain ledgers this module
+    exists to audit)."""
     total = 0.0
-    for k in species_before:
+    for k in sorted(set(species_before) | set(species_after)):
         mu0_k = mu0.get(k, 0.0) if isinstance(mu0, dict) else mu0
-        f_before = _dilute_ideal_free_energy_density(species_before[k], mu0_k, RT)
-        f_after = _dilute_ideal_free_energy_density(species_after[k], mu0_k, RT)
+        c_before = species_before[k] if k in species_before else np.zeros_like(species_after[k])
+        c_after = species_after[k] if k in species_after else np.zeros_like(species_before[k])
+        f_before = _dilute_ideal_free_energy_density(c_before, mu0_k, RT)
+        f_after = _dilute_ideal_free_energy_density(c_after, mu0_k, RT)
         total += float((f_after - f_before).sum())
     return total * dx ** 3
 

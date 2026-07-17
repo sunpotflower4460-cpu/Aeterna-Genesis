@@ -32,6 +32,16 @@ def test_species_partition_ratio_nan_when_region_empty():
     assert np.isnan(vf.species_partition_ratio(c, phi))
 
 
+def test_species_partition_ratio_nan_not_inf_when_outside_concentration_is_zero():
+    # a depleted/never-present species outside must read as an undefined (NaN) partition, not
+    # `inf` -- `inf` could pass a downstream "ratio>=2 selectivity" check as if infinitely
+    # selective instead of failing closed on an unmeasurable ratio (Codex).
+    phi = _sphere()
+    c = np.zeros_like(phi)
+    c[phi > 0.5] = 1.0   # nonzero inside, exactly zero outside
+    assert np.isnan(vf.species_partition_ratio(c, phi))
+
+
 def test_net_boundary_flux_vanishes_at_equilibrium_but_not_in_transient():
     phi = _sphere()
     c_eq, converged, _ = vp.equilibrate(phi, chi=0.5, n_steps=4000)

@@ -60,14 +60,14 @@ def _merge_periodic_labels(lbl, mask):
 
     if not parent:
         return lbl
-    out = lbl.copy()
-    for label in np.unique(lbl):
-        if label == 0:
-            continue
-        root = find(int(label))
-        if root != label:
-            out[lbl == label] = root
-    return out
+    # Vectorized relabel via a lookup table (CodeRabbit): building a per-label mapping array and
+    # indexing `lbl` through it is O(V), unlike the O(n_labels * V) cost of masking the full array
+    # once per label -- matters on noisy grids with many components.
+    max_label = int(lbl.max())
+    mapping = np.arange(max_label + 1, dtype=lbl.dtype)
+    for label in range(1, max_label + 1):
+        mapping[label] = find(label)
+    return mapping[lbl]
 
 
 def connected_components(mask):
@@ -78,9 +78,12 @@ def connected_components(mask):
     if n == 0:
         return 0, []
     lbl = _merge_periodic_labels(lbl, mask)
-    labels_present = [int(x) for x in np.unique(lbl) if x != 0]
-    sizes = [int((lbl == label).sum()) for label in labels_present]
-    return len(labels_present), sorted(sizes, reverse=True)
+    # np.bincount (CodeRabbit) is O(V) versus summing a fresh `lbl == label` boolean mask per
+    # label (O(n_labels * V)) -- the merged labels are no longer contiguous from 1, so bins for
+    # merged-away labels are simply empty and filtered out below.
+    counts = np.bincount(lbl.ravel())
+    sizes = [int(s) for s in counts[1:] if s > 0]
+    return len(sizes), sorted(sizes, reverse=True)
 
 
 def boundary_topology(mask):

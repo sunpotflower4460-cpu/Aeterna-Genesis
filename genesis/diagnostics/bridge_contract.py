@@ -25,11 +25,15 @@ this module only applies the frozen arithmetic honestly and reports which specif
 any, failed.
 """
 import numpy as np
+import types
 
 # Frozen thresholds (VERTICAL_EMERGENCE_CONTRACT.md Section 2, Gate II). Not overridable at
-# call-time by design -- see gate_ii_effective_law's docstring.
-GATE_II_DEFAULTS = dict(r_pred_max=0.10, min_seeds=5, coeff_cv_max=0.15,
-                         closure_residual_max=0.20, min_scales=3, min_scale_ratio=4.0)
+# call-time by design -- see gate_ii_effective_law's docstring. MappingProxyType enforces that
+# immutability at RUNTIME too (CodeRabbit): a plain dict stays mutable even though the module's
+# whole point is that these thresholds never change after being seen.
+GATE_II_DEFAULTS = types.MappingProxyType(dict(
+    r_pred_max=0.10, min_seeds=5, coeff_cv_max=0.15,
+    closure_residual_max=0.20, min_scales=3, min_scale_ratio=4.0))
 
 
 def gate_i_derivation(is_target_encoded):
@@ -43,10 +47,15 @@ def gate_i_derivation(is_target_encoded):
 
 
 def _num_lt(x, bound):
-    """True iff x is a real number strictly less than bound; False (never a raised TypeError) for
-    None/missing/non-numeric x -- a missing measurement must FAIL the criterion, not crash gate
-    evaluation (Codex: bare `x < bound` on a None metric aborts the whole audit with a TypeError
-    instead of returning the conservative FAIL this module's own no-silent-omission rule promises)."""
+    """True iff x is a real number (NOT a bool) strictly less than bound; False (never a raised
+    TypeError) for None/missing/non-numeric/boolean x -- a missing measurement must FAIL the
+    criterion, not crash gate evaluation (Codex: bare `x < bound` on a None metric aborts the
+    whole audit with a TypeError instead of returning the conservative FAIL this module's own
+    no-silent-omission rule promises). Booleans are rejected explicitly: `bool` is a Python `int`
+    subclass, so `float(True)==1.0`/`float(False)==0.0` would otherwise let a mistakenly-passed
+    pass/fail flag silently satisfy a numeric threshold (Codex)."""
+    if isinstance(x, bool):
+        return False
     try:
         return x is not None and float(x) < bound
     except (TypeError, ValueError):
@@ -54,7 +63,10 @@ def _num_lt(x, bound):
 
 
 def _num_ge(x, bound):
-    """True iff x is a real number >= bound; False for None/missing/non-numeric x (see `_num_lt`)."""
+    """True iff x is a real number (NOT a bool) >= bound; False for None/missing/non-numeric/
+    boolean x (see `_num_lt`)."""
+    if isinstance(x, bool):
+        return False
     try:
         return x is not None and float(x) >= bound
     except (TypeError, ValueError):
@@ -95,8 +107,12 @@ def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_sc
 
 
 def _safe_float(x):
-    """float(x), or None for None/non-numeric x (never raises) -- used so a missing Gate III
-    metric can still be reported in `detail` without crashing (see `gate_iii_downward`)."""
+    """float(x), or None for None/non-numeric/boolean x (never raises) -- used so a missing Gate
+    III metric can still be reported in `detail` without crashing (see `gate_iii_downward`).
+    Booleans rejected explicitly (see `_num_lt`): a stray pass/fail flag must not silently convert
+    to `1.0`/`0.0` and be treated as a real measured effect magnitude (Codex)."""
+    if isinstance(x, bool):
+        return None
     try:
         return float(x) if x is not None else None
     except (TypeError, ValueError):

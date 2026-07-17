@@ -74,6 +74,17 @@ def test_gate_ii_fails_closed_on_missing_numeric_metrics_without_raising():
     assert detail3["scale_robustness"] is False
 
 
+def test_gate_ii_fails_closed_on_boolean_numeric_metrics():
+    # a stray pass/fail flag passed where a real measurement was expected must FAIL, never
+    # silently convert via float(True)==1.0 / float(False)==0.0 and satisfy the threshold.
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(r_pred=False))
+    assert status == "FAIL"
+    assert detail["prediction"] is False
+    status2, detail2 = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(n_seeds=True))
+    assert status2 == "FAIL"
+    assert detail2["reproducibility"] is False
+
+
 def test_gate_ii_fails_if_function_form_not_invariant_across_seeds_despite_good_cv():
     # good CV/span numbers alone are NOT sufficient -- the frozen contract also requires the
     # measured effective law's functional FORM to stay the same across seeds (§2 II point 2).
@@ -131,6 +142,16 @@ def test_gate_iii_fails_closed_on_missing_numeric_effect_without_raising():
         effect_full=0.5, effect_matched_control=None, control_removes_downward_path=True)
     assert status2 == "FAIL"
     assert detail2["effect_matched_control"] is None
+
+
+def test_gate_iii_fails_closed_on_boolean_effect_metrics():
+    # if metadata plumbing passes pass/fail booleans instead of measured effect magnitudes,
+    # float(True)==1.0/float(False)==0.0 must NOT let an unmeasured bridge silently reach PASS.
+    status, detail = bc.gate_iii_downward(
+        effect_full=True, effect_matched_control=False, control_removes_downward_path=True)
+    assert status == "FAIL"
+    assert detail["effect_full"] is None
+    assert detail["effect_matched_control"] is None
 
 
 def test_gate_iii_refuses_wrong_direction_control():
