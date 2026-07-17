@@ -31,8 +31,8 @@ def test_boltzmann_partition_law_is_recovered():
     # after relaxation, c(x) exp(chi phi(x)) must be spatially uniform -> c ∝ exp(-chi phi):
     # the geometry-independent statement of the Nernst/Boltzmann partition (the Gate-I known law).
     phi = _sphere()
-    c, converged, cv = vp.equilibrate(phi, chi=0.5, n_steps=4000)
-    assert converged, "Boltzmann invariant not uniform: CV=%.4g" % cv
+    _, converged, cv = vp.equilibrate(phi, chi=0.5, n_steps=4000)
+    assert converged, f"Boltzmann invariant not uniform: CV={cv:.4g}"
     assert cv < 1e-2
 
 
