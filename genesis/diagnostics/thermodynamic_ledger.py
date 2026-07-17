@@ -81,6 +81,11 @@ def _reject_negative_concentration(c, eps):
     overshoot pass a downstream reaction_delta_g/entropy_production check as if nothing were
     wrong)."""
     c = np.asarray(c, dtype=float)
+    if not np.all(np.isfinite(c)):
+        raise ValueError(
+            "non-finite concentration (inf/nan) detected -- indicates a solver blow-up, not a "
+            "valid measurement (Codex: inf/nan are invisible to the c < -eps check below, since "
+            "both `inf < -eps` and `nan < -eps` are False)")
     if np.any(c < -eps):
         raise ValueError(
             "negative concentration detected (c < -eps): unphysical, indicates a solver bug -- "
@@ -182,7 +187,18 @@ def reaction_delta_g(concentrations, stoich, mu0, RT=1.0):
     `stoich`: dict species -> stoichiometric coefficient nu_i (negative for reactants). This is
     Delta G_rxn itself, NOT the affinity A = -Delta G_rxn -- pass `-reaction_delta_g(...)` as the
     driving force to `entropy_production_reaction` (affinity = -Delta G_rxn, per the F0's frozen
-    `entropy_production = sum_rxn(rate*affinity/RT)`)."""
+    `entropy_production = sum_rxn(rate*affinity/RT)`).
+
+    Every non-scalar species concentration used in `stoich` must share the SAME grid shape
+    (Codex): a broadcast-compatible placeholder (e.g. a 1-element array for one species against a
+    full 3-D field for another) would otherwise silently broadcast in the `total = term if ...
+    else total + term` sum, fabricating a finite Delta G_rxn field from malformed reaction
+    metadata instead of failing closed on the shape mismatch."""
+    shapes = {np.asarray(concentrations[k]).shape for k in stoich} - {()}
+    if len(shapes) > 1:
+        raise ValueError(
+            "reaction_delta_g: species concentration fields have mismatched shapes %r -- every "
+            "species used in this reaction must share the same grid shape" % (sorted(shapes),))
     total = None
     for k, nu in stoich.items():
         mu0_k = _mu0_for_species(mu0, k)
@@ -215,8 +231,23 @@ def entropy_production_reaction(rate, affinity, RT=1.0, dx=1.0):
     volumetric reaction-rate DENSITY (matching `reaction_localization.reaction_rate_field`'s
     `k*R*c` convention); `dx^3` converts the per-cell sum into the extensive total entropy
     production (Codex: without it, the required `entropy_production>0` ledger check would scale
-    with the number of grid cells, not physical entropy production, under grid refinement)."""
-    return float((np.asarray(rate) * affinity / RT).sum()) * dx ** 3
+    with the number of grid cells, not physical entropy production, under grid refinement).
+
+    When BOTH `rate` and `affinity` are non-scalar, their shapes must match EXACTLY (Codex,
+    second finding): a broadcast-compatible-but-incomplete placeholder for one of them (e.g. a
+    1-element array standing in for a full 3-D field) would otherwise silently broadcast across
+    the whole domain and report a finite entropy-production total from malformed per-cell
+    reaction metadata, satisfying a downstream `entropy_production>0` ledger check without a real
+    measured rate/affinity field. A scalar `rate` or `affinity` (a caller's deliberate uniform
+    value) remains a legitimate broadcast against the other."""
+    rate_arr = np.asarray(rate, dtype=float)
+    affinity_arr = np.asarray(affinity, dtype=float)
+    if rate_arr.ndim != 0 and affinity_arr.ndim != 0 and rate_arr.shape != affinity_arr.shape:
+        raise ValueError(
+            "entropy_production_reaction: non-scalar rate has shape %r but non-scalar affinity "
+            "has shape %r -- both must describe the same grid cells, not merely broadcast" %
+            (rate_arr.shape, affinity_arr.shape))
+    return float((rate_arr * affinity_arr / RT).sum()) * dx ** 3
 
 
 def viscous_dissipation(strain_rate_sq, eta=1.0, dx=1.0):
@@ -225,8 +256,27 @@ def viscous_dissipation(strain_rate_sq, eta=1.0, dx=1.0):
     converts the per-cell sum into the extensive volume integral the F0 defines (`∫ 2η e:e dV`),
     matching `entropy_production_reaction`/`useful_work`'s identical convention (Codex: without
     it, a fixed-L resolution sweep would change the entropy/thermodynamic balance purely from the
-    number of grid cells, not the physical dissipation)."""
-    return float(2.0 * eta * np.asarray(strain_rate_sq).sum()) * dx ** 3
+    number of grid cells, not the physical dissipation).
+
+    `strain_rate_sq` (e:e, a sum of squared tensor components) is a real physical quantity that
+    is ALWAYS non-negative and finite -- boolean, negative, or non-finite entries are impossible
+    measurements and must fail closed rather than being integrated as valid dissipation (Codex,
+    second finding: `True`/`False` silently cast to `1.0`/`0.0`, and `inf` stays positive, so
+    missing/corrupted hydrodynamic metadata could otherwise report a positive viscous-dissipation
+    total that feeds the thermodynamic ledger's entropy-production evidence as if it were real)."""
+    sr = np.asarray(strain_rate_sq)
+    if sr.dtype == np.bool_:
+        raise ValueError(
+            "viscous_dissipation: strain_rate_sq must be a real-valued field, not a boolean "
+            "array -- True/False must never silently convert to 1.0/0.0")
+    sr = sr.astype(float)
+    if not np.all(np.isfinite(sr)):
+        raise ValueError("viscous_dissipation: strain_rate_sq contains non-finite values (inf/nan)")
+    if np.any(sr < 0.0):
+        raise ValueError(
+            "viscous_dissipation: strain_rate_sq contains negative values -- e:e is a sum of "
+            "squared tensor components and can never be negative, indicates corrupted metadata")
+    return float(2.0 * eta * sr.sum()) * dx ** 3
 
 
 def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
@@ -252,10 +302,25 @@ def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
     `stress_power_density` must match `phi`'s shape EXACTLY, not merely be broadcast-compatible
     (Codex, third finding): an incomplete/malformed field (e.g. a 1-element array or a lower-
     dimensional profile) would otherwise silently broadcast across the whole interface band,
-    fabricating a uniform "measured" field from data that was never actually per-cell."""
+    fabricating a uniform "measured" field from data that was never actually per-cell.
+
+    A boolean `stress_power_density` (scalar or array) is rejected outright, before the `float`
+    cast (Codex, fourth finding): `np.asarray(x, dtype=float)` silently turns `True`/`False` cells
+    into `1.0`/`0.0`, which could otherwise report positive boundary-maintenance work from a
+    boolean mask rather than any real measured `sigma_M:grad(u)` field. Non-finite (`inf`/`nan`)
+    entries are also rejected: an `inf` cell would otherwise propagate to a positive-infinite
+    `useful_work` total, letting a Gate III ledger's `useful_work>0` check pass corrupted
+    hydrodynamic metadata instead of failing closed."""
     band = np.abs(phi) < band_thresh
     phi_shape = np.asarray(phi).shape
-    spd = np.asarray(stress_power_density, dtype=float)
+    spd_raw = np.asarray(stress_power_density)
+    if spd_raw.dtype == np.bool_:
+        raise ValueError(
+            "useful_work: stress_power_density must be a real-valued field/scalar, not a "
+            "boolean array/value -- True/False must never silently convert to 1.0/0.0")
+    spd = spd_raw.astype(float)
+    if not np.all(np.isfinite(spd)):
+        raise ValueError("useful_work: stress_power_density contains non-finite values (inf/nan)")
     if spd.ndim == 0:
         if spd != 0.0:
             raise ValueError(
@@ -272,9 +337,43 @@ def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
     return float(spd[band].sum()) * dx ** 3
 
 
+def _reject_invalid_signed_amount(x, label):
+    """Raise iff `x` is not a finite, non-boolean real number -- unlike `_reject_invalid_mass`,
+    sign is NOT restricted here: `matter_in_amt` can be genuinely NEGATIVE (the frozen `matter_in`
+    formula `k_res*(f_res-f)` summed over the outer shell is a net rate that flips sign under a
+    real net-efflux transient, e.g. once interior fuel diffuses out and locally exceeds the
+    reservoir concentration), so forcing non-negative here would reject a real measurement, not
+    just corrupted data. Booleans and non-finite (`inf`/`nan`) values ARE always corruption
+    regardless of sign (Codex: `True`/`False` silently cast to `1.0`/`0.0`, and an unchecked
+    `inf`/`nan` term could coincidentally offset the balance and pass the audit) and are rejected
+    outright."""
+    if isinstance(x, (bool, np.bool_)):
+        raise ValueError("%s must be a real number, not a boolean" % label)
+    try:
+        xf = float(x)
+    except (TypeError, ValueError):
+        raise ValueError("%s must be a finite real number, got %r" % (label, x))
+    if not np.isfinite(xf):
+        raise ValueError("%s must be a finite real number, got %r" % (label, x))
+    return xf
+
+
 def mass_balance_error(mass_before, mass_after, matter_in_amt, waste_out_amt, other_sinks=0.0):
     """|Δmass - (matter_in - waste_out - other_sinks)| -- an accounting residual; should be ~0 to
-    numerical precision for a correctly integrated scheme."""
+    numerical precision for a correctly integrated scheme.
+
+    `mass_before`/`mass_after` (a `total_mass`-style sum of a non-negative concentration field)
+    are validated as finite, non-negative, non-boolean; `matter_in_amt`/`waste_out_amt`/
+    `other_sinks` are validated as finite and non-boolean only, NOT forced non-negative (see
+    `_reject_invalid_signed_amount` -- `matter_in_amt` in particular can be legitimately negative
+    under net efflux). Without this, a negative or boolean mass could otherwise coincidentally
+    offset the residual and pass the `mass_balance_error ~ 0` audit with corrupted accounting data
+    instead of surfacing it (Codex)."""
+    mass_before = _reject_invalid_mass(mass_before, "mass_before")
+    mass_after = _reject_invalid_mass(mass_after, "mass_after")
+    matter_in_amt = _reject_invalid_signed_amount(matter_in_amt, "matter_in_amt")
+    waste_out_amt = _reject_invalid_signed_amount(waste_out_amt, "waste_out_amt")
+    other_sinks = _reject_invalid_signed_amount(other_sinks, "other_sinks")
     return float(abs((mass_after - mass_before) - (matter_in_amt - waste_out_amt - other_sinks)))
 
 

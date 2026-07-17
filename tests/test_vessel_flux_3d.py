@@ -89,6 +89,24 @@ def test_instantaneous_face_flux_zeroes_the_domain_boundary_face():
         assert np.allclose(J[tuple(sl)], 0.0)
 
 
+def test_instantaneous_face_flux_rejects_a_wrong_shaped_nonscalar_mobility():
+    # a broadcast-compatible-but-incomplete D (e.g. a 1-element array) must not silently
+    # broadcast across the whole 3-D flux calculation and report a valid-looking permeability
+    # from incomplete mobility metadata (Codex).
+    phi = _sphere()
+    c = np.full(phi.shape, 1.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi, chi=0.5, D=np.array([1.0]), axis=0)
+
+
+def test_instantaneous_face_flux_accepts_a_full_field_mobility():
+    phi = _sphere()
+    c = np.full(phi.shape, 1.0)
+    D_field = np.full(phi.shape, 2.0)
+    J = vf.instantaneous_face_flux(c, phi, chi=0.5, D=D_field, axis=0)
+    assert J.shape == phi.shape
+
+
 def test_instantaneous_face_flux_rt_scaling_matches_beta_convention():
     # RT must divide chi exactly as vessel_permeability.relax_step's beta = chi/RT -- doubling RT
     # while doubling chi must reproduce the RT=1 flux exactly (same beta).

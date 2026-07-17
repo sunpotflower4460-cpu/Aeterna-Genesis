@@ -61,10 +61,23 @@ def radial_reaction_profile(rate, phi, n_bins=20, phi_range=(-1.0, 1.0)):
     (bin_centers, mean_rate_per_bin); empty bins report NaN, never a silently-dropped zero.
     Values of `phi` OUTSIDE `phi_range` are EXCLUDED, not folded into the edge bins -- clipping
     them in would let out-of-range cells masquerade as edge-bin data when a caller narrows
-    `phi_range` to inspect the interface region specifically."""
+    `phi_range` to inspect the interface region specifically.
+
+    `rate` and `phi` must share the EXACT SAME shape, not merely the same element count (Codex):
+    a reshaped or transposed `rate` array with the same size but a different shape would otherwise
+    still `.ravel()` successfully and get binned against unrelated `phi` cells via the shared flat
+    index, producing a plausible-looking but spatially scrambled localization profile instead of
+    failing closed on the shape mismatch."""
+    rate_arr = np.asarray(rate)
+    phi_arr = np.asarray(phi)
+    if rate_arr.shape != phi_arr.shape:
+        raise ValueError(
+            "radial_reaction_profile: rate shape %r does not match phi's shape %r -- both must "
+            "describe the same grid cells in the same layout, not merely the same element count" %
+            (rate_arr.shape, phi_arr.shape))
     edges = np.linspace(phi_range[0], phi_range[1], n_bins + 1)
-    phi_flat = phi.ravel()
-    flat = np.asarray(rate).ravel()
+    phi_flat = phi_arr.ravel()
+    flat = rate_arr.ravel()
     in_range = (phi_flat >= phi_range[0]) & (phi_flat <= phi_range[1])
     idx = np.clip(np.digitize(phi_flat[in_range], edges) - 1, 0, n_bins - 1)
     vals = flat[in_range]

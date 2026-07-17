@@ -75,6 +75,16 @@ def test_band_vs_bulk_ratio_rejects_invalid_region():
         rl.band_vs_bulk_ratio(rate, phi, bulk_region="nowhere")
 
 
+def test_radial_reaction_profile_rejects_mismatched_shape_with_same_element_count():
+    # a reshaped/transposed rate array with the same SIZE but a different SHAPE must not
+    # silently .ravel() and bin against unrelated phi cells via the shared flat index,
+    # fabricating a spatially scrambled but plausible-looking localization profile (Codex).
+    phi = np.zeros((4, 4))
+    rate = np.full((16,), 1.0)   # same element count (16), different shape
+    with pytest.raises(ValueError):
+        rl.radial_reaction_profile(rate, phi, n_bins=4)
+
+
 def test_radial_reaction_profile_monotonic_for_monotonic_concentration():
     # chi<0 (concentration enriched toward phi=+1, i.e. inside) -> the binned mean rate must be
     # monotonically non-decreasing in phi (a clean, independently-checkable pattern).

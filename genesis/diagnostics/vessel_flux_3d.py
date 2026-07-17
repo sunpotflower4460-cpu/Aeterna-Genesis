@@ -51,8 +51,20 @@ def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0, RT=1.0):
     The domain-boundary face along `axis` (index `c.shape[axis]-1`, which `np.roll(..., -1)` would
     otherwise wrap to a nonexistent periodic neighbour) is always zeroed, matching `relax_step`'s
     Neumann (no-flux) domain boundary -- this instrument reports the SAME flux law `relax_step`
-    integrates, not a periodic variant of it."""
+    integrates, not a periodic variant of it.
+
+    A non-scalar `D` must match `c`'s shape EXACTLY, not merely be broadcast-compatible (Codex):
+    the documented alternatives are a scalar mobility or a real per-cell field, so a
+    broadcast-compatible-but-incomplete `D` (e.g. a 1-element array or a one-axis profile) would
+    otherwise silently broadcast across the whole 3-D flux calculation, letting
+    `net_boundary_flux` report a valid-looking permeability from incomplete mobility metadata."""
     D_arr = np.asarray(D, dtype=float)
+    c_shape = np.asarray(c).shape
+    if D_arr.ndim != 0 and D_arr.shape != c_shape:
+        raise ValueError(
+            "instantaneous_face_flux: non-scalar D has shape %r, which does not match c's shape "
+            "%r -- a real per-cell mobility field must match exactly, not merely broadcast" %
+            (D_arr.shape, c_shape))
     cp = np.roll(c, -1, axis=axis)
     pp = np.roll(phi, -1, axis=axis)
     beta = chi / RT

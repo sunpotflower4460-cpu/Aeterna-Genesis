@@ -68,6 +68,16 @@ def test_chemical_potential_tolerates_tiny_negative_floating_noise():
     assert np.isfinite(mu[0])
 
 
+def test_chemical_potential_rejects_non_finite_concentration():
+    # a solver blow-up producing inf/nan is invisible to the `c < -eps` check (both
+    # `inf < -eps` and `nan < -eps` are False) -- must be rejected explicitly, not silently
+    # flow into chemical_potential/reaction_delta_g/entropy_production (Codex).
+    with pytest.raises(ValueError):
+        tl.chemical_potential(np.array([1.0, np.inf, 2.0]))
+    with pytest.raises(ValueError):
+        tl.chemical_potential(np.array([1.0, np.nan, 2.0]))
+
+
 def test_chemical_free_energy_change_matches_the_dilute_ideal_free_energy_density_integral():
     # the free-energy DENSITY is f(c) = mu0*c + RT*(c*ln(c) - c) -- the Legendre-consistent
     # integral of mu(c) dc -- NOT the bare product c*mu(c), which overstates it by RT*c (Codex:
@@ -161,6 +171,25 @@ def test_chemical_free_energy_change_derivative_matches_chemical_potential():
     assert abs(slope - mu_c0) < 1e-5
 
 
+def test_reaction_delta_g_rejects_mismatched_species_shapes():
+    # a broadcast-compatible placeholder (e.g. a 1-element array standing in for a full 3-D
+    # field) must not silently broadcast in the per-species sum and fabricate a finite Delta
+    # G_rxn field from malformed reaction metadata (Codex).
+    shape = (2, 2, 2)
+    conc = {"f": np.full(shape, 2.0), "m": np.array([1.0])}
+    with pytest.raises(ValueError):
+        tl.reaction_delta_g(conc, {"f": -1.0, "m": 1.0}, mu0={"f": 0.0, "m": 0.0})
+
+
+def test_reaction_delta_g_allows_scalar_mixed_with_a_single_field_shape():
+    # a genuinely scalar species concentration (a deliberate uniform value) is not a shape
+    # mismatch -- only two DIFFERING non-scalar shapes must raise.
+    shape = (2, 2, 2)
+    conc = {"f": np.full(shape, 2.0), "m": 1.0}
+    dg = tl.reaction_delta_g(conc, {"f": -1.0, "m": 1.0}, mu0={"f": 0.0, "m": 0.0})
+    assert np.asarray(dg).shape == shape
+
+
 def test_reaction_delta_g_matches_stoichiometric_combination():
     shape = (2, 2, 2)
     conc = {"f": np.full(shape, 2.0), "m": np.full(shape, 1.0)}
@@ -215,6 +244,23 @@ def test_entropy_production_scales_by_dx_cubed():
     assert abs(scaled - base * 8.0) < 1e-9
 
 
+def test_entropy_production_rejects_mismatched_rate_affinity_shapes():
+    # a broadcast-compatible-but-incomplete placeholder for rate or affinity (e.g. a 1-element
+    # array against a full 3-D field) must not silently broadcast and report a finite entropy-
+    # production total from malformed per-cell reaction metadata (Codex).
+    rate = np.full((4, 4, 4), 1.0)
+    affinity = np.array([1.0])
+    with pytest.raises(ValueError):
+        tl.entropy_production_reaction(rate, affinity)
+
+
+def test_entropy_production_allows_a_scalar_affinity_broadcast_against_a_rate_field():
+    # a genuinely scalar affinity (a deliberate uniform driving force) is not a shape mismatch.
+    rate = np.full((4, 4, 4), 1.0)
+    ep = tl.entropy_production_reaction(rate, 2.0)
+    assert abs(ep - 128.0) < 1e-9   # sum(1.0*2.0) over 64 cells
+
+
 def test_viscous_dissipation_zero_when_strain_rate_zero():
     assert tl.viscous_dissipation(np.zeros((3, 3, 3)), eta=1.0) == 0.0
 
@@ -231,6 +277,21 @@ def test_viscous_dissipation_scales_by_dx_cubed():
     assert abs(scaled - base * 8.0) < 1e-9
 
 
+def test_viscous_dissipation_rejects_boolean_strain_rate_sq():
+    # True/False must never silently cast to 1.0/0.0 and report dissipation from a boolean mask.
+    with pytest.raises(ValueError):
+        tl.viscous_dissipation(np.array([True, False, True]))
+
+
+def test_viscous_dissipation_rejects_negative_or_non_finite_strain_rate_sq():
+    # e:e is a sum of squared tensor components -- always non-negative and finite; a negative or
+    # non-finite value is corrupted hydrodynamic metadata, not a real measurement.
+    with pytest.raises(ValueError):
+        tl.viscous_dissipation(np.array([-1.0, 2.0]))
+    with pytest.raises(ValueError):
+        tl.viscous_dissipation(np.array([1.0, float("inf")]))
+
+
 def test_mass_balance_error_zero_for_consistent_accounting():
     assert tl.mass_balance_error(10.0, 13.0, matter_in_amt=5.0, waste_out_amt=2.0) < 1e-12
 
@@ -238,6 +299,30 @@ def test_mass_balance_error_zero_for_consistent_accounting():
 def test_mass_balance_error_nonzero_flags_bug():
     err = tl.mass_balance_error(10.0, 20.0, matter_in_amt=5.0, waste_out_amt=0.0)
     assert abs(err - 5.0) < 1e-9
+
+
+def test_mass_balance_error_rejects_boolean_or_negative_mass():
+    # a negative or boolean mass_before/mass_after must never be able to coincidentally offset
+    # the residual and pass the "~0" audit with corrupted accounting data (Codex).
+    with pytest.raises(ValueError):
+        tl.mass_balance_error(True, 2.0, matter_in_amt=1.0, waste_out_amt=0.0)
+    with pytest.raises(ValueError):
+        tl.mass_balance_error(-5.0, 2.0, matter_in_amt=1.0, waste_out_amt=0.0)
+
+
+def test_mass_balance_error_rejects_non_finite_or_boolean_flux_terms():
+    with pytest.raises(ValueError):
+        tl.mass_balance_error(10.0, 13.0, matter_in_amt=float("inf"), waste_out_amt=0.0)
+    with pytest.raises(ValueError):
+        tl.mass_balance_error(10.0, 13.0, matter_in_amt=True, waste_out_amt=0.0)
+
+
+def test_mass_balance_error_allows_a_negative_matter_in_amt_under_net_efflux():
+    # matter_in can be genuinely negative (net efflux through the outer shell, per the frozen
+    # k_res*(f_res-f) formula) -- this must NOT be rejected as if it were corrupted data, unlike
+    # mass_before/mass_after (which are always non-negative field sums).
+    err = tl.mass_balance_error(10.0, 8.0, matter_in_amt=-2.0, waste_out_amt=0.0)
+    assert err < 1e-12
 
 
 def test_stoichiometric_balance_error_zero_with_matching_sources():
@@ -360,6 +445,28 @@ def test_useful_work_rejects_a_wrong_shaped_nonscalar_stress_power():
     phi[2:4, 2:4, 2:4] = 0.0
     with pytest.raises(ValueError):
         tl.useful_work(np.array([3.0]), phi, band_thresh=0.9)
+
+
+def test_useful_work_rejects_a_boolean_stress_power_array():
+    # a boolean field must not silently cast True/False to 1.0/0.0 and report positive
+    # boundary-maintenance work from a mask rather than a real measured sigma_M:grad(u) (Codex).
+    shape = (6, 6, 6)
+    phi = np.full(shape, 1.0)
+    phi[2:4, 2:4, 2:4] = 0.0
+    spd_bool = np.zeros(shape, dtype=bool)
+    spd_bool[2, 2, 2] = True
+    with pytest.raises(ValueError):
+        tl.useful_work(spd_bool, phi, band_thresh=0.9)
+
+
+def test_useful_work_rejects_non_finite_stress_power_values():
+    shape = (6, 6, 6)
+    phi = np.full(shape, 1.0)
+    phi[2:4, 2:4, 2:4] = 0.0
+    spd_inf = np.zeros(shape)
+    spd_inf[2, 2, 2] = float("inf")
+    with pytest.raises(ValueError):
+        tl.useful_work(spd_inf, phi, band_thresh=0.9)
 
 
 def test_useful_work_scales_by_dx_cubed():
