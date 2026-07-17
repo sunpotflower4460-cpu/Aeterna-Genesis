@@ -36,6 +36,41 @@ happen. A large residual flags a bug in the caller's integrator, not a physics d
 import numpy as np
 
 
+def _reject_invalid_dx(dx):
+    """Raise iff `dx` is not a finite, non-boolean real number strictly greater than zero
+    (CodeRabbit): `dx=0` silently erases every extensive measurement in this module (`dx**3`
+    zeroes the whole ledger), and a negative or non-finite `dx` flips signs or produces invalid
+    totals -- neither is a valid cell spacing, so every `dx`-weighted function must fail closed
+    on it rather than silently computing a meaningless ledger value."""
+    if isinstance(dx, (bool, np.bool_)):
+        raise ValueError("dx must be a real number, not a boolean, got %r" % (dx,))
+    try:
+        dxf = float(dx)
+    except (TypeError, ValueError):
+        raise ValueError("dx must be a finite positive real number, got %r" % (dx,))
+    if not np.isfinite(dxf) or dxf <= 0.0:
+        raise ValueError("dx must be a finite positive real number, got %r" % (dx,))
+    return dxf
+
+
+def _reject_invalid_RT(RT):
+    """Raise iff `RT` is not a finite, non-boolean real number strictly greater than zero
+    (CodeRabbit): `RT=0` divides by zero in some callers and returns silently-zeroed chemical
+    potentials in others (`RT*log(...)`), a negative `RT` reverses thermodynamic signs, and a
+    non-finite `RT` contaminates every downstream free-energy/entropy measurement -- none of
+    these is a valid absolute-temperature-scaled energy unit, so every RT-consuming function must
+    fail closed on it."""
+    if isinstance(RT, (bool, np.bool_)):
+        raise ValueError("RT must be a real number, not a boolean, got %r" % (RT,))
+    try:
+        rtf = float(RT)
+    except (TypeError, ValueError):
+        raise ValueError("RT must be a finite positive real number, got %r" % (RT,))
+    if not np.isfinite(rtf) or rtf <= 0.0:
+        raise ValueError("RT must be a finite positive real number, got %r" % (RT,))
+    return rtf
+
+
 def outer_shell_mask(shape, shell_width=1):
     """Boolean mask of the FIXED outer-shell reservoir region: cells within `shell_width` of any
     domain boundary face, on any axis. This is a BOX geometry, independent of the vessel's
@@ -46,7 +81,20 @@ def outer_shell_mask(shape, shell_width=1):
     `matter_in`'s total to converge to a fixed physical value under grid refinement (same box
     size, same physical shell thickness), callers comparing across resolutions must scale
     `shell_width` as `~1/dx` (e.g. double it when halving dx) -- holding `shell_width` fixed in
-    CELLS while refining shrinks the shell's physical thickness and understates `matter_in`."""
+    CELLS while refining shrinks the shell's physical thickness and understates `matter_in`.
+
+    `shell_width` must be a positive integer (Codex): `int(shell_width)` silently TRUNCATES a
+    fractional width (e.g. `1.7` -> `1`) and silently ACCEPTS a negative width as a valid Python
+    slice bound (`slice(0, -1)` marks almost the entire box as the reservoir instead of failing)
+    -- this mask defines the fixed, preregistered fuel-source geometry that `matter_in` integrates
+    over, so a config typo must fail closed rather than silently redefining that geometry."""
+    if isinstance(shell_width, (bool, np.bool_)):
+        raise ValueError("shell_width must be a positive integer, not a boolean, got %r" % (shell_width,))
+    if shell_width != int(shell_width) or shell_width <= 0:
+        raise ValueError(
+            "shell_width must be a positive integer (in cells), got %r -- a fractional or "
+            "non-positive width would silently truncate or redefine the reservoir geometry" %
+            (shell_width,))
     mask = np.zeros(shape, dtype=bool)
     sw = int(shell_width)
     for ax in range(len(shape)):
@@ -73,9 +121,33 @@ def matter_in(f, outer_mask, k_res, f_res, dx=1.0):
     `outer_mask` must have EXACTLY `f`'s shape (Codex): a scalar or wrong-shaped-but-broadcast-
     compatible mask would otherwise silently broadcast and integrate the WRONG region -- e.g. a
     bare `outer_mask=True` integrates fuel exchange over the ENTIRE domain instead of the fixed
-    outer shell, corrupting the stop/restart mass/energy ledger this function feeds."""
-    f_arr = np.asarray(f)
+    outer shell, corrupting the stop/restart mass/energy ledger this function feeds. `outer_mask`
+    must ALSO have `dtype == bool` exactly (CodeRabbit): a same-shaped NUMERIC mask (e.g. all
+    `0.5`) passes the shape check but is not a 0/1 selector -- it silently WEIGHTS the reservoir
+    integration by arbitrary fractional values instead of selecting the shell region, corrupting
+    the ledger without any shape mismatch to catch it. `dx` is validated as finite/positive/
+    non-boolean (CodeRabbit): `dx=0` would silently erase this measurement entirely.
+
+    `f` (a non-negative concentration field, see `_reject_negative_concentration`) and `k_res`/
+    `f_res` (finite, non-negative, non-boolean rate/reference-concentration constants) are
+    validated before use (Codex): an unchecked negative/non-finite `f` -- e.g. from a solver
+    overshoot -- would otherwise be folded directly into `matter_in` and could offset a matching
+    mass change in the stop/restart ledger. The computed TOTAL may still be legitimately negative
+    when a valid `f > f_res` (net efflux) -- only the individual inputs are constrained, not the
+    formula's sign."""
+    dx = _reject_invalid_dx(dx)
+    f_arr = _reject_negative_concentration(f, eps=1e-12)
+    if isinstance(k_res, (bool, np.bool_)) or not np.isfinite(k_res) or k_res < 0.0:
+        raise ValueError("matter_in: k_res must be a finite, non-negative rate constant, got %r" % (k_res,))
+    if isinstance(f_res, (bool, np.bool_)) or not np.isfinite(f_res) or f_res < 0.0:
+        raise ValueError(
+            "matter_in: f_res must be a finite, non-negative reference concentration, got %r" % (f_res,))
     mask_arr = np.asarray(outer_mask)
+    if mask_arr.dtype != np.bool_:
+        raise ValueError(
+            "matter_in: outer_mask must have dtype bool, got %r -- a numeric mask silently "
+            "weights the reservoir integration by arbitrary values instead of selecting cells" %
+            (mask_arr.dtype,))
     if mask_arr.shape != f_arr.shape:
         raise ValueError(
             "matter_in: outer_mask shape %r does not match f's shape %r -- a malformed mask "
@@ -95,13 +167,17 @@ def _reject_negative_concentration(c, eps):
     finding): an accidentally-passed occupancy/mask array would otherwise have its `True`/`False`
     cells silently cast to `1.0`/`0.0` by `np.asarray(c, dtype=float)` and flow through
     `chemical_potential`/`reaction_delta_g`/`chemical_free_energy_change` as if it were a real
-    measured concentration."""
-    if isinstance(c, (bool, np.bool_)) or (isinstance(c, np.ndarray) and c.dtype == np.bool_):
+    measured concentration. The boolean check converts `c` to an array FIRST and inspects its
+    `dtype` (CodeRabbit): checking `isinstance(c, (bool, np.bool_))` on the raw input misses a
+    plain PYTHON LIST of booleans (e.g. `[True, False]`), which is neither a `bool` scalar nor an
+    `np.ndarray` yet, but still has its elements silently cast to `1.0`/`0.0` once converted."""
+    c_check = np.asarray(c)
+    if c_check.dtype == np.bool_:
         raise ValueError(
             "concentration must be a real-valued field/scalar, not a boolean array/value -- "
             "True/False must never silently convert to 1.0/0.0 and be treated as a measured "
             "concentration")
-    c = np.asarray(c, dtype=float)
+    c = c_check.astype(float)
     if not np.all(np.isfinite(c)):
         raise ValueError(
             "non-finite concentration (inf/nan) detected -- indicates a solver blow-up, not a "
@@ -118,8 +194,11 @@ def chemical_potential(c, mu0=0.0, RT=1.0, eps=1e-12):
     """Dilute-ideal chemical potential mu = mu0 + RT*ln(c) (F0 frozen reference state). Clipped at
     `eps` to keep log finite for c=0 cells -- this clip is a numerical floor for c>=0, not a
     physics claim. A genuinely negative `c` raises (see `_reject_negative_concentration`) rather
-    than being silently treated as ~0."""
+    than being silently treated as ~0. `RT` is validated as finite/positive/non-boolean
+    (CodeRabbit, see `_reject_invalid_RT`): `RT=0`/negative/non-finite silently zeroes, reverses
+    the sign of, or contaminates every chemical potential computed from this function."""
     c = _reject_negative_concentration(c, eps)
+    RT = _reject_invalid_RT(RT)
     return mu0 + RT * np.log(np.clip(c, eps, None))
 
 
@@ -140,8 +219,12 @@ def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
     (CodeRabbit, first finding): clipping `c` itself before the linear/multiplicative terms would
     give an exact-zero cell a spurious `eps*ln(eps)-eps` contribution (~-2.9e-11 at the default
     eps) instead of exactly 0, which accumulates into a nonzero baseline offset when integrated
-    over a large grid with many empty cells."""
+    over a large grid with many empty cells. `RT` is validated as finite/positive/non-boolean
+    (CodeRabbit, see `_reject_invalid_RT`), matching `chemical_potential`'s discipline -- the two
+    must agree on which `RT` values are valid since this function's derivative must reproduce
+    `chemical_potential` exactly."""
     c = _reject_negative_concentration(c, eps)
+    RT = _reject_invalid_RT(RT)
     c_physical = np.maximum(c, 0.0)
     c_log = np.clip(c_physical, eps, None)
     return mu0 * c_physical + RT * (c_physical * np.log(c_log) - c_physical)
@@ -184,7 +267,30 @@ def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1
     exists to audit). A species present on BOTH sides must have EXACTLY matching field shapes
     (Codex): a malformed snapshot (e.g. a scalar/1-cell placeholder against a full 3D field)
     would otherwise silently broadcast in the `f_after - f_before` subtraction and integrate a
-    fabricated uniform field instead of failing closed on the shape mismatch."""
+    fabricated uniform field instead of failing closed on the shape mismatch.
+
+    ALL species (not just each species' own before/after pair) must share ONE common non-scalar
+    grid shape (CodeRabbit): the per-species check above only compares a species against ITSELF,
+    so two DIFFERENT species could each pass with internally-consistent but mutually different
+    shapes (e.g. species 'a' on a 2x2x2 grid, species 'b' on a 4x4x4 grid) and still be summed
+    together into one purported domain integral -- a physically meaningless total, since `dx^3`
+    then means a different physical cell volume for each species' contribution."""
+    dx = _reject_invalid_dx(dx)
+    domain_shape = None
+    for k in sorted(set(species_before) | set(species_after)):
+        for side, d in (("before", species_before), ("after", species_after)):
+            if k in d:
+                s = np.asarray(d[k]).shape
+                if s == ():
+                    continue
+                if domain_shape is None:
+                    domain_shape = s
+                elif s != domain_shape:
+                    raise ValueError(
+                        "chemical_free_energy_change: species %r (%s) has shape %r, which does "
+                        "not match the common domain shape %r established by another species -- "
+                        "every species must share ONE grid, not be independently shaped" %
+                        (k, side, s, domain_shape))
     total = 0.0
     for k in sorted(set(species_before) | set(species_after)):
         mu0_k = _mu0_for_species(mu0, k)
@@ -203,6 +309,23 @@ def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1
     return total * dx ** 3
 
 
+def _reject_invalid_coefficient(nu, label):
+    """Raise iff `nu` is not a finite, non-boolean real SCALAR -- a stoichiometric coefficient's
+    SIGN is meaningful (negative for reactants, positive for products) and must NOT be
+    restricted, unlike a mass/amount magnitude (CodeRabbit/Codex: `nu` values are used without
+    validation, so a `NaN` coefficient silently propagates a `NaN` audit result, and an array
+    `nu` can introduce unintended broadcasting into what should be a per-species scalar term)."""
+    if isinstance(nu, (bool, np.bool_)):
+        raise ValueError("%s must be a real number, not a boolean, got %r" % (label, nu))
+    try:
+        nuf = float(nu)
+    except (TypeError, ValueError):
+        raise ValueError("%s must be a finite real scalar, got %r" % (label, nu))
+    if not np.isfinite(nuf):
+        raise ValueError("%s must be a finite real scalar, got %r" % (label, nu))
+    return nuf
+
+
 def reaction_delta_g(concentrations, stoich, mu0, RT=1.0):
     """Delta G_rxn field = sum_i nu_i * mu_i(c_i), evaluated pointwise (F0 frozen formula).
     `stoich`: dict species -> stoichiometric coefficient nu_i (negative for reactants). This is
@@ -214,7 +337,9 @@ def reaction_delta_g(concentrations, stoich, mu0, RT=1.0):
     (Codex): a broadcast-compatible placeholder (e.g. a 1-element array for one species against a
     full 3-D field for another) would otherwise silently broadcast in the `total = term if ...
     else total + term` sum, fabricating a finite Delta G_rxn field from malformed reaction
-    metadata instead of failing closed on the shape mismatch."""
+    metadata instead of failing closed on the shape mismatch. Every coefficient `nu_i` is
+    validated as a finite, non-boolean real scalar (see `_reject_invalid_coefficient`) -- signed
+    values remain valid (a coefficient's sign IS its physical meaning)."""
     shapes = {np.asarray(concentrations[k]).shape for k in stoich} - {()}
     if len(shapes) > 1:
         raise ValueError(
@@ -222,6 +347,7 @@ def reaction_delta_g(concentrations, stoich, mu0, RT=1.0):
             "species used in this reaction must share the same grid shape" % (sorted(shapes),))
     total = None
     for k, nu in stoich.items():
+        nu = _reject_invalid_coefficient(nu, "stoich[%r]" % (k,))
         mu0_k = _mu0_for_species(mu0, k)
         term = nu * chemical_potential(concentrations[k], mu0_k, RT)
         total = term if total is None else total + term
@@ -242,19 +368,34 @@ def waste_out(w, k_out, region_mask=None, dx=1.0):
     waste removal as a positive sink magnitude, so a negative concentration overshoot in `w` or a
     negative/non-finite `k_out` -- either of which would otherwise silently produce a negative or
     infinite `waste_out` -- must fail closed instead of letting a corrupted sink measurement flow
-    into `mass_balance_error`'s accounting and coincidentally offset a real mass change."""
+    into `mass_balance_error`'s accounting and coincidentally offset a real mass change. A
+    non-`None` `region_mask` must have `dtype == bool` AND exactly `w`'s shape (CodeRabbit): a
+    bare `region_mask=True` would otherwise silently ignore the intended subregion (integrating
+    the whole domain), and a numeric mask would silently RESCALE the sink by arbitrary weights,
+    corrupting the subregion accounting without any error. `dx` is validated as finite/positive/
+    non-boolean (see `_reject_invalid_dx`)."""
+    dx = _reject_invalid_dx(dx)
     w_arr = _reject_negative_concentration(w, eps=1e-12)
     if isinstance(k_out, (bool, np.bool_)) or not np.isfinite(k_out) or k_out < 0.0:
         raise ValueError(
             "waste_out: k_out must be a finite, non-negative rate constant, got %r" % (k_out,))
     arr = k_out * w_arr
     if region_mask is not None:
-        arr = arr * region_mask
+        mask_arr = np.asarray(region_mask)
+        if mask_arr.dtype != np.bool_:
+            raise ValueError(
+                "waste_out: region_mask must have dtype bool, got %r -- a numeric mask silently "
+                "rescales the sink instead of selecting cells" % (mask_arr.dtype,))
+        if mask_arr.shape != w_arr.shape:
+            raise ValueError(
+                "waste_out: region_mask shape %r does not match w's shape %r" %
+                (mask_arr.shape, w_arr.shape))
+        arr = arr * mask_arr
     return float(arr.sum()) * dx ** 3
 
 
 def entropy_production_reaction(rate, affinity, RT=1.0, dx=1.0):
-    """Reaction contribution to entropy production: sum(rate * (-affinity) / RT) * dx^3 -- pass
+    """Reaction contribution to entropy production: sum(rate * affinity / RT) * dx^3 -- pass
     the reaction's driving force as `affinity` = -Delta G_rxn (i.e. `-reaction_delta_g(...)`) so
     that a spontaneous (Delta G_rxn<0) reaction contributes a non-negative term, matching the F0's
     ">=0 for a thermodynamically consistent reaction" requirement. A negative result is a real,
@@ -278,13 +419,21 @@ def entropy_production_reaction(rate, affinity, RT=1.0, dx=1.0):
     infinite entropy-production total -- either way letting corrupted/unmeasured reaction
     metadata satisfy the preregistered `entropy_production > 0` maintenance-evidence check instead
     of failing closed. Sign itself is NOT restricted (a negative rate*affinity combination is a
-    real, reportable inconsistent-rate-law finding, per this function's own documented behavior)."""
-    if isinstance(rate, (bool, np.bool_)) or (isinstance(rate, np.ndarray) and rate.dtype == np.bool_):
+    real, reportable inconsistent-rate-law finding, per this function's own documented behavior).
+    The boolean check converts to an array FIRST and inspects `dtype` (CodeRabbit), matching
+    `_reject_negative_concentration`'s discipline -- an `isinstance` check on the raw input misses
+    a plain Python list of booleans. `RT` is validated as finite/positive/non-boolean (CodeRabbit,
+    see `_reject_invalid_RT`) and `dx` as finite/positive/non-boolean (see `_reject_invalid_dx`)."""
+    RT = _reject_invalid_RT(RT)
+    dx = _reject_invalid_dx(dx)
+    rate_check = np.asarray(rate)
+    if rate_check.dtype == np.bool_:
         raise ValueError("entropy_production_reaction: rate must be real-valued, not boolean")
-    if isinstance(affinity, (bool, np.bool_)) or (isinstance(affinity, np.ndarray) and affinity.dtype == np.bool_):
+    affinity_check = np.asarray(affinity)
+    if affinity_check.dtype == np.bool_:
         raise ValueError("entropy_production_reaction: affinity must be real-valued, not boolean")
-    rate_arr = np.asarray(rate, dtype=float)
-    affinity_arr = np.asarray(affinity, dtype=float)
+    rate_arr = rate_check.astype(float)
+    affinity_arr = affinity_check.astype(float)
     if not np.all(np.isfinite(rate_arr)):
         raise ValueError("entropy_production_reaction: rate contains non-finite values (inf/nan)")
     if not np.all(np.isfinite(affinity_arr)):
@@ -310,7 +459,16 @@ def viscous_dissipation(strain_rate_sq, eta=1.0, dx=1.0):
     measurements and must fail closed rather than being integrated as valid dissipation (Codex,
     second finding: `True`/`False` silently cast to `1.0`/`0.0`, and `inf` stays positive, so
     missing/corrupted hydrodynamic metadata could otherwise report a positive viscous-dissipation
-    total that feeds the thermodynamic ledger's entropy-production evidence as if it were real)."""
+    total that feeds the thermodynamic ledger's entropy-production evidence as if it were real).
+
+    `eta` (a physical viscosity coefficient) is validated as finite/non-negative/non-boolean
+    (CodeRabbit): an invalid `eta` -- e.g. `-1`, `nan`, or a boolean -- would otherwise convert
+    directly into negative, non-finite, or mask-derived dissipation despite `strain_rate_sq`
+    itself being fully validated. `dx` is validated as finite/positive/non-boolean (see
+    `_reject_invalid_dx`)."""
+    dx = _reject_invalid_dx(dx)
+    if isinstance(eta, (bool, np.bool_)) or not np.isfinite(eta) or eta < 0.0:
+        raise ValueError("viscous_dissipation: eta must be a finite, non-negative real number, got %r" % (eta,))
     sr = np.asarray(strain_rate_sq)
     if sr.dtype == np.bool_:
         raise ValueError(
@@ -357,9 +515,25 @@ def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
     boolean mask rather than any real measured `sigma_M:grad(u)` field. Non-finite (`inf`/`nan`)
     entries are also rejected: an `inf` cell would otherwise propagate to a positive-infinite
     `useful_work` total, letting a Gate III ledger's `useful_work>0` check pass corrupted
-    hydrodynamic metadata instead of failing closed."""
-    band = np.abs(phi) < band_thresh
-    phi_shape = np.asarray(phi).shape
+    hydrodynamic metadata instead of failing closed.
+
+    `phi` itself is validated as finite and non-boolean BEFORE `band` is constructed (CodeRabbit):
+    a `NaN` cell makes `abs(phi) < band_thresh` False (NaN comparisons are always False), so a
+    corrupted interface cell would otherwise be silently EXCLUDED from the band rather than
+    failing the whole measurement, underreporting Gate III work instead of surfacing the
+    corruption. `dx` is validated as finite/positive/non-boolean (see `_reject_invalid_dx`)."""
+    dx = _reject_invalid_dx(dx)
+    phi_check = np.asarray(phi)
+    if phi_check.dtype == np.bool_:
+        raise ValueError("useful_work: phi must be a real-valued field, not boolean")
+    phi_arr = phi_check.astype(float)
+    if not np.all(np.isfinite(phi_arr)):
+        raise ValueError(
+            "useful_work: phi contains non-finite values (inf/nan) -- a corrupted interface "
+            "field would otherwise be silently excluded from band (NaN comparisons are always "
+            "False) instead of failing the whole measurement")
+    band = np.abs(phi_arr) < band_thresh
+    phi_shape = phi_arr.shape
     spd_raw = np.asarray(stress_power_density)
     if spd_raw.dtype == np.bool_:
         raise ValueError(
@@ -410,17 +584,22 @@ def mass_balance_error(mass_before, mass_after, matter_in_amt, waste_out_amt, ot
     numerical precision for a correctly integrated scheme.
 
     `mass_before`/`mass_after` (a `total_mass`-style sum of a non-negative concentration field)
-    are validated as finite, non-negative, non-boolean; `matter_in_amt`/`waste_out_amt`/
-    `other_sinks` are validated as finite and non-boolean only, NOT forced non-negative (see
-    `_reject_invalid_signed_amount` -- `matter_in_amt` in particular can be legitimately negative
-    under net efflux). Without this, a negative or boolean mass could otherwise coincidentally
-    offset the residual and pass the `mass_balance_error ~ 0` audit with corrupted accounting data
-    instead of surfacing it (Codex)."""
+    are validated as finite, non-negative, non-boolean. `matter_in_amt` is the ONLY term
+    validated as merely finite/non-boolean via `_reject_invalid_signed_amount` (sign
+    unrestricted -- it can be legitimately negative under net efflux, per `matter_in`'s own
+    formula). `waste_out_amt`/`other_sinks` are SINK magnitudes -- they are SUBTRACTED, so they
+    must be non-negative via `_reject_invalid_mass` (CodeRabbit/Codex: `_reject_invalid_signed_
+    amount` on these would let a negative value become an ADDITION and silently cancel a real
+    residual, e.g. `mass_before=10, mass_after=15, matter_in_amt=3, waste_out_amt=-2` passing as
+    if `+2` of extra waste had left the system, exactly backwards for an impossible negative
+    waste-removal magnitude). Without any validation, a negative or boolean mass could otherwise
+    coincidentally offset the residual and pass the `mass_balance_error ~ 0` audit with corrupted
+    accounting data instead of surfacing it (Codex)."""
     mass_before = _reject_invalid_mass(mass_before, "mass_before")
     mass_after = _reject_invalid_mass(mass_after, "mass_after")
     matter_in_amt = _reject_invalid_signed_amount(matter_in_amt, "matter_in_amt")
-    waste_out_amt = _reject_invalid_signed_amount(waste_out_amt, "waste_out_amt")
-    other_sinks = _reject_invalid_signed_amount(other_sinks, "other_sinks")
+    waste_out_amt = _reject_invalid_mass(waste_out_amt, "waste_out_amt")
+    other_sinks = _reject_invalid_mass(other_sinks, "other_sinks")
     return float(abs((mass_after - mass_before) - (matter_in_amt - waste_out_amt - other_sinks)))
 
 
@@ -465,14 +644,20 @@ def stoichiometric_balance_error(species_masses_before, species_masses_after, st
 
     Every consumed mass/source/sink value is validated as a finite, non-negative, non-boolean
     real number (see `_reject_invalid_mass`) before use -- an impossible negative mass must
-    raise, never silently produce a coincidentally-balanced zero residual."""
+    raise, never silently produce a coincidentally-balanced zero residual. Every `stoich[k]`
+    coefficient is also validated as a finite, non-boolean real scalar (see
+    `_reject_invalid_coefficient`, CodeRabbit) -- a `NaN` coefficient would otherwise silently
+    return a `NaN` audit result, and an array coefficient could introduce unintended broadcasting;
+    sign remains unrestricted (a coefficient's sign is its physical meaning)."""
     lhs_before = sum(
-        stoich[k] * _reject_invalid_mass(species_masses_before.get(k, 0.0),
-                                          "species_masses_before[%r]" % (k,))
+        _reject_invalid_coefficient(stoich[k], "stoich[%r]" % (k,)) *
+        _reject_invalid_mass(species_masses_before.get(k, 0.0),
+                              "species_masses_before[%r]" % (k,))
         for k in stoich)
     lhs_after = sum(
-        stoich[k] * _reject_invalid_mass(species_masses_after.get(k, 0.0),
-                                          "species_masses_after[%r]" % (k,))
+        _reject_invalid_coefficient(stoich[k], "stoich[%r]" % (k,)) *
+        _reject_invalid_mass(species_masses_after.get(k, 0.0),
+                              "species_masses_after[%r]" % (k,))
         for k in stoich)
     rhs_sources = sum(_reject_invalid_mass(v, "sources[%r]" % (k,)) for k, v in sources.items()) if sources else 0.0
     rhs_sinks = sum(_reject_invalid_mass(v, "sinks[%r]" % (k,)) for k, v in sinks.items()) if sinks else 0.0

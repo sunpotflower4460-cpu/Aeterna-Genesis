@@ -20,6 +20,39 @@ import numpy as np
 from genesis.diagnostics.vessel_permeability import _bernoulli
 
 
+def _reject_invalid_concentration_field(c, label):
+    """Raise iff `c` is not a finite, non-negative, non-boolean real field/scalar (matches
+    `thermodynamic_ledger._reject_negative_concentration`'s discipline, duplicated here per this
+    module's existing convention of small self-contained validators -- see `_reject_invalid_
+    mass`). Converts to an array FIRST and inspects `dtype` (Codex/CodeRabbit): a boolean
+    occupancy mask would otherwise have `True`/`False` silently averaged as `1.0`/`0.0`
+    concentrations, and an unchecked `inf`/negative value would let a corrupted/depleted field
+    read as a plausible (or infinitely selective) partition/flux measurement instead of failing
+    closed."""
+    c_check = np.asarray(c)
+    if c_check.dtype == np.bool_:
+        raise ValueError("%s must be a real-valued field, not a boolean array/value" % label)
+    c_arr = c_check.astype(float)
+    if not np.all(np.isfinite(c_arr)):
+        raise ValueError("%s contains non-finite values (inf/nan)" % label)
+    if np.any(c_arr < 0.0):
+        raise ValueError("%s contains negative values -- a concentration can never be negative" % label)
+    return c_arr
+
+
+def _reject_invalid_phi_field(phi, label):
+    """Raise iff `phi` is not a finite, non-boolean real field/scalar (sign unrestricted -- phi
+    ranges over `[-1, 1]`). A non-finite `phi` would otherwise silently corrupt every downstream
+    inside/outside/band mask derived from it (Codex)."""
+    phi_check = np.asarray(phi)
+    if phi_check.dtype == np.bool_:
+        raise ValueError("%s must be a real-valued field, not a boolean array/value" % label)
+    phi_arr = phi_check.astype(float)
+    if not np.all(np.isfinite(phi_arr)):
+        raise ValueError("%s contains non-finite values (inf/nan)" % label)
+    return phi_arr
+
+
 def species_partition_ratio(c, phi, thresh=0.5):
     """Inside/outside mean-concentration ratio (the F1 V0 selective-boundary readout, generalized
     to any species field `c`). NaN if either region is empty, OR if the outside mean is ~0 (a
@@ -36,21 +69,28 @@ def species_partition_ratio(c, phi, thresh=0.5):
     `phi.shape + (n_species,)`) is otherwise still accepted by the `phi > thresh` boolean mask
     (NumPy broadcasts the mask across the trailing axis), and `.mean()` then silently averages
     over the trailing species axis too, reporting a ratio for a MIXTURE of species rather than the
-    single field this function documents."""
-    c_arr = np.asarray(c)
-    phi_arr = np.asarray(phi)
+    single field this function documents.
+
+    `c` is validated as finite/non-negative/non-boolean and `phi` as finite/non-boolean (Codex,
+    second finding): an unchecked `inf` inside-concentration with a finite outside would
+    otherwise return `inf`, which -- like the zero-bulk case this function already guards --
+    could satisfy a downstream `ratio>=2` selectivity/Gate-I check as if it were a real
+    measurement; a boolean occupancy mask would have `True`/`False` silently averaged as
+    `1.0`/`0.0` concentrations."""
+    c_arr = _reject_invalid_concentration_field(c, "species_partition_ratio: c")
+    phi_arr = _reject_invalid_phi_field(phi, "species_partition_ratio: phi")
     if c_arr.shape != phi_arr.shape:
         raise ValueError(
             "species_partition_ratio: c shape %r does not match phi's shape %r -- a real "
             "single-species field must match exactly, not merely be mask-broadcast-compatible" %
             (c_arr.shape, phi_arr.shape))
-    inside, outside = phi > thresh, phi < -thresh
+    inside, outside = phi_arr > thresh, phi_arr < -thresh
     if not inside.any() or not outside.any():
         return float("nan")
-    outside_mean = float(c[outside].mean())
+    outside_mean = float(c_arr[outside].mean())
     if abs(outside_mean) < 1e-12:
         return float("nan")
-    return float(c[inside].mean() / outside_mean)
+    return float(c_arr[inside].mean() / outside_mean)
 
 
 def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0, RT=1.0):
@@ -83,17 +123,26 @@ def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0, RT=1.0):
     negative mobility makes the SG flux anti-diffusive, a boolean `D` is silently cast to
     `1.0`/`0.0`, and a non-finite `D` propagates to an infinite flux -- all invalid as a physical
     mobility, and all would otherwise be summed by `net_boundary_flux` as if they were real
-    measured permeability evidence."""
-    c_arr0 = np.asarray(c)
-    phi_arr0 = np.asarray(phi)
+    measured permeability evidence.
+
+    `c` is validated as finite/non-negative/non-boolean and `phi` as finite/non-boolean (Codex,
+    fourth finding): an unchecked negative/non-finite `c` produces an anti-physical or infinite
+    flux, and a non-finite `phi` makes the Bernoulli factors blow up -- either way
+    `net_boundary_flux` would treat the result as real measured permeability evidence. `RT` is
+    validated as finite/positive/non-boolean and `chi` as finite/non-boolean (CodeRabbit/Codex,
+    fifth finding) before forming `beta = chi/RT`: `RT=0` divides by zero, and a negative/
+    non-finite `RT` or non-finite `chi` produces an invalid SG flux instead of failing closed."""
+    c_arr0 = _reject_invalid_concentration_field(c, "instantaneous_face_flux: c")
+    phi_arr0 = _reject_invalid_phi_field(phi, "instantaneous_face_flux: phi")
     if c_arr0.shape != phi_arr0.shape:
         raise ValueError(
             "instantaneous_face_flux: c shape %r does not match phi's shape %r -- both must "
             "describe the SAME snapshot's grid, not merely be broadcast-compatible" %
             (c_arr0.shape, phi_arr0.shape))
-    if isinstance(D, (bool, np.bool_)) or (isinstance(D, np.ndarray) and D.dtype == np.bool_):
+    D_check = np.asarray(D)
+    if D_check.dtype == np.bool_:
         raise ValueError("instantaneous_face_flux: D must be real-valued, not boolean")
-    D_arr = np.asarray(D, dtype=float)
+    D_arr = D_check.astype(float)
     if not np.all(np.isfinite(D_arr)):
         raise ValueError("instantaneous_face_flux: D contains non-finite values (inf/nan)")
     if np.any(D_arr < 0.0):
@@ -106,14 +155,20 @@ def instantaneous_face_flux(c, phi, chi, D=1.0, axis=0, RT=1.0):
             "instantaneous_face_flux: non-scalar D has shape %r, which does not match c's shape "
             "%r -- a real per-cell mobility field must match exactly, not merely broadcast" %
             (D_arr.shape, c_shape))
-    cp = np.roll(c, -1, axis=axis)
-    pp = np.roll(phi, -1, axis=axis)
+    if isinstance(RT, (bool, np.bool_)) or not np.isfinite(RT) or RT <= 0.0:
+        raise ValueError(
+            "instantaneous_face_flux: RT must be a finite, positive real number, got %r" % (RT,))
+    if isinstance(chi, (bool, np.bool_)) or not np.isfinite(chi):
+        raise ValueError(
+            "instantaneous_face_flux: chi must be a finite real number, got %r" % (chi,))
+    cp = np.roll(c_arr0, -1, axis=axis)
+    pp = np.roll(phi_arr0, -1, axis=axis)
     beta = chi / RT
-    dpsi = beta * (pp - phi)
+    dpsi = beta * (pp - phi_arr0)
     D_face = D_arr if D_arr.ndim == 0 else 0.5 * (D_arr + np.roll(D_arr, -1, axis=axis))
-    J = D_face * (_bernoulli(dpsi) * c - _bernoulli(-dpsi) * cp)
-    sl = [slice(None)] * c.ndim
-    sl[axis] = c.shape[axis] - 1
+    J = D_face * (_bernoulli(dpsi) * c_arr0 - _bernoulli(-dpsi) * cp)
+    sl = [slice(None)] * c_arr0.ndim
+    sl[axis] = c_arr0.shape[axis] - 1
     J[tuple(sl)] = 0.0
     return J
 
@@ -134,8 +189,15 @@ def net_boundary_flux(c, phi, chi, D=1.0, thresh=0.5, RT=1.0):
 
 
 def total_mass(c, dx=1.0):
-    """Total conserved species amount."""
-    return float(c.sum()) * dx ** 3
+    """Total conserved species amount.
+
+    `c` is validated as finite/non-negative/non-boolean (Codex): an unchecked invalid field can
+    hide corruption behind a plausible-looking total -- e.g. `[-1, 2]` sums to a plausible `1`,
+    and a boolean mask silently sums as if it were a real concentration -- exactly the kind of
+    corrupted-but-coincidentally-sane total that feeds `mass_balance_error`/`mass_balance_
+    residual`'s conservation audits."""
+    c_arr = _reject_invalid_concentration_field(c, "total_mass: c")
+    return float(c_arr.sum()) * dx ** 3
 
 
 def _reject_invalid_mass(x, label):
@@ -155,6 +217,22 @@ def _reject_invalid_mass(x, label):
     return xf
 
 
+def _reject_invalid_coefficient(nu, label):
+    """Raise iff `nu` is not a finite, non-boolean real scalar (matches
+    `thermodynamic_ledger._reject_invalid_coefficient`'s identical discipline, duplicated per
+    this module's convention) -- sign is NOT restricted (a coefficient's sign is its physical
+    meaning, e.g. negative for a consumed species)."""
+    if isinstance(nu, (bool, np.bool_)):
+        raise ValueError("%s must be a real number, not a boolean, got %r" % (label, nu))
+    try:
+        nuf = float(nu)
+    except (TypeError, ValueError):
+        raise ValueError("%s must be a finite real scalar, got %r" % (label, nu))
+    if not np.isfinite(nuf):
+        raise ValueError("%s must be a finite real scalar, got %r" % (label, nu))
+    return nuf
+
+
 def stoichiometric_invariant(species_masses, coeffs):
     """sum_k coeffs[k] * species_masses[k] -- for a closed reaction chain (no fuel-in/waste-out)
     this combination is conserved by construction; callers audit it against known source/sink
@@ -163,9 +241,13 @@ def stoichiometric_invariant(species_masses, coeffs):
     before it appears in a sparse before/after reaction-chain audit must not abort this
     computation, matching `thermodynamic_ledger.stoichiometric_balance_error`'s identical
     sparse-species handling. Every consumed mass is validated as finite/non-negative/non-boolean
-    (see `_reject_invalid_mass`) before use."""
+    (see `_reject_invalid_mass`) before use; every `coeffs[k]` is also validated as a finite,
+    non-boolean real scalar (see `_reject_invalid_coefficient`, CodeRabbit) -- a boolean,
+    non-numeric, or non-finite coefficient would otherwise yield a misleading invariant or an
+    uncontrolled exception, while a genuinely negative coefficient remains valid."""
     return float(sum(
-        coeffs[k] * _reject_invalid_mass(species_masses.get(k, 0.0), "species_masses[%r]" % (k,))
+        _reject_invalid_coefficient(coeffs[k], "coeffs[%r]" % (k,)) *
+        _reject_invalid_mass(species_masses.get(k, 0.0), "species_masses[%r]" % (k,))
         for k in coeffs))
 
 

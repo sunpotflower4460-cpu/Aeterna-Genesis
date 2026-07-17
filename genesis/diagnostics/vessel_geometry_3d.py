@@ -21,6 +21,23 @@ from scipy import ndimage
 from genesis.diagnostics.topology_betti import betti3d
 
 
+def _reject_non_boolean_mask(mask, label):
+    """Raise iff `mask` does not have `dtype == bool` exactly (Codex): every geometry function in
+    this module trusts a mask's values as ARITHMETIC (summed for volume, compared across
+    neighbors for surface area, labeled by `ndimage.label` for components) -- a labeled or
+    weighted numeric array (e.g. `np.full(shape, 2)`) is not a 0/1 selector and silently produces
+    false geometry (e.g. `volume` reporting TWICE the true voxel count) instead of failing
+    closed. Downstream Gate-I checks rely on voxel counts and fractions of a genuinely BINARY
+    vessel mask, so a non-boolean input must never be silently integrated as if it were one."""
+    mask_arr = np.asarray(mask)
+    if mask_arr.dtype != np.bool_:
+        raise ValueError(
+            "%s must have dtype bool, got %r -- a numeric/labeled mask is not a 0/1 selector and "
+            "would silently produce false geometry instead of failing closed" %
+            (label, mask_arr.dtype))
+    return mask_arr
+
+
 def vessel_mask(phi, thresh=0.0):
     """The vessel interior as a boolean mask: phi > thresh.
 
@@ -86,7 +103,9 @@ def _merge_periodic_labels(lbl, mask):
 def connected_components(mask):
     """(n_components, sizes_desc): 6-connected component count and voxel counts, largest first --
     periodic across the domain boundary (a component that crosses a seam counts as ONE object,
-    matching the periodic-box vessel model; see `_merge_periodic_labels`)."""
+    matching the periodic-box vessel model; see `_merge_periodic_labels`). `mask` must have
+    `dtype == bool` (see `_reject_non_boolean_mask`, Codex)."""
+    mask = _reject_non_boolean_mask(mask, "connected_components: mask")
     lbl, n = ndimage.label(mask)
     if n == 0:
         return 0, []
@@ -111,7 +130,9 @@ def boundary_topology(mask):
     vessel that touches or crosses the periodic boundary. Fixing this requires updating the
     shared, already-validated Topology Instrument itself (out of this additive PR's no_touch
     scope) -- deferred to a dedicated follow-up. Not a concern for a centered vessel with margin
-    to the domain edge (the F1 V0 / early P10 S1 placement pattern)."""
+    to the domain edge (the F1 V0 / early P10 S1 placement pattern). `mask` must have
+    `dtype == bool` (see `_reject_non_boolean_mask`, Codex)."""
+    mask = _reject_non_boolean_mask(mask, "boundary_topology: mask")
     b = betti3d(mask)
     b["is_closed_single_component"] = bool(b["b0"] == 1 and b["b2"] == 0)
     return b
@@ -129,7 +150,9 @@ def surface_area(mask, dx=1.0):
     smooth surface they approximate. Reported honestly rather than silently corrected: callers
     comparing surface area ACROSS TIME on a fixed grid (e.g. "did the vessel's area grow") get a
     valid relative signal; callers wanting an absolute area estimate should apply an independent
-    correction (e.g. marching-cubes) rather than trust this number at face value."""
+    correction (e.g. marching-cubes) rather than trust this number at face value. `mask` must
+    have `dtype == bool` (see `_reject_non_boolean_mask`, Codex)."""
+    mask = _reject_non_boolean_mask(mask, "surface_area: mask")
     area_faces = 0
     for ax in range(mask.ndim):
         nb = np.roll(mask, -1, axis=ax)
@@ -138,13 +161,18 @@ def surface_area(mask, dx=1.0):
 
 
 def volume(mask, dx=1.0):
-    """Interior volume: voxel count times dx^3."""
+    """Interior volume: voxel count times dx^3. `mask` must have `dtype == bool` (see
+    `_reject_non_boolean_mask`, Codex): a non-boolean mask (e.g. `np.full(shape, 2)`) is summed
+    as arithmetic, not counted as a 0/1 selector, and would silently report a false volume."""
+    mask = _reject_non_boolean_mask(mask, "volume: mask")
     return float(mask.sum()) * dx ** 3
 
 
 def volume_fraction(mask):
     """Interior volume as a fraction of the total domain (dx-independent, useful for tracking a
-    vessel's relative size/integrity over time or across resolutions)."""
+    vessel's relative size/integrity over time or across resolutions). `mask` must have
+    `dtype == bool` (see `_reject_non_boolean_mask`, Codex)."""
+    mask = _reject_non_boolean_mask(mask, "volume_fraction: mask")
     return float(np.mean(mask))
 
 
@@ -217,9 +245,10 @@ def detect_split_fusion(mask_prev, mask_curr):
     temporal change, so frames accidentally taken from different grid sizes or cropped domains
     must fail closed rather than being compared by component COUNT alone (which `connected_
     components` can still compute on either shape independently, silently reporting a plausible
-    but meaningless 'split'/'fusion'/'ambiguous' classification)."""
-    mask_prev = np.asarray(mask_prev)
-    mask_curr = np.asarray(mask_curr)
+    but meaningless 'split'/'fusion'/'ambiguous' classification). Both masks must also have
+    `dtype == bool` (see `_reject_non_boolean_mask`, Codex)."""
+    mask_prev = _reject_non_boolean_mask(mask_prev, "detect_split_fusion: mask_prev")
+    mask_curr = _reject_non_boolean_mask(mask_curr, "detect_split_fusion: mask_curr")
     if mask_prev.shape != mask_curr.shape:
         raise ValueError(
             "detect_split_fusion: mask_prev shape %r does not match mask_curr shape %r -- a "

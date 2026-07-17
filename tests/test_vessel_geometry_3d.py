@@ -98,6 +98,24 @@ def test_volume_fraction_matches_volume_over_total():
     assert abs(vg.volume_fraction(mask) - vg.volume(mask) / mask.size) < 1e-12
 
 
+def test_mask_consuming_functions_reject_non_boolean_masks():
+    # every geometry function trusts a mask's values as arithmetic (summed, compared across
+    # neighbors, labeled) -- a labeled/weighted numeric array is not a 0/1 selector and would
+    # silently produce false geometry, e.g. volume(np.full(shape, 2)) reporting TWICE the true
+    # voxel count, instead of failing closed (Codex).
+    numeric_mask = np.full((8, 8, 8), 2.0)
+    with pytest.raises(ValueError):
+        vg.volume(numeric_mask)
+    with pytest.raises(ValueError):
+        vg.volume_fraction(numeric_mask)
+    with pytest.raises(ValueError):
+        vg.surface_area(numeric_mask)
+    with pytest.raises(ValueError):
+        vg.connected_components(numeric_mask)
+    with pytest.raises(ValueError):
+        vg.boundary_topology(numeric_mask)
+
+
 def test_surface_area_scales_as_r_squared_with_stable_known_bias():
     # face-counting surface area has a known, roughly-constant overestimate bias (~1.5x) for a
     # smoothly curved surface -- checked here as a STABLE ratio across R, not an exact match

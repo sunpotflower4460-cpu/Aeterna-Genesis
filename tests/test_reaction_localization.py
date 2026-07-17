@@ -37,6 +37,20 @@ def test_reaction_rate_field_rejects_wrong_shaped_nonscalar_R():
         rl.reaction_rate_field(c, k=0.5, R=np.full((4,), 1.0))
 
 
+def test_reaction_rate_field_rejects_negative_or_non_finite_operands():
+    # the frozen k*R*c rate is a non-negative real density -- a negative/non-finite c, k, or R
+    # must fail closed rather than multiplying directly into a plausible-looking field (Codex).
+    c = np.full((4, 4, 4), 2.0)
+    with pytest.raises(ValueError):
+        rl.reaction_rate_field(np.full((4, 4, 4), -1.0), k=0.5)
+    with pytest.raises(ValueError):
+        rl.reaction_rate_field(c, k=-0.5)
+    with pytest.raises(ValueError):
+        rl.reaction_rate_field(c, k=0.5, R=-1.0)
+    with pytest.raises(ValueError):
+        rl.reaction_rate_field(c, k=float("nan"))
+
+
 def test_uniform_rate_gives_ratio_one_regardless_of_geometry():
     # a spatially UNIFORM reaction rate must read as "no localization" (ratio=1) even though the
     # vessel geometry is highly structured -- this is the F0 #2 target-encoding guard, checked
@@ -55,6 +69,20 @@ def test_band_vs_bulk_ratio_rejects_a_stacked_extra_dimensional_rate():
     rate_stacked = np.random.default_rng(2).uniform(0, 1, phi.shape + (2,))
     with pytest.raises(ValueError):
         rl.band_vs_bulk_ratio(rate_stacked, phi)
+
+
+def test_band_vs_bulk_ratio_rejects_non_finite_rate_or_phi():
+    # an unchecked inf rate confined to the interface band (with an otherwise finite bulk) would
+    # otherwise return inf, satisfying ANY ratio>1 gate on a blown-up run (Codex).
+    phi = _sphere()
+    rate_inf = np.full(phi.shape, 1.0)
+    rate_inf[np.abs(phi) < 0.5] = np.inf
+    with pytest.raises(ValueError):
+        rl.band_vs_bulk_ratio(rate_inf, phi)
+    phi_nan = phi.copy()
+    phi_nan[0, 0, 0] = np.nan
+    with pytest.raises(ValueError):
+        rl.band_vs_bulk_ratio(np.full(phi.shape, 1.0), phi_nan)
 
 
 def test_ratio_reflects_where_concentration_actually_sits():

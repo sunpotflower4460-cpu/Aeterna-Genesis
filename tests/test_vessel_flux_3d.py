@@ -53,6 +53,21 @@ def test_species_partition_ratio_rejects_a_stacked_extra_dimensional_c():
         vf.species_partition_ratio(c_stacked, phi)
 
 
+def test_species_partition_ratio_rejects_invalid_c_or_phi():
+    # an unchecked inf inside-concentration with a finite outside would otherwise return inf,
+    # satisfying a downstream ratio>=2 selectivity/Gate-I check as if it were real (Codex);
+    # a boolean occupancy mask would have True/False silently averaged as concentrations.
+    phi = _sphere()
+    c_inf = np.full(phi.shape, 1.0)
+    c_inf[phi > 0.5] = np.inf
+    with pytest.raises(ValueError):
+        vf.species_partition_ratio(c_inf, phi)
+    with pytest.raises(ValueError):
+        vf.species_partition_ratio(np.full(phi.shape, True), phi)
+    with pytest.raises(ValueError):
+        vf.species_partition_ratio(np.full(phi.shape, 1.0), np.where(phi > 0, phi, np.nan))
+
+
 def test_net_boundary_flux_vanishes_at_equilibrium_but_not_in_transient():
     phi = _sphere()
     c_eq, converged, _ = vp.equilibrate(phi, chi=0.5, n_steps=4000)
@@ -142,6 +157,33 @@ def test_instantaneous_face_flux_rejects_invalid_mobility():
         vf.instantaneous_face_flux(c, phi, chi=0.5, D=float("inf"))
 
 
+def test_instantaneous_face_flux_rejects_invalid_RT_or_chi():
+    # RT=0 divides by zero forming beta=chi/RT; a negative/non-finite RT or non-finite chi
+    # produces an invalid SG flux instead of failing closed (CodeRabbit/Codex).
+    phi = np.full((4, 4, 4), 1.0)
+    c = np.full((4, 4, 4), 1.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi, chi=0.5, RT=0.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi, chi=0.5, RT=-1.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi, chi=float("nan"))
+
+
+def test_instantaneous_face_flux_rejects_invalid_c_or_phi():
+    # a negative/non-finite c produces an anti-physical or infinite flux, and a non-finite phi
+    # makes the Bernoulli factors blow up -- either would otherwise be treated by
+    # net_boundary_flux as real measured permeability evidence (Codex).
+    phi = np.full((4, 4, 4), 1.0)
+    c = np.full((4, 4, 4), 1.0)
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(np.full((4, 4, 4), -1.0), phi, chi=0.5)
+    phi_nan = np.full((4, 4, 4), 1.0)
+    phi_nan[0, 0, 0] = float("nan")
+    with pytest.raises(ValueError):
+        vf.instantaneous_face_flux(c, phi_nan, chi=0.5)
+
+
 def test_instantaneous_face_flux_rt_scaling_matches_beta_convention():
     # RT must divide chi exactly as vessel_permeability.relax_step's beta = chi/RT -- doubling RT
     # while doubling chi must reproduce the RT=1 flux exactly (same beta).
@@ -155,6 +197,17 @@ def test_instantaneous_face_flux_rt_scaling_matches_beta_convention():
 def test_total_mass_matches_sum():
     c = np.random.default_rng(0).uniform(0, 1, (6, 6, 6))
     assert abs(vf.total_mass(c) - float(c.sum())) < 1e-9
+
+
+def test_total_mass_rejects_invalid_c():
+    # an unchecked invalid field can hide corruption behind a plausible-looking total, e.g.
+    # [-1, 2] sums to a plausible 1, and a boolean mask silently sums as a real amount (Codex).
+    with pytest.raises(ValueError):
+        vf.total_mass(np.array([-1.0, 2.0]))
+    with pytest.raises(ValueError):
+        vf.total_mass(np.array([True, False]))
+    with pytest.raises(ValueError):
+        vf.total_mass(np.array([1.0, float("inf")]))
 
 
 def test_stoichiometric_invariant_is_weighted_sum():
@@ -189,6 +242,16 @@ def test_stoichiometric_invariant_rejects_boolean_mass():
 def test_stoichiometric_invariant_rejects_non_finite_mass():
     with pytest.raises(ValueError):
         vf.stoichiometric_invariant({"a": float("inf")}, {"a": 1.0})
+
+
+def test_stoichiometric_invariant_rejects_invalid_coefficient():
+    # a NaN or boolean coeffs[k] must fail closed, not yield a misleading invariant or an
+    # uncontrolled exception -- a genuinely negative coefficient remains valid (CodeRabbit).
+    with pytest.raises(ValueError):
+        vf.stoichiometric_invariant({"a": 1.0}, {"a": float("nan")})
+    with pytest.raises(ValueError):
+        vf.stoichiometric_invariant({"a": 1.0}, {"a": True})
+    assert vf.stoichiometric_invariant({"a": 1.0}, {"a": -1.0}) == -1.0
 
 
 def test_mass_balance_residual_zero_for_consistent_accounting():

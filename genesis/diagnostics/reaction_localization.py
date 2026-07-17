@@ -17,15 +17,39 @@ already produced.
 import numpy as np
 
 
+def _reject_invalid_nonneg_field(x, label):
+    """Raise iff `x` is not a finite, non-negative, non-boolean real field/scalar -- a
+    concentration/rate-constant/rate-multiplier operand of the frozen `k*R*c` reaction-rate
+    density is never physically negative or non-finite (Codex): an unchecked solver overshoot or
+    `inf` catalyst would otherwise multiply directly into the measured rate field, producing a
+    plausible positive or infinite band/bulk readout from corrupted reaction metadata."""
+    x_check = np.asarray(x)
+    if x_check.dtype == np.bool_:
+        raise ValueError("%s must be a real-valued field/scalar, not boolean" % label)
+    x_arr = x_check.astype(float)
+    if not np.all(np.isfinite(x_arr)):
+        raise ValueError("%s contains non-finite values (inf/nan)" % label)
+    if np.any(x_arr < 0.0):
+        raise ValueError("%s contains negative values -- never physically valid here" % label)
+    return x_arr
+
+
 def reaction_rate_field(c, k, R=1.0):
     """Local reaction rate k*R*c. `R` defaults to spatially uniform (1.0, a true scalar); passing
     a field is the caller's explicit choice to make (never a hidden default that localizes
     reaction sites). A non-scalar `R` must match `c`'s shape EXACTLY (Codex): an incomplete or
     malformed `R` (e.g. a 1-D profile) would otherwise silently broadcast across the full field,
     fabricating a spatial reaction pattern before any localization audit runs, rather than
-    failing closed on the shape mismatch."""
-    c_arr = np.asarray(c)
-    R_arr = np.asarray(R)
+    failing closed on the shape mismatch.
+
+    `c`, `k`, and `R` are each validated as finite and non-negative (Codex, second finding): the
+    frozen `k*R*c` rate is a non-negative real density, so a negative or non-finite operand (a
+    solver overshoot in `c`, or an `inf` catalyst rate `k`) must fail closed rather than
+    multiplying directly into a plausible-looking measured rate field."""
+    c_arr = _reject_invalid_nonneg_field(c, "reaction_rate_field: c")
+    if isinstance(k, (bool, np.bool_)) or not np.isfinite(k) or k < 0.0:
+        raise ValueError("reaction_rate_field: k must be a finite, non-negative real number, got %r" % (k,))
+    R_arr = _reject_invalid_nonneg_field(R, "reaction_rate_field: R")
     if R_arr.ndim != 0 and R_arr.shape != c_arr.shape:
         raise ValueError(
             "reaction_rate_field: non-scalar R has shape %r, which does not match c's shape %r "
@@ -45,27 +69,42 @@ def band_vs_bulk_ratio(rate, phi, band_thresh=0.5, bulk_region="outside"):
     `(L, L, L, n_species)` array) is otherwise still accepted by the `phi`-derived boolean masks
     (NumPy broadcasts the 3-D mask across the trailing axis), and `.mean()` then silently averages
     over the remaining species axis too, reporting a plausible-looking localization ratio for a
-    MIXTURE of rates rather than the single per-cell reaction field this diagnostic audits."""
-    rate_arr = np.asarray(rate)
-    phi_arr = np.asarray(phi)
+    MIXTURE of rates rather than the single per-cell reaction field this diagnostic audits.
+
+    `rate` and `phi` are also validated as finite before any mask/mean is built (Codex, second
+    finding): an unchecked `inf` rate confined to the interface band (with an otherwise finite
+    bulk) would otherwise return `inf`, which can satisfy ANY `ratio > 1` reaction-localization
+    gate on a blown-up run instead of surfacing the corrupted field."""
+    rate_check = np.asarray(rate)
+    if rate_check.dtype == np.bool_:
+        raise ValueError("band_vs_bulk_ratio: rate must be a real-valued field, not boolean")
+    rate_arr = rate_check.astype(float)
+    if not np.all(np.isfinite(rate_arr)):
+        raise ValueError("band_vs_bulk_ratio: rate contains non-finite values (inf/nan)")
+    phi_check = np.asarray(phi)
+    if phi_check.dtype == np.bool_:
+        raise ValueError("band_vs_bulk_ratio: phi must be a real-valued field, not boolean")
+    phi_arr = phi_check.astype(float)
+    if not np.all(np.isfinite(phi_arr)):
+        raise ValueError("band_vs_bulk_ratio: phi contains non-finite values (inf/nan)")
     if rate_arr.shape != phi_arr.shape:
         raise ValueError(
             "band_vs_bulk_ratio: rate shape %r does not match phi's shape %r -- a real "
             "single-field measurement must match exactly, not merely be mask-broadcast-compatible"
             % (rate_arr.shape, phi_arr.shape))
-    band = np.abs(phi) < band_thresh
+    band = np.abs(phi_arr) < band_thresh
     if bulk_region == "outside":
-        bulk = phi < -band_thresh
+        bulk = phi_arr < -band_thresh
     elif bulk_region == "inside":
-        bulk = phi > band_thresh
+        bulk = phi_arr > band_thresh
     else:
         raise ValueError("bulk_region must be 'outside' or 'inside'")
     if not band.any() or not bulk.any():
         return float("nan")
-    bulk_mean = float(rate[bulk].mean())
+    bulk_mean = float(rate_arr[bulk].mean())
     if abs(bulk_mean) < 1e-12:
         return float("nan")
-    return float(rate[band].mean()) / bulk_mean
+    return float(rate_arr[band].mean()) / bulk_mean
 
 
 def radial_reaction_profile(rate, phi, n_bins=20, phi_range=(-1.0, 1.0)):
