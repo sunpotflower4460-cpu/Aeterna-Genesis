@@ -224,13 +224,26 @@ def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
     `dx^3` cell-volume weighting converts the per-cell density sum into the extensive integral
     (Codex: without it, `useful_work` would grow with the number of interface-band cells rather
     than the physical boundary-maintenance power under grid refinement). Zero by construction
-    whenever `stress_power_density` is all-zero (S1, u=0) -- callers may pass a bare scalar `0.0`
-    for this S1 case (broadcast to `phi`'s shape before masking) rather than being forced to
-    construct a full zero-filled field array (Codex: a bare 0-d array from `np.asarray(0.0)`
-    cannot be indexed by the 3D interface-band mask and raised, aborting the ledger for exactly
-    the pre-hydrodynamic stage this docstring says is supported)."""
+    whenever `stress_power_density` is all-zero (S1, u=0) -- callers may pass the bare scalar
+    `0.0` for this S1 case (broadcast to `phi`'s shape before masking) rather than being forced
+    to construct a full zero-filled field array. A NONZERO scalar is rejected (raises
+    ValueError), not silently broadcast: sigma_M:grad(u) is a real per-cell velocity-gradient
+    quantity that is never physically uniform across the whole interface band, so a nonzero
+    scalar is never a valid measured field -- only ever an accident (e.g. incomplete
+    hydrodynamic metadata or a caller passing a scalar total) that must not be able to satisfy a
+    downstream `useful_work>0` Gate III check as if it were a real measurement (Codex, second
+    finding: the scalar special-case must be limited to the documented 0.0 S1 case)."""
     band = np.abs(phi) < band_thresh
-    spd = np.broadcast_to(np.asarray(stress_power_density, dtype=float), np.asarray(phi).shape)
+    spd = np.asarray(stress_power_density, dtype=float)
+    if spd.ndim == 0:
+        if spd != 0.0:
+            raise ValueError(
+                "useful_work: a nonzero scalar stress_power_density is not a valid measured "
+                "field -- only the scalar 0.0 (S1 pre-hydrodynamic stage) is accepted; a real "
+                "sigma_M:grad(u) measurement must be a per-cell array")
+        spd = np.zeros_like(np.asarray(phi), dtype=float)
+    else:
+        spd = np.broadcast_to(spd, np.asarray(phi).shape)
     return float(spd[band].sum()) * dx ** 3
 
 
@@ -241,19 +254,27 @@ def mass_balance_error(mass_before, mass_after, matter_in_amt, waste_out_amt, ot
 
 
 def stoichiometric_balance_error(species_masses_before, species_masses_after, stoich,
-                                  source_terms=None):
-    """|Delta(sum_i nu_i * mass_i) - sum(source_terms)| for a reaction chain's conserved
+                                  sources=None, sinks=None):
+    """|Delta(sum_i nu_i * mass_i) - (sum(sources) - sum(sinks))| for a reaction chain's conserved
     combination (e.g. total f+m+w for f->m->w with matched coefficients), compared ACROSS A
     BEFORE/AFTER WINDOW (matching `mass_balance_error`'s existing before/after pattern) -- zero
-    without external sources; with sources/sinks it must match `matter_in`/`waste_out` exactly.
+    without external sources/sinks; with them it must match `matter_in`/`waste_out` exactly.
     Comparing the CHANGE in the invariant, not its absolute total, matters: a perfectly conserved
     but nonzero-total system (e.g. mass never leaves f+m+w, but f+m+w != 0) must read as zero
     error, not flag the total mass itself as an accounting bug. A species in `stoich` that is
     absent from `species_masses_before`/`species_masses_after` is treated as mass 0 there (Codex:
     a waste/product species genuinely absent before the window and appearing after it must not
     abort the residual computation -- the same sparse-dictionary handling
-    `chemical_free_energy_change` already supports)."""
+    `chemical_free_energy_change` already supports).
+
+    `sources`/`sinks`: optional dicts of named POSITIVE-magnitude terms, mirroring
+    `mass_balance_error`'s explicit `matter_in_amt`/`waste_out_amt` sign convention -- `sinks`
+    are SUBTRACTED, not blindly summed as if every named term were an addition (Codex: an
+    earlier single-dict `source_terms` design would make a caller naturally passing the positive
+    `waste_out` MAGNITUDE report a spurious nonzero residual for a correctly balanced window,
+    unless they manually negated it first; `sources`/`sinks` removes that footgun by construction,
+    same as `mass_balance_error` already does)."""
     lhs_before = sum(stoich[k] * species_masses_before.get(k, 0.0) for k in stoich)
     lhs_after = sum(stoich[k] * species_masses_after.get(k, 0.0) for k in stoich)
-    rhs = sum(source_terms.values()) if source_terms else 0.0
+    rhs = (sum(sources.values()) if sources else 0.0) - (sum(sinks.values()) if sinks else 0.0)
     return float(abs((lhs_after - lhs_before) - rhs))

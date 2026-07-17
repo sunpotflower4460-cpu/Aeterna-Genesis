@@ -86,6 +86,18 @@ def _num_ge(x, bound):
     return xf is not None and xf >= bound
 
 
+def _is_true(x):
+    """True iff x is exactly Python `True` OR exactly `np.bool_(True)`; False for anything else,
+    including any other truthy value. A caller measuring a boolean flag via a NumPy reduction
+    (e.g. `np.all(shape_params_match)`) naturally gets `np.bool_`, not Python `bool` -- a strict
+    `x is True` identity check would then incorrectly FAIL a genuinely-passing measurement just
+    because of which boolean type computed it (Codex). This still rejects every other truthy
+    value (a non-empty string, a nonzero float, `1`) that must not silently satisfy a flag whose
+    entire point is requiring an explicit, unambiguous confirmation -- `_BOOL_TYPES` (not a bare
+    truthiness check) is exactly what keeps `"false"`/`"unknown"` out."""
+    return isinstance(x, _BOOL_TYPES) and bool(x) is True
+
+
 def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_scales, scale_ratio,
                            form_invariant_across_seeds, form_invariant_across_scales):
     """Gate II: PASS iff ALL FOUR frozen criteria hold simultaneously (contract Section 2, II).
@@ -110,10 +122,10 @@ def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_sc
     checks = dict(
         prediction=_num_lt(r_pred, t["r_pred_max"]),
         reproducibility=bool(_num_ge(n_seeds, t["min_seeds"]) and _num_lt(seed_coeff_cv, t["coeff_cv_max"])
-                              and form_invariant_across_seeds is True),
+                              and _is_true(form_invariant_across_seeds)),
         closure=_num_lt(closure_residual, t["closure_residual_max"]),
         scale_robustness=bool(_num_ge(n_scales, t["min_scales"]) and _num_ge(scale_ratio, t["min_scale_ratio"])
-                               and form_invariant_across_scales is True),
+                               and _is_true(form_invariant_across_scales)),
     )
     status = "PASS" if all(checks.values()) else "FAIL"
     return status, checks
@@ -151,12 +163,12 @@ def gate_iii_downward(effect_full, effect_matched_control, control_removes_downw
     accidentally froze the upward m->interface path instead of the downward one). Fails closed
     (never raises) on a None/non-numeric effect metric, matching `gate_ii_effective_law`'s
     `_num_lt`/`_num_ge` discipline -- a missing measurement must FAIL, not abort the audit with a
-    TypeError (Codex). `control_removes_downward_path` is checked with `is not True` (identity),
-    NOT a truthiness check (Codex, second finding): `not control_removes_downward_path` treats
-    any truthy value -- including the non-empty STRING `"false"` -- as confirmation, which is
-    exactly backwards for a flag whose entire purpose is requiring an explicit, unambiguous
+    TypeError (Codex). `control_removes_downward_path` is checked via `_is_true` (accepts exactly
+    Python `True` or `np.bool_(True)`), NOT a truthiness check: `not control_removes_downward_path`
+    treats any truthy value -- including the non-empty STRING `"false"` -- as confirmation, which
+    is exactly backwards for a flag whose entire purpose is requiring an explicit, unambiguous
     `True` from the caller."""
-    if control_removes_downward_path is not True:
+    if not _is_true(control_removes_downward_path):
         return "FAIL", "control does not remove the claimed downward pathway (matched control mismatch)"
     ef = _safe_float(effect_full)
     emc = _safe_float(effect_matched_control)

@@ -135,6 +135,20 @@ def volume_fraction(mask):
     return float(np.mean(mask))
 
 
+def _periodic_gradient(phi, dx=1.0):
+    """Central-difference gradient with PERIODIC (wraparound) boundary treatment, matching the
+    periodic-box vessel model `surface_area`/`connected_components` already assume. Identical to
+    `np.gradient`'s formula in the domain INTERIOR (`(f[i+1]-f[i-1])/(2*dx)`, verified to machine
+    precision) but wraps at the domain edge instead of `np.gradient`'s default one-sided edge
+    difference (Codex: for a vessel that crosses the periodic seam -- the same context
+    `connected_components` already supports -- a one-sided edge difference creates an artificial
+    gradient discontinuity right at the seam, corrupting `interface_width`/`mean_curvature_field`
+    for exactly the cells `connected_components` already treats as a single continuous object)."""
+    phi = np.asarray(phi)
+    return [(np.roll(phi, -1, axis=ax) - np.roll(phi, 1, axis=ax)) / (2.0 * dx)
+            for ax in range(phi.ndim)]
+
+
 def interface_width(phi, dx=1.0, band_thresh=0.9, eps=1e-9):
     """Estimated diffuse-interface THICKNESS in physical length units (e.g. cells at dx=1),
     intrinsic to the local tanh-like transition profile and INDEPENDENT of vessel size or surface
@@ -147,8 +161,10 @@ def interface_width(phi, dx=1.0, band_thresh=0.9, eps=1e-9):
     (1-phi^2)/w, so w(x) = (1-phi(x)^2) / |grad phi(x)| recovers the LOCAL width at every point,
     averaged over the diffuse interface band |phi|<band_thresh. Verified to recover the exact
     `width` parameter of `vessel_permeability.radial_phi`'s synthetic spheres to <1% regardless
-    of R. NaN if the band is empty."""
-    grads = np.gradient(phi, dx)
+    of R. NaN if the band is empty. Uses a periodic gradient (see `_periodic_gradient`), so a
+    vessel that crosses the domain seam still measures the same intrinsic width as one placed
+    away from any boundary."""
+    grads = _periodic_gradient(phi, dx)
     mag = np.sqrt(sum(g ** 2 for g in grads)) + eps
     local_width = (1.0 - np.asarray(phi) ** 2) / mag
     band = np.abs(phi) < band_thresh
@@ -159,11 +175,13 @@ def mean_curvature_field(phi, dx=1.0, eps=1e-9):
     """Discrete mean curvature kappa = -div(grad(phi)/|grad(phi)|) (sum-of-principal-curvatures
     convention, i.e. kappa=2/R for a sphere of radius R, since grad(phi) points INWARD for the
     phi=tanh((R-r)/width) convention used throughout this campaign -- see F1 V0's `radial_phi`).
-    Returns the full field; most callers want `mean_curvature` (its interface-band average)."""
-    grads = np.gradient(phi, dx)
+    Returns the full field; most callers want `mean_curvature` (its interface-band average). Uses
+    a periodic gradient/divergence throughout (see `_periodic_gradient`) so a vessel crossing the
+    domain seam doesn't pick up an artificial curvature discontinuity there (Codex)."""
+    grads = _periodic_gradient(phi, dx)
     mag = np.sqrt(sum(g ** 2 for g in grads)) + eps
     n = [g / mag for g in grads]
-    div = sum(np.gradient(ni, dx, axis=ax) for ax, ni in enumerate(n))
+    div = sum(_periodic_gradient(ni, dx)[ax] for ax, ni in enumerate(n))
     return -div
 
 

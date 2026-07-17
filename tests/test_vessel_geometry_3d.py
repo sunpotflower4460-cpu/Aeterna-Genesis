@@ -27,6 +27,31 @@ def test_single_sphere_is_one_closed_component_genus_zero():
     assert bt["genus"] == 0
 
 
+def _seam_crossing_sphere(L=20, R=4.0, width=1.5, center_x=0.0, center_yz=10.0):
+    idx = np.arange(L, dtype=float)
+    X, Y, Z = np.meshgrid(idx, idx, idx, indexing="ij")
+    dx = np.minimum(np.abs(X - center_x), L - np.abs(X - center_x))
+    r = np.sqrt(dx ** 2 + (Y - center_yz) ** 2 + (Z - center_yz) ** 2)
+    return np.tanh((R - r) / width)
+
+
+def test_interface_width_is_correct_for_a_seam_crossing_vessel():
+    # np.gradient's default one-sided edge difference would corrupt the interface-width readout
+    # right at the domain seam -- must use a periodic gradient so a seam-crossing vessel
+    # measures the same intrinsic width as one placed away from any boundary (Codex).
+    phi = _seam_crossing_sphere(width=1.5)
+    assert phi[0].max() > 0.5 and phi[-1].max() > 0.5   # sanity: genuinely touches both seam faces
+    w = vg.interface_width(phi, band_thresh=0.9)
+    assert abs(w - 1.5) < 0.1
+
+
+def test_mean_curvature_is_correct_for_a_seam_crossing_vessel():
+    phi = _seam_crossing_sphere(R=4.0, width=1.5)
+    kappa = vg.mean_curvature(phi, band_thresh=0.9)
+    known = 2.0 / 4.0
+    assert abs(kappa - known) < 0.15 * known
+
+
 def test_connected_components_is_periodic_across_the_domain_seam():
     # a component that crosses the periodic boundary must count as ONE object, matching the
     # periodic-box vessel model (surface_area already treats the domain as periodic) -- plain

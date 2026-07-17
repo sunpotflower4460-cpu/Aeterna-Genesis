@@ -234,7 +234,28 @@ def test_mass_balance_error_nonzero_flags_bug():
 def test_stoichiometric_balance_error_zero_with_matching_sources():
     before = {"f": 10.0, "m": 5.0, "w": 2.0}
     after = {"f": 10.0, "m": 5.0, "w": 19.0}   # w increased by 17, matched by an external source
-    err = tl.stoichiometric_balance_error(before, after, {"f": 1.0, "m": 1.0, "w": 1.0}, {"in": 17.0})
+    err = tl.stoichiometric_balance_error(
+        before, after, {"f": 1.0, "m": 1.0, "w": 1.0}, sources={"matter_in": 17.0})
+    assert err < 1e-9
+
+
+def test_stoichiometric_balance_error_zero_with_matching_sinks():
+    # a sink (e.g. the POSITIVE-magnitude waste_out amount) must be SUBTRACTED, not blindly
+    # summed as if it were an addition -- passing it as `sinks` (not into an undifferentiated
+    # source_terms dict) must correctly balance a window where mass genuinely left the system.
+    before = {"f": 10.0, "m": 5.0, "w": 2.0}
+    after = {"f": 10.0, "m": 5.0, "w": -5.0}   # w decreased by 7, matched by an external sink
+    err = tl.stoichiometric_balance_error(
+        before, after, {"f": 1.0, "m": 1.0, "w": 1.0}, sinks={"waste_out": 7.0})
+    assert err < 1e-9
+
+
+def test_stoichiometric_balance_error_sources_and_sinks_combine_correctly():
+    before = {"f": 10.0}
+    after = {"f": 10.0}   # f unchanged -> invariant change is 0
+    # a source of 5 and a sink of 5 must cancel, leaving a zero net rhs matching the zero change.
+    err = tl.stoichiometric_balance_error(
+        before, after, {"f": 1.0}, sources={"in": 5.0}, sinks={"out": 5.0})
     assert err < 1e-9
 
 
@@ -291,13 +312,16 @@ def test_useful_work_accepts_a_bare_scalar_zero_for_the_s1_stage():
     assert tl.useful_work(0.0, phi) == 0.0
 
 
-def test_useful_work_broadcasts_a_nonzero_scalar_too():
+def test_useful_work_rejects_a_nonzero_scalar():
+    # sigma_M:grad(u) is a real per-cell field, never physically uniform across the interface
+    # band -- a nonzero scalar is never a valid measurement (only the documented 0.0 S1 case is
+    # accepted as a scalar) and must raise rather than silently broadcast and satisfy a
+    # downstream useful_work>0 Gate III check from incomplete hydrodynamic metadata.
     shape = (6, 6, 6)
     phi = np.full(shape, 1.0)
     phi[2:4, 2:4, 2:4] = 0.0
-    band = np.abs(phi) < 0.9
-    uw = tl.useful_work(3.0, phi, band_thresh=0.9)
-    assert abs(uw - 3.0 * band.sum()) < 1e-9
+    with pytest.raises(ValueError):
+        tl.useful_work(3.0, phi, band_thresh=0.9)
 
 
 def test_useful_work_scales_by_dx_cubed():
