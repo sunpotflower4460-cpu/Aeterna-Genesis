@@ -105,6 +105,37 @@ def test_net_interface_flux_vanishes_at_equilibrium():
     assert abs(flux_early) > 10 * abs(flux0)
 
 
+def test_mass_conserved_on_noncubic_grid():
+    # Neumann boundaries must use the per-axis length, not shape[0] for every axis; otherwise a
+    # rectangular field gets a spurious interior no-flux wall and a live wrap-around boundary, and
+    # mass is not conserved (external review, Codex, 2026-07-17).
+    ii, jj, kk = np.meshgrid(np.arange(12.0), np.arange(16.0), np.arange(10.0), indexing="ij")
+    phi = np.tanh(4.0 - np.sqrt((ii - 5.5) ** 2 + (jj - 7.5) ** 2 + (kk - 4.5) ** 2))
+    c = np.full(phi.shape, 1.0)
+    m0 = vp.total_mass(c)
+    for _ in range(300):
+        c = vp.relax_step(c, phi, chi=0.6)
+    assert abs(vp.total_mass(c) - m0) < 1e-9 * m0
+
+
+def test_spatial_mobility_field_reaches_same_equilibrium():
+    # D is a MOBILITY, so a spatially varying D(phi) (face-averaged) must reach the SAME Boltzmann
+    # partition as a scalar D -- equilibrium depends only on chi, not on D or its spatial profile
+    # (external review, Codex, 2026-07-17: face-average the spatial mobility).
+    phi = _sphere()
+    D_field = 1.0 + 0.5 * (phi > 0.0)               # different mobility inside vs outside
+    c_field, conv_f, _ = vp.equilibrate(phi, chi=0.5, D=D_field, n_steps=8000)
+    c_scalar, conv_s, _ = vp.equilibrate(phi, chi=0.5, D=1.0, n_steps=8000)
+    assert conv_f and conv_s
+    assert abs(vp.partition_ratio(c_field, phi) - vp.partition_ratio(c_scalar, phi)) < 0.02
+    # and mass is still exactly conserved with a spatial, face-averaged mobility
+    c = np.full(phi.shape, 1.0)
+    m0 = vp.total_mass(c)
+    for _ in range(200):
+        c = vp.relax_step(c, phi, chi=0.5, D=D_field)
+    assert abs(vp.total_mass(c) - m0) < 1e-9 * m0
+
+
 def test_boltzmann_law_holds_for_sharp_interface_and_large_chi():
     # Stress test for the Scharfetter-Gummel face flux (external review, Codex, 2026-07-17): with a
     # SHARP interface (width 0.8) and LARGE chi (1.5) the per-cell potential jump beta*dphi is no

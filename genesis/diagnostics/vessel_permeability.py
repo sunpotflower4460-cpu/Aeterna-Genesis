@@ -81,18 +81,25 @@ def relax_step(c, phi, chi, D=1.0, dt=0.1, RT=1.0):
     Still a shared per-face value used with opposite sign by the two adjacent cells, so discrete
     mass stays EXACTLY conserved (checked by `test_mass_is_exactly_conserved`).
     """
-    L = c.shape[0]
     dc = np.zeros_like(c)
     beta = chi / RT
+    D_arr = np.asarray(D, dtype=float)        # scalar, or an (L,L,L) spatial mobility D(phi)
     for ax in range(3):
         cp = np.roll(c, -1, axis=ax)          # c[i+1]
         pp = np.roll(phi, -1, axis=ax)        # phi[i+1]
         dpsi = beta * (pp - phi)              # potential jump across the face i|i+1
+        # Symmetric FACE average of the (possibly spatial) mobility. A cell-centered D would give
+        # each face its lower-index cell's mobility, so opposite sides of the same interface would
+        # use inside- vs outside-D and transient fluxes would depend on grid orientation (external
+        # review, Codex, 2026-07-17). Scalar D is unaffected.
+        D_face = D_arr if D_arr.ndim == 0 else 0.5 * (D_arr + np.roll(D_arr, -1, axis=ax))
         # Scharfetter-Gummel flux toward +ax across the face between cell i and i+1:
-        J = D * (_bernoulli(dpsi) * c - _bernoulli(-dpsi) * cp)
-        # Neumann: no flux across the domain boundary (the wrap-around face at index L-1 along ax).
+        J = D_face * (_bernoulli(dpsi) * c - _bernoulli(-dpsi) * cp)
+        # Neumann: no flux across the domain boundary. The boundary face is the LAST index ALONG
+        # THIS axis (c.shape[ax]-1) -- differs per axis for non-cubic fields, where a fixed L-1
+        # would wall off an interior plane and leave the real wrap-around face active (Codex #5).
         sl = [slice(None)] * 3
-        sl[ax] = L - 1
+        sl[ax] = c.shape[ax] - 1
         J[tuple(sl)] = 0.0
         Jm = np.roll(J, 1, axis=ax)           # flux across the face between cell i-1 and i
         sl0 = [slice(None)] * 3
