@@ -66,6 +66,15 @@ def test_chemical_free_energy_change_matches_the_dilute_ideal_free_energy_densit
     assert abs(dG - 8.0 * (0.0 - (-1.0))) < 1e-9   # 8 cells * (f(e) - f(1)) = 8 cells * 1.0
 
 
+def test_chemical_free_energy_change_scales_by_dx_cubed():
+    shape = (2, 2, 2)
+    before = {"a": np.full(shape, 1.0)}
+    after = {"a": np.full(shape, np.e)}
+    base = tl.chemical_free_energy_change(before, after, mu0={"a": 0.0}, RT=1.0, dx=1.0)
+    scaled = tl.chemical_free_energy_change(before, after, mu0={"a": 0.0}, RT=1.0, dx=2.0)
+    assert abs(scaled - base * 8.0) < 1e-9
+
+
 def test_chemical_free_energy_change_derivative_matches_chemical_potential():
     # sanity cross-check: the free-energy density's slope (measured via a small finite
     # difference) must reproduce chemical_potential exactly -- this is the defining property
@@ -123,6 +132,16 @@ def test_entropy_production_matches_analytic_value_and_is_nonnegative_for_sponta
     expected = 8.0 * np.log(2.0)
     assert abs(ep - expected) < 1e-9
     assert ep >= 0.0   # spontaneous reaction (f->m, mu_f>mu_m here) must have non-negative sigma
+
+
+def test_entropy_production_scales_by_dx_cubed():
+    shape = (2, 2, 2)
+    conc = {"f": np.full(shape, 2.0), "m": np.full(shape, 1.0)}
+    delta_g = tl.reaction_delta_g(conc, {"f": -1.0, "m": 1.0}, mu0={"f": 0.0, "m": 0.0}, RT=1.0)
+    rate = np.full(shape, 1.0)
+    base = tl.entropy_production_reaction(rate, -delta_g, RT=1.0, dx=1.0)
+    scaled = tl.entropy_production_reaction(rate, -delta_g, RT=1.0, dx=2.0)
+    assert abs(scaled - base * 8.0) < 1e-9
 
 
 def test_viscous_dissipation_zero_when_strain_rate_zero():
@@ -184,3 +203,13 @@ def test_useful_work_zero_for_s1_stage_with_zero_stress_power():
     phi = np.full((4, 4, 4), 0.0)   # everything in-band
     stress_power = np.zeros((4, 4, 4))   # u=0, no hydrodynamics yet
     assert tl.useful_work(stress_power, phi) == 0.0
+
+
+def test_useful_work_scales_by_dx_cubed():
+    shape = (6, 6, 6)
+    phi = np.full(shape, 1.0)
+    phi[2:4, 2:4, 2:4] = 0.0
+    stress_power = np.full(shape, 3.0)
+    base = tl.useful_work(stress_power, phi, band_thresh=0.9, dx=1.0)
+    scaled = tl.useful_work(stress_power, phi, band_thresh=0.9, dx=2.0)
+    assert abs(scaled - base * 8.0) < 1e-9

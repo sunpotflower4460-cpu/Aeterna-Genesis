@@ -26,19 +26,76 @@ def vessel_mask(phi, thresh=0.0):
     return phi > thresh
 
 
+def _merge_periodic_labels(lbl, mask):
+    """Union `ndimage.label`'s (non-periodic) labels across the domain's periodic boundary faces:
+    for the periodic-box vessel model this campaign uses (`surface_area` already treats the
+    domain as periodic via `np.roll`), a component that crosses a seam is ONE object, but
+    `ndimage.label` alone splits it into two labels since it only sees face-adjacency within the
+    array, never wraparound (Codex). Returns a relabeled array with seam-connected labels merged."""
+    parent = {}
+
+    def find(x):
+        root = x
+        while parent.get(root, root) != root:
+            root = parent[root]
+        while parent.get(x, x) != root:
+            parent[x], x = root, parent.get(x, x)
+        return root
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    for ax in range(mask.ndim):
+        face0 = [slice(None)] * mask.ndim
+        face0[ax] = 0
+        face1 = [slice(None)] * mask.ndim
+        face1[ax] = -1
+        l0 = lbl[tuple(face0)]
+        l1 = lbl[tuple(face1)]
+        both = (l0 > 0) & (l1 > 0)
+        for a, b in zip(l0[both].ravel().tolist(), l1[both].ravel().tolist()):
+            union(a, b)
+
+    if not parent:
+        return lbl
+    out = lbl.copy()
+    for label in np.unique(lbl):
+        if label == 0:
+            continue
+        root = find(int(label))
+        if root != label:
+            out[lbl == label] = root
+    return out
+
+
 def connected_components(mask):
-    """(n_components, sizes_desc): 6-connected component count and voxel counts, largest first."""
+    """(n_components, sizes_desc): 6-connected component count and voxel counts, largest first --
+    periodic across the domain boundary (a component that crosses a seam counts as ONE object,
+    matching the periodic-box vessel model; see `_merge_periodic_labels`)."""
     lbl, n = ndimage.label(mask)
     if n == 0:
         return 0, []
-    sizes = ndimage.sum(mask, lbl, index=range(1, n + 1))
-    return int(n), sorted((int(s) for s in sizes), reverse=True)
+    lbl = _merge_periodic_labels(lbl, mask)
+    labels_present = [int(x) for x in np.unique(lbl) if x != 0]
+    sizes = [int((lbl == label).sum()) for label in labels_present]
+    return len(labels_present), sorted(sizes, reverse=True)
 
 
 def boundary_topology(mask):
     """Betti numbers (b0/b1/b2), Euler characteristic, and a closed-single-component flag for a
     vessel mask -- delegates entirely to the validated Topology Instrument v1 (`topology_betti.
-    betti3d`); does not reimplement homology."""
+    betti3d`); does not reimplement homology.
+
+    KNOWN GAP (documented, not silently papered over): unlike this module's own
+    `connected_components` (periodic across the domain boundary, see `_merge_periodic_labels`),
+    `topology_betti.betti3d` does not yet implement periodic connectivity, so `b0`/
+    `is_closed_single_component` here can disagree with `connected_components`'s count for a
+    vessel that touches or crosses the periodic boundary. Fixing this requires updating the
+    shared, already-validated Topology Instrument itself (out of this additive PR's no_touch
+    scope) -- deferred to a dedicated follow-up. Not a concern for a centered vessel with margin
+    to the domain edge (the F1 V0 / early P10 S1 placement pattern)."""
     b = betti3d(mask)
     b["is_closed_single_component"] = bool(b["b0"] == 1 and b["b2"] == 0)
     return b

@@ -121,6 +121,18 @@ def test_gate_iii_fails_closed_by_default_without_explicit_control_confirmation(
     assert "matched control" in reason or "pathway" in reason
 
 
+def test_gate_iii_fails_closed_on_missing_numeric_effect_without_raising():
+    # a None/missing effect metric must FAIL, never raise TypeError and abort the audit.
+    status, detail = bc.gate_iii_downward(
+        effect_full=None, effect_matched_control=0.0, control_removes_downward_path=True)
+    assert status == "FAIL"
+    assert detail["effect_full"] is None
+    status2, detail2 = bc.gate_iii_downward(
+        effect_full=0.5, effect_matched_control=None, control_removes_downward_path=True)
+    assert status2 == "FAIL"
+    assert detail2["effect_matched_control"] is None
+
+
 def test_gate_iii_refuses_wrong_direction_control():
     # even if the numbers "look right", a control that does not target the claimed downward
     # pathway must never pass Gate III (the exact mistake caught by external review on the F0).

@@ -14,16 +14,17 @@ Frozen reference (F0 §4, `thermodynamic_ledger`):
   matter_in = sum over the FIXED outer-shell reservoir region k_res*(f_res-f) * dx^3 (box
     geometry, not phi-relative; volumetric, matching the frozen PDE's volumetric source term).
   chemical potential: dilute-ideal  mu_i = mu0_i + RT*ln(c_i).
-  chemical free-energy change: Delta G = sum_i integral( f_i(c_i_after) - f_i(c_i_before) ) dV,
-    where f_i(c) = mu0_i*c + RT*(c*ln(c) - c) is the free-energy DENSITY whose derivative is
+  chemical free-energy change: Delta G = sum_i integral( f_i(c_i_after) - f_i(c_i_before) ) dV *
+    dx^3, where f_i(c) = mu0_i*c + RT*(c*ln(c) - c) is the free-energy DENSITY whose derivative is
     mu_i(c) (the Legendre-consistent integral of mu dc, NOT the bare product c*mu).
   reaction Delta G_rxn = sum_i nu_i * mu_i  (nu_i: stoichiometric coefficients); affinity = -Delta
     G_rxn.
   waste_out = sum of k_out*w * dx^3 over the WHOLE domain (the frozen PDE's `-k_out*w` sink is
     global and volumetric).
-  entropy_production = sum_rxn(rate * affinity / RT) + viscous dissipation (>=0 for consistency).
-  useful_work = interface-band integral of sigma_M:grad(u) (free energy converted to boundary
-    maintenance; zero while u=0 pre-hydrodynamics).
+  entropy_production = sum_rxn(rate * affinity / RT) * dx^3 + viscous dissipation (>=0 for
+    consistency).
+  useful_work = interface-band integral of sigma_M:grad(u) * dx^3 (free energy converted to
+    boundary maintenance; zero while u=0 pre-hydrodynamics).
   mass_balance_error / stoichiometric_balance_error: before/after accounting residuals, should be
     ~0.
 
@@ -89,20 +90,23 @@ def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
     return mu0 * c + RT * (c * np.log(c) - c)
 
 
-def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0):
+def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1.0):
     """Delta G = sum_i integral( f_i(c_i_after) - f_i(c_i_before) ) dV, where `f_i(c) = mu0_i*c +
     RT*(c*ln(c) - c)` is the dilute-ideal free-energy DENSITY (see `_dilute_ideal_free_energy_
     density`) whose derivative reproduces `chemical_potential` -- the physically correct integral
     of mu(c) dc for a FINITE concentration change, not the bare product `c*mu(c)` (which is a
     different, larger quantity by `RT*c`). `species_before`/`species_after`: dict species-name ->
-    field. `mu0`: dict or scalar."""
+    field. `mu0`: dict or scalar. `dx^3` cell-volume weighting converts the free-energy DENSITY
+    sum into the extensive integral (Codex: a bare per-cell sum would make this change with grid
+    resolution relative to the rest of the ledger -- `matter_in`/`waste_out`/`total_mass` already
+    use `dx^3`)."""
     total = 0.0
     for k in species_before:
         mu0_k = mu0.get(k, 0.0) if isinstance(mu0, dict) else mu0
         f_before = _dilute_ideal_free_energy_density(species_before[k], mu0_k, RT)
         f_after = _dilute_ideal_free_energy_density(species_after[k], mu0_k, RT)
         total += float((f_after - f_before).sum())
-    return total
+    return total * dx ** 3
 
 
 def reaction_delta_g(concentrations, stoich, mu0, RT=1.0):
@@ -134,13 +138,17 @@ def waste_out(w, k_out, region_mask=None, dx=1.0):
     return float(arr.sum()) * dx ** 3
 
 
-def entropy_production_reaction(rate, affinity, RT=1.0):
-    """Reaction contribution to entropy production: sum(rate * (-affinity) / RT) -- pass the
-    reaction's driving force as `affinity` = -Delta G_rxn (i.e. `-reaction_delta_g(...)`) so that a
-    spontaneous (Delta G_rxn<0) reaction contributes a non-negative term, matching the F0's
+def entropy_production_reaction(rate, affinity, RT=1.0, dx=1.0):
+    """Reaction contribution to entropy production: sum(rate * (-affinity) / RT) * dx^3 -- pass
+    the reaction's driving force as `affinity` = -Delta G_rxn (i.e. `-reaction_delta_g(...)`) so
+    that a spontaneous (Delta G_rxn<0) reaction contributes a non-negative term, matching the F0's
     ">=0 for a thermodynamically consistent reaction" requirement. A negative result is a real,
-    reportable finding (an inconsistent rate law), never silently clipped to zero."""
-    return float((np.asarray(rate) * affinity / RT).sum())
+    reportable finding (an inconsistent rate law), never silently clipped to zero. `rate` is a
+    volumetric reaction-rate DENSITY (matching `reaction_localization.reaction_rate_field`'s
+    `k*R*c` convention); `dx^3` converts the per-cell sum into the extensive total entropy
+    production (Codex: without it, the required `entropy_production>0` ledger check would scale
+    with the number of grid cells, not physical entropy production, under grid refinement)."""
+    return float((np.asarray(rate) * affinity / RT).sum()) * dx ** 3
 
 
 def viscous_dissipation(strain_rate_sq, eta=1.0):
@@ -149,17 +157,20 @@ def viscous_dissipation(strain_rate_sq, eta=1.0):
     return float(2.0 * eta * np.asarray(strain_rate_sq).sum())
 
 
-def useful_work(stress_power_density, phi, band_thresh=0.9):
+def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
     """Free energy converted into boundary MAINTENANCE (F0 §4: `useful_work` = "界面維持へ回った
     自由エネルギー（sigma_M:grad(u) の界面寄与）") -- the caller-supplied `stress_power_density`
-    field (= sigma_M : grad(u), the Marangoni-stress power density; depends on the full stress
+    field (= sigma_M : grad(u), the Marangoni-stress power DENSITY; depends on the full stress
     tensor and velocity gradient, which S1 does not yet produce since u=0 -- same caller-supplies-
     the-field pattern as `viscous_dissipation`'s hydrodynamic hook) integrated over ONLY the
     diffuse interface band |phi|<band_thresh, not the bulk -- this is the required Gate III ledger
     field distinguishing energy that maintained the BOUNDARY from energy dissipated in the bulk.
-    Zero by construction whenever `stress_power_density` is all-zero (S1, u=0)."""
+    `dx^3` cell-volume weighting converts the per-cell density sum into the extensive integral
+    (Codex: without it, `useful_work` would grow with the number of interface-band cells rather
+    than the physical boundary-maintenance power under grid refinement). Zero by construction
+    whenever `stress_power_density` is all-zero (S1, u=0)."""
     band = np.abs(phi) < band_thresh
-    return float(np.asarray(stress_power_density)[band].sum())
+    return float(np.asarray(stress_power_density)[band].sum()) * dx ** 3
 
 
 def mass_balance_error(mass_before, mass_after, matter_in_amt, waste_out_amt, other_sinks=0.0):

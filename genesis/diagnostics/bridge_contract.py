@@ -94,6 +94,15 @@ def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_sc
     return status, checks
 
 
+def _safe_float(x):
+    """float(x), or None for None/non-numeric x (never raises) -- used so a missing Gate III
+    metric can still be reported in `detail` without crashing (see `gate_iii_downward`)."""
+    try:
+        return float(x) if x is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def gate_iii_downward(effect_full, effect_matched_control, control_removes_downward_path=False,
                        tol=1e-9):
     """Gate III: PASS iff the claimed downward (upper-state -> lower-level) effect is present in
@@ -102,13 +111,18 @@ def gate_iii_downward(effect_full, effect_matched_control, control_removes_downw
     confirm `control_removes_downward_path=True` -- i.e. the EXPERIMENT DESIGN (not this function)
     guarantees the control targets the correct (downward, not upward) pathway; this refuses to
     pass a Gate III claim built on the wrong control (see F0's Codex #5: an earlier P10 draft
-    accidentally froze the upward m->interface path instead of the downward one)."""
+    accidentally froze the upward m->interface path instead of the downward one). Fails closed
+    (never raises) on a None/non-numeric effect metric, matching `gate_ii_effective_law`'s
+    `_num_lt`/`_num_ge` discipline -- a missing measurement must FAIL, not abort the audit with a
+    TypeError (Codex)."""
     if not control_removes_downward_path:
         return "FAIL", "control does not remove the claimed downward pathway (matched control mismatch)"
-    effect_present = abs(effect_full) > tol
-    effect_absent_under_control = abs(effect_matched_control) <= tol
+    ef = _safe_float(effect_full)
+    emc = _safe_float(effect_matched_control)
+    effect_present = ef is not None and abs(ef) > tol
+    effect_absent_under_control = emc is not None and abs(emc) <= tol
     status = "PASS" if (effect_present and effect_absent_under_control) else "FAIL"
-    return status, dict(effect_full=float(effect_full), effect_matched_control=float(effect_matched_control))
+    return status, dict(effect_full=ef, effect_matched_control=emc)
 
 
 def bridge_level(gate_i_status, gate_ii_status, gate_iii_status):

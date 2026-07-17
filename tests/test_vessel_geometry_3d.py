@@ -27,6 +27,35 @@ def test_single_sphere_is_one_closed_component_genus_zero():
     assert bt["genus"] == 0
 
 
+def test_connected_components_is_periodic_across_the_domain_seam():
+    # a component that crosses the periodic boundary must count as ONE object, matching the
+    # periodic-box vessel model (surface_area already treats the domain as periodic) -- plain
+    # ndimage.label alone would split a seam-crossing sphere into two labels (Codex).
+    L = 20
+    idx = np.arange(L, dtype=float)
+    X, Y, Z = np.meshgrid(idx, idx, idx, indexing="ij")
+    dx = np.minimum(np.abs(X - 0), L - np.abs(X - 0))   # periodic distance along x from x=0
+    r = np.sqrt(dx ** 2 + (Y - 10) ** 2 + (Z - 10) ** 2)
+    mask = r < 4.0
+    assert mask[0].any() and mask[-1].any()   # sanity: genuinely touches both seam faces
+    n, sizes = vg.connected_components(mask)
+    assert n == 1
+    assert sizes[0] == int(mask.sum())
+
+
+def test_connected_components_still_separates_genuinely_distinct_components():
+    # periodic merging must not glue together components that are NOT seam-connected.
+    L = 20
+    idx = np.arange(L, dtype=float)
+    X, Y, Z = np.meshgrid(idx, idx, idx, indexing="ij")
+    r1 = np.sqrt((X - 5) ** 2 + (Y - 10) ** 2 + (Z - 10) ** 2)
+    r2 = np.sqrt((X - 15) ** 2 + (Y - 10) ** 2 + (Z - 10) ** 2)
+    mask = (r1 < 3.0) | (r2 < 3.0)
+    n, sizes = vg.connected_components(mask)
+    assert n == 2
+    assert len(sizes) == 2
+
+
 def test_volume_matches_known_sphere_volume():
     for R in (6.0, 10.0, 15.0):
         L = int(R * 4)
