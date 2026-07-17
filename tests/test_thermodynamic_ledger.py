@@ -3,6 +3,7 @@ role V). Every check is an exact analytic identity (dilute-ideal chemical potent
 mass-balance arithmetic) matching the F0's frozen formulas 1:1 -- no physics run data involved.
 """
 import numpy as np
+import pytest
 
 import genesis.diagnostics.thermodynamic_ledger as tl
 
@@ -53,6 +54,20 @@ def test_chemical_potential_shifts_with_mu0():
     assert abs(float(tl.chemical_potential(c, mu0=5.0, RT=1.0)[0]) - 5.0) < 1e-12
 
 
+def test_chemical_potential_rejects_negative_concentration():
+    # a genuinely negative concentration is a solver bug, not a valid near-zero state -- must
+    # raise, never be silently floored to eps and made to look like a valid tiny concentration.
+    with pytest.raises(ValueError):
+        tl.chemical_potential(np.array([1.0, -0.05, 2.0]))
+
+
+def test_chemical_potential_tolerates_tiny_negative_floating_noise():
+    # values within eps of zero (floating-point noise, not a real overshoot) must still floor
+    # to eps rather than raise.
+    mu = tl.chemical_potential(np.array([-1e-13]), mu0=0.0, RT=1.0, eps=1e-12)
+    assert np.isfinite(mu[0])
+
+
 def test_chemical_free_energy_change_matches_the_dilute_ideal_free_energy_density_integral():
     # the free-energy DENSITY is f(c) = mu0*c + RT*(c*ln(c) - c) -- the Legendre-consistent
     # integral of mu(c) dc -- NOT the bare product c*mu(c), which overstates it by RT*c (Codex:
@@ -64,6 +79,14 @@ def test_chemical_free_energy_change_matches_the_dilute_ideal_free_energy_densit
     after = {"a": np.full(shape, np.e)}       # f(e) = 0*e + 1*(e*1 - e) = 0
     dG = tl.chemical_free_energy_change(before, after, mu0={"a": 0.0}, RT=1.0)
     assert abs(dG - 8.0 * (0.0 - (-1.0))) < 1e-9   # 8 cells * (f(e) - f(1)) = 8 cells * 1.0
+
+
+def test_chemical_free_energy_change_rejects_negative_concentration():
+    shape = (2, 2, 2)
+    before = {"a": np.full(shape, 1.0)}
+    after = {"a": np.full(shape, -0.5)}   # unphysical overshoot
+    with pytest.raises(ValueError):
+        tl.chemical_free_energy_change(before, after, mu0={"a": 0.0}, RT=1.0)
 
 
 def test_chemical_free_energy_change_scales_by_dx_cubed():
@@ -151,6 +174,13 @@ def test_viscous_dissipation_zero_when_strain_rate_zero():
 def test_viscous_dissipation_matches_known_formula():
     strain_sq = np.full((2, 2, 2), 0.5)
     assert abs(tl.viscous_dissipation(strain_sq, eta=2.0) - (2.0 * 2.0 * 8 * 0.5)) < 1e-9
+
+
+def test_viscous_dissipation_scales_by_dx_cubed():
+    strain_sq = np.full((2, 2, 2), 0.5)
+    base = tl.viscous_dissipation(strain_sq, eta=2.0, dx=1.0)
+    scaled = tl.viscous_dissipation(strain_sq, eta=2.0, dx=2.0)
+    assert abs(scaled - base * 8.0) < 1e-9
 
 
 def test_mass_balance_error_zero_for_consistent_accounting():

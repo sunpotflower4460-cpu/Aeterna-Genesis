@@ -72,10 +72,29 @@ def matter_in(f, outer_mask, k_res, f_res, dx=1.0):
     return float((k_res * (f_res - f) * outer_mask).sum()) * dx ** 3
 
 
+def _reject_negative_concentration(c, eps):
+    """Raise iff `c` contains a genuinely NEGATIVE value (beyond `eps` floating-point noise) --
+    a negative concentration is unphysical and indicates a caller/solver bug (overshoot), not a
+    valid near-zero state. Only `[0, eps)` is treated as numerical noise and floored to `eps` for
+    `log(0)`; a real negative value must surface as an error, not be silently floored to look
+    like a tiny-but-valid concentration (Codex: clipping c<0 straight to eps let a solver
+    overshoot pass a downstream reaction_delta_g/entropy_production check as if nothing were
+    wrong)."""
+    c = np.asarray(c, dtype=float)
+    if np.any(c < -eps):
+        raise ValueError(
+            "negative concentration detected (c < -eps): unphysical, indicates a solver bug -- "
+            "not silently floored to eps")
+    return c
+
+
 def chemical_potential(c, mu0=0.0, RT=1.0, eps=1e-12):
     """Dilute-ideal chemical potential mu = mu0 + RT*ln(c) (F0 frozen reference state). Clipped at
-    `eps` to keep log finite for c=0 cells -- this clip is a numerical floor, not a physics claim."""
-    return mu0 + RT * np.log(np.clip(np.asarray(c), eps, None))
+    `eps` to keep log finite for c=0 cells -- this clip is a numerical floor for c>=0, not a
+    physics claim. A genuinely negative `c` raises (see `_reject_negative_concentration`) rather
+    than being silently treated as ~0."""
+    c = _reject_negative_concentration(c, eps)
+    return mu0 + RT * np.log(np.clip(c, eps, None))
 
 
 def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
@@ -85,8 +104,10 @@ def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
     differs from f(c) by exactly `RT*c` (Codex, 2026-07-17: an earlier version of
     `chemical_free_energy_change` used the bare `c*mu(c)` product, which overstates the true
     free-energy change by `RT*Delta(c)` whenever the total amount of material changes, e.g.
-    across a fuel-in/waste-out window -- silently wrong even though `c*mu` LOOKS extensive)."""
-    c = np.clip(np.asarray(c), eps, None)
+    across a fuel-in/waste-out window -- silently wrong even though `c*mu` LOOKS extensive).
+    A genuinely negative `c` raises, matching `chemical_potential`'s discipline."""
+    c = _reject_negative_concentration(c, eps)
+    c = np.clip(c, eps, None)
     return mu0 * c + RT * (c * np.log(c) - c)
 
 
@@ -151,10 +172,14 @@ def entropy_production_reaction(rate, affinity, RT=1.0, dx=1.0):
     return float((np.asarray(rate) * affinity / RT).sum()) * dx ** 3
 
 
-def viscous_dissipation(strain_rate_sq, eta=1.0):
+def viscous_dissipation(strain_rate_sq, eta=1.0, dx=1.0):
     """2*eta*integral(e:e) dV -- zero for the S1 stage (u=0, no hydrodynamics yet); kept as a
-    hook for later hydrodynamic stages of the P10 mainline (F0 §8)."""
-    return float(2.0 * eta * np.asarray(strain_rate_sq).sum())
+    hook for later hydrodynamic stages of the P10 mainline (F0 §8). `dx^3` cell-volume weighting
+    converts the per-cell sum into the extensive volume integral the F0 defines (`∫ 2η e:e dV`),
+    matching `entropy_production_reaction`/`useful_work`'s identical convention (Codex: without
+    it, a fixed-L resolution sweep would change the entropy/thermodynamic balance purely from the
+    number of grid cells, not the physical dissipation)."""
+    return float(2.0 * eta * np.asarray(strain_rate_sq).sum()) * dx ** 3
 
 
 def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):

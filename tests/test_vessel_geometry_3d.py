@@ -89,10 +89,37 @@ def test_surface_area_scales_as_r_squared_with_stable_known_bias():
     assert max(ratios) - min(ratios) < 0.1, "bias ratio should be stable across R, got %s" % ratios
 
 
-def test_interface_width_fraction_shrinks_with_sharper_interface():
+def test_interface_width_shrinks_with_sharper_interface():
     phi_diffuse = _sphere(width=3.0)
     phi_sharp = _sphere(width=0.5)
-    assert vg.interface_width_fraction(phi_sharp) < vg.interface_width_fraction(phi_diffuse)
+    assert vg.interface_width(phi_sharp) < vg.interface_width(phi_diffuse)
+
+
+def test_interface_width_recovers_the_true_width_parameter():
+    # the tanh-profile identity must recover the ACTUAL width used to build the synthetic
+    # sphere (sanity-checks the analytic derivation). A width close to the grid spacing (dx=1)
+    # is finite-difference-resolution-limited (the width=0.5 case has ~12% error since the
+    # profile is barely resolved by the grid) so the tolerance is looser there; widths well
+    # above dx recover to <1%.
+    tolerances = {0.5: 0.15, 1.5: 0.05, 3.0: 0.05}
+    for width, tol in tolerances.items():
+        phi = _sphere(width=width)
+        measured = vg.interface_width(phi)
+        assert abs(measured - width) < tol * width, "width=%g: measured=%g" % (width, measured)
+
+
+def test_interface_width_is_independent_of_vessel_size_unlike_band_volume_fraction():
+    # a band VOLUME FRACTION shrinks as the vessel grows even at fixed physical interface
+    # thickness (Codex) -- interface_width must NOT have that size-dependence: the same
+    # width=1.5 profile must measure ~1.5 regardless of R.
+    widths = []
+    for R in (6.0, 10.0, 15.0):
+        L = int(R * 4)
+        phi = _sphere(L=L, R=R, width=1.5)
+        widths.append(vg.interface_width(phi))
+    for w in widths:
+        assert abs(w - 1.5) < 0.1, "width should stay ~1.5 regardless of R, got %s" % widths
+    assert max(widths) - min(widths) < 0.05, "width should be stable across R, got %s" % widths
 
 
 def test_mean_curvature_matches_known_sphere_curvature():
