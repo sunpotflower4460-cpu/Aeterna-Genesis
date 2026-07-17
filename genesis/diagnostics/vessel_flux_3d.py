@@ -88,8 +88,12 @@ def total_mass(c, dx=1.0):
 def stoichiometric_invariant(species_masses, coeffs):
     """sum_k coeffs[k] * species_masses[k] -- for a closed reaction chain (no fuel-in/waste-out)
     this combination is conserved by construction; callers audit it against known source/sink
-    terms via `mass_balance_residual`, not by assuming it is zero."""
-    return float(sum(coeffs[k] * species_masses[k] for k in coeffs))
+    terms via `mass_balance_residual`, not by assuming it is zero. A species in `coeffs` absent
+    from `species_masses` is treated as mass 0 (Codex): a waste/product species genuinely absent
+    before it appears in a sparse before/after reaction-chain audit must not abort this
+    computation, matching `thermodynamic_ledger.stoichiometric_balance_error`'s identical
+    sparse-species handling."""
+    return float(sum(coeffs[k] * species_masses.get(k, 0.0) for k in coeffs))
 
 
 def mass_balance_residual(mass_before, mass_after, sources=0.0, sinks=0.0):

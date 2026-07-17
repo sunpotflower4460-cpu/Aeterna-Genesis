@@ -111,6 +111,15 @@ def test_stoichiometric_invariant_is_weighted_sum():
     assert abs(inv2 - 15.0) < 1e-9
 
 
+def test_stoichiometric_invariant_treats_species_absent_from_masses_as_zero():
+    # a waste/product species genuinely absent from a sparse before/after mass dict (not yet
+    # appeared) must not abort the computation -- treated as mass 0, matching
+    # thermodynamic_ledger.stoichiometric_balance_error's identical sparse-species handling.
+    masses = dict(a=10.0)   # "w" not present yet
+    inv = vf.stoichiometric_invariant(masses, dict(a=1.0, w=1.0))
+    assert abs(inv - 10.0) < 1e-9
+
+
 def test_mass_balance_residual_zero_for_consistent_accounting():
     assert vf.mass_balance_residual(10.0, 13.0, sources=5.0, sinks=2.0) < 1e-12
 

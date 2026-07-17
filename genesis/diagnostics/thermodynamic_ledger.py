@@ -224,9 +224,14 @@ def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
     `dx^3` cell-volume weighting converts the per-cell density sum into the extensive integral
     (Codex: without it, `useful_work` would grow with the number of interface-band cells rather
     than the physical boundary-maintenance power under grid refinement). Zero by construction
-    whenever `stress_power_density` is all-zero (S1, u=0)."""
+    whenever `stress_power_density` is all-zero (S1, u=0) -- callers may pass a bare scalar `0.0`
+    for this S1 case (broadcast to `phi`'s shape before masking) rather than being forced to
+    construct a full zero-filled field array (Codex: a bare 0-d array from `np.asarray(0.0)`
+    cannot be indexed by the 3D interface-band mask and raised, aborting the ledger for exactly
+    the pre-hydrodynamic stage this docstring says is supported)."""
     band = np.abs(phi) < band_thresh
-    return float(np.asarray(stress_power_density)[band].sum()) * dx ** 3
+    spd = np.broadcast_to(np.asarray(stress_power_density, dtype=float), np.asarray(phi).shape)
+    return float(spd[band].sum()) * dx ** 3
 
 
 def mass_balance_error(mass_before, mass_after, matter_in_amt, waste_out_amt, other_sinks=0.0):

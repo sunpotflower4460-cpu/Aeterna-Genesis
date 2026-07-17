@@ -284,6 +284,22 @@ def test_useful_work_zero_for_s1_stage_with_zero_stress_power():
     assert tl.useful_work(stress_power, phi) == 0.0
 
 
+def test_useful_work_accepts_a_bare_scalar_zero_for_the_s1_stage():
+    # callers should be able to pass a bare 0.0 for the pre-hydrodynamic S1 stage rather than
+    # being forced to construct a full zero-filled field array matching phi's shape.
+    phi = np.full((4, 4, 4), 0.0)
+    assert tl.useful_work(0.0, phi) == 0.0
+
+
+def test_useful_work_broadcasts_a_nonzero_scalar_too():
+    shape = (6, 6, 6)
+    phi = np.full(shape, 1.0)
+    phi[2:4, 2:4, 2:4] = 0.0
+    band = np.abs(phi) < 0.9
+    uw = tl.useful_work(3.0, phi, band_thresh=0.9)
+    assert abs(uw - 3.0 * band.sum()) < 1e-9
+
+
 def test_useful_work_scales_by_dx_cubed():
     shape = (6, 6, 6)
     phi = np.full(shape, 1.0)

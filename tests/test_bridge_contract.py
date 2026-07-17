@@ -95,6 +95,27 @@ def test_gate_ii_fails_closed_on_numpy_boolean_metrics():
     assert detail["prediction"] is False
 
 
+def test_gate_ii_fails_closed_on_negative_metrics():
+    # R_pred/coefficient CV/closure residual are non-negative BY DEFINITION -- a negative
+    # sentinel (e.g. -1 for "not yet computed") or a broken diagnostic must not pass just
+    # because `-1 < bound` is arithmetically true.
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(r_pred=-1.0))
+    assert status == "FAIL"
+    assert detail["prediction"] is False
+    status2, detail2 = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(closure_residual=-0.01))
+    assert status2 == "FAIL"
+    assert detail2["closure"] is False
+
+
+def test_gate_ii_fails_closed_on_non_finite_metrics():
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(r_pred=float("inf")))
+    assert status == "FAIL"
+    assert detail["prediction"] is False
+    status2, detail2 = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(closure_residual=float("nan")))
+    assert status2 == "FAIL"
+    assert detail2["closure"] is False
+
+
 def test_gate_ii_fails_if_function_form_not_invariant_across_seeds_despite_good_cv():
     # good CV/span numbers alone are NOT sufficient -- the frozen contract also requires the
     # measured effective law's functional FORM to stay the same across seeds (§2 II point 2).
@@ -140,6 +161,31 @@ def test_gate_iii_fails_closed_by_default_without_explicit_control_confirmation(
     status, reason = bc.gate_iii_downward(effect_full=0.5, effect_matched_control=0.0)
     assert status == "FAIL"
     assert "matched control" in reason or "pathway" in reason
+
+
+def test_gate_iii_rejects_truthy_non_true_control_confirmation():
+    # a truthiness check (`not x`) would wrongly accept the non-empty STRING "false" as
+    # confirmation -- only the literal boolean True may confirm the control.
+    status, reason = bc.gate_iii_downward(
+        effect_full=0.5, effect_matched_control=0.0, control_removes_downward_path="false")
+    assert status == "FAIL"
+    assert "matched control" in reason or "pathway" in reason
+    status2, _ = bc.gate_iii_downward(
+        effect_full=0.5, effect_matched_control=0.0, control_removes_downward_path="unknown")
+    assert status2 == "FAIL"
+
+
+def test_gate_iii_fails_closed_on_non_finite_effect_magnitudes():
+    # an upstream divide-by-zero/normalization failure producing inf must not read as
+    # "effect present" (abs(inf) > tol) and help promote a bridge to B3.
+    status, detail = bc.gate_iii_downward(
+        effect_full=float("inf"), effect_matched_control=0.0, control_removes_downward_path=True)
+    assert status == "FAIL"
+    assert detail["effect_full"] is None
+    status2, detail2 = bc.gate_iii_downward(
+        effect_full=0.5, effect_matched_control=float("nan"), control_removes_downward_path=True)
+    assert status2 == "FAIL"
+    assert detail2["effect_matched_control"] is None
 
 
 def test_gate_iii_fails_closed_on_missing_numeric_effect_without_raising():

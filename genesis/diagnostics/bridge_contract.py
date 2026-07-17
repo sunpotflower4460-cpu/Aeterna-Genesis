@@ -49,33 +49,41 @@ def gate_i_derivation(is_target_encoded):
 _BOOL_TYPES = (bool, np.bool_)
 
 
-def _num_lt(x, bound):
-    """True iff x is a real number (NOT a bool) strictly less than bound; False (never a raised
-    TypeError) for None/missing/non-numeric/boolean x -- a missing measurement must FAIL the
-    criterion, not crash gate evaluation (Codex: bare `x < bound` on a None metric aborts the
-    whole audit with a TypeError instead of returning the conservative FAIL this module's own
-    no-silent-omission rule promises). Booleans are rejected explicitly, INCLUDING `np.bool_`
-    (Codex, second finding: `np.bool_` is not a Python `bool` subclass, so a bare `isinstance(x,
-    bool)` check misses NumPy boolean scalars -- common output from array comparisons/diagnostics
-    -- and `float(np.bool_(False))==0.0` would otherwise let one slip through and silently
-    satisfy a numeric threshold, same as a plain Python bool would)."""
-    if isinstance(x, _BOOL_TYPES):
-        return False
+def _clean_num(x):
+    """Return a finite, non-negative float for x, or None if x is None/non-numeric/boolean/
+    negative/non-finite -- every Gate II metric this module gates (R_pred, coefficient CV,
+    closure residual, seed/scale counts, scale ratio) is non-negative BY DEFINITION (a norm, a
+    CV, a residual variance ratio, a count, a length ratio), so a negative value is never a valid
+    measurement -- only a broken diagnostic or an uninitialized sentinel (e.g. -1 for "not yet
+    computed") could produce one, and it must FAIL, not silently satisfy a `< bound` check
+    (Codex: `-1 < 0.10` is True, so a negative sentinel could pass `_num_lt` outright). `inf`/
+    `nan` are rejected for the same reason a `None` metric is: not a real measurement."""
+    if isinstance(x, _BOOL_TYPES) or x is None:
+        return None
     try:
-        return x is not None and float(x) < bound
+        xf = float(x)
     except (TypeError, ValueError):
-        return False
+        return None
+    if not np.isfinite(xf) or xf < 0.0:
+        return None
+    return xf
+
+
+def _num_lt(x, bound):
+    """True iff x cleans to a finite non-negative float strictly less than bound (see
+    `_clean_num`); False (never a raised TypeError) for anything that doesn't -- a missing or
+    invalid measurement must FAIL the criterion, not crash gate evaluation (Codex: bare
+    `x < bound` on a None metric aborts the whole audit with a TypeError instead of returning the
+    conservative FAIL this module's own no-silent-omission rule promises)."""
+    xf = _clean_num(x)
+    return xf is not None and xf < bound
 
 
 def _num_ge(x, bound):
-    """True iff x is a real number (NOT a bool/np.bool_) >= bound; False for None/missing/non-
-    numeric/boolean x (see `_num_lt`)."""
-    if isinstance(x, _BOOL_TYPES):
-        return False
-    try:
-        return x is not None and float(x) >= bound
-    except (TypeError, ValueError):
-        return False
+    """True iff x cleans to a finite non-negative float >= bound (see `_clean_num`); False for
+    anything that doesn't (see `_num_lt`)."""
+    xf = _clean_num(x)
+    return xf is not None and xf >= bound
 
 
 def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_scales, scale_ratio,
@@ -112,17 +120,24 @@ def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_sc
 
 
 def _safe_float(x):
-    """float(x), or None for None/non-numeric/boolean x (never raises) -- used so a missing Gate
-    III metric can still be reported in `detail` without crashing (see `gate_iii_downward`).
-    Booleans (including `np.bool_`, see `_num_lt`) rejected explicitly: a stray pass/fail flag
-    must not silently convert to `1.0`/`0.0` and be treated as a real measured effect magnitude
-    (Codex)."""
+    """float(x), or None for None/non-numeric/boolean/non-finite x (never raises) -- used so a
+    missing Gate III metric can still be reported in `detail` without crashing (see
+    `gate_iii_downward`). Booleans (including `np.bool_`, see `_num_lt`) rejected explicitly: a
+    stray pass/fail flag must not silently convert to `1.0`/`0.0` and be treated as a real
+    measured effect magnitude. `inf`/`nan` also rejected (Codex): an upstream divide-by-zero or
+    normalization failure producing `inf` must not read as `abs(inf) > tol` == "effect present"
+    and help promote a bridge to B3 -- a non-finite value is not a valid measurement, the same as
+    a missing one. Unlike `_clean_num` (Gate II), a genuinely NEGATIVE effect magnitude IS valid
+    here (an effect can point either direction), so only finiteness is enforced."""
     if isinstance(x, _BOOL_TYPES):
         return None
     try:
-        return float(x) if x is not None else None
+        xf = float(x) if x is not None else None
     except (TypeError, ValueError):
         return None
+    if xf is not None and not np.isfinite(xf):
+        return None
+    return xf
 
 
 def gate_iii_downward(effect_full, effect_matched_control, control_removes_downward_path=False,
@@ -136,8 +151,12 @@ def gate_iii_downward(effect_full, effect_matched_control, control_removes_downw
     accidentally froze the upward m->interface path instead of the downward one). Fails closed
     (never raises) on a None/non-numeric effect metric, matching `gate_ii_effective_law`'s
     `_num_lt`/`_num_ge` discipline -- a missing measurement must FAIL, not abort the audit with a
-    TypeError (Codex)."""
-    if not control_removes_downward_path:
+    TypeError (Codex). `control_removes_downward_path` is checked with `is not True` (identity),
+    NOT a truthiness check (Codex, second finding): `not control_removes_downward_path` treats
+    any truthy value -- including the non-empty STRING `"false"` -- as confirmation, which is
+    exactly backwards for a flag whose entire purpose is requiring an explicit, unambiguous
+    `True` from the caller."""
+    if control_removes_downward_path is not True:
         return "FAIL", "control does not remove the claimed downward pathway (matched control mismatch)"
     ef = _safe_float(effect_full)
     emc = _safe_float(effect_matched_control)
