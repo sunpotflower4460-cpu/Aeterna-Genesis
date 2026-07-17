@@ -11,15 +11,19 @@ non-reproducible"). Every formula here matches the F0's frozen prose 1:1; changi
 without a documented, dated reason is exactly the drift this module exists to prevent.
 
 Frozen reference (F0 §4, `thermodynamic_ledger`):
-  matter_in = sum over the FIXED outer-shell reservoir region k_res*(f_res-f) (box geometry, not
-    phi-relative).
+  matter_in = sum over the FIXED outer-shell reservoir region k_res*(f_res-f) * dx^3 (box
+    geometry, not phi-relative; volumetric, matching the frozen PDE's volumetric source term).
   chemical potential: dilute-ideal  mu_i = mu0_i + RT*ln(c_i).
-  chemical free-energy change: Delta G = sum_i integral( c_i*mu_i ) dV, before/after difference
-    (an EXTENSIVE quantity).
+  chemical free-energy change: Delta G = sum_i integral( f_i(c_i_after) - f_i(c_i_before) ) dV,
+    where f_i(c) = mu0_i*c + RT*(c*ln(c) - c) is the free-energy DENSITY whose derivative is
+    mu_i(c) (the Legendre-consistent integral of mu dc, NOT the bare product c*mu).
   reaction Delta G_rxn = sum_i nu_i * mu_i  (nu_i: stoichiometric coefficients); affinity = -Delta
     G_rxn.
-  waste_out = sum of k_out*w over the WHOLE domain (the frozen PDE's `-k_out*w` sink is global).
+  waste_out = sum of k_out*w * dx^3 over the WHOLE domain (the frozen PDE's `-k_out*w` sink is
+    global and volumetric).
   entropy_production = sum_rxn(rate * affinity / RT) + viscous dissipation (>=0 for consistency).
+  useful_work = interface-band integral of sigma_M:grad(u) (free energy converted to boundary
+    maintenance; zero while u=0 pre-hydrodynamics).
   mass_balance_error / stoichiometric_balance_error: before/after accounting residuals, should be
     ~0.
 
@@ -36,7 +40,12 @@ def outer_shell_mask(shape, shell_width=1):
     domain boundary face, on any axis. This is a BOX geometry, independent of the vessel's
     position -- the F0's frozen fuel term is `J_f^ext = k_res*(f_res-f)*1_{outer(x)}` where
     `outer(x)` is the fixed reservoir shell, never derived from `phi` (deriving it from phi would
-    make the reservoir track the vessel instead of being a fixed exterior boundary condition)."""
+    make the reservoir track the vessel instead of being a fixed exterior boundary condition).
+    `shell_width` is in CELLS: the shell's PHYSICAL thickness is `shell_width * dx`. For
+    `matter_in`'s total to converge to a fixed physical value under grid refinement (same box
+    size, same physical shell thickness), callers comparing across resolutions must scale
+    `shell_width` as `~1/dx` (e.g. double it when halving dx) -- holding `shell_width` fixed in
+    CELLS while refining shrinks the shell's physical thickness and understates `matter_in`."""
     mask = np.zeros(shape, dtype=bool)
     sw = int(shell_width)
     for ax in range(len(shape)):
@@ -47,12 +56,19 @@ def outer_shell_mask(shape, shell_width=1):
     return mask
 
 
-def matter_in(f, outer_mask, k_res, f_res):
-    """matter_in = sum(k_res*(f_res-f)) restricted to the FIXED outer-shell reservoir region
-    `outer_mask` (from `outer_shell_mask`), matching the F0's frozen `J_f^ext =
-    k_res*(f_res-f)*1_{outer(x)}` term exactly -- NOT restricted by `phi`, which would make the
-    reservoir region track the vessel's position instead of being a fixed box-geometry boundary."""
-    return float((k_res * (f_res - f) * outer_mask).sum())
+def matter_in(f, outer_mask, k_res, f_res, dx=1.0):
+    """matter_in = sum(k_res*(f_res-f))*dx^3 restricted to the FIXED outer-shell reservoir region
+    `outer_mask` (from `outer_shell_mask`), matching the F0's frozen volumetric source term
+    `J_f^ext = k_res*(f_res-f)*1_{outer(x)}` (added directly into `d_t f`, so its cumulative
+    contribution is a VOLUME integral over the outer-shell cells) -- NOT restricted by `phi`,
+    which would make the reservoir region track the vessel's position instead of being a fixed
+    box-geometry boundary. The `dx^3` cell-volume weighting is required for the total to converge
+    under grid refinement at fixed physical box size and fixed physical shell thickness (Codex:
+    a bare per-cell sum scales with the number of boundary cells, not the physical fuel-exchange
+    rate, so refining 48^3 -> 96^3 would silently change the apparent fuel input); it also keeps
+    `matter_in` in the same physical units as `mass_balance_error`'s `mass_before`/`mass_after`
+    (both computed via `vessel_flux_3d.total_mass`'s identical `dx^3` convention)."""
+    return float((k_res * (f_res - f) * outer_mask).sum()) * dx ** 3
 
 
 def chemical_potential(c, mu0=0.0, RT=1.0, eps=1e-12):
@@ -61,20 +77,31 @@ def chemical_potential(c, mu0=0.0, RT=1.0, eps=1e-12):
     return mu0 + RT * np.log(np.clip(np.asarray(c), eps, None))
 
 
+def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
+    """f(c) = mu0*c + RT*(c*ln(c) - c) -- the dilute-ideal bulk free-energy density whose
+    derivative df/dc reproduces `chemical_potential` exactly (mu0 + RT*ln c). This is the
+    Legendre-consistent integral of mu(c) dc, NOT `c*mu(c)`: `c*mu(c) = mu0*c + RT*c*ln(c)`
+    differs from f(c) by exactly `RT*c` (Codex, 2026-07-17: an earlier version of
+    `chemical_free_energy_change` used the bare `c*mu(c)` product, which overstates the true
+    free-energy change by `RT*Delta(c)` whenever the total amount of material changes, e.g.
+    across a fuel-in/waste-out window -- silently wrong even though `c*mu` LOOKS extensive)."""
+    c = np.clip(np.asarray(c), eps, None)
+    return mu0 * c + RT * (c * np.log(c) - c)
+
+
 def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0):
-    """Delta G = sum_i integral( c_i_after*mu_i(c_i_after) - c_i_before*mu_i(c_i_before) ) dV
-    (F0 frozen formula). `species_before`/`species_after`: dict species-name -> field. `mu0`: dict
-    or scalar. Weighted by concentration `c_i` (an EXTENSIVE free-energy density, `c*mu`), not the
-    bare intensive `mu_after - mu_before` -- the chemical potential alone has no volume/amount
-    information, so summing it directly would silently drop the amount-of-substance factor."""
+    """Delta G = sum_i integral( f_i(c_i_after) - f_i(c_i_before) ) dV, where `f_i(c) = mu0_i*c +
+    RT*(c*ln(c) - c)` is the dilute-ideal free-energy DENSITY (see `_dilute_ideal_free_energy_
+    density`) whose derivative reproduces `chemical_potential` -- the physically correct integral
+    of mu(c) dc for a FINITE concentration change, not the bare product `c*mu(c)` (which is a
+    different, larger quantity by `RT*c`). `species_before`/`species_after`: dict species-name ->
+    field. `mu0`: dict or scalar."""
     total = 0.0
     for k in species_before:
         mu0_k = mu0.get(k, 0.0) if isinstance(mu0, dict) else mu0
-        c_before = np.asarray(species_before[k])
-        c_after = np.asarray(species_after[k])
-        mu_before = chemical_potential(c_before, mu0_k, RT)
-        mu_after = chemical_potential(c_after, mu0_k, RT)
-        total += float((c_after * mu_after - c_before * mu_before).sum())
+        f_before = _dilute_ideal_free_energy_density(species_before[k], mu0_k, RT)
+        f_after = _dilute_ideal_free_energy_density(species_after[k], mu0_k, RT)
+        total += float((f_after - f_before).sum())
     return total
 
 
@@ -92,15 +119,19 @@ def reaction_delta_g(concentrations, stoich, mu0, RT=1.0):
     return total
 
 
-def waste_out(w, k_out, region_mask=None):
-    """waste_out = sum(k_out*w) over the WHOLE domain by default (F0's frozen PDE sink `-k_out*w`
-    in `∂_t w + u·grad w = div(D(phi) grad w) + k2 m - k_out w` is global, not restricted to any
-    sub-region). Pass `region_mask` only for an explicit diagnostic sub-region breakdown -- the
-    default (None) must match the frozen PDE exactly."""
+def waste_out(w, k_out, region_mask=None, dx=1.0):
+    """waste_out = sum(k_out*w)*dx^3 over the WHOLE domain by default (F0's frozen PDE sink
+    `-k_out*w` in `∂_t w + u·grad w = div(D(phi) grad w) + k2 m - k_out w` is global, not
+    restricted to any sub-region, and is itself a volumetric rate, matching F0's `∮ k_out w dV`).
+    Pass `region_mask` only for an explicit diagnostic sub-region breakdown -- the default (None)
+    must match the frozen PDE exactly. `dx^3` cell-volume weighting keeps this in the same units
+    as `matter_in`/`mass_balance_error`'s before/after mass (`vessel_flux_3d.total_mass`'s `dx^3`
+    convention); without it the two terms in `mass_balance_error` would be dimensionally
+    inconsistent whenever `dx != 1`."""
     arr = k_out * np.asarray(w)
     if region_mask is not None:
         arr = arr * region_mask
-    return float(arr.sum())
+    return float(arr.sum()) * dx ** 3
 
 
 def entropy_production_reaction(rate, affinity, RT=1.0):
@@ -116,6 +147,19 @@ def viscous_dissipation(strain_rate_sq, eta=1.0):
     """2*eta*integral(e:e) dV -- zero for the S1 stage (u=0, no hydrodynamics yet); kept as a
     hook for later hydrodynamic stages of the P10 mainline (F0 §8)."""
     return float(2.0 * eta * np.asarray(strain_rate_sq).sum())
+
+
+def useful_work(stress_power_density, phi, band_thresh=0.9):
+    """Free energy converted into boundary MAINTENANCE (F0 §4: `useful_work` = "界面維持へ回った
+    自由エネルギー（sigma_M:grad(u) の界面寄与）") -- the caller-supplied `stress_power_density`
+    field (= sigma_M : grad(u), the Marangoni-stress power density; depends on the full stress
+    tensor and velocity gradient, which S1 does not yet produce since u=0 -- same caller-supplies-
+    the-field pattern as `viscous_dissipation`'s hydrodynamic hook) integrated over ONLY the
+    diffuse interface band |phi|<band_thresh, not the bulk -- this is the required Gate III ledger
+    field distinguishing energy that maintained the BOUNDARY from energy dissipated in the bulk.
+    Zero by construction whenever `stress_power_density` is all-zero (S1, u=0)."""
+    band = np.abs(phi) < band_thresh
+    return float(np.asarray(stress_power_density)[band].sum())
 
 
 def mass_balance_error(mass_before, mass_after, matter_in_amt, waste_out_amt, other_sinks=0.0):

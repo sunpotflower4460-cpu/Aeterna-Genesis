@@ -14,9 +14,10 @@ formation; only actual S1/E2/E3 physics data can.
 
 Frozen Gate II thresholds (contract Section 2, "決定的閾値", not to be loosened after seeing results):
   R_pred < 0.10 (normalized prediction residual)
-  >= 5 independent seeds, coefficient CV < 0.15
+  >= 5 independent seeds, coefficient CV < 0.15, AND function form invariant across seeds
   closure residual < 0.20
-  >= 3 coarse-graining scales, spanning >= 4x in block length
+  >= 3 coarse-graining scales, spanning >= 4x in block length, AND function form invariant
+    across scales
 
 WHAT IT IS NOT
 Not a physics model, not an automatic upgrader -- callers must supply real measured quantities;
@@ -41,20 +42,53 @@ def gate_i_derivation(is_target_encoded):
     return "FAIL" if is_target_encoded else "PASS"
 
 
-def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_scales, scale_ratio):
+def _num_lt(x, bound):
+    """True iff x is a real number strictly less than bound; False (never a raised TypeError) for
+    None/missing/non-numeric x -- a missing measurement must FAIL the criterion, not crash gate
+    evaluation (Codex: bare `x < bound` on a None metric aborts the whole audit with a TypeError
+    instead of returning the conservative FAIL this module's own no-silent-omission rule promises)."""
+    try:
+        return x is not None and float(x) < bound
+    except (TypeError, ValueError):
+        return False
+
+
+def _num_ge(x, bound):
+    """True iff x is a real number >= bound; False for None/missing/non-numeric x (see `_num_lt`)."""
+    try:
+        return x is not None and float(x) >= bound
+    except (TypeError, ValueError):
+        return False
+
+
+def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_scales, scale_ratio,
+                           form_invariant_across_seeds, form_invariant_across_scales):
     """Gate II: PASS iff ALL FOUR frozen criteria hold simultaneously (contract Section 2, II).
     Returns (status, detail) where `detail` is a dict of {criterion: bool} -- callers always see
     exactly which criterion failed, never a bare boolean that hides partial credit. Thresholds are
     NOT overridable by callers (no `thresholds` parameter): a per-call override would let a result
     seen after the fact quietly loosen the frozen decision criteria, defeating the exact discipline
     this module exists to enforce ("結果を見た後の成功条件変更を禁止する"). Comparisons use the
-    frozen contract's strict `<` (not `<=`) at every boundary."""
+    frozen contract's strict `<` (not `<=`) at every boundary, and fail closed (never raise) on a
+    missing/non-numeric measurement.
+
+    `reproducibility` and `scale_robustness` are each TWO-part criteria per the frozen contract
+    (§2 II, points 2 and 4): the numeric CV/span check ALONE is insufficient -- the measured
+    effective law's FUNCTIONAL FORM (not just its coefficients) must also stay invariant across
+    seeds (point 2: "かつ関数形が同一") and across coarse-graining scales (point 4: "関数形が不変").
+    Callers must explicitly measure and pass `form_invariant_across_seeds`/`form_invariant_across_
+    scales` as real booleans (Codex: an earlier version of this gate would PASS a coarse-graining
+    that silently changed functional form as long as the CV/span numbers alone looked fine --
+    exactly the "特定粗視化の見かけ" (an artifact of one particular coarse-graining, not a real
+    effective law) the frozen contract's FAIL condition explicitly warns against)."""
     t = GATE_II_DEFAULTS
     checks = dict(
-        prediction=bool(r_pred < t["r_pred_max"]),
-        reproducibility=bool(n_seeds >= t["min_seeds"] and seed_coeff_cv < t["coeff_cv_max"]),
-        closure=bool(closure_residual < t["closure_residual_max"]),
-        scale_robustness=bool(n_scales >= t["min_scales"] and scale_ratio >= t["min_scale_ratio"]),
+        prediction=_num_lt(r_pred, t["r_pred_max"]),
+        reproducibility=bool(_num_ge(n_seeds, t["min_seeds"]) and _num_lt(seed_coeff_cv, t["coeff_cv_max"])
+                              and form_invariant_across_seeds is True),
+        closure=_num_lt(closure_residual, t["closure_residual_max"]),
+        scale_robustness=bool(_num_ge(n_scales, t["min_scales"]) and _num_ge(scale_ratio, t["min_scale_ratio"])
+                               and form_invariant_across_scales is True),
     )
     status = "PASS" if all(checks.values()) else "FAIL"
     return status, checks

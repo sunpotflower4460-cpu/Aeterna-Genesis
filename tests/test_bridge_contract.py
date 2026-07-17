@@ -20,18 +20,22 @@ def test_gate_i_fails_closed_on_missing_or_non_bool_measurement():
     assert bc.gate_i_derivation(is_target_encoded="") == "FAIL"
 
 
+def _gate_ii_pass_kwargs(**overrides):
+    kwargs = dict(r_pred=0.05, seed_coeff_cv=0.10, n_seeds=6, closure_residual=0.10,
+                  n_scales=3, scale_ratio=4.0, form_invariant_across_seeds=True,
+                  form_invariant_across_scales=True)
+    kwargs.update(overrides)
+    return kwargs
+
+
 def test_gate_ii_pass_requires_all_four_criteria():
-    status, detail = bc.gate_ii_effective_law(
-        r_pred=0.05, seed_coeff_cv=0.10, n_seeds=6, closure_residual=0.10,
-        n_scales=3, scale_ratio=4.0)
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs())
     assert status == "PASS"
     assert all(detail.values())
 
 
 def test_gate_ii_fails_if_prediction_residual_too_large():
-    status, detail = bc.gate_ii_effective_law(
-        r_pred=0.20, seed_coeff_cv=0.10, n_seeds=6, closure_residual=0.10,
-        n_scales=3, scale_ratio=4.0)
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(r_pred=0.20))
     assert status == "FAIL"
     assert detail["prediction"] is False
     assert detail["reproducibility"] is True   # other criteria still individually visible
@@ -39,27 +43,54 @@ def test_gate_ii_fails_if_prediction_residual_too_large():
 
 def test_gate_ii_fails_if_too_few_seeds_even_with_low_cv():
     status, detail = bc.gate_ii_effective_law(
-        r_pred=0.05, seed_coeff_cv=0.01, n_seeds=2, closure_residual=0.10,
-        n_scales=3, scale_ratio=4.0)
+        **_gate_ii_pass_kwargs(seed_coeff_cv=0.01, n_seeds=2))
     assert status == "FAIL"
     assert detail["reproducibility"] is False
 
 
 def test_gate_ii_fails_if_scale_span_too_small():
-    status, detail = bc.gate_ii_effective_law(
-        r_pred=0.05, seed_coeff_cv=0.10, n_seeds=6, closure_residual=0.10,
-        n_scales=3, scale_ratio=2.0)   # ratio below the frozen 4.0x minimum
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(scale_ratio=2.0))
     assert status == "FAIL"
     assert detail["scale_robustness"] is False
 
 
 def test_gate_ii_uses_strict_less_than_at_the_boundary():
     # exactly AT the frozen threshold must FAIL (frozen contract says strict '<', not '<=').
-    status, detail = bc.gate_ii_effective_law(
-        r_pred=0.10, seed_coeff_cv=0.10, n_seeds=6, closure_residual=0.10,
-        n_scales=3, scale_ratio=4.0)
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(r_pred=0.10))
     assert status == "FAIL"
     assert detail["prediction"] is False
+
+
+def test_gate_ii_fails_closed_on_missing_numeric_metrics_without_raising():
+    # a None metric must FAIL that criterion, never raise TypeError and abort the audit.
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(r_pred=None))
+    assert status == "FAIL"
+    assert detail["prediction"] is False
+    status2, detail2 = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(closure_residual=None))
+    assert status2 == "FAIL"
+    assert detail2["closure"] is False
+    status3, detail3 = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(n_scales=None))
+    assert status3 == "FAIL"
+    assert detail3["scale_robustness"] is False
+
+
+def test_gate_ii_fails_if_function_form_not_invariant_across_seeds_despite_good_cv():
+    # good CV/span numbers alone are NOT sufficient -- the frozen contract also requires the
+    # measured effective law's functional FORM to stay the same across seeds (§2 II point 2).
+    status, detail = bc.gate_ii_effective_law(
+        **_gate_ii_pass_kwargs(form_invariant_across_seeds=False))
+    assert status == "FAIL"
+    assert detail["reproducibility"] is False
+
+
+def test_gate_ii_fails_if_function_form_not_invariant_across_scales_despite_good_span():
+    # same requirement across coarse-graining scales (§2 II point 4): a coarse-graining that
+    # changes the effective law's functional form is "a specific coarse-graining's appearance,
+    # not a real effective law" per the frozen contract's own FAIL condition.
+    status, detail = bc.gate_ii_effective_law(
+        **_gate_ii_pass_kwargs(form_invariant_across_scales=False))
+    assert status == "FAIL"
+    assert detail["scale_robustness"] is False
 
 
 def test_gate_iii_pass_when_effect_present_and_absent_under_control():
