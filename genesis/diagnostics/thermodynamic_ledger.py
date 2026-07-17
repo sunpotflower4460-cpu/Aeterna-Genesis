@@ -155,10 +155,20 @@ def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1
     is genuinely absent before the window and appears after it (Codex: iterating only
     `species_before`'s keys silently dropped that species' free-energy contribution entirely,
     underreporting Delta G for exactly the stop/restart reaction-chain ledgers this module
-    exists to audit)."""
+    exists to audit). A species present on BOTH sides must have EXACTLY matching field shapes
+    (Codex): a malformed snapshot (e.g. a scalar/1-cell placeholder against a full 3D field)
+    would otherwise silently broadcast in the `f_after - f_before` subtraction and integrate a
+    fabricated uniform field instead of failing closed on the shape mismatch."""
     total = 0.0
     for k in sorted(set(species_before) | set(species_after)):
         mu0_k = _mu0_for_species(mu0, k)
+        if k in species_before and k in species_after:
+            shape_before = np.asarray(species_before[k]).shape
+            shape_after = np.asarray(species_after[k]).shape
+            if shape_before != shape_after:
+                raise ValueError(
+                    "chemical_free_energy_change: species %r has mismatched shapes before %r "
+                    "vs after %r" % (k, shape_before, shape_after))
         c_before = species_before[k] if k in species_before else np.zeros_like(species_after[k])
         c_after = species_after[k] if k in species_after else np.zeros_like(species_before[k])
         f_before = _dilute_ideal_free_energy_density(c_before, mu0_k, RT)
@@ -238,8 +248,13 @@ def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
     scalar is never a valid measured field -- only ever an accident (e.g. incomplete
     hydrodynamic metadata or a caller passing a scalar total) that must not be able to satisfy a
     downstream `useful_work>0` Gate III check as if it were a real measurement (Codex, second
-    finding: the scalar special-case must be limited to the documented 0.0 S1 case)."""
+    finding: the scalar special-case must be limited to the documented 0.0 S1 case). A non-scalar
+    `stress_power_density` must match `phi`'s shape EXACTLY, not merely be broadcast-compatible
+    (Codex, third finding): an incomplete/malformed field (e.g. a 1-element array or a lower-
+    dimensional profile) would otherwise silently broadcast across the whole interface band,
+    fabricating a uniform "measured" field from data that was never actually per-cell."""
     band = np.abs(phi) < band_thresh
+    phi_shape = np.asarray(phi).shape
     spd = np.asarray(stress_power_density, dtype=float)
     if spd.ndim == 0:
         if spd != 0.0:
@@ -247,9 +262,13 @@ def useful_work(stress_power_density, phi, band_thresh=0.9, dx=1.0):
                 "useful_work: a nonzero scalar stress_power_density is not a valid measured "
                 "field -- only the scalar 0.0 (S1 pre-hydrodynamic stage) is accepted; a real "
                 "sigma_M:grad(u) measurement must be a per-cell array")
-        spd = np.zeros_like(np.asarray(phi), dtype=float)
+        spd = np.zeros(phi_shape, dtype=float)
     else:
-        spd = np.broadcast_to(spd, np.asarray(phi).shape)
+        if spd.shape != phi_shape:
+            raise ValueError(
+                "useful_work: stress_power_density shape %r does not match phi's shape %r -- a "
+                "real per-cell measurement must match exactly, not merely broadcast" %
+                (spd.shape, phi_shape))
     return float(spd[band].sum()) * dx ** 3
 
 

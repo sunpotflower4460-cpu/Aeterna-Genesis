@@ -18,9 +18,20 @@ import numpy as np
 
 
 def reaction_rate_field(c, k, R=1.0):
-    """Local reaction rate k*R*c. `R` defaults to spatially uniform (1.0); passing a field is the
-    caller's explicit choice to make (never a hidden default that localizes reaction sites)."""
-    return k * np.asarray(R) * np.asarray(c)
+    """Local reaction rate k*R*c. `R` defaults to spatially uniform (1.0, a true scalar); passing
+    a field is the caller's explicit choice to make (never a hidden default that localizes
+    reaction sites). A non-scalar `R` must match `c`'s shape EXACTLY (Codex): an incomplete or
+    malformed `R` (e.g. a 1-D profile) would otherwise silently broadcast across the full field,
+    fabricating a spatial reaction pattern before any localization audit runs, rather than
+    failing closed on the shape mismatch."""
+    c_arr = np.asarray(c)
+    R_arr = np.asarray(R)
+    if R_arr.ndim != 0 and R_arr.shape != c_arr.shape:
+        raise ValueError(
+            "reaction_rate_field: non-scalar R has shape %r, which does not match c's shape %r "
+            "-- a real per-cell R must match exactly, not merely broadcast" %
+            (R_arr.shape, c_arr.shape))
+    return k * R_arr * c_arr
 
 
 def band_vs_bulk_ratio(rate, phi, band_thresh=0.5, bulk_region="outside"):

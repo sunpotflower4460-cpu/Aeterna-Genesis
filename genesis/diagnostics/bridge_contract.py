@@ -36,17 +36,20 @@ GATE_II_DEFAULTS = types.MappingProxyType(dict(
     closure_residual_max=0.20, min_scales=3, min_scale_ratio=4.0))
 
 
+_BOOL_TYPES = (bool, np.bool_)
+
+
 def gate_i_derivation(is_target_encoded):
     """Gate I: PASS iff the upper variable was derived from lower state (target_encoded=False) --
     the 8th-audit `target_encoded` discipline generalized across scales (contract Section 2, I).
     Fails CLOSED on anything but an explicit bool: a missing/None measurement must never read as
-    PASS by a falsy-value accident (this module's own no-silent-pass principle, Section headline)."""
-    if not isinstance(is_target_encoded, bool):
+    PASS by a falsy-value accident (this module's own no-silent-pass principle, Section headline).
+    Accepts `np.bool_` alongside Python `bool` (Codex: Gate II/III already treat NumPy boolean
+    scalars as valid -- a `target_encoded` measurement produced by a NumPy predicate like
+    `np.any(...)` must not fail Gate I outright just because of which boolean type measured it)."""
+    if not isinstance(is_target_encoded, _BOOL_TYPES):
         return "FAIL"
-    return "FAIL" if is_target_encoded else "PASS"
-
-
-_BOOL_TYPES = (bool, np.bool_)
+    return "FAIL" if bool(is_target_encoded) else "PASS"
 
 
 def _clean_num(x):
@@ -86,6 +89,16 @@ def _num_ge(x, bound):
     return xf is not None and xf >= bound
 
 
+def _int_ge(x, bound):
+    """True iff x cleans to a finite non-negative float that is additionally INTEGER-VALUED
+    (`n == round(n)`) and >= bound; False otherwise. `n_seeds`/`n_scales` are discrete COUNTS
+    (you cannot have 5.1 independent seeds), unlike `scale_ratio` (a continuous length ratio) or
+    the residual/CV metrics -- a fractional count must FAIL, not silently satisfy the frozen
+    threshold just because `5.1 >= 5` is arithmetically true (Codex)."""
+    xf = _clean_num(x)
+    return xf is not None and xf == round(xf) and xf >= bound
+
+
 def _is_true(x):
     """True iff x is exactly Python `True` OR exactly `np.bool_(True)`; False for anything else,
     including any other truthy value. A caller measuring a boolean flag via a NumPy reduction
@@ -121,10 +134,10 @@ def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_sc
     t = GATE_II_DEFAULTS
     checks = dict(
         prediction=_num_lt(r_pred, t["r_pred_max"]),
-        reproducibility=bool(_num_ge(n_seeds, t["min_seeds"]) and _num_lt(seed_coeff_cv, t["coeff_cv_max"])
+        reproducibility=bool(_int_ge(n_seeds, t["min_seeds"]) and _num_lt(seed_coeff_cv, t["coeff_cv_max"])
                               and _is_true(form_invariant_across_seeds)),
         closure=_num_lt(closure_residual, t["closure_residual_max"]),
-        scale_robustness=bool(_num_ge(n_scales, t["min_scales"]) and _num_ge(scale_ratio, t["min_scale_ratio"])
+        scale_robustness=bool(_int_ge(n_scales, t["min_scales"]) and _num_ge(scale_ratio, t["min_scale_ratio"])
                                and _is_true(form_invariant_across_scales)),
     )
     status = "PASS" if all(checks.values()) else "FAIL"

@@ -4,6 +4,7 @@ No physics claims -- checks against the F1 V0-validated Boltzmann/Nernst partiti
 (`vessel_permeability`) and simple analytic mass-balance identities.
 """
 import numpy as np
+import pytest
 
 import genesis.diagnostics.vessel_flux_3d as vf
 import genesis.diagnostics.vessel_permeability as vp
@@ -118,6 +119,23 @@ def test_stoichiometric_invariant_treats_species_absent_from_masses_as_zero():
     masses = dict(a=10.0)   # "w" not present yet
     inv = vf.stoichiometric_invariant(masses, dict(a=1.0, w=1.0))
     assert abs(inv - 10.0) < 1e-9
+
+
+def test_stoichiometric_invariant_rejects_negative_mass():
+    # a negative species mass is never physically valid -- must not silently flow into the
+    # invariant computation (Codex: matches thermodynamic_ledger's identical discipline).
+    with pytest.raises(ValueError):
+        vf.stoichiometric_invariant({"a": -1.0}, {"a": 1.0})
+
+
+def test_stoichiometric_invariant_rejects_boolean_mass():
+    with pytest.raises(ValueError):
+        vf.stoichiometric_invariant({"a": True}, {"a": 1.0})
+
+
+def test_stoichiometric_invariant_rejects_non_finite_mass():
+    with pytest.raises(ValueError):
+        vf.stoichiometric_invariant({"a": float("inf")}, {"a": 1.0})
 
 
 def test_mass_balance_residual_zero_for_consistent_accounting():

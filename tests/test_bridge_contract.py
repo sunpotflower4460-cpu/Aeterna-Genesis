@@ -229,3 +229,31 @@ def test_bridge_level_caps_at_last_passed_gate():
 def test_bridge_level_never_guesses_upward_from_pending():
     # a 'pending' (not yet measured) gate must never be treated as PASS.
     assert bc.bridge_level("PASS", "pending", "PASS") == "B1"
+
+
+def test_gate_i_accepts_numpy_boolean_alongside_python_bool():
+    # np.bool_ is NOT a Python bool subclass -- a naive isinstance(x, bool) check would wrongly
+    # FAIL a target_encoded measurement produced by a NumPy predicate like np.any(...) (Codex).
+    assert bc.gate_i_derivation(np.bool_(False)) == "PASS"
+    assert bc.gate_i_derivation(np.bool_(True)) == "FAIL"
+
+
+def test_gate_ii_fails_closed_on_fractional_seed_or_scale_counts():
+    # n_seeds/n_scales are discrete COUNTS (no 5.1 independent seeds) -- a fractional value must
+    # FAIL, not silently satisfy the frozen threshold just because 5.1 >= 5 is arithmetically
+    # true (Codex).
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(n_seeds=5.5))
+    assert status == "FAIL"
+    assert detail["reproducibility"] is False
+    status2, detail2 = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(n_scales=3.2))
+    assert status2 == "FAIL"
+    assert detail2["scale_robustness"] is False
+
+
+def test_gate_ii_accepts_integer_valued_float_seed_or_scale_counts():
+    # an integer-valued float (e.g. 6.0, as arithmetic on measured counts might naturally
+    # produce) must still PASS -- only genuinely fractional counts are rejected.
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(n_seeds=6.0, n_scales=3.0))
+    assert status == "PASS"
+    assert detail["reproducibility"] is True
+    assert detail["scale_robustness"] is True

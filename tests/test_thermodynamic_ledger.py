@@ -111,6 +111,15 @@ def test_chemical_free_energy_change_includes_species_present_only_before_the_wi
     assert abs(dG - expected) < 1e-6
 
 
+def test_chemical_free_energy_change_rejects_mismatched_species_shapes():
+    # a species present in both before/after with mismatched array shapes must never silently
+    # broadcast into a fabricated (and physically meaningless) combined shape (Codex).
+    before = {"a": np.full((2, 2, 2), 1.0)}
+    after = {"a": np.full((4,), 1.0)}
+    with pytest.raises(ValueError):
+        tl.chemical_free_energy_change(before, after, mu0={"a": 0.0})
+
+
 def test_chemical_free_energy_change_fails_closed_on_missing_mu0_entry():
     # a species newly appearing on one side (via the union-of-keys handling above) must NOT
     # silently get an unregistered mu0=0.0 reference if the caller forgot to preregister it.
@@ -340,6 +349,17 @@ def test_useful_work_rejects_a_nonzero_scalar():
     phi[2:4, 2:4, 2:4] = 0.0
     with pytest.raises(ValueError):
         tl.useful_work(3.0, phi, band_thresh=0.9)
+
+
+def test_useful_work_rejects_a_wrong_shaped_nonscalar_stress_power():
+    # a broadcast-compatible-but-wrong-shaped stress_power_density (e.g. a 1-element array
+    # against a full 3D phi) must never silently broadcast past the nonzero-scalar guard and
+    # fabricate a spatially uniform "measurement" (Codex).
+    shape = (6, 6, 6)
+    phi = np.full(shape, 1.0)
+    phi[2:4, 2:4, 2:4] = 0.0
+    with pytest.raises(ValueError):
+        tl.useful_work(np.array([3.0]), phi, band_thresh=0.9)
 
 
 def test_useful_work_scales_by_dx_cubed():

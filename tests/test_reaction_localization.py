@@ -29,6 +29,14 @@ def test_reaction_rate_field_defaults_to_uniform_R():
     assert np.allclose(rate, 1.0)   # 0.5 * 1.0 * 2.0
 
 
+def test_reaction_rate_field_rejects_wrong_shaped_nonscalar_R():
+    # a non-scalar R that doesn't match c's shape must never silently broadcast and fabricate a
+    # spatial reaction pattern before any localization audit runs (Codex).
+    c = np.full((4, 4, 4), 2.0)
+    with pytest.raises(ValueError):
+        rl.reaction_rate_field(c, k=0.5, R=np.full((4,), 1.0))
+
+
 def test_uniform_rate_gives_ratio_one_regardless_of_geometry():
     # a spatially UNIFORM reaction rate must read as "no localization" (ratio=1) even though the
     # vessel geometry is highly structured -- this is the F0 #2 target-encoding guard, checked

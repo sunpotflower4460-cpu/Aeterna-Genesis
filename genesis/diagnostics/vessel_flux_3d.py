@@ -85,6 +85,23 @@ def total_mass(c, dx=1.0):
     return float(c.sum()) * dx ** 3
 
 
+def _reject_invalid_mass(x, label):
+    """Raise iff `x` is not a finite, non-negative, non-boolean real number (matches
+    `thermodynamic_ledger._reject_invalid_mass`'s identical discipline) -- a negative/non-finite/
+    boolean species mass is never physically valid and must not silently flow into an invariant
+    computation (Codex: the thermodynamic ledger already rejects invalid masses before computing
+    the same kind of residual; this flux-side invariant must not be a weaker sibling)."""
+    if isinstance(x, (bool, np.bool_)):
+        raise ValueError("%s must be a real number, not a boolean" % label)
+    try:
+        xf = float(x)
+    except (TypeError, ValueError):
+        raise ValueError("%s must be a finite non-negative real number, got %r" % (label, x))
+    if not np.isfinite(xf) or xf < 0.0:
+        raise ValueError("%s must be a finite non-negative real number, got %r" % (label, x))
+    return xf
+
+
 def stoichiometric_invariant(species_masses, coeffs):
     """sum_k coeffs[k] * species_masses[k] -- for a closed reaction chain (no fuel-in/waste-out)
     this combination is conserved by construction; callers audit it against known source/sink
@@ -92,8 +109,11 @@ def stoichiometric_invariant(species_masses, coeffs):
     from `species_masses` is treated as mass 0 (Codex): a waste/product species genuinely absent
     before it appears in a sparse before/after reaction-chain audit must not abort this
     computation, matching `thermodynamic_ledger.stoichiometric_balance_error`'s identical
-    sparse-species handling."""
-    return float(sum(coeffs[k] * species_masses.get(k, 0.0) for k in coeffs))
+    sparse-species handling. Every consumed mass is validated as finite/non-negative/non-boolean
+    (see `_reject_invalid_mass`) before use."""
+    return float(sum(
+        coeffs[k] * _reject_invalid_mass(species_masses.get(k, 0.0), "species_masses[%r]" % (k,))
+        for k in coeffs))
 
 
 def mass_balance_residual(mass_before, mass_after, sources=0.0, sinks=0.0):
