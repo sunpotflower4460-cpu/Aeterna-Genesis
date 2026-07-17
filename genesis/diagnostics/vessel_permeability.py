@@ -52,32 +52,53 @@ def radial_phi(L, radius, width, center=None):
     return np.tanh((radius - r) / width)
 
 
+def _bernoulli(x):
+    """Bernoulli function B(x) = x / (exp(x) - 1), with the removable singularity B(0)=1 handled
+    by a small-argument series. Used for the Scharfetter-Gummel face flux (below)."""
+    out = np.empty_like(x, dtype=float)
+    big = np.abs(x) >= 1e-6
+    xb = x[big]
+    out[big] = xb / np.expm1(xb)
+    xs = x[~big]
+    out[~big] = 1.0 - xs / 2.0 + xs * xs / 12.0   # Taylor of x/(e^x-1) about 0
+    return out
+
+
 def relax_step(c, phi, chi, D=1.0, dt=0.1, RT=1.0):
     """One explicit finite-VOLUME step of  d_t c = -div J,  J = -D (grad c + (chi/RT) c grad phi),
-    with no-flux (Neumann) domain boundaries.
+    with no-flux (Neumann) domain boundaries, using the SCHARFETTER-GUMMEL (exponentially fitted)
+    face flux.
 
-    Finite-volume face fluxes with the interior face shared by its two cells with opposite sign
-    make discrete mass EXACTLY conserved (only the zeroed boundary faces break the telescoping
-    sum, and those are zero) -- checked by `test_mass_conservation`.
+    Why SG rather than a central face flux (external review, Codex, 2026-07-17): a central flux
+    `J = -D[(c_{i+1}-c_i) + beta*c_face*(phi_{i+1}-phi_i)]` has zero-flux state
+    `c_{i+1}/c_i = (1 - beta*dphi/2)/(1 + beta*dphi/2)`, which only matches the true Boltzmann
+    ratio `exp(-beta*dphi)` to second order -- so for a sharp interface or large chi the scheme's
+    own steady state drifts from the KNOWN law this validator must certify. The SG face flux
+    `J = D[ B(beta*dphi) c_i - B(-beta*dphi) c_{i+1} ]` (B = Bernoulli) is exactly Boltzmann-
+    balanced: its zero-flux state is `c_{i+1}/c_i = B(beta*dphi)/B(-beta*dphi) = exp(-beta*dphi)`
+    for ANY dphi, so the discrete equilibrium IS `c ∝ exp(-beta phi)` to machine precision.
+
+    Still a shared per-face value used with opposite sign by the two adjacent cells, so discrete
+    mass stays EXACTLY conserved (checked by `test_mass_is_exactly_conserved`).
     """
     L = c.shape[0]
     dc = np.zeros_like(c)
     beta = chi / RT
     for ax in range(3):
-        cp = np.roll(c, -1, axis=ax)      # c[i+1]
-        pp = np.roll(phi, -1, axis=ax)    # phi[i+1]
-        c_face = 0.5 * (c + cp)
-        # J across the face between cell i and i+1, positive toward +ax:
-        J = -D * ((cp - c) + beta * c_face * (pp - phi))
+        cp = np.roll(c, -1, axis=ax)          # c[i+1]
+        pp = np.roll(phi, -1, axis=ax)        # phi[i+1]
+        dpsi = beta * (pp - phi)              # potential jump across the face i|i+1
+        # Scharfetter-Gummel flux toward +ax across the face between cell i and i+1:
+        J = D * (_bernoulli(dpsi) * c - _bernoulli(-dpsi) * cp)
         # Neumann: no flux across the domain boundary (the wrap-around face at index L-1 along ax).
         sl = [slice(None)] * 3
         sl[ax] = L - 1
         J[tuple(sl)] = 0.0
-        Jm = np.roll(J, 1, axis=ax)       # flux across the face between cell i-1 and i
+        Jm = np.roll(J, 1, axis=ax)           # flux across the face between cell i-1 and i
         sl0 = [slice(None)] * 3
         sl0[ax] = 0
-        Jm[tuple(sl0)] = 0.0              # first cell has no left neighbour
-        dc += (Jm - J)                    # d_t c[i] = J_{i-1} - J_i  (in from left, out to right)
+        Jm[tuple(sl0)] = 0.0                  # first cell has no left neighbour
+        dc += (Jm - J)                        # d_t c[i] = J_{i-1} - J_i  (in from left, out right)
     return c + dt * dc
 
 
@@ -109,12 +130,16 @@ def partition_ratio(c, phi, thresh=0.5):
 
 
 def predicted_partition_ratio(phi, chi, thresh=0.5, RT=1.0):
-    """The known-law prediction exp(-chi (⟨phi⟩_in - ⟨phi⟩_out)/RT) using the ACTUAL region-mean
-    phi of this (saturating-tanh) geometry -- the honest target for `partition_ratio`."""
+    """The known-law prediction for `partition_ratio`, which compares VOLUME-AVERAGED
+    concentrations. With c ∝ exp(-chi phi/RT), the correct target is therefore
+    `mean(exp(-chi phi/RT))_in / mean(exp(-chi phi/RT))_out` -- the mean of the Boltzmann factor,
+    NOT `exp(-chi (⟨phi⟩_in-⟨phi⟩_out)/RT)` (those differ by Jensen's inequality whenever phi
+    varies within the masks, e.g. a diffuse interface or a looser threshold -- external review,
+    Codex, 2026-07-17)."""
     inside = phi > thresh
     outside = phi < -thresh
-    dphi = float(phi[inside].mean() - phi[outside].mean())
-    return float(np.exp(-(chi / RT) * dphi))
+    w = np.exp(-(chi / RT) * phi)
+    return float(w[inside].mean() / w[outside].mean())
 
 
 def total_mass(c):

@@ -105,6 +105,21 @@ def test_net_interface_flux_vanishes_at_equilibrium():
     assert abs(flux_early) > 10 * abs(flux0)
 
 
+def test_boltzmann_law_holds_for_sharp_interface_and_large_chi():
+    # Stress test for the Scharfetter-Gummel face flux (external review, Codex, 2026-07-17): with a
+    # SHARP interface (width 0.8) and LARGE chi (1.5) the per-cell potential jump beta*dphi is no
+    # longer small, so a central face flux would converge to (1-beta*dphi/2)/(1+beta*dphi/2) per
+    # face -- NOT exp(-beta*dphi) -- and this exact-law check would fail. SG stays Boltzmann-
+    # balanced at any sharpness/chi, so the invariant must still be uniform and the partition ratio
+    # must match the averaged-Boltzmann prediction.
+    phi = vp.radial_phi(L, 4.0, 0.8)
+    c, converged, cv = vp.equilibrate(phi, chi=1.5, n_steps=6000)
+    assert converged, f"sharp/large-chi: Boltzmann invariant not uniform: CV={cv:.4g}"
+    ratio = vp.partition_ratio(c, phi)
+    pred = vp.predicted_partition_ratio(phi, chi=1.5)
+    assert abs(ratio - pred) < 0.03 * pred
+
+
 def test_zero_chi_gives_uniform_field():
     # no partition coupling -> uniform stays uniform (no spurious selectivity from geometry alone).
     phi = _sphere()
