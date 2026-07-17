@@ -243,8 +243,8 @@ def test_stoichiometric_balance_error_zero_with_matching_sinks():
     # a sink (e.g. the POSITIVE-magnitude waste_out amount) must be SUBTRACTED, not blindly
     # summed as if it were an addition -- passing it as `sinks` (not into an undifferentiated
     # source_terms dict) must correctly balance a window where mass genuinely left the system.
-    before = {"f": 10.0, "m": 5.0, "w": 2.0}
-    after = {"f": 10.0, "m": 5.0, "w": -5.0}   # w decreased by 7, matched by an external sink
+    before = {"f": 10.0, "m": 5.0, "w": 9.0}
+    after = {"f": 10.0, "m": 5.0, "w": 2.0}    # w decreased by 7, matched by an external sink
     err = tl.stoichiometric_balance_error(
         before, after, {"f": 1.0, "m": 1.0, "w": 1.0}, sinks={"waste_out": 7.0})
     assert err < 1e-9
@@ -283,6 +283,24 @@ def test_stoichiometric_balance_error_treats_species_absent_from_one_side_as_zer
     after = {"f": 9.0, "w": 1.0}                # f->w conversion of 1 unit; f+w invariant unchanged
     err = tl.stoichiometric_balance_error(before, after, {"f": 1.0, "w": 1.0})
     assert err < 1e-9
+
+
+def test_stoichiometric_balance_error_rejects_negative_mass():
+    # an impossible negative species mass (e.g. from a solver bug) must raise, never silently
+    # flow into the residual and coincidentally balance to zero (CodeRabbit).
+    before = {"f": 10.0}
+    after = {"f": -1.0}
+    with pytest.raises(ValueError):
+        tl.stoichiometric_balance_error(before, after, {"f": 1.0})
+
+
+def test_stoichiometric_balance_error_rejects_negative_source_or_sink():
+    before = {"f": 10.0}
+    after = {"f": 15.0}
+    with pytest.raises(ValueError):
+        tl.stoichiometric_balance_error(before, after, {"f": 1.0}, sources={"in": -5.0})
+    with pytest.raises(ValueError):
+        tl.stoichiometric_balance_error(before, after, {"f": 1.0}, sinks={"out": -5.0})
 
 
 def test_useful_work_only_integrates_the_interface_band():

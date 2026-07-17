@@ -105,14 +105,20 @@ def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
     `chemical_free_energy_change` used the bare `c*mu(c)` product, which overstates the true
     free-energy change by `RT*Delta(c)` whenever the total amount of material changes, e.g.
     across a fuel-in/waste-out window -- silently wrong even though `c*mu` LOOKS extensive).
-    A genuinely negative `c` raises, matching `chemical_potential`'s discipline. The `eps` floor
-    applies ONLY inside the log argument (CodeRabbit): clipping `c` itself before the linear/
-    multiplicative terms would give an exact-zero cell a spurious `eps*ln(eps)-eps` contribution
-    (~-2.9e-11 at the default eps) instead of exactly 0, which accumulates into a nonzero baseline
-    offset when integrated over a large grid with many empty cells."""
+    A genuinely negative `c` raises, matching `chemical_potential`'s discipline. Tolerated
+    near-zero noise (`c` in `[-eps, 0)`, allowed through by `_reject_negative_concentration`) is
+    normalized to exactly `0.0` before the linear/multiplicative terms (CodeRabbit, second
+    finding): otherwise a tolerated tiny-negative value would still flow into `mu0*c + ...` as a
+    small but genuinely negative number, giving a spurious nonzero free-energy contribution for a
+    cell that's physically empty. The `eps` floor applies ONLY inside the log argument
+    (CodeRabbit, first finding): clipping `c` itself before the linear/multiplicative terms would
+    give an exact-zero cell a spurious `eps*ln(eps)-eps` contribution (~-2.9e-11 at the default
+    eps) instead of exactly 0, which accumulates into a nonzero baseline offset when integrated
+    over a large grid with many empty cells."""
     c = _reject_negative_concentration(c, eps)
-    c_log = np.clip(c, eps, None)
-    return mu0 * c + RT * (c * np.log(c_log) - c)
+    c_physical = np.maximum(c, 0.0)
+    c_log = np.clip(c_physical, eps, None)
+    return mu0 * c_physical + RT * (c_physical * np.log(c_log) - c_physical)
 
 
 def _mu0_for_species(mu0, k):
@@ -253,6 +259,23 @@ def mass_balance_error(mass_before, mass_after, matter_in_amt, waste_out_amt, ot
     return float(abs((mass_after - mass_before) - (matter_in_amt - waste_out_amt - other_sinks)))
 
 
+def _reject_invalid_mass(x, label):
+    """Raise iff `x` is not a finite, non-negative, non-boolean real number -- a species mass or
+    a named source/sink MAGNITUDE can never be negative, non-finite, or a stray boolean (Codex/
+    CodeRabbit: an impossible negative mass -- e.g. from a solver bug -- must not be able to
+    silently flow into `stoichiometric_balance_error`'s residual and coincidentally balance to
+    zero, hiding the corruption instead of surfacing it)."""
+    if isinstance(x, (bool, np.bool_)):
+        raise ValueError("%s must be a real number, not a boolean" % label)
+    try:
+        xf = float(x)
+    except (TypeError, ValueError):
+        raise ValueError("%s must be a finite non-negative real number, got %r" % (label, x))
+    if not np.isfinite(xf) or xf < 0.0:
+        raise ValueError("%s must be a finite non-negative real number, got %r" % (label, x))
+    return xf
+
+
 def stoichiometric_balance_error(species_masses_before, species_masses_after, stoich,
                                   sources=None, sinks=None):
     """|Delta(sum_i nu_i * mass_i) - (sum(sources) - sum(sinks))| for a reaction chain's conserved
@@ -273,8 +296,19 @@ def stoichiometric_balance_error(species_masses_before, species_masses_after, st
     earlier single-dict `source_terms` design would make a caller naturally passing the positive
     `waste_out` MAGNITUDE report a spurious nonzero residual for a correctly balanced window,
     unless they manually negated it first; `sources`/`sinks` removes that footgun by construction,
-    same as `mass_balance_error` already does)."""
-    lhs_before = sum(stoich[k] * species_masses_before.get(k, 0.0) for k in stoich)
-    lhs_after = sum(stoich[k] * species_masses_after.get(k, 0.0) for k in stoich)
-    rhs = (sum(sources.values()) if sources else 0.0) - (sum(sinks.values()) if sinks else 0.0)
-    return float(abs((lhs_after - lhs_before) - rhs))
+    same as `mass_balance_error` already does).
+
+    Every consumed mass/source/sink value is validated as a finite, non-negative, non-boolean
+    real number (see `_reject_invalid_mass`) before use -- an impossible negative mass must
+    raise, never silently produce a coincidentally-balanced zero residual."""
+    lhs_before = sum(
+        stoich[k] * _reject_invalid_mass(species_masses_before.get(k, 0.0),
+                                          "species_masses_before[%r]" % (k,))
+        for k in stoich)
+    lhs_after = sum(
+        stoich[k] * _reject_invalid_mass(species_masses_after.get(k, 0.0),
+                                          "species_masses_after[%r]" % (k,))
+        for k in stoich)
+    rhs_sources = sum(_reject_invalid_mass(v, "sources[%r]" % (k,)) for k, v in sources.items()) if sources else 0.0
+    rhs_sinks = sum(_reject_invalid_mass(v, "sinks[%r]" % (k,)) for k, v in sinks.items()) if sinks else 0.0
+    return float(abs((lhs_after - lhs_before) - (rhs_sources - rhs_sinks)))
