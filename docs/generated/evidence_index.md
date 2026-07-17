@@ -68,6 +68,6 @@ Auto-derived from `experiments/*/experiment.yaml` + `rooms/official/*/emergence.
 | e058 | V | measured/observed | 2D | False | measurement_tool | 渦ダイポールepisodeの打ち切り対応生存時間分析（Observer v2・Kaplan-Meier）— e055/e056を正しい統計手法で再測定 |
 | e059 | V | measured | 3D | False | measurement_tool | 3D渦線トレーサーの検証（既存seeded vortex ring e003で既存計測器と相互確認、role V） |
 
-## Diagnostics modules (15)
-`angular_modes`, `corroborate`, `coupled_spectrum`, `dipole_episodes`, `gauge_aligned_distance`, `higher_levels`, `level3_motion`, `measures`, `plaquette_ledger`, `survival_analysis`, `topology3d`, `topology_betti`, `vortex_lines_3d`, `vortex_tracking_v2`, `winding_reliability`
+## Diagnostics modules (16)
+`angular_modes`, `corroborate`, `coupled_spectrum`, `dipole_episodes`, `gauge_aligned_distance`, `higher_levels`, `level3_motion`, `measures`, `plaquette_ledger`, `survival_analysis`, `topology3d`, `topology_betti`, `vessel_permeability`, `vortex_lines_3d`, `vortex_tracking_v2`, `winding_reliability`
 
