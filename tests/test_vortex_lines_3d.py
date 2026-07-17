@@ -175,6 +175,14 @@ def test_duplicate_healing_edge_is_skipped_not_double_counted(monkeypatch):
     # spurious 2-node closed loop and gets silently dropped by the len(path)>=3 filter, instead of
     # being reported as the small open fragment it actually is (found by external review,
     # 2026-07-16).
+    #
+    # This pair's two chain-endpoint tangents necessarily point directly AWAY from each other
+    # (they are the two ends of the very same 2-node clean-pair chain) -- chain-endpoint-based
+    # reconnection (H021 campaign) would always reject this pair on direction alone, skipping the
+    # already-connected check below it entirely and wrongly counting BOTH faces as unhealed even
+    # though they are already fully resolved via the clean pairing. Already-connected pairs must
+    # bypass direction filtering and go straight to the existing-edge handling (found by external
+    # review, 2026-07-16).
     W_xy = np.zeros((3, 3, 4), dtype=int)
     W_xy[1, 1, 1] = -1   # cube (1,1,1)'s bottom z-face outward flux = +1
     W_xy[1, 1, 2] = -1   # cube (1,1,1)'s top z-face outward flux = -1 -- clean pair (sum=0)
@@ -188,6 +196,8 @@ def test_duplicate_healing_edge_is_skipped_not_double_counted(monkeypatch):
     assert len(r["open_paths"]) == 1
     assert r["open_paths"][0]["n_points"] == 2
     assert r["n_healed_connections"] == 0   # already-connected pair must not be double-counted
+    assert r["n_unhealed_dangling"] == 0    # already resolved via the clean pair, not unresolved
+    assert r["n_direction_rejected_pairs"] == 0   # bypassed direction filtering entirely
 
 
 def test_n_cubes_dangling_counts_cubes_not_unique_faces(monkeypatch):
@@ -271,3 +281,57 @@ def test_two_sided_dangling_face_is_excluded_from_healing_pool(monkeypatch):
     assert r["loops"] == []
     assert len(r["open_paths"]) == 2           # the two-sided face, and R's face, both isolated
     assert all(p["n_points"] == 1 for p in r["open_paths"])
+
+
+def test_direction_filter_rejects_parallel_nearby_chains(monkeypatch):
+    # Chain-endpoint-based reconnection (H021 campaign, 2026-07-16): two short clean-pair chains,
+    # both running along +z, positioned side by side (their dangling tips are within
+    # max_heal_distance and have opposite sign -- the OLD pure-distance-and-sign healing would have
+    # paired them). But neither chain is actually reaching TOWARD the other: the gap between the
+    # tips runs along +x, perpendicular to both chains' own +z tangent -- a plausible real-world
+    # case of two unrelated nearby tangent-gaps, not one continuous line. The direction filter must
+    # reject this pair (dot(disp, tangent) == 0 at both ends, not > 0) rather than fabricate a
+    # sideways bridge between two unrelated chains.
+    W_xy = np.zeros((3, 1, 3), dtype=int)
+    W_xy[0, 0, 0] = 1    # cube (0,0,0): clean pair, faces ("z",0,0,0) sign-1 / ("z",0,0,1) sign+1
+    W_xy[0, 0, 1] = 1    # cube (0,0,1): only pierced face ("z",0,0,1) sign-1 -> dangling chain tip
+    W_xy[2, 0, 0] = -1   # cube (2,0,0): clean pair, faces ("z",2,0,0) sign+1 / ("z",2,0,1) sign-1
+    W_xy[2, 0, 1] = -1   # cube (2,0,1): only pierced face ("z",2,0,1) sign+1 -> dangling chain tip
+    W_yz = np.zeros((4, 1, 2), dtype=int)
+    W_zx = np.zeros((3, 2, 2), dtype=int)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((4, 4, 4), dtype=complex))
+    assert r["n_cubes_dangling"] == 2
+    assert r["n_healed_connections"] == 0
+    assert r["n_direction_rejected_pairs"] == 1
+    assert r["n_unhealed_dangling"] == 2
+    assert r["loops"] == []
+    assert len(r["open_paths"]) == 2
+    assert all(p["n_points"] == 2 for p in r["open_paths"])
+
+
+def test_direction_filter_allows_converging_chains_to_heal(monkeypatch):
+    # Same chain-endpoint-based reconnection as above, but here the two chains genuinely converge:
+    # chain A runs along +z with its dangling tip pointing further +z (toward chain B), and chain B
+    # runs along +z too but its dangling tip's outward tangent points back -z (toward chain A) --
+    # both chains reaching for each other, a plausible single line with a tangent-region gap in the
+    # middle. The direction filter must allow this pair to heal, merging both chains into one
+    # continuous open path.
+    W_xy = np.zeros((1, 1, 5), dtype=int)
+    W_xy[0, 0, 0] = 1   # cube (0,0,0): clean pair, faces ("z",0,0,0) / ("z",0,0,1) -- chain A
+    W_xy[0, 0, 1] = 1   # cube (0,0,1): only pierced face ("z",0,0,1) sign-1 -> chain A's dangling tip
+    W_xy[0, 0, 3] = 1   # cube (0,0,2): only pierced face ("z",0,0,3) sign+1 -> chain B's dangling tip
+    W_xy[0, 0, 4] = 1   # cube (0,0,3): clean pair, faces ("z",0,0,3) / ("z",0,0,4) -- chain B
+    W_yz = np.zeros((2, 1, 4), dtype=int)
+    W_zx = np.zeros((1, 2, 4), dtype=int)
+    monkeypatch.setattr(vl3d, "face_windings", lambda *a, **k: (W_xy, W_yz, W_zx, 0.1))
+    r = vl3d.trace_vortex_lines(np.zeros((6, 6, 6), dtype=complex))
+    assert r["n_cubes_dangling"] == 2
+    assert r["n_healed_connections"] == 1
+    assert r["n_direction_rejected_pairs"] == 0
+    assert r["n_unhealed_dangling"] == 0
+    assert r["loops"] == []
+    assert len(r["open_paths"]) == 1
+    # the healed connection merges chain A and chain B into one continuous 4-node path spanning
+    # ("z",0,0,0)-("z",0,0,1)-("z",0,0,3)-("z",0,0,4), not two separate 2-point fragments.
+    assert r["open_paths"][0]["n_points"] == 4
