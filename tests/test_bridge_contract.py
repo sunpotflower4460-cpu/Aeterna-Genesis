@@ -2,6 +2,8 @@
 Gate I/II/III scaffolding, PR-1, role V). Checks the frozen arithmetic against hand-computed cases
 -- no P10 physics data, no bridge is ever silently passed by omission.
 """
+import numpy as np
+
 import genesis.diagnostics.bridge_contract as bc
 
 
@@ -83,6 +85,14 @@ def test_gate_ii_fails_closed_on_boolean_numeric_metrics():
     status2, detail2 = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(n_seeds=True))
     assert status2 == "FAIL"
     assert detail2["reproducibility"] is False
+
+
+def test_gate_ii_fails_closed_on_numpy_boolean_metrics():
+    # np.bool_ is NOT a Python bool subclass, so a naive isinstance(x, bool) check misses it --
+    # must still be rejected, not silently converted via float(np.bool_(False))==0.0.
+    status, detail = bc.gate_ii_effective_law(**_gate_ii_pass_kwargs(r_pred=np.bool_(False)))
+    assert status == "FAIL"
+    assert detail["prediction"] is False
 
 
 def test_gate_ii_fails_if_function_form_not_invariant_across_seeds_despite_good_cv():

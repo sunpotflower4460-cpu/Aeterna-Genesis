@@ -111,6 +111,23 @@ def test_chemical_free_energy_change_includes_species_present_only_before_the_wi
     assert abs(dG - expected) < 1e-6
 
 
+def test_chemical_free_energy_change_fails_closed_on_missing_mu0_entry():
+    # a species newly appearing on one side (via the union-of-keys handling above) must NOT
+    # silently get an unregistered mu0=0.0 reference if the caller forgot to preregister it.
+    shape = (2, 2, 2)
+    before = {"a": np.full(shape, 1.0)}
+    after = {"a": np.full(shape, 1.0), "b": np.full(shape, np.e)}
+    with pytest.raises(KeyError):
+        tl.chemical_free_energy_change(before, after, mu0={"a": 0.0})   # "b" missing from mu0
+
+
+def test_reaction_delta_g_fails_closed_on_missing_mu0_entry():
+    shape = (2, 2, 2)
+    conc = {"f": np.full(shape, 2.0), "m": np.full(shape, 1.0)}
+    with pytest.raises(KeyError):
+        tl.reaction_delta_g(conc, {"f": -1.0, "m": 1.0}, mu0={"f": 0.0})   # "m" missing from mu0
+
+
 def test_chemical_free_energy_change_scales_by_dx_cubed():
     shape = (2, 2, 2)
     before = {"a": np.full(shape, 1.0)}
@@ -235,6 +252,16 @@ def test_stoichiometric_balance_error_nonzero_when_invariant_actually_drifts():
     after = {"f": 9.0, "m": 5.0}   # f dropped by 1 with no matching m/w change and no source term
     err = tl.stoichiometric_balance_error(before, after, {"f": 1.0, "m": 1.0})
     assert abs(err - 1.0) < 1e-9
+
+
+def test_stoichiometric_balance_error_treats_species_absent_from_one_side_as_zero_mass():
+    # a waste/product species genuinely absent before the window (introduced only after it) must
+    # not abort the residual computation -- treated as mass 0 there, matching
+    # chemical_free_energy_change's sparse-species handling (Codex).
+    before = {"f": 10.0}                       # "w" doesn't exist yet
+    after = {"f": 9.0, "w": 1.0}                # f->w conversion of 1 unit; f+w invariant unchanged
+    err = tl.stoichiometric_balance_error(before, after, {"f": 1.0, "w": 1.0})
+    assert err < 1e-9
 
 
 def test_useful_work_only_integrates_the_interface_band():

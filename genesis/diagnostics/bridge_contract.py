@@ -46,15 +46,20 @@ def gate_i_derivation(is_target_encoded):
     return "FAIL" if is_target_encoded else "PASS"
 
 
+_BOOL_TYPES = (bool, np.bool_)
+
+
 def _num_lt(x, bound):
     """True iff x is a real number (NOT a bool) strictly less than bound; False (never a raised
     TypeError) for None/missing/non-numeric/boolean x -- a missing measurement must FAIL the
     criterion, not crash gate evaluation (Codex: bare `x < bound` on a None metric aborts the
     whole audit with a TypeError instead of returning the conservative FAIL this module's own
-    no-silent-omission rule promises). Booleans are rejected explicitly: `bool` is a Python `int`
-    subclass, so `float(True)==1.0`/`float(False)==0.0` would otherwise let a mistakenly-passed
-    pass/fail flag silently satisfy a numeric threshold (Codex)."""
-    if isinstance(x, bool):
+    no-silent-omission rule promises). Booleans are rejected explicitly, INCLUDING `np.bool_`
+    (Codex, second finding: `np.bool_` is not a Python `bool` subclass, so a bare `isinstance(x,
+    bool)` check misses NumPy boolean scalars -- common output from array comparisons/diagnostics
+    -- and `float(np.bool_(False))==0.0` would otherwise let one slip through and silently
+    satisfy a numeric threshold, same as a plain Python bool would)."""
+    if isinstance(x, _BOOL_TYPES):
         return False
     try:
         return x is not None and float(x) < bound
@@ -63,9 +68,9 @@ def _num_lt(x, bound):
 
 
 def _num_ge(x, bound):
-    """True iff x is a real number (NOT a bool) >= bound; False for None/missing/non-numeric/
-    boolean x (see `_num_lt`)."""
-    if isinstance(x, bool):
+    """True iff x is a real number (NOT a bool/np.bool_) >= bound; False for None/missing/non-
+    numeric/boolean x (see `_num_lt`)."""
+    if isinstance(x, _BOOL_TYPES):
         return False
     try:
         return x is not None and float(x) >= bound
@@ -109,9 +114,10 @@ def gate_ii_effective_law(r_pred, seed_coeff_cv, n_seeds, closure_residual, n_sc
 def _safe_float(x):
     """float(x), or None for None/non-numeric/boolean x (never raises) -- used so a missing Gate
     III metric can still be reported in `detail` without crashing (see `gate_iii_downward`).
-    Booleans rejected explicitly (see `_num_lt`): a stray pass/fail flag must not silently convert
-    to `1.0`/`0.0` and be treated as a real measured effect magnitude (Codex)."""
-    if isinstance(x, bool):
+    Booleans (including `np.bool_`, see `_num_lt`) rejected explicitly: a stray pass/fail flag
+    must not silently convert to `1.0`/`0.0` and be treated as a real measured effect magnitude
+    (Codex)."""
+    if isinstance(x, _BOOL_TYPES):
         return None
     try:
         return float(x) if x is not None else None

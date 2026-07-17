@@ -115,6 +115,23 @@ def _dilute_ideal_free_energy_density(c, mu0=0.0, RT=1.0, eps=1e-12):
     return mu0 * c + RT * (c * np.log(c_log) - c)
 
 
+def _mu0_for_species(mu0, k):
+    """Look up the preregistered per-species reference potential mu0_i (F0: `mu_i^0` must be
+    preregistered) -- a dict `mu0` missing an entry for `k` raises, rather than silently defaulting
+    to 0.0 (Codex: a species newly appearing on one side of a stop/restart window, e.g. via
+    `chemical_free_energy_change`'s union-of-keys handling, could silently get an unregistered
+    mu0=0.0 reference instead of surfacing that the caller forgot to preregister it -- changing
+    the ledger's answer without any failure). Pass a plain scalar `mu0` (not a dict) for an
+    intentional single shared reference across all species."""
+    if isinstance(mu0, dict):
+        if k not in mu0:
+            raise KeyError(
+                "mu0 dict is missing a preregistered reference potential for species %r -- a "
+                "missing entry must not silently default to 0.0" % (k,))
+        return mu0[k]
+    return mu0
+
+
 def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1.0):
     """Delta G = sum_i integral( f_i(c_i_after) - f_i(c_i_before) ) dV, where `f_i(c) = mu0_i*c +
     RT*(c*ln(c) - c)` is the dilute-ideal free-energy DENSITY (see `_dilute_ideal_free_energy_
@@ -135,7 +152,7 @@ def chemical_free_energy_change(species_before, species_after, mu0, RT=1.0, dx=1
     exists to audit)."""
     total = 0.0
     for k in sorted(set(species_before) | set(species_after)):
-        mu0_k = mu0.get(k, 0.0) if isinstance(mu0, dict) else mu0
+        mu0_k = _mu0_for_species(mu0, k)
         c_before = species_before[k] if k in species_before else np.zeros_like(species_after[k])
         c_after = species_after[k] if k in species_after else np.zeros_like(species_before[k])
         f_before = _dilute_ideal_free_energy_density(c_before, mu0_k, RT)
@@ -152,7 +169,7 @@ def reaction_delta_g(concentrations, stoich, mu0, RT=1.0):
     `entropy_production = sum_rxn(rate*affinity/RT)`)."""
     total = None
     for k, nu in stoich.items():
-        mu0_k = mu0.get(k, 0.0) if isinstance(mu0, dict) else mu0
+        mu0_k = _mu0_for_species(mu0, k)
         term = nu * chemical_potential(concentrations[k], mu0_k, RT)
         total = term if total is None else total + term
     return total
@@ -226,8 +243,12 @@ def stoichiometric_balance_error(species_masses_before, species_masses_after, st
     without external sources; with sources/sinks it must match `matter_in`/`waste_out` exactly.
     Comparing the CHANGE in the invariant, not its absolute total, matters: a perfectly conserved
     but nonzero-total system (e.g. mass never leaves f+m+w, but f+m+w != 0) must read as zero
-    error, not flag the total mass itself as an accounting bug."""
-    lhs_before = sum(stoich[k] * species_masses_before[k] for k in stoich)
-    lhs_after = sum(stoich[k] * species_masses_after[k] for k in stoich)
+    error, not flag the total mass itself as an accounting bug. A species in `stoich` that is
+    absent from `species_masses_before`/`species_masses_after` is treated as mass 0 there (Codex:
+    a waste/product species genuinely absent before the window and appearing after it must not
+    abort the residual computation -- the same sparse-dictionary handling
+    `chemical_free_energy_change` already supports)."""
+    lhs_before = sum(stoich[k] * species_masses_before.get(k, 0.0) for k in stoich)
+    lhs_after = sum(stoich[k] * species_masses_after.get(k, 0.0) for k in stoich)
     rhs = sum(source_terms.values()) if source_terms else 0.0
     return float(abs((lhs_after - lhs_before) - rhs))
