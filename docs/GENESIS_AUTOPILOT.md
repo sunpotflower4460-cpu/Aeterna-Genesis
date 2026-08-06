@@ -94,7 +94,7 @@ in Autopilot.
 ## Portable CI
 
 GitHub ActionsやMacは使わない。LinuxコンテナでAutopilotの2D→local-3D実計算、Schema、チェックサム、
-Observatoryビルドを検証する。
+Observatoryビルドを検証する。テスト実行中のネットワークも既定で無効にする。
 
 ```bash
 bash ci/run-container.sh autopilot
