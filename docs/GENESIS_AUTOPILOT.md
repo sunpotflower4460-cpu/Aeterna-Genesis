@@ -90,3 +90,15 @@ initial-condition implementation and a test.
 
 Formal promotion to `rooms/official/` remains a separate audited command and is intentionally not implemented
 in Autopilot.
+
+## Portable CI
+
+GitHub ActionsやMacは使わない。LinuxコンテナでAutopilotの2D→local-3D実計算、Schema、チェックサム、
+Observatoryビルドを検証する。
+
+```bash
+bash ci/run-container.sh autopilot
+```
+
+クラウドLinux VMで継続実行する場合は `ci/cloud-runner.sh` をcron/systemdから呼ぶ。
+詳細は `docs/PORTABLE_CI.md`。
