@@ -20,5 +20,7 @@ RUN npm --prefix app ci --no-audit --no-fund
 
 COPY . /workspace
 
+# Dependencies are already inside the image. The launcher runs this image with
+# --network none so the tests themselves cannot depend on external services.
 ENTRYPOINT ["python", "ci/run_ci.py"]
 CMD ["autopilot"]
