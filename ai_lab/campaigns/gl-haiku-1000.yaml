@@ -1,0 +1,59 @@
+schema_version: 1
+campaign_id: gl-haiku-1000-robustness
+title: GL quick robustness screen — 200 conditions x 5 seeds
+parent_room: room-g001-a
+quick: true
+
+# 200 parameter conditions x 5 independent seeds = exactly 1000 initial 2D jobs.
+# Survivors automatically transfer to quick local-3D. This campaign intentionally
+# stops there; coarse/full 3D confirmation must be a separately approved campaign.
+seeds: [0, 1, 2, 3, 4]
+min_reached_level: 1
+stages: [2d-screen, local-3d]
+approval_required: []
+
+hypotheses:
+  - id: h001
+    statement: >
+      Measured emergence and 2D-to-local-3D transfer robustness depend jointly on
+      initial noise amplitude and quench duration. The scan tests the full allowed
+      logarithmic noise range while concentrating quench samples around the
+      pilot-positive short-quench region and retaining fast/slow controls.
+    search:
+      grid:
+        # 20 logarithmically spaced values across the allowed 1e-5..1e-2 range.
+        noise_amplitude:
+          - 0.0000100000
+          - 0.0000143845
+          - 0.0000206914
+          - 0.0000297635
+          - 0.0000428133
+          - 0.0000615848
+          - 0.0000885867
+          - 0.0001274275
+          - 0.0001832981
+          - 0.0002636651
+          - 0.0003792690
+          - 0.0005455595
+          - 0.0007847600
+          - 0.0011288379
+          - 0.0016237767
+          - 0.0023357215
+          - 0.0033598183
+          - 0.0048329302
+          - 0.0069519280
+          - 0.0100000000
+
+        # Dense near 4.0 because the seed-0 pilot transferred at 4.0 but weakened
+        # at 8.0 and disappeared at 12.0. 2.0 and 12.0 act as boundary controls.
+        quench_duration:
+          - 2.00
+          - 2.75
+          - 3.25
+          - 3.75
+          - 4.00
+          - 4.25
+          - 4.75
+          - 5.50
+          - 7.50
+          - 12.00
