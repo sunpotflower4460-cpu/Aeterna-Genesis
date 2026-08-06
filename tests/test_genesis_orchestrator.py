@@ -1,5 +1,7 @@
 import copy
 
+import pytest
+
 from genesis.runners import runner
 from genesis_orchestrator import campaign, db
 
@@ -28,6 +30,37 @@ def test_grid_compiles_deterministically():
     assert len({job["job_id"] for job in jobs}) == 8
     assert all(job["stage"] == "2d-screen" for job in jobs)
     assert jobs[0]["genesis"]["model"] == runner._DEMO_GENESIS["model"]
+
+
+def test_parent_model_lineage_mismatch_is_rejected(tmp_path):
+    root = tmp_path
+    (root / "schemas").mkdir()
+    (root / "rooms").mkdir()
+    (root / "genesis" / "registry").mkdir(parents=True)
+    (root / "schemas" / "campaign.schema.json").write_text(
+        (campaign.repo_root() / "schemas" / "campaign.schema.json").read_text()
+    )
+    (root / "genesis" / "registry" / "param_ranges.yaml").write_text(
+        (campaign.repo_root() / "genesis" / "registry" / "param_ranges.yaml").read_text()
+    )
+    (root / "rooms" / "catalog.json").write_text(
+        '{"rooms":[{"room_id":"room-other","genesis_model":"some_other_law"}]}'
+    )
+    doc = {
+        "schema_version": 1,
+        "campaign_id": "lineage-test",
+        "title": "lineage",
+        "parent_room": "room-other",
+        "hypotheses": [
+            {
+                "id": "h01",
+                "statement": "must reject",
+                "search": {"variants": [{"overrides": {"noise_amplitude": 0.001}}]},
+            }
+        ],
+    }
+    with pytest.raises(ValueError, match="refusing to label one law"):
+        campaign._semantic_validate(doc, root)
 
 
 def test_db_claim_and_gated_next_stage(tmp_path):
@@ -75,12 +108,15 @@ def test_db_claim_and_gated_next_stage(tmp_path):
     assert db.claim_next(path)["stage"] == "coarse-global-3d"
 
 
-def test_recorded_runner_is_checksum_identical_to_common_runner():
+@pytest.mark.parametrize("mode", ["2d-screen", "local-3d"])
+def test_recorded_runner_is_checksum_identical_to_common_runner(mode):
     from genesis.runners.recorded_runner import run_recorded
 
     genesis = copy.deepcopy(runner._DEMO_GENESIS)
-    plain = runner.run(genesis, mode="2d-screen", quick=True)
-    recorded = run_recorded(genesis, mode="2d-screen", quick=True)
+    plain = runner.run(genesis, mode=mode, quick=True)
+    recorded = run_recorded(genesis, mode=mode, quick=True)
     assert recorded["manifest"]["checksum"] == plain["manifest"]["checksum"]
     assert recorded["manifest"]["summary"] == plain["manifest"]["summary"]
-    assert recorded["recorder"].field_doc()["nframes"] > 0
+    field = recorded["recorder"].field_doc()
+    assert field["nframes"] > 0
+    assert field["dimension"] == (2 if mode == "2d-screen" else 3)
