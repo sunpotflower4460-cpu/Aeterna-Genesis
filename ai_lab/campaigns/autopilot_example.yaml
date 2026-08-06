@@ -1,0 +1,18 @@
+schema_version: 1
+campaign_id: gl-quench-window
+# AI may help author this file, but the worker only accepts the schema and allowed knobs below.
+title: GL quench window — deterministic 2D to gated 3D scan
+parent_room: room-g001-a
+quick: true
+seeds: [0, 1, 2]
+min_reached_level: 1
+stages: [2d-screen, local-3d, coarse-global-3d, full-3d]
+approval_required: [coarse-global-3d, full-3d]
+
+hypotheses:
+  - id: h001
+    statement: A narrow noise/quench window may retain measured structure when transferred from 2D to 3D.
+    search:
+      grid:
+        noise_amplitude: [0.001, 0.003, 0.01]
+        quench_duration: [6.0, 8.0, 12.0]
