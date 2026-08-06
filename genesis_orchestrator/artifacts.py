@@ -8,8 +8,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import yaml
+import numpy as np
 from jsonschema import Draft202012Validator
 
 STAGES = ("2d-screen", "local-3d", "coarse-global-3d", "full-3d")
@@ -118,6 +118,7 @@ def write_candidate(
     _atomic_json(room_dir / "emergence.json", result["emergence"])
 
     manifest = dict(result["manifest"])
+    manifest["room_id"] = room_id
     checksum = manifest["checksum"]
     summary = manifest["summary"]
     _atomic_json(run_dir / "manifest.json", manifest)
@@ -155,6 +156,7 @@ def _first_override(job: dict[str, Any]) -> dict[str, Any]:
     if overrides:
         key = sorted(overrides)[0]
         return {"param": key, "to": float(overrides[key])}
+    # Campaign schema requires a mutation; defensive fallback keeps the legacy job schema valid.
     return {"param": "noise_amplitude", "to": float(job["genesis"]["initial_state"]["noise_amplitude"])}
 
 
