@@ -44,6 +44,15 @@ def _semantic_validate(doc: dict[str, Any], root: Path) -> None:
     model = doc.get("model", runner._DEMO_GENESIS["model"])
     if model not in runner.MODELS:
         raise ValueError(f"model {model!r} is not supported by the common runner")
+    parent_room = doc.get("parent_room", "room-g001-a")
+    parent_model = _resolve_parent_model(root, parent_room)
+    if parent_model is None:
+        raise ValueError(f"unknown parent_room {parent_room!r}")
+    if parent_model != model:
+        raise ValueError(
+            f"parent {parent_room!r} uses model {parent_model!r}, but campaign requests {model!r}; "
+            "refusing to label one law as a branch of another"
+        )
     for hyp in doc["hypotheses"]:
         stages = hyp.get("stages", doc.get("stages", list(ALLOWED_STAGES)))
         if not stages or stages[0] != "2d-screen":
@@ -54,6 +63,19 @@ def _semantic_validate(doc: dict[str, Any], root: Path) -> None:
             raise ValueError(f"{hyp['id']}: stages must follow 2D -> local 3D -> coarse 3D -> full 3D")
         for overrides in _variant_overrides(hyp):
             _validate_overrides(overrides, root)
+
+
+def _resolve_parent_model(root: Path, parent_room: str) -> str | None:
+    catalog_path = root / "rooms" / "catalog.json"
+    if catalog_path.exists():
+        for entry in json.loads(catalog_path.read_text()).get("rooms", []):
+            if entry.get("room_id") == parent_room:
+                return entry.get("genesis_model")
+    for base in ("candidates", "rejected_in_3d"):
+        room_path = root / "rooms" / base / parent_room / "room.yaml"
+        if room_path.exists():
+            return (yaml.safe_load(room_path.read_text()) or {}).get("genesis_model")
+    return None
 
 
 def _validate_overrides(overrides: dict[str, float], root: Path) -> None:
@@ -88,6 +110,7 @@ def _variant_overrides(hypothesis: dict[str, Any]) -> list[dict[str, float]]:
             variants.append({k: float(v) for k, v in zip(keys, values)})
     if not variants:
         raise ValueError(f"{hypothesis['id']}: search must contain variants or grid")
+    # Stable de-duplication is important for idempotent re-submission.
     seen: set[str] = set()
     unique: list[dict[str, float]] = []
     for variant in variants:
