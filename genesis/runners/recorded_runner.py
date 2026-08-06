@@ -52,9 +52,9 @@ def run_recorded(
     f0 = model.free_energy(psi, p)
     for step in range(steps):
         psi = model.step(psi, step * p["dt"], p)
-        if not np.all(np.isfinite(psi)):
-            raise FloatingPointError(f"non-finite field at step {step} ({mode})")
         if step % snap_every == 0 or step == steps - 1:
+            if not np.all(np.isfinite(psi)):
+                raise FloatingPointError(f"non-finite field at step {step} ({mode})")
             _, skprom = measures.structure_factor_peak(psi)
             traj.append(
                 {
