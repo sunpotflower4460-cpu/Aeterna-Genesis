@@ -38,7 +38,6 @@ AUTOPILOT_STEPS = [
 ]
 
 APP_STEPS = [
-    command("app-install", ["npm", "--prefix", "app", "ci", "--no-audit", "--no-fund"]),
     command("app-typecheck", ["npm", "--prefix", "app", "run", "typecheck"]),
     command("app-build", ["npm", "--prefix", "app", "run", "build"]),
 ]
@@ -128,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
         "platform": platform.platform(),
         "python": sys.version,
         "root": str(ROOT),
+        "network_expected": False,
         "steps": [],
     }
     exit_code = 0
