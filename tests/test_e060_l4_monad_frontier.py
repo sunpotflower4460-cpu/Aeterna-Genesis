@@ -174,3 +174,62 @@ def test_phase0_mass_conserved_conserves_mass_exactly():
     r = C.screen_mass_conserved({}, seed=0, N=48, settle=800, hold=200)
     assert r["status"] == "ok"
     assert r["mass_drift"] < 1e-9
+
+
+# --- 下位ゲート（EVIDENCE_CONTRACT_V2 §2.1「途中gateを飛び越えさせない」） ------
+
+def test_ladder_uses_the_same_l1_thresholds_as_measures():
+    from experiments.e060_l4_monad_frontier import ladder
+    assert ladder.L1_AMP_GROWTH == 5.0
+    assert ladder.L1_SK_PROMINENCE == 1.5
+
+
+def test_reached_level_never_skips_a_lower_gate():
+    """L1未通過なら、たとえ個体判定がTrueでもLevel 4を主張しない。"""
+    from experiments.e060_l4_monad_frontier import ladder
+    l1_fail = {"level1_passed": False}
+    l2_ok = {"level2_passed": True}
+    lvl, reason = ladder.conservative_reached_level(l1_fail, l2_ok,
+                                                    individual_level4=True, centroid_drift=0.0)
+    assert lvl == 0 and reason == "level1_not_passed"
+
+    l1_ok = {"level1_passed": True}
+    l2_fail = {"level2_passed": False}
+    lvl2, _ = ladder.conservative_reached_level(l1_ok, l2_fail,
+                                                individual_level4=True, centroid_drift=0.0)
+    assert lvl2 == 1                      # 局在・持続が未確認なら L4 を主張しない
+
+
+def test_level4_static_is_allowed_because_motion_is_a_separate_axis():
+    """L3（自発運動）は独立軸。静止した個体でも L4 は成立する（SH の L4-static）。"""
+    from experiments.e060_l4_monad_frontier import ladder
+    lvl, reason = ladder.conservative_reached_level(
+        {"level1_passed": True}, {"level2_passed": True},
+        individual_level4=True, centroid_drift=0.0)
+    assert lvl == 4
+    assert "separate_axis" in reason      # 飛ばしたのではなく別軸であることを明示
+
+
+def test_level2_is_recorded_as_partial_for_real_scalar_whites():
+    """実場には位相がないので位相巻き欠陥は測れない。partial として正直に記録する。"""
+    from experiments.e060_l4_monad_frontier import ladder
+    l2 = ladder.measure_l2(ncomp=1, area_fraction=0.02, persistence_change=1e-8,
+                           complex_field=False)
+    assert l2["level2_passed"] is True
+    assert l2["level2_partial"] is True
+    assert l2["level2_winding_defects"] == "not_applicable_real_field"
+    # 複素場なら位相巻きを要求する（緩めない）
+    l2c = ladder.measure_l2(1, 0.02, 1e-8, complex_field=True, defects=0)
+    assert l2c["level2_passed"] is False and l2c["level2_partial"] is False
+
+
+def test_l1_growth_is_measured_from_t0(monkeypatch):
+    """L1は t=0 の場と後期の場の比で測る（一様＋ノイズから差が育ったか）。"""
+    import numpy as np
+    from experiments.e060_l4_monad_frontier import ladder
+    rng = np.random.default_rng(0)
+    t0 = 1e-3 * rng.standard_normal((64, 64))
+    late = np.zeros((64, 64)); late[28:36, 28:36] = 1.4      # 局在構造が育った
+    l1 = ladder.measure_l1(t0, late)
+    assert l1["mean_amplitude_growth"] > 5.0
+    assert l1["level1_passed"] is True
