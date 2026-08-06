@@ -1,0 +1,101 @@
+# 単子性監査（Monad Audit）— 実行前に凍結する分類
+#
+# 前提：白0は「モナド」＝これ以上分割できないもの。この監査は比喩ではなく、
+# どの白を主軸に使ってよいかを決める運用基準である。
+#
+# ⚠️ この分類は Phase 0 の実行前に凍結する。走らせた後で結果に合わせて
+#    変更してはならない（docs/ANTI_DRIFT.md 原則1・精密化⑤）。
+#
+# 判定基準（3条件すべてを問う）:
+#   M1 無分割     : 場は「部品」ではなく一つのものの相・様態か。複数場なら
+#                   保存則や拘束で一つの実体に縛られているか。
+#   M2 窓なし     : 外部oracle・中心制御・実行時介入がないか。
+#   M3 内的原理   : 個体は「切り出された部品」ではなく全体場の一つのモードか。
+#                   → 局在を初期条件に置いた時点で M3 違反（個体を先取りしている）。
+
+audit_version: 1
+frozen_before_phase0: true
+frozen_at_commit: 9d5f9cf4ea272311db5793e29decc6b445ebe5b8
+
+whites:
+  - id: mass_conserved
+    module: genesis.models.mass_conserved_3d
+    fields: [a, b]
+    constraint: "a + b が厳密保存（同じ f を符号反転で両方に入れる／項ごとに保存）"
+    monadicity: monadic
+    m1_indivisible: true
+    m2_windowless: true
+    reason: >
+      a と b は別々の物ではなく、一つの保存された実体の二つの相。反応 f は
+      両者の間で質量を移すだけで、source も sink も持たない。したがって
+      「2つの部品」ではなく「1つのものの2つの様態」と読める。
+    role: primary
+    known_ceiling: >
+      bumpあり3Dで存在ゲート通過・静的（ai_lab/campaigns/m2_results/m2e3d_mass_conserved.yaml）。
+      b0>=3.0 で単一球、b0=2.5 で分裂。局在は seeded。
+
+  - id: swift_hohenberg
+    module: genesis.models.swift_hohenberg
+    fields: [u]
+    constraint: "単一実スカラー場"
+    monadicity: monadic
+    m1_indivisible: true
+    m2_windowless: true
+    reason: >
+      場が1本しかないので M1 は自明に満たす。ただし変分（勾配流）であるため
+      構造は静止する＝L4-static に限定される。
+    role: primary
+    known_ceiling: >
+      bumpあり2Dで L4-static 到達済み（docs/WHITE_CEILINGS.md）。持続・自己修復・
+      サイズ非依存は emerged だが localization_seeded=True。centroid drift = 0.0。
+
+  - id: g001_ginzburg_landau_quench
+    module: genesis.models.ginzburg_landau
+    fields: [psi]
+    constraint: "単一複素場"
+    monadicity: monadic
+    m1_indivisible: true
+    m2_windowless: true
+    reason: >
+      振幅と位相は2つの部品ではなく、複素数1つの様態。位相巻き（渦）は
+      場に内在する自由度の顕在化であって、足したものではない。
+    role: negative_control
+    known_ceiling: >
+      L2（位相巻き渦）で天井。緩和勾配流＝運動量/移流がないため自発運動が出ない
+      （docs/WHITE_CEILINGS.md）。Phase 0 で「落ちるべきものが落ちる」確認に使う。
+
+  - id: mass_conserved_nr
+    module: genesis.models.mass_conserved_nr_3d
+    fields: [a, b, w]
+    constraint: "a + b は保存。w は自由に付加された第3の場（拘束を共有しない）"
+    monadicity: composite
+    m1_indivisible: false
+    m2_windowless: true
+    reason: >
+      w は「動かすために足した」場であり、a+b の保存拘束を共有しない独立部品。
+      M1（無分割）に違反する。docs/ANTI_DRIFT.md の喩えで言えば、木に買ってきた
+      リンゴをくくりつけた状態に相当する。
+    role: contrast_only
+    excluded_from_primary: true
+    known_ceiling: >
+      「M2はさみ」（ai_lab/campaigns/m2_results/m2e3d_nr_null.yaml）：動かせるほど強く
+      結合すると断片化し（ncomp>1）、単一個体でいる限り静止（速度はノイズ床）。
+
+# 主軸から除外した白と、その理由の要約。
+# GPTの当初提案（非相反場の追加を主軸にする）は、この監査の下では主軸になれない。
+# 「何も足さず、種＝初期条件だけを変える」ことがモナド前提と整合する唯一の道である。
+exclusions:
+  - white: mass_conserved_nr
+    rule_violated: M1
+    note: 主軸から除外。合成白として別枠で報告し、モナド白からの創発とは呼ばない。
+
+# 摂動と M2（窓なし）の整合方針
+perturbation_policy:
+  claim_base: unperturbed_control
+  control_runtime_interventions: 0
+  perturbed_runtime_interventions: 1
+  note: >
+    L4判定は recovers_after_perturbation を要求するが、摂動は外部介入であり
+    一見 M2 違反である。主張の土台は無摂動control（runtime_interventions=0）に置き、
+    摂動枝は「モナドについての認識論的プローブ」として別runに分離し、介入回数を
+    正直に記録する。こうすればモナドは窓なしのまま、摂動は測定であって改造ではない。
