@@ -11,6 +11,7 @@ Docker または Podman で同一条件を再現する。Mac 固有のランナ�
 - `rooms/official/` のハッシュが計算前後で変化していないことを検査する。
 - ログと `report.json` を `ci-artifacts/` に保存する。
 - 同じコンテナをローカル Linux、NAS、オンプレ、任意の Linux VM で使う。
+- 依存取得はイメージbuild時に限定し、テスト本体は既定で `--network none` で実行する。
 
 ## 最短実行
 
@@ -118,11 +119,19 @@ cronまたはsystemd timerから同じスクリプトを呼べる。CIサービ�
 - `full`: 4 CPU / 8 GB RAMを推奨
 - 本番 `full-3d` キャンペーン: ジョブ数と格子に応じて個別にCPU/RAM上限を設定
 
-ローカルの既定値は `CI_CPUS=2`, `CI_MEMORY=4g`。変更例:
+ローカルの既定値は `CI_CPUS=2`, `CI_MEMORY=4g`, `CI_NETWORK=none`。変更例:
 
 ```bash
 CI_CPUS=4 CI_MEMORY=8g bash ci/run-container.sh full
 ```
+
+外部ネットワークを明示的に必要とする別検証だけ、例外として変更する:
+
+```bash
+CI_NETWORK=bridge bash ci/run-container.sh quick
+```
+
+通常のAutopilot検証では変更しない。
 
 ## 科学的完全性
 
