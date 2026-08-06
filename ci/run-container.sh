@@ -6,6 +6,7 @@ IMAGE="${AETERNA_CI_IMAGE:-aeterna-genesis-ci:local}"
 ARTIFACTS="${CI_ARTIFACTS_HOST:-$(pwd)/ci-artifacts}"
 CPUS="${CI_CPUS:-2}"
 MEMORY="${CI_MEMORY:-4g}"
+NETWORK="${CI_NETWORK:-none}"
 
 if command -v docker >/dev/null 2>&1; then
   ENGINE=docker
@@ -21,6 +22,7 @@ mkdir -p "$ARTIFACTS"
 "$ENGINE" run --rm \
   --cpus "$CPUS" \
   --memory "$MEMORY" \
+  --network "$NETWORK" \
   --volume "$ARTIFACTS:/artifacts" \
   "$IMAGE" "$PROFILE"
 
