@@ -103,11 +103,15 @@ def main() -> int:
         room = yaml.safe_load((room_dir / "room.yaml").read_text())
         assert room["official"] is False
         assert room["dimension_status"]["local_3d"] == "passed"
-        manifest = yaml.safe_load((room_dir / "render-manifest.yaml").read_text())
-        field = json.loads((room_dir / manifest["frames_ref"]).read_text())
-        assert manifest["dimension"] == 3
+        render_manifest = yaml.safe_load((room_dir / "render-manifest.yaml").read_text())
+        field = json.loads((room_dir / render_manifest["frames_ref"]).read_text())
+        run_manifest_path = next((room_dir / "runs").glob("local_3d-*/manifest.json"))
+        run_manifest = json.loads(run_manifest_path.read_text())
+        assert render_manifest["dimension"] == 3
+        assert run_manifest["manifest"]["grid"] == [20, 20, 20]
         assert field["dimension"] == 3
-        assert field["grid"] == [20, 20, 20]
+        assert field["grid"] == [28, 28, 28]
+        assert field["honesty"]["interpolated_for_display"] is True
         assert tree_digest(repo / "rooms" / "official") == official_before
 
         print(
@@ -116,7 +120,8 @@ def main() -> int:
                     "status": "passed",
                     "jobs": {stage: job["job_id"] for stage, job in by_stage.items()},
                     "local_3d_room": room_id,
-                    "field_grid": field["grid"],
+                    "simulation_grid": run_manifest["manifest"]["grid"],
+                    "display_grid": field["grid"],
                     "official_tree_unchanged": True,
                 },
                 indent=2,
