@@ -29,6 +29,7 @@ from genesis.models import ginzburg_landau as gl
 _REPO = Path(__file__).resolve().parents[2]
 _LEDGER = _REPO / "ai_lab" / "discoveries" / "deep_time_fission.json"
 _LADDER = (4.0, 16.0, 64.0)
+_MIN_EXTENSION_FACTOR = 1.5
 
 
 def _candidate_key(candidate: dict[str, Any]) -> str:
@@ -41,11 +42,17 @@ def _candidate_key(candidate: dict[str, Any]) -> str:
 
 
 def next_effective_rung(*, tau_ref: float, base_physical_time: float, last_rung: float = 0.0) -> float | None:
-    """Return the next ladder rung that actually extends beyond the ordinary observation window."""
+    """Return the next rung that is both new and materially longer than ordinary observation.
+
+    A nominal 4-tau rung can be almost identical to the ordinary short run when the quench itself is
+    long. Calling that 'Deep Time' would overstate what was tested, so a fresh lead skips any rung
+    whose target horizon is less than 1.5x the normal observation window. Already-recorded rungs are
+    also skipped monotonically.
+    """
     for rung in _LADDER:
         if rung <= last_rung + 1e-12:
             continue
-        if rung * tau_ref <= base_physical_time * 1.05:
+        if rung * tau_ref < base_physical_time * _MIN_EXTENSION_FACTOR:
             continue
         return rung
     return None
@@ -96,8 +103,10 @@ def run_candidate(candidate: dict[str, Any], *, horizon_multiplier: float, quick
     snapshots: list[dict[str, Any]] = []
     traj: list[dict[str, Any]] = []
     finite = True
+    completed_steps = 0
     for t in range(total):
         psi = gl.step(psi, t * p["dt"], p)
+        completed_steps = t + 1
         if not np.all(np.isfinite(psi)):
             finite = False
             break
@@ -151,7 +160,7 @@ def run_candidate(candidate: dict[str, Any], *, horizon_multiplier: float, quick
         "base_physical_time": base_physical_time,
         "requested_horizon_multiplier": float(horizon_multiplier),
         "target_physical_time": target_physical_time,
-        "observed_physical_time": (len(range(total)) * p["dt"]) if finite else None,
+        "observed_physical_time": completed_steps * p["dt"],
         "replayed_from_time_zero": True,
         "midrun_shape_seeded": False,
         "reached_level_for_path_measurement": reached_level,
@@ -237,6 +246,7 @@ def register_and_run(
         "selected_leads": len(selected),
         "results": summaries,
         "ladder_tau": list(_LADDER),
+        "minimum_extension_factor": _MIN_EXTENSION_FACTOR,
         "replay_is_uninterrupted_from_t0": True,
         "midrun_triangle_seeded": False,
         "official_level_effect": False,
