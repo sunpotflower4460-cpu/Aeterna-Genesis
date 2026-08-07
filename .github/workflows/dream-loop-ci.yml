@@ -60,18 +60,20 @@ jobs:
             --unknown-followup-max-patterns 1 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 43
-      - name: Multi-World shadow dry-run
+      - name: Multi-World shadow dry-run with cross-world emergence comparison
         run: python -m ai_lab.dream.multiworld --quick --seed 44 --output ai_lab/reports/multiworld/latest.json
-      - name: Easy, emergence and Multi-World reports were produced
+      - name: Easy, emergence, cross-world and Multi-World reports were produced
         run: |
           test -f ai_lab/reports/easy/latest.json
           test -f ai_lab/reports/easy/latest.md
           test -f ai_lab/reports/multiworld/latest.json
           test -f ai_lab/reports/emergence/latest.json
+          test -f ai_lab/reports/crossworld/latest.json
           test -f ai_lab/discoveries/promising_leads.json
           test -f ai_lab/discoveries/fission_path_leads.json
           test -f ai_lab/discoveries/deep_time_fission.json
           test -f ai_lab/discoveries/emergence_graph.json
+          test -f ai_lab/discoveries/cross_world_emergence.json
           test -f ai_lab/discoveries/question_critic.json
           test -f ai_lab/discoveries/unknown_followups.json
           grep -q 'promising_followup' ai_lab/reports/easy/latest.json
@@ -82,6 +84,8 @@ jobs:
           grep -q 'question_critic' ai_lab/reports/easy/latest.json
           grep -q '"known_F_path_is_one_reference_only": true' ai_lab/reports/emergence/latest.json
           grep -q '"mode": "shadow"' ai_lab/reports/multiworld/latest.json
+          grep -q '"mode": "cross-world-open-ended-shadow"' ai_lab/reports/crossworld/latest.json
+          grep -q '"universality_claim": false' ai_lab/reports/crossworld/latest.json
 
   observatory:
     runs-on: ubuntu-latest
