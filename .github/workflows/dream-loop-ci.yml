@@ -1,0 +1,53 @@
+name: Dream Loop CI
+
+on:
+  pull_request:
+    paths:
+      - 'ai_lab/dream/**'
+      - 'tests/test_dream_loop.py'
+      - 'tools/collect_app_data.py'
+      - 'app/src/components/DreamNightReport.tsx'
+      - 'app/src/components/Inbox.tsx'
+      - 'app/src/lib/dream.ts'
+      - '.github/workflows/dream-loop*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Dream Loop unit tests
+        run: pytest -q tests/test_dream_loop.py tests/test_ai_lab.py tests/test_ai_ledger.py
+      - name: Tiny real Dream dry-run including recorded native lane
+        run: |
+          python -m ai_lab.dream \
+            --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
+            --native-variants 1 --max-jobs 4 \
+            --no-record --no-refresh-app --seed 42
+
+  observatory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build

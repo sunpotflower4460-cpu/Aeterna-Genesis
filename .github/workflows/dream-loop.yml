@@ -1,0 +1,119 @@
+name: Genesis Dream Loop
+
+on:
+  # One production burst is triggered when this workflow first lands on main.
+  # Dream-generated evidence never touches this path, so its own commits cannot recursively retrigger it.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/dream-loop.yml'
+  schedule:
+    # 03:17 JST daily. Off the top of the hour to reduce scheduled-run congestion.
+    - cron: '17 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: genesis-dream-loop
+  cancel-in-progress: false
+
+jobs:
+  research-burst:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install research dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore Dream state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            runtime/dream
+            ai_lab/discoveries/ledger.json
+            ai_lab/discoveries/event_ledger.json
+            ai_lab/discoveries/view_presets.json
+            rooms/candidates
+            rooms/rejected_in_3d
+            rooms/jobs
+          key: dream-state-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            dream-state-${{ runner.os }}-
+
+      - name: Run bounded Dream Loop
+        run: |
+          python -m ai_lab.dream \
+            --quick \
+            --mode random \
+            --trials 32 \
+            --repro-top 3 \
+            --repro-seeds 3 \
+            --native-variants 3 \
+            --max-jobs 12
+
+      - name: Save Dream state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            runtime/dream
+            ai_lab/discoveries/ledger.json
+            ai_lab/discoveries/event_ledger.json
+            ai_lab/discoveries/view_presets.json
+            rooms/candidates
+            rooms/rejected_in_3d
+            rooms/jobs
+          key: dream-state-${{ runner.os }}-${{ github.run_id }}
+
+      - name: Upload Night Report and view-ready evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genesis-night-report-${{ github.run_number }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            ai_lab/reports/nightly/latest.json
+            ai_lab/reports/nightly/*/report.md
+            ai_lab/reports/nightly/*/summary.json
+            ai_lab/reports/nightly/*/events.json
+            ai_lab/discoveries/event_ledger.json
+            ai_lab/discoveries/view_presets.json
+            rooms/candidates
+            rooms/rejected_in_3d
+            rooms/jobs
+            app/generated/catalog.json
+            app/public/data/dream
+
+      # Generated research evidence is persisted to main by default so Observatory can show the latest night.
+      # Set repository variable PERSIST_DREAM_RESULTS=false later if artifact/cache-only operation is preferred.
+      - name: Persist generated evidence to repository
+        if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' }}
+        shell: bash
+        run: |
+          git config user.name "aeterna-dream-bot"
+          git config user.email "aeterna-dream-bot@users.noreply.github.com"
+          git add \
+            ai_lab/discoveries/ledger.json \
+            ai_lab/discoveries/event_ledger.json \
+            ai_lab/discoveries/view_presets.json \
+            ai_lab/reports/nightly \
+            rooms/candidates rooms/rejected_in_3d rooms/jobs \
+            app/generated/catalog.json app/public/data || true
+          if git diff --cached --quiet; then
+            echo "No generated Dream evidence changed."
+          else
+            git commit -m "record Dream Loop evidence"
+            git push
+          fi
