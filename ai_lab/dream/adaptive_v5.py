@@ -1,4 +1,4 @@
-"""Adaptive Dream v5: v4 discovery/follow-ups + bounded 0->fission frontier verification."""
+"""Adaptive Dream v5: v4 discovery/follow-ups + bounded relation-fission F-path verification."""
 from __future__ import annotations
 
 import json
@@ -28,6 +28,7 @@ def _enrich_easy_report(paths: dict[str, str], path: dict[str, Any], follow: dic
         return
 
     depth = int(path.get("deepest_contiguous_stage", -1))
+    code = path.get("deepest_code") or (f"F{depth}" if depth >= 0 else None)
     selected = int(follow.get("selected_leads", 0))
     trials = int(follow.get("trials_2d", 0))
     repeated = sum(
@@ -37,21 +38,22 @@ def _enrich_easy_report(paths: dict[str, str], path: dict[str, Any], follow: dic
     weakened = int(follow.get("weakened", 0))
     if selected:
         follow_text = (
-            f"0から分裂への道で深く進んだ候補を {selected} 方向選び、追加で {trials} 通りを追試しました。"
-            f" 同じ深さまで再び進む傾向が確認できた候補は {repeated} 件、弱まった候補は {weakened} 件です。"
+            f"関係分離のF-pathで深く進んだ候補を {selected} 方向選び、追加で {trials} 通りを追試しました。"
+            f" 同じF段階まで再び進む傾向が確認できた候補は {repeated} 件、弱まった候補は {weakened} 件です。"
         )
     else:
-        follow_text = "今回は段階4以上の『0から分裂への道』候補がまだ無かったので、専用追試は行いませんでした。"
+        follow_text = "今回はF4以上の関係分離F-path候補がまだ無かったので、専用追試は行いませんでした。"
 
-    easy["zero_to_fission_path"] = path
+    easy["zero_to_fission_path"] = path  # compatibility key retained; content now declares relation-fission-F
     easy["zero_to_fission_followup"] = follow_text
     easy["zero_to_fission_followup_summary"] = follow
     if depth >= 0:
         easy["zero_to_fission_status"] = (
-            f"同じrunで段階 {depth}（{path.get('deepest_label')}）まで連続到達。"
+            f"同じrunで {code}（{path.get('deepest_label')}）まで連続到達。"
+            " F段階は公式Emergence Levelとは別です。"
         )
     else:
-        easy["zero_to_fission_status"] = "厳しい0スタート条件で連続到達した経路は今回は未確認。"
+        easy["zero_to_fission_status"] = "厳しい0スタート条件で連続到達したF-pathは今回は未確認。"
 
     latest.write_text(json.dumps(easy, indent=2, ensure_ascii=False))
     if paths.get("json"):
@@ -62,7 +64,7 @@ def _enrich_easy_report(paths: dict[str, str], path: dict[str, Any], follow: dic
         f"**ひとことで：** {easy.get('one_line', '')}", "",
         "## 今回なにをした？", str(easy.get("what_we_did", "")), "",
         "## なにが分かった？", str(easy.get("what_we_found", "")), "",
-        "## 0から分裂への道はどこまで進んだ？", str(easy.get("zero_to_fission_status", "")), "",
+        "## 関係分離F-pathはどこまで進んだ？", str(easy.get("zero_to_fission_status", "")), "",
         "## その深い道は追試した？", follow_text, "",
         "## 三角形のバランスが崩れると？", str(easy.get("balance_break_question", "")), "",
         "## 気になった一般候補は追いかけた？", str(easy.get("promising_followup", "")), "",
@@ -100,6 +102,7 @@ def run_adaptive_v5(
     counts["fission_path_geometry_replays"] = int(follow.get("geometry_replays", 0))
     counts["experiments"] = int(counts.get("experiments", 0)) + int(follow.get("trials_2d", 0))
     report.setdefault("honesty", {})["zero_to_fission_path_is_official_level"] = False
+    report["honesty"]["relation_fission_F_path_is_official_level"] = False
     report["honesty"]["zero_to_fission_followup_replaces_broad_exploration"] = False
     report["honesty"]["triangle_or_division_seeded_by_path_lane"] = False
 
@@ -112,7 +115,7 @@ def run_adaptive_v5(
 
 def build_parser():
     ap = v4.build_parser()
-    ap.description = "Aeterna Adaptive Dream v5 — discovery + promising leads + 0->fission frontier verification"
+    ap.description = "Aeterna Adaptive Dream v5 — discovery + promising leads + relation-fission F-path verification"
     ap.add_argument("--fission-path-trials-2d", type=int, default=24)
     ap.add_argument("--fission-path-max-leads", type=int, default=2)
     return ap
@@ -137,10 +140,10 @@ def main(argv: list[str] | None = None) -> int:
     pf = r.get("zero_to_fission_followup") or {}
     print(f"=== Aeterna Adaptive Dream v5: {r['burst_id']} ===")
     print(f"  broad: 2D={r['counts'].get('mass_2d_trials', 0)} 3D={r['counts'].get('native_3d_trials', 0)}")
-    print(f"  zero-to-fission deepest={path.get('deepest_contiguous_stage', -1)} {path.get('deepest_label')}")
+    print(f"  relation-fission deepest={path.get('deepest_code')} {path.get('deepest_label')}")
     print(f"  path follow-up: leads={pf.get('selected_leads', 0)} 2D={pf.get('trials_2d', 0)}")
     print(f"  easy-report: {result['easy_paths']['markdown']}")
-    print("  NOTE: the path is observation guidance only; no triangle/division is seeded and official Levels are unchanged.")
+    print("  NOTE: F0..F7 is observation guidance only; no triangle/division is seeded and official Levels are unchanged.")
     return 0
 
 
