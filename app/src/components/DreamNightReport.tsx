@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
-import { loadDreamReport, type DreamEvent, type DreamReport } from '../lib/dream'
+import {
+  loadDreamReport,
+  loadViewPresets,
+  type DreamEvent,
+  type DreamReport,
+  type ViewPreset,
+} from '../lib/dream'
 import { useStore } from '../store'
 
 const KIND: Record<string, { label: string; glyph: string }> = {
@@ -23,9 +29,13 @@ function Count({ value, label }: { value: number; label: string }) {
   )
 }
 
-function EventCard({ event }: { event: DreamEvent }) {
+function EventCard({ event, preset }: { event: DreamEvent; preset?: ViewPreset }) {
   const openRoom = useStore((s) => s.openRoom)
   const toCompare = useStore((s) => s.toCompare)
+  const setLens = useStore((s) => s.setLens)
+  const setSpeed = useStore((s) => s.setSpeed)
+  const setView = useStore((s) => s.setView)
+  const setFrame = useStore((s) => s.setFrame)
   const catalog = useStore((s) => s.catalog)!
   const info = KIND[event.kind] || { label: event.kind, glyph: '•' }
   const roomExists = !!event.room_id && (
@@ -34,6 +44,29 @@ function EventCard({ event }: { event: DreamEvent }) {
   )
   const parentExists = !!event.parent_room && catalog.rooms.some((r) => r.room_id === event.parent_room)
   const canCompare = roomExists && parentExists
+
+  const applyPreset = () => {
+    if (!preset) return
+    setLens(preset.lens)
+    setSpeed(preset.playback.speed)
+    setFrame(0)
+    setView({
+      threshold: preset.view.threshold,
+      opacity: preset.view.opacity,
+      glow: preset.view.glow,
+      quality: preset.view.quality,
+    })
+  }
+  const observe = () => {
+    if (!event.room_id) return
+    openRoom(event.room_id)
+    applyPreset()
+  }
+  const compare = () => {
+    if (!event.parent_room || !event.room_id) return
+    toCompare(event.parent_room, event.room_id)
+    applyPreset()
+  }
 
   return (
     <div style={{ padding: '11px 0', borderTop: '1px solid var(--line)', display: 'grid', gap: 6 }}>
@@ -49,15 +82,15 @@ function EventCard({ event }: { event: DreamEvent }) {
       <div style={{ fontSize: 12.5, lineHeight: 1.65, color: 'var(--ink)' }}>{event.plain}</div>
       <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.55 }}>{event.why}</div>
       {(roomExists || canCompare) && (
-        <div style={{ display: 'flex', gap: 7, marginTop: 2 }}>
+        <div style={{ display: 'flex', gap: 7, marginTop: 2, flexWrap: 'wrap' }}>
           {roomExists && (
-            <button className="lens" onClick={() => openRoom(event.room_id!)}>
-              👁 見る{event.view_preset_id ? '（Presetあり）' : ''}
+            <button className="lens" onClick={observe}>
+              👁 見る{preset ? `（${preset.lens} Preset）` : ''}
             </button>
           )}
           {canCompare && (
-            <button className="lens" onClick={() => toCompare(event.parent_room!, event.room_id!)}>
-              親と比較
+            <button className="lens" onClick={compare}>
+              親と比較{preset ? '（同期Preset）' : ''}
             </button>
           )}
         </div>
@@ -68,8 +101,14 @@ function EventCard({ event }: { event: DreamEvent }) {
 
 export default function DreamNightReport() {
   const [report, setReport] = useState<DreamReport | null | undefined>(undefined)
+  const [presets, setPresets] = useState<Record<string, ViewPreset>>({})
   useEffect(() => {
-    loadDreamReport().then(setReport).catch(() => setReport(null))
+    Promise.all([loadDreamReport(), loadViewPresets()])
+      .then(([r, ps]) => {
+        setReport(r)
+        setPresets(Object.fromEntries(ps.map((p) => [p.preset_id, p])))
+      })
+      .catch(() => setReport(null))
   }, [])
 
   if (report === undefined) return null
@@ -112,9 +151,11 @@ export default function DreamNightReport() {
         </div>
       )}
 
-      {top.map((e) => <EventCard key={e.event_id} event={e} />)}
+      {top.map((e) => (
+        <EventCard key={e.event_id} event={e} preset={e.view_preset_id ? presets[e.view_preset_id] : undefined} />
+      ))}
       <div className="mono muted" style={{ fontSize: 10.5, marginTop: 8, lineHeight: 1.55 }}>
-        novelty / 見る価値は観察・ランキング用。成功判定や official 昇格には使用しません。
+        novelty / 見る価値は観察・ランキング用。Preset は表示だけを変え、成功判定や official 昇格には使用しません。
       </div>
     </section>
   )
