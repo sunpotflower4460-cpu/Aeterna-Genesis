@@ -14,7 +14,6 @@ from typing import Any
 
 from ai_lab.dream import deep_time as legacy
 from ai_lab.dream import prefix_audit
-from ai_lab.dream import strict_geometry as strict
 
 _ORIGINAL_RUN = legacy.run_candidate
 _ORIGINAL_REGISTER = legacy.register_and_run
@@ -37,13 +36,19 @@ def _historical_F_depth(prefix_depth: int, result: dict[str, Any]) -> int:
 
 
 def _prefix_classification(candidate: dict[str, Any], *, quick: bool) -> dict[str, Any]:
-    probe = strict._geometry_probe({**candidate, "quick": bool(quick)})
-    path = probe.get("zero_to_fission") or {}
+    """Replay exactly the ordinary observation window using the Deep-Time worker's own diagnostics.
+
+    Deep-Time leads intentionally store only t=0 provenance, not the mass-search reached_level field.
+    Reusing strict._geometry_probe directly would therefore misclassify many legacy leads.  The
+    original Deep-Time worker recomputes Level from its trajectory, so a zero-multiplier run is the
+    correct independent prefix classifier.
+    """
+    prefix = _ORIGINAL_RUN(candidate, horizon_multiplier=0.0, quick=quick)
     return {
-        "F_depth": int(path.get("depth", -1)),
-        "F_code": path.get("depth_code"),
-        "triangle_seen": bool(probe.get("triangle_seen")),
-        "persistent_relation_seen": bool(probe.get("persistent_relation_seen")),
+        "F_depth": int(prefix.get("F_depth", -1)),
+        "F_code": prefix.get("F_code"),
+        "triangle_seen": bool(prefix.get("triangle_seen")),
+        "balance_collapse_seen": bool(prefix.get("balance_collapse_seen")),
     }
 
 
