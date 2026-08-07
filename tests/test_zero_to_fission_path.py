@@ -102,8 +102,10 @@ def test_balanced_triangle_can_be_followed_by_connected_collapse_then_split():
         {"step": 1, "points": triangle_points, "triad": geom.best_mutual_triad(triangle_points, shape), "triangle": anchor},
         {"step": 2, "points": collapsed_points, "triad": collapsed, "triangle": None},
         {"step": 3, "points": collapsed_points, "triad": collapsed, "triangle": None},
-        {"step": 4, "points": split_points, "triad": geom.best_mutual_triad(split_points, shape), "triangle": None},
+        # After balance loss is established, require the same one-group instability to persist again.
+        {"step": 4, "points": collapsed_points, "triad": collapsed, "triangle": None},
         {"step": 5, "points": split_points, "triad": geom.best_mutual_triad(split_points, shape), "triangle": None},
+        {"step": 6, "points": split_points, "triad": geom.best_mutual_triad(split_points, shape), "triangle": None},
     ]
     transition = strict._triangle_transition_after(snapshots, 0, anchor, shape)
     assert transition["balance_collapse_seen"] is True
