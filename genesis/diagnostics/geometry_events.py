@@ -1,15 +1,14 @@
 """Observation-only geometry diagnostics for spontaneous vortex arrangements.
 
-These diagnostics NEVER change emergence Levels or success thresholds. They ask a separate
-question: when an isolated local group of three naturally formed vortices persists in a balanced
-triangle, is a later split of that local group more common than after a non-triangular three-vortex
-control arrangement?
+These diagnostics NEVER change emergence Levels or success thresholds. They observe naturally formed
+mutual-nearest vortex pairs and triads, and separately ask whether a persistent balanced triangle is
+followed by relation-network separation more often than a matched non-triangle control.
 
-The triangle is never seeded. "Fission-like" is field geometry, not biological cell division.
+Pairs, triangles and controls are never seeded. "Fission-like" is field geometry, not biological cell
+division. Pair observations are descriptive and do not alter the existing triangle hypothesis gates.
 """
 from __future__ import annotations
 
-import itertools
 import math
 from typing import Any
 
@@ -70,17 +69,9 @@ def _nearest_ids(points: list[dict[str, Any]], i: int, shape: tuple[int, int], k
     ]
 
 
-def _mutual_nearest_triad(points: list[dict[str, Any]], ids: tuple[int, int, int], shape: tuple[int, int]) -> bool:
-    """Require each member's two nearest vortices to be the other two members.
-
-    This prevents a dense cloud with dozens of vortices from producing an "interesting triangle"
-    merely because some arbitrary combination of three happens to look equilateral.
-    """
-    target = set(ids)
-    return all(set(_nearest_ids(points, i, shape, 2)) == (target - {i}) for i in ids)
-
-
-def _centroid(points: list[dict[str, Any]], ids: tuple[int, int, int], shape: tuple[int, int]) -> dict[str, float]:
+def _centroid(points: list[dict[str, Any]], ids: tuple[int, ...], shape: tuple[int, int]) -> dict[str, float]:
+    if not ids:
+        raise ValueError("centroid requires at least one point")
     ref = points[ids[0]]
     ys, xs = [float(ref["y"])], [float(ref["x"])]
     for idx in ids[1:]:
@@ -90,6 +81,71 @@ def _centroid(points: list[dict[str, Any]], ids: tuple[int, int, int], shape: tu
             base = vals[0]
             vals.append(min((raw - size, raw, raw + size), key=lambda v: abs(v - base)))
     return {"y": round(float(np.mean(ys)) % shape[0], 4), "x": round(float(np.mean(xs)) % shape[1], 4)}
+
+
+def _pair_metrics(points: list[dict[str, Any]], ids: tuple[int, int], shape: tuple[int, int]) -> dict[str, Any]:
+    a, b = points[ids[0]], points[ids[1]]
+    d = periodic_distance(a, b, shape)
+    charges = [int(a["charge"]), int(b["charge"])]
+    # Preserve +-/orientation-independent composition while retaining point indices separately.
+    charge_pattern = "".join("+" if q > 0 else "-" for q in sorted(charges, reverse=True))
+    return {
+        "indices": list(ids),
+        "separation": round(d, 4),
+        "max_side": round(d, 4),
+        "charge_pattern": charge_pattern,
+        "mutual_nearest": True,
+        "centroid": _centroid(points, ids, shape),
+    }
+
+
+def best_mutual_pair(points: list[dict[str, Any]], shape: tuple[int, int]) -> dict[str, Any] | None:
+    """Return the closest pair whose members are each other's nearest vortex.
+
+    This gives two-vortex relations a symmetric, predeclared definition rather than selecting pairs
+    because their later energy profile looks interesting.  Pair observations never affect F-stages.
+    """
+    if len(points) < 2:
+        return None
+    candidates: list[dict[str, Any]] = []
+    seen: set[tuple[int, int]] = set()
+    for i in range(len(points)):
+        nearest = _nearest_ids(points, i, shape, 1)
+        if not nearest:
+            continue
+        j = nearest[0]
+        ids = tuple(sorted((i, j)))
+        if ids in seen:
+            continue
+        seen.add(ids)
+        back = _nearest_ids(points, j, shape, 1)
+        if not back or back[0] != i:
+            continue
+        m = _pair_metrics(points, ids, shape)
+        if float(m["separation"]) <= 0.35 * min(shape):
+            candidates.append(m)
+    if not candidates:
+        return None
+    best = min(candidates, key=lambda m: float(m["separation"]))
+    return {**best, "qualified": True, "kind": "pair"}
+
+
+def same_local_pair(a: dict[str, Any], b: dict[str, Any], shape: tuple[int, int]) -> bool:
+    """Loose persistence match for mutual-nearest pairs in consecutive snapshots."""
+    if not a or not b or a.get("kind") != "pair" or b.get("kind") != "pair":
+        return False
+    scale = max(float(a.get("separation") or 1.0), float(b.get("separation") or 1.0))
+    return periodic_distance(a["centroid"], b["centroid"], shape) <= max(2.0, 0.60 * scale)
+
+
+def _mutual_nearest_triad(points: list[dict[str, Any]], ids: tuple[int, int, int], shape: tuple[int, int]) -> bool:
+    """Require each member's two nearest vortices to be the other two members.
+
+    This prevents a dense cloud with dozens of vortices from producing an "interesting triangle"
+    merely because some arbitrary combination of three happens to look equilateral.
+    """
+    target = set(ids)
+    return all(set(_nearest_ids(points, i, shape, 2)) == (target - {i}) for i in ids)
 
 
 def _triad_metrics(points: list[dict[str, Any]], ids: tuple[int, int, int], shape: tuple[int, int]) -> dict[str, Any]:

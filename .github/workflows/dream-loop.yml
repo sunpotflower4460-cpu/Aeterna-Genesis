@@ -11,7 +11,7 @@ on:
       - 'genesis/worlds/**'
       - 'genesis/models/vector_o3.py'
       - 'genesis/models/q_tensor_nematic.py'
-      - 'genesis/diagnostics/geometry_events.py'
+      - 'genesis/diagnostics/**'
   schedule:
     # Primary evidence burst every hour at :17.
     - cron: '17 * * * *'
@@ -119,8 +119,8 @@ jobs:
 
       # Shadow-only: heterogeneous Worlds are observed in a common envelope but cannot change the
       # g001 search budget, official Levels, promotion gates or hypothesis confidence. The same step
-      # now also projects recurrent g001 X-patterns into a common observable vocabulary and compares
-      # them with independently evolved trajectories in the other Worlds.
+      # also projects recurrent g001 X-patterns into a common observable vocabulary and compares them
+      # with independently evolved trajectories in the other Worlds.
       - name: Run Multi-World Genesis shadow observer
         if: steps.watchdog.outputs.run_burst == 'true'
         run: |
