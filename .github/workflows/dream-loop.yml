@@ -9,8 +9,8 @@ on:
       - '.github/workflows/dream-loop.yml'
       - 'ai_lab/dream/**'
   schedule:
-    # 03:17 JST daily. Off the top of the hour to reduce scheduled-run congestion.
-    - cron: '17 18 * * *'
+    # Four connected research cycles per JST day: 03:17 / 09:17 / 15:17 / 21:17.
+    - cron: '17 0,6,12,18 * * *'
   workflow_dispatch:
 
 permissions:
@@ -23,7 +23,8 @@ concurrency:
 jobs:
   research-burst:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Must finish before the next six-hour cycle; this is a bounded burst, never an endless daemon.
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,6 +46,10 @@ jobs:
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
+            ai_lab/discoveries/coverage_atlas.json
+            ai_lab/discoveries/hypothesis_ledger.json
+            ai_lab/discoveries/research_decisions.json
+            ai_lab/discoveries/native3d_discoveries.json
             rooms/candidates
             rooms/rejected_in_3d
             rooms/jobs
@@ -52,15 +57,17 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run bounded Dream Loop
+      - name: Run Adaptive Dream Cycle v2
         run: |
-          python -m ai_lab.dream \
+          python -m ai_lab.dream.adaptive_loop \
             --quick \
-            --mode random \
-            --trials 32 \
-            --repro-top 3 \
+            --trials 2048 \
+            --native3d-trials 100 \
+            --workers 4 \
+            --repro-top 8 \
             --repro-seeds 3 \
-            --native-variants 3 \
+            --compare-native3d-top 12 \
+            --native-variants 1 \
             --max-jobs 12
 
       - name: Save Dream state
@@ -72,12 +79,16 @@ jobs:
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
+            ai_lab/discoveries/coverage_atlas.json
+            ai_lab/discoveries/hypothesis_ledger.json
+            ai_lab/discoveries/research_decisions.json
+            ai_lab/discoveries/native3d_discoveries.json
             rooms/candidates
             rooms/rejected_in_3d
             rooms/jobs
           key: dream-state-${{ runner.os }}-${{ github.run_id }}
 
-      - name: Upload Night Report and view-ready evidence
+      - name: Upload Night Report and discovery evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -89,16 +100,21 @@ jobs:
             ai_lab/reports/nightly/*/report.md
             ai_lab/reports/nightly/*/summary.json
             ai_lab/reports/nightly/*/events.json
+            ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
+            ai_lab/discoveries/coverage_atlas.json
+            ai_lab/discoveries/hypothesis_ledger.json
+            ai_lab/discoveries/research_decisions.json
+            ai_lab/discoveries/native3d_discoveries.json
             rooms/candidates
             rooms/rejected_in_3d
             rooms/jobs
             app/generated/catalog.json
             app/public/data/dream
 
-      # Generated research evidence is persisted to main by default so Observatory can show the latest night.
-      # Set repository variable PERSIST_DREAM_RESULTS=false later if artifact/cache-only operation is preferred.
+      # Persist compact knowledge plus genuinely useful candidate evidence. Mass failures are NOT files;
+      # they are aggregated into coverage_atlas.json. Set PERSIST_DREAM_RESULTS=false for artifact/cache-only mode.
       - name: Persist generated evidence to repository
         if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' }}
         shell: bash
@@ -109,12 +125,16 @@ jobs:
             ai_lab/discoveries/ledger.json \
             ai_lab/discoveries/event_ledger.json \
             ai_lab/discoveries/view_presets.json \
+            ai_lab/discoveries/coverage_atlas.json \
+            ai_lab/discoveries/hypothesis_ledger.json \
+            ai_lab/discoveries/research_decisions.json \
+            ai_lab/discoveries/native3d_discoveries.json \
             ai_lab/reports/nightly \
             rooms/candidates rooms/rejected_in_3d rooms/jobs \
             app/generated/catalog.json app/public/data || true
           if git diff --cached --quiet; then
             echo "No generated Dream evidence changed."
           else
-            git commit -m "record Dream Loop evidence"
+            git commit -m "record Adaptive Dream evidence"
             git push
           fi
