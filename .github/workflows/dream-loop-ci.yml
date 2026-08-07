@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - 'ai_lab/dream/**'
+      - 'genesis/diagnostics/geometry_events.py'
       - 'tests/test_dream_loop.py'
       - 'tests/test_adaptive_dream.py'
+      - 'tests/test_hourly_discovery.py'
       - 'tools/collect_app_data.py'
       - 'app/src/components/DreamNightReport.tsx'
       - 'app/src/components/Inbox.tsx'
@@ -28,20 +30,23 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hourly_discovery.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny Adaptive Dream v2 dry-run including direct 3D
+      - name: Tiny Adaptive Dream v3 dry-run including full 3D and triangle probe
         run: |
           python -m ai_lab.dream.adaptive_loop \
             --quick --trials 4 --native3d-trials 2 --workers 1 \
             --repro-top 1 --repro-seeds 3 --compare-native3d-top 1 \
+            --geometry-top 1 --geometry-broad 0 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 43
+      - name: Easy report was produced
+        run: test -f ai_lab/reports/easy/latest.json && test -f ai_lab/reports/easy/latest.md
 
   observatory:
     runs-on: ubuntu-latest
