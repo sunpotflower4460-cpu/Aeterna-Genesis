@@ -6,6 +6,7 @@ from ai_lab.dream import deep_time_v2
 from ai_lab.dream import open_ended
 from ai_lab.dream import prefix_audit
 from ai_lab.dream import question_critic
+from ai_lab.dream import unknown_followups
 
 
 def _snapshot(t, *, amp=1.0, coh=0.2, ent=0.8, kr=0.1, anis=0.1, grad=0.1, defects=4.0, charge=0.0, high=0.2):
@@ -87,6 +88,33 @@ def test_recurrent_unknown_requires_independent_seeds_and_conditions():
     assert pattern["status"] == "CROSS_CONDITION_RECURRENT"
     assert len(pattern["seeds"]) == 3
     assert len(pattern["conditions"]) == 2
+
+
+def test_unknown_followup_variants_only_change_allowed_start_side_knobs():
+    source = {
+        "family": "white",
+        "trial_index": 12,
+        "score": 3.0,
+        "knobs": {
+            "noise_amplitude": 1e-4,
+            "correlation_length": 4.0,
+            "diffusion_ratio": 0.5,
+            "drive_strength": 3.0,
+            "quench_duration": 8.0,
+        },
+    }
+    rows = unknown_followups.variants(source, pattern_id="X-test", burst_id="b1")
+    assert [x["followup_mode"] for x in rows] == [
+        "fresh-seed-exact", "fresh-seed-local", "fresh-seed-contrast"
+    ]
+    allowed = {
+        "noise_amplitude", "correlation_length", "diffusion_ratio", "drive_strength", "quench_duration"
+    }
+    assert len({x["seed"] for x in rows}) == 3
+    for row in rows:
+        assert row["family"] == "white"
+        assert set(row["knobs"]) == allowed
+        assert not ({"triangle", "vortex_charge", "division_site", "division_time"} & set(row))
 
 
 def test_prefix_digest_tolerates_last_bit_noise_but_not_real_change():
