@@ -186,6 +186,21 @@ def _new_autopilot_events(event_ledger: dict[str, Any]) -> tuple[list[dict[str, 
     )
 
 
+def _executed_job_ids(native_results: list[dict[str, Any]]) -> set[str]:
+    """Return the exact orchestrator jobs processed during this worker burst.
+
+    The persistent queue may carry jobs from an earlier Dream campaign. Those are still part of what
+    happened *tonight* if this worker executed them, so the Night Report should follow execution rather
+    than campaign creation time.
+    """
+    out: set[str] = set()
+    for result in native_results:
+        job = result.get("job") or {}
+        if job.get("job_id"):
+            out.add(str(job["job_id"]))
+    return out
+
+
 def _refresh_observatory() -> str | None:
     """Refresh catalog/data once after the burst. Failure is reported but does not erase research."""
     try:
@@ -254,6 +269,7 @@ def run_burst(
             quick=quick,
             max_jobs=max_jobs,
         )
+    executed_job_ids = _executed_job_ids(native_results)
 
     event_ledger = _load_event_ledger()
     autopilot_events, seen_jobs = _new_autopilot_events(event_ledger)
@@ -267,6 +283,7 @@ def run_burst(
         expanded_trials=int(search_result.get("n", 0)),
         native_jobs=len(native_results),
         generated_at=now.isoformat(),
+        executed_job_ids=executed_job_ids,
     )
     report["search"] = {
         "mode": mode,
@@ -279,6 +296,7 @@ def run_burst(
         "enabled": native,
         "variants": native_variants if native else 0,
         "jobs_executed": len(native_results),
+        "executed_job_ids": sorted(executed_job_ids),
         "approval_gate": ["coarse-global-3d", "full-3d"],
     }
     paths = write_report(str(_REPO), report, stamp=stamp)
