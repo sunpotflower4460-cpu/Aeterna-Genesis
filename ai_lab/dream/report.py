@@ -43,16 +43,23 @@ def _sort_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
-def _belongs_to_burst(event: dict[str, Any], burst_id: str) -> bool:
-    """Keep a Night Report about *this* Dream burst, not the whole historical Autopilot ledger.
+def _belongs_to_burst(
+    event: dict[str, Any],
+    burst_id: str,
+    executed_job_ids: set[str] | None = None,
+) -> bool:
+    """Keep a Night Report about work that actually happened during this burst.
 
-    Search events are constructed in-memory for the current burst, so they need no campaign filter.
-    Genesis Orchestrator events come from an append-only repository ledger that can contain many older
-    campaigns; those must match the current burst's campaign_id or the first Night Report will recount
-    historical promotions as if they happened tonight.
+    Search events are constructed in-memory during the current burst. Genesis Orchestrator events come
+    from an append-only ledger that can contain historical campaigns. When the worker's executed job IDs
+    are available, they are the authoritative boundary: this also correctly includes a carried-over job
+    from yesterday if it was actually executed tonight. The campaign-id check is a defensive fallback for
+    direct callers/tests that do not provide worker results.
     """
     if event.get("source") != "genesis-orchestrator":
         return True
+    if executed_job_ids is not None:
+        return str(event.get("source_key") or "") in executed_job_ids
     return (event.get("facts") or {}).get("campaign_id") == burst_id
 
 
@@ -63,9 +70,13 @@ def build_report(
     expanded_trials: int,
     native_jobs: int,
     generated_at: str | None = None,
+    executed_job_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     generated_at = generated_at or datetime.now(timezone.utc).isoformat()
-    current_events = [event for event in events if _belongs_to_burst(event, burst_id)]
+    current_events = [
+        event for event in events
+        if _belongs_to_burst(event, burst_id, executed_job_ids=executed_job_ids)
+    ]
     ranked = _sort_events(current_events)
     counts: dict[str, int] = {
         "experiments": int(expanded_trials) + int(native_jobs),
