@@ -1,6 +1,12 @@
 name: Genesis Dream Loop
 
 on:
+  # One production burst is triggered when this workflow first lands on main.
+  # Dream-generated evidence never touches this path, so its own commits cannot recursively retrigger it.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/dream-loop.yml'
   schedule:
     # 03:17 JST daily. Off the top of the hour to reduce scheduled-run congestion.
     - cron: '17 18 * * *'
@@ -90,10 +96,10 @@ jobs:
             app/generated/catalog.json
             app/public/data/dream
 
-      # Default is artifact/cache persistence: research continues without silently changing main.
-      # Set repository variable PERSIST_DREAM_RESULTS=true if generated evidence should also be committed.
+      # Generated research evidence is persisted to main by default so Observatory can show the latest night.
+      # Set repository variable PERSIST_DREAM_RESULTS=false later if artifact/cache-only operation is preferred.
       - name: Persist generated evidence to repository
-        if: ${{ vars.PERSIST_DREAM_RESULTS == 'true' }}
+        if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' }}
         shell: bash
         run: |
           git config user.name "aeterna-dream-bot"
