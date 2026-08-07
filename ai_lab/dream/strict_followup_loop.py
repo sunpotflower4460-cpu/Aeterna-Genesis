@@ -7,11 +7,32 @@ from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream.strict_loop import _install_strict_geometry
 
 
+def _install_strict_followup_geometry() -> None:
+    # Follow-up triangle replays must use the same strict detector as the main geometry lane.
+    followups.hourly._geometry_probe = strict._geometry_probe
+    original = followups._update_status
+
+    def update_status(lead):
+        if lead.get("category") != "triangle-fission":
+            return original(lead)
+        # Do not weaken/strengthen a triangle lead merely because many replay runs contained no
+        # qualifying triangle.  Only actual strict triangle observations count toward this lead.
+        g = lead["evidence"]["geometry"]
+        triangles = int(g.get("triangle", 0))
+        split = int(g.get("fission_like", 0))
+        if triangles >= 8 and split == 0:
+            lead["status"] = "WEAKENED"
+        elif triangles >= 8 and split >= 3:
+            lead["status"] = "REPEATED_OBSERVATION"  # repeatability only; triangle causality stays separate
+        else:
+            lead["status"] = "VERIFYING"
+
+    followups._update_status = update_status
+
+
 def main(argv: list[str] | None = None) -> int:
     _install_strict_geometry()
-    # Follow-up triangle replays must use the same strict detector as the main geometry lane.
-    # Otherwise a lead could appear to reproduce only because its verification used a looser detector.
-    followups.hourly._geometry_probe = strict._geometry_probe
+    _install_strict_followup_geometry()
     return adaptive_v4.main(argv)
 
 
