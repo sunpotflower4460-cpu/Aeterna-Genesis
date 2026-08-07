@@ -1,21 +1,25 @@
 """Trajectory-prefix integrity helpers for long-horizon follow-up.
 
 A long run is only comparable to an earlier short run when its early trajectory is the same
-trajectory.  We therefore store a stable digest of the ordinary observation endpoint and compare it
-with an independent replay before interpreting later-time events.
+trajectory.  Two complementary checks are used:
 
-The digest is deliberately quantized before hashing.  It is strict enough to catch a different
-trajectory/start/solver path while avoiding false mismatches from irrelevant last-bit floating point
-differences across runners.  This is an integrity check, not a physical observable.
+1. an observation digest made directly from the ORIGINAL geometry probe's compact time series; and
+2. a quantized endpoint-field digest from an independent t=0 reconstruction.
+
+The first check proves that the replay reproduces the actually recorded detector history.  The second
+is a stricter reconstruction-stability signal for new candidates.  Neither is a physical observable
+or a target-shape seed.
 """
 from __future__ import annotations
 
 import hashlib
+import json
 from typing import Any
 
 import numpy as np
 
 _ALGORITHM = "sha256-round12-v1"
+_OBSERVATION_ALGORITHM = "sha256-observation-round10-v1"
 _DECIMALS = 12
 
 
@@ -41,6 +45,32 @@ def field_digest(field: np.ndarray, *, decimals: int = _DECIMALS) -> dict[str, A
     }
 
 
+def observation_digest(series: list[dict[str, Any]] | None, *, decimals: int = 10) -> dict[str, Any] | None:
+    """Digest the compact detector history that came from the actual ordinary geometry run."""
+    if series is None:
+        return None
+
+    def normalize(value: Any) -> Any:
+        if isinstance(value, float):
+            if not np.isfinite(value):
+                return str(value)
+            return round(value, decimals)
+        if isinstance(value, dict):
+            return {str(k): normalize(v) for k, v in sorted(value.items())}
+        if isinstance(value, (list, tuple)):
+            return [normalize(v) for v in value]
+        return value
+
+    normalized = normalize(series)
+    payload = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+    return {
+        "algorithm": _OBSERVATION_ALGORITHM if decimals == 10 else f"sha256-observation-round{decimals}-v1",
+        "value": hashlib.sha256(payload).hexdigest(),
+        "snapshots": len(series),
+        "source": "actual-ordinary-geometry-observation-series",
+    }
+
+
 def compare_digest(expected: dict[str, Any] | None, actual: dict[str, Any] | None) -> dict[str, Any]:
     """Compare two stored digests without pretending missing legacy evidence is a match."""
     if not expected:
@@ -56,14 +86,16 @@ def compare_digest(expected: dict[str, Any] | None, actual: dict[str, Any] | Non
             "scientific_usable_from_hash": False,
         }
     same_algorithm = expected.get("algorithm") == actual.get("algorithm")
-    same_shape = expected.get("shape") == actual.get("shape")
+    same_shape = expected.get("shape") == actual.get("shape") if "shape" in expected or "shape" in actual else True
+    same_count = expected.get("snapshots") == actual.get("snapshots") if "snapshots" in expected or "snapshots" in actual else True
     same_value = expected.get("value") == actual.get("value")
-    match = bool(same_algorithm and same_shape and same_value)
+    match = bool(same_algorithm and same_shape and same_count and same_value)
     return {
         "status": "MATCH" if match else "MISMATCH",
         "match": match,
         "same_algorithm": same_algorithm,
         "same_shape": same_shape,
+        "same_count": same_count,
         "same_value": same_value,
         "scientific_usable_from_hash": match,
         "expected": expected,
@@ -72,11 +104,7 @@ def compare_digest(expected: dict[str, Any] | None, actual: dict[str, Any] | Non
 
 
 def replay_g001_endpoint(candidate: dict[str, Any], *, quick: bool = True) -> dict[str, Any] | None:
-    """Independently replay only the ordinary g001 observation prefix and digest its endpoint.
-
-    This replay does not inspect a triangle or any later outcome.  It uses only the recorded t=0
-    family/knobs/seed, so attaching this digest to a frontier candidate does not seed a target shape.
-    """
+    """Independently replay only the ordinary g001 observation prefix and digest its endpoint."""
     from ai_lab import lab
     from genesis.models import ginzburg_landau as gl
 
@@ -103,18 +131,13 @@ def replay_g001_endpoint(candidate: dict[str, Any], *, quick: bool = True) -> di
         "ordinary_internal_steps": int(total),
         "ordinary_physical_time": float(macro_steps * base_dt),
         "quick": bool(quick),
-        "source": "independent-t0-endpoint-replay",
+        "source": "independent-t0-endpoint-reconstruction",
     })
     return digest
 
 
 def install_geometry_digest_wrapper(hourly_module: Any, strict_module: Any) -> None:
-    """Attach prefix digests only to naturally observed F4+ probes and their frontier summaries.
-
-    The strict geometry probe itself is intentionally left untouched.  A second endpoint-only replay
-    is performed for the small number of F4+ candidates, keeping the broad geometry lane simple and
-    making the provenance of the integrity digest explicit.
-    """
+    """Attach integrity digests only to naturally observed F4+ probes and frontier summaries."""
     current = hourly_module.run_geometry_probes
     if getattr(current, "_prefix_digest_wrapper", False):
         return
@@ -128,6 +151,9 @@ def install_geometry_digest_wrapper(hourly_module: Any, strict_module: Any) -> N
             path = probe.get("zero_to_fission") or {}
             if int(path.get("depth", -1)) < 4:
                 continue
+            # This digest is made from the actual ordinary probe output, not from a later replay.
+            probe["prefix_observation_digest"] = observation_digest(probe.get("series"))
+            # This complementary field digest is an independent reconstruction and is labelled as such.
             probe["prefix_state_digest"] = replay_g001_endpoint(probe, quick=quick)
             probe["prefix_identity_digest_is_target_seed"] = False
         return probes
@@ -135,20 +161,22 @@ def install_geometry_digest_wrapper(hourly_module: Any, strict_module: Any) -> N
     def geometry_summary_with_digest(probes: list[dict[str, Any]]):
         summary = original_summary(probes)
         by_key = {
-            (p.get("trial_index"), p.get("seed")): p.get("prefix_state_digest")
-            for p in probes if p.get("prefix_state_digest")
+            (p.get("trial_index"), p.get("seed")): {
+                "prefix_observation_digest": p.get("prefix_observation_digest"),
+                "prefix_state_digest": p.get("prefix_state_digest"),
+            }
+            for p in probes if p.get("prefix_observation_digest") or p.get("prefix_state_digest")
         }
         path = summary.get("zero_to_fission_path") or {}
         for item in path.get("frontier_candidates") or []:
-            digest = by_key.get((item.get("trial_index"), item.get("seed")))
-            if digest:
-                item["prefix_state_digest"] = digest
+            digests = by_key.get((item.get("trial_index"), item.get("seed"))) or {}
+            item.update({k: v for k, v in digests.items() if v})
         best = path.get("best_frontier_candidate")
         if best:
-            digest = by_key.get((best.get("trial_index"), best.get("seed")))
-            if digest:
-                best["prefix_state_digest"] = digest
+            digests = by_key.get((best.get("trial_index"), best.get("seed"))) or {}
+            best.update({k: v for k, v in digests.items() if v})
         path["prefix_identity_digest_attached_to_F4_plus"] = True
+        path["actual_observation_history_digest_attached"] = True
         summary["zero_to_fission_path"] = path
         summary["prefix_identity_digest_attached_to_F4_plus"] = True
         return summary
