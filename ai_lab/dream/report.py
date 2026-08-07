@@ -43,6 +43,19 @@ def _sort_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
+def _belongs_to_burst(event: dict[str, Any], burst_id: str) -> bool:
+    """Keep a Night Report about *this* Dream burst, not the whole historical Autopilot ledger.
+
+    Search events are constructed in-memory for the current burst, so they need no campaign filter.
+    Genesis Orchestrator events come from an append-only repository ledger that can contain many older
+    campaigns; those must match the current burst's campaign_id or the first Night Report will recount
+    historical promotions as if they happened tonight.
+    """
+    if event.get("source") != "genesis-orchestrator":
+        return True
+    return (event.get("facts") or {}).get("campaign_id") == burst_id
+
+
 def build_report(
     events: list[dict[str, Any]],
     *,
@@ -52,7 +65,8 @@ def build_report(
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     generated_at = generated_at or datetime.now(timezone.utc).isoformat()
-    ranked = _sort_events(events)
+    current_events = [event for event in events if _belongs_to_burst(event, burst_id)]
+    ranked = _sort_events(current_events)
     counts: dict[str, int] = {
         "experiments": int(expanded_trials) + int(native_jobs),
         "expanded_trials": int(expanded_trials),
@@ -78,7 +92,7 @@ def build_report(
         "NUMERICAL_WARNING": "numerical_warning",
         "NEW_REGION": "new_region",
     }
-    for event in events:
+    for event in current_events:
         key = map_key.get(event.get("kind"))
         if key:
             counts[key] += 1

@@ -144,3 +144,51 @@ def test_night_report_is_plain_language_and_marks_honesty():
     assert "Genesis Night Report" in md
     assert "再現成功" in md
     assert "official" in md
+
+
+def test_night_report_only_counts_orchestrator_events_from_current_burst():
+    current = {
+        "event_id": "evt-current",
+        "kind": "PROMOTION_READY",
+        "source": "genesis-orchestrator",
+        "title": "current",
+        "plain": "current",
+        "why": "current",
+        "facts": {"campaign_id": "dream-current", "stage": "local-3d"},
+        "scientific_status": "local_3d_passed",
+        "visual_interest": "high",
+        "room_id": "room-current",
+        "parent_room": "room-g001-a",
+        "view_preset_id": None,
+    }
+    historical = {
+        **current,
+        "event_id": "evt-old",
+        "title": "old",
+        "facts": {"campaign_id": "old-campaign", "stage": "local-3d"},
+        "room_id": "room-old",
+    }
+    search_event = {
+        "event_id": "evt-search",
+        "kind": "REPRODUCED",
+        "source": "ai-lab-search",
+        "title": "search",
+        "plain": "search",
+        "why": "search",
+        "facts": {"reproduction": {"matched": 2, "tested": 3}},
+        "scientific_status": "2d_reproducible",
+        "visual_interest": "medium",
+        "room_id": None,
+        "parent_room": "room-g001-a",
+        "view_preset_id": None,
+    }
+    report = build_report(
+        [historical, current, search_event],
+        burst_id="dream-current",
+        expanded_trials=1,
+        native_jobs=1,
+        generated_at="2026-08-07T00:00:00+00:00",
+    )
+    assert report["counts"]["promotion_ready"] == 1
+    assert report["counts"]["reproduced"] == 1
+    assert {event["event_id"] for event in report["events"]} == {"evt-current", "evt-search"}
