@@ -96,11 +96,13 @@ solver step 数ではなく World 固有の reference time `tau_ref` で比較�
 - 16 tau
 - 64 tau
 
-深い候補のみ同じ run の checkpoint から続きを計算する。途中状態を「新しい初期条件」として再生成して 0-start claim に使ってはいけない。
+**現在 g001 の F4+ 候補について実装済み。** 候補の途中状態を抜き出して三角形を新しい初期条件として置き直すのではなく、元の family / knobs / seed から **同じ t=0 軌道を再実行し、そのままより長い物理時間まで連続発展**させる。通常観測時間より短い rung は自動的に飛ばす。
+
+これにより、「F5 が出なかった」が「存在しない」のか「観測時間が短かった」のかを切り分ける。現在は再現可能な t=0 replay を採用し、将来の checkpoint/resume は計算量最適化として追加できるが、因果的な 0-start claim の条件にはしない。
 
 ## 7. Physics Integrity Autopilot
 
-重要候補は少なくとも以下を自動監査する。
+重要候補は少なくとも以下を自動監査する計画を共通形式で生成する。
 
 - independent seed
 - dt/2
@@ -108,21 +110,22 @@ solver step 数ではなく World 固有の reference time `tau_ref` で比較�
 - 2x box size
 - alternative solver where available
 
-解像度・dt・box・solver に依存する現象は、強い claim ではなく `DEPENDENT_ON_NUMERICS_OR_SCALE` または Q/frontier として扱う。
+現段階では**監査計画と判定形式まで実装済みで、全 variant の自動実行は次段階**。解像度・dt・box・solver に依存する現象は、強い claim ではなく `DEPENDENT_ON_NUMERICS_OR_SCALE` または Q/frontier として扱う。
 
 ## 8. 次の実装順
 
-1. current foundation + shadow observation（この文書と同時に導入）
-2. g002/CGL/Gray-Scott adapters
-3. checkpoint/resume Deep-Time worker
-4. automated convergence execution (not only plan generation)
+1. current foundation + shadow observation（実装済み）
+2. g001 F4+ Deep-Time t=0 replay（実装済み）
+3. g002/CGL/Gray-Scott adapters
+4. automated convergence execution (dt/dx/domain/seed; solver where available)
 5. body morphology / neck / persistent-ID fission detector
 6. Emergence Event Graph and cross-law phenomenon fingerprints
 7. Native-3D vector/tensor lanes
-8. Abelian-Higgs U(1) gauge **Validation** lane
-9. cosmology Validation lane
-10. relational geometry known-model Validation
-11. only after validation: C4 Relational Genesis frontier
+8. optional checkpoint/resume acceleration for expensive Deep-Time worlds
+9. Abelian-Higgs U(1) gauge **Validation** lane
+10. cosmology Validation lane
+11. relational geometry known-model Validation
+12. only after validation: C4 Relational Genesis frontier
 
 ## 9. 研究上の禁止事項
 
