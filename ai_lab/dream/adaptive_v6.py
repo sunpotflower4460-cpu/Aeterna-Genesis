@@ -18,6 +18,7 @@ from ai_lab.dream import adaptive_v5 as v5
 from ai_lab.dream import deep_time_v2
 from ai_lab.dream import open_ended
 from ai_lab.dream import question_critic
+from ai_lab.dream import unknown_followups
 from ai_lab.dream.report import write_report
 
 
@@ -29,8 +30,33 @@ def _question_text(critic: dict[str, Any], *, limit: int = 2) -> str:
     return " / ".join(bits)
 
 
+def _unknown_followup_text(follow: dict[str, Any]) -> str:
+    n = int(follow.get("selected_patterns", 0))
+    if not n:
+        return "複数条件で繰り返す未知X-patternが今のmass候補に再出現しなかったため、専用追試はありませんでした。"
+    specific = sum(1 for x in follow.get("patterns") or [] if x.get("status") == "REPEATED_SPECIFIC_CANDIDATE")
+    nonspecific = sum(1 for x in follow.get("patterns") or [] if x.get("status") == "REPEATED_NONSPECIFIC")
+    weakened = sum(1 for x in follow.get("patterns") or [] if x.get("status") == "WEAKENED")
+    return (
+        f"反復X-patternを {n} 件選び、各patternを別seedの同条件・近傍条件・対照条件で追試しました。"
+        f" 条件特異的に残りそう={specific}、広い条件で出る={nonspecific}、弱まった={weakened} 件です。"
+    )
+
+
+def _deep_time_easy_text(easy: dict[str, Any], report: dict[str, Any]) -> str:
+    deep = report.get("deep_time_followup") or {}
+    bad = int(deep.get("quarantined_prefix_mismatches", 0))
+    base = str(easy.get("deep_time_followup", ""))
+    if bad:
+        return base + f" ただしprefix一致を確認できなかった {bad} 件は物理結果として使わず隔離しました。"
+    if deep.get("prefix_identity_audit_enabled"):
+        return base + " 元の短時間runと同じprefixかも自動監査しています。"
+    return base
+
+
 def _enrich_easy_report(
-    paths: dict[str, str], *, open_summary: dict[str, Any], critic: dict[str, Any], report: dict[str, Any],
+    paths: dict[str, str], *, open_summary: dict[str, Any], unknown_follow: dict[str, Any],
+    critic: dict[str, Any], report: dict[str, Any],
 ) -> None:
     latest = Path(paths["latest"])
     if not latest.exists():
@@ -47,8 +73,11 @@ def _enrich_easy_report(
         easy["one_line"] = highlight
     easy["unexpected_discovery"] = highlight
     easy["open_ended_emergence"] = open_summary
+    easy["unknown_pattern_followup"] = unknown_follow
+    easy["unknown_pattern_followup_text"] = _unknown_followup_text(unknown_follow)
     easy["question_critic"] = critic
     easy["question_critic_summary"] = _question_text(critic)
+    easy["deep_time_followup"] = _deep_time_easy_text(easy, report)
     easy["known_route_context"] = (
         "F0〜F7は残していますが、自然の正解順序ではなく『人間が先に考えた参照ルートの1本』として扱います。"
         "別の枝・ループ・長期安定・合流・未知遷移も同じ価値で探します。"
@@ -72,6 +101,7 @@ def _enrich_easy_report(
             f"変化点候補 {open_summary.get('episodes', 0)} 件、新しいfingerprint {open_summary.get('new_patterns', 0)} 件。"
             f"複数条件で反復した未整理patternは {open_summary.get('recurrent_unlabeled_patterns', 0)} 件です。"
         ), "",
+        "## その未知patternは別条件でも追試した？", str(easy.get("unknown_pattern_followup_text", "")), "",
         "## そもそも問い方が狭くない？", str(easy.get("question_critic_summary", "")), "",
         "## 今回なにをした？", str(easy.get("what_we_did", "")), "",
         "## F-pathはどう扱う？", str(easy.get("known_route_context", "")), "",
@@ -87,7 +117,8 @@ def _enrich_easy_report(
 
 
 def run_adaptive_v6(
-    *, open_ended_probes: int = 24, open_ended_max_episodes: int = 3, **kwargs: Any,
+    *, open_ended_probes: int = 24, open_ended_max_episodes: int = 3,
+    unknown_followup_max_patterns: int = 2, **kwargs: Any,
 ) -> dict[str, Any]:
     # Capture the same broad mass search for a stratified observational sample; do not change it.
     open_ended.install_mass_capture(adaptive)
@@ -112,6 +143,13 @@ def run_adaptive_v6(
         workers=max(1, workers),
         max_episodes_per_probe=max(0, int(open_ended_max_episodes)),
     )
+    unknown_follow = unknown_followups.run_recurrent_followups(
+        burst_id=str(report["burst_id"]),
+        mass_results=mass_results,
+        quick=bool(kwargs.get("quick", True)),
+        max_patterns=max(0, int(unknown_followup_max_patterns)),
+        max_episodes_per_probe=max(0, int(open_ended_max_episodes)),
+    )
     ar = report.get("adaptive_research") or {}
     critic = question_critic.run_question_critic(
         burst_id=str(report["burst_id"]),
@@ -121,6 +159,7 @@ def run_adaptive_v6(
     )
 
     report["open_ended_emergence"] = opened
+    report["unknown_pattern_followup"] = unknown_follow
     report["question_critic"] = critic
     report["known_route_policy"] = {
         "relation_fission_F": "one-known-reference-route",
@@ -131,16 +170,25 @@ def run_adaptive_v6(
     counts = report.setdefault("counts", {})
     counts["open_ended_probes"] = int(opened.get("probes", 0))
     counts["open_ended_change_episodes"] = int(opened.get("episodes", 0))
-    counts["experiments"] = int(counts.get("experiments", 0)) + int(opened.get("probes", 0))
+    counts["unknown_pattern_followup_trials"] = int(unknown_follow.get("trials", 0))
+    counts["experiments"] = (
+        int(counts.get("experiments", 0))
+        + int(opened.get("probes", 0))
+        + int(unknown_follow.get("trials", 0))
+    )
     report.setdefault("honesty", {})["F_path_is_the_assumed_natural_route"] = False
     report["honesty"]["open_ended_pattern_is_new_physics_claim"] = False
     report["honesty"]["question_critic_changes_truth_gate"] = False
     report["honesty"]["open_ended_lane_replaces_broad_exploration"] = False
+    report["honesty"]["unknown_pattern_followup_replaces_broad_exploration"] = False
+    report["honesty"]["unknown_pattern_followup_seeds_target_shape"] = False
 
     generated = datetime.fromisoformat(str(report["generated_at"]).replace("Z", "+00:00"))
     stamp = generated.strftime("%Y-%m-%dT%H-%M-%SZ")
     base["paths"] = write_report(str(v3._REPO), report, stamp=stamp)
-    _enrich_easy_report(base["easy_paths"], open_summary=opened, critic=critic, report=report)
+    _enrich_easy_report(
+        base["easy_paths"], open_summary=opened, unknown_follow=unknown_follow, critic=critic, report=report
+    )
     return base
 
 
@@ -149,6 +197,7 @@ def build_parser():
     ap.description = "Aeterna Adaptive Dream v6 — open-ended emergence + known reference routes"
     ap.add_argument("--open-ended-probes", type=int, default=24)
     ap.add_argument("--open-ended-max-episodes", type=int, default=3)
+    ap.add_argument("--unknown-followup-max-patterns", type=int, default=2)
     return ap
 
 
@@ -168,13 +217,16 @@ def main(argv: list[str] | None = None) -> int:
         deep_time_max_leads=max(0, a.deep_time_max_leads),
         open_ended_probes=max(0, a.open_ended_probes),
         open_ended_max_episodes=max(0, a.open_ended_max_episodes),
+        unknown_followup_max_patterns=max(0, a.unknown_followup_max_patterns),
     )
     r = result["report"]
     opened = r.get("open_ended_emergence") or {}
+    uf = r.get("unknown_pattern_followup") or {}
     path = r.get("zero_to_fission_path") or {}
     print(f"=== Aeterna Adaptive Dream v6: {r['burst_id']} ===")
     print(f"  broad: 2D={r['counts'].get('mass_2d_trials', 0)} 3D={r['counts'].get('native_3d_trials', 0)}")
     print(f"  open-ended: probes={opened.get('probes', 0)} episodes={opened.get('episodes', 0)} recurrent-unlabeled={opened.get('recurrent_unlabeled_patterns', 0)}")
+    print(f"  unknown follow-up: patterns={uf.get('selected_patterns', 0)} trials={uf.get('trials', 0)}")
     print(f"  known F reference: deepest={path.get('deepest_code')} (not the assumed natural route)")
     deep = r.get("deep_time_followup") or {}
     print(f"  prefix-audited deep-time runs={len(deep.get('results') or [])} quarantined={deep.get('quarantined_prefix_mismatches', 0)}")
