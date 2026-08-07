@@ -8,6 +8,9 @@ on:
     paths:
       - '.github/workflows/dream-loop.yml'
       - 'ai_lab/dream/**'
+      - 'genesis/worlds/**'
+      - 'genesis/models/vector_o3.py'
+      - 'genesis/models/q_tensor_nematic.py'
       - 'genesis/diagnostics/geometry_events.py'
   schedule:
     # Primary evidence burst every hour at :17.
@@ -84,7 +87,7 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run hourly Adaptive Dream v5 with zero-to-fission frontier research
+      - name: Run hourly Adaptive Dream v5 with relation-fission F-path research
         if: steps.watchdog.outputs.run_burst == 'true'
         run: |
           python -m ai_lab.dream.strict_fission_loop \
@@ -104,6 +107,16 @@ jobs:
             --fission-path-max-leads 2 \
             --native-variants 1 \
             --max-jobs 12
+
+      # Shadow-only: heterogeneous Worlds are observed in a common envelope but cannot change the
+      # g001 search budget, official Levels, promotion gates or hypothesis confidence.
+      - name: Run Multi-World Genesis shadow observer
+        if: steps.watchdog.outputs.run_burst == 'true'
+        run: |
+          python -m ai_lab.dream.multiworld \
+            --quick \
+            --seed "${{ github.run_number }}" \
+            --output ai_lab/reports/multiworld/latest.json
 
       - name: Save Dream state
         if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
@@ -141,6 +154,7 @@ jobs:
             ai_lab/reports/easy/latest.md
             ai_lab/reports/easy/*/report.json
             ai_lab/reports/easy/*/report.md
+            ai_lab/reports/multiworld/latest.json
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
@@ -176,6 +190,7 @@ jobs:
             ai_lab/discoveries/fission_path_leads.json \
             ai_lab/reports/nightly \
             ai_lab/reports/easy \
+            ai_lab/reports/multiworld \
             rooms/candidates rooms/rejected_in_3d rooms/jobs \
             app/generated/catalog.json app/public/data || true
           if git diff --cached --quiet; then
