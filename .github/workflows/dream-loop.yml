@@ -1,16 +1,18 @@
 name: Genesis Dream Loop
 
 on:
-  # Run once when Dream implementation/workflow changes land on main.
-  # Generated evidence never touches these paths, so Dream commits cannot recursively retrigger it.
+  # Run once when research implementation/workflow changes land on main.
+  # Generated evidence never touches these code paths, so evidence commits do not recurse.
   push:
     branches: [main]
     paths:
       - '.github/workflows/dream-loop.yml'
       - 'ai_lab/dream/**'
+      - 'genesis/diagnostics/geometry_events.py'
   schedule:
-    # Four connected research cycles per JST day: 03:17 / 09:17 / 15:17 / 21:17.
-    - cron: '17 0,6,12,18 * * *'
+    # Evidence burst every hour at :17. The code itself lets the Research Director rethink only
+    # at 03:17 / 09:17 / 15:17 / 21:17 JST; the other 20 bursts only gather more evidence.
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -23,8 +25,8 @@ concurrency:
 jobs:
   research-burst:
     runs-on: ubuntu-latest
-    # Must finish before the next six-hour cycle; this is a bounded burst, never an endless daemon.
-    timeout-minutes: 240
+    # An hourly burst must stay bounded and finish before the next one.
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,7 +59,7 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run Adaptive Dream Cycle v2
+      - name: Run hourly Adaptive Dream v3
         run: |
           python -m ai_lab.dream.adaptive_loop \
             --quick \
@@ -67,6 +69,8 @@ jobs:
             --repro-top 8 \
             --repro-seeds 3 \
             --compare-native3d-top 12 \
+            --geometry-top 12 \
+            --geometry-broad 12 \
             --native-variants 1 \
             --max-jobs 12
 
@@ -88,11 +92,11 @@ jobs:
             rooms/jobs
           key: dream-state-${{ runner.os }}-${{ github.run_id }}
 
-      - name: Upload Night Report and discovery evidence
+      - name: Upload reports and discovery evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: genesis-night-report-${{ github.run_number }}
+          name: genesis-research-report-${{ github.run_number }}
           retention-days: 30
           if-no-files-found: warn
           path: |
@@ -100,6 +104,10 @@ jobs:
             ai_lab/reports/nightly/*/report.md
             ai_lab/reports/nightly/*/summary.json
             ai_lab/reports/nightly/*/events.json
+            ai_lab/reports/easy/latest.json
+            ai_lab/reports/easy/latest.md
+            ai_lab/reports/easy/*/report.json
+            ai_lab/reports/easy/*/report.md
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
@@ -113,8 +121,8 @@ jobs:
             app/generated/catalog.json
             app/public/data/dream
 
-      # Persist compact knowledge plus genuinely useful candidate evidence. Mass failures are NOT files;
-      # they are aggregated into coverage_atlas.json. Set PERSIST_DREAM_RESULTS=false for artifact/cache-only mode.
+      # Persist compact knowledge plus useful candidate evidence. Mundane failures are represented by
+      # Coverage Atlas, not one file per trial. Easy reports are intentionally kept for human reading.
       - name: Persist generated evidence to repository
         if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' }}
         shell: bash
@@ -130,11 +138,12 @@ jobs:
             ai_lab/discoveries/research_decisions.json \
             ai_lab/discoveries/native3d_discoveries.json \
             ai_lab/reports/nightly \
+            ai_lab/reports/easy \
             rooms/candidates rooms/rejected_in_3d rooms/jobs \
             app/generated/catalog.json app/public/data || true
           if git diff --cached --quiet; then
             echo "No generated Dream evidence changed."
           else
-            git commit -m "record Adaptive Dream evidence"
+            git commit -m "record hourly Adaptive Dream evidence"
             git push
           fi
