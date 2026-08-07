@@ -59,9 +59,9 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run hourly Adaptive Dream v3
+      - name: Run hourly Adaptive Dream v3 with strict triangle controls
         run: |
-          python -m ai_lab.dream.adaptive_loop \
+          python -m ai_lab.dream.strict_loop \
             --quick \
             --trials 2048 \
             --native3d-trials 100 \
