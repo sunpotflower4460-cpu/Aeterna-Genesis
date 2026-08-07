@@ -1,12 +1,13 @@
 name: Genesis Dream Loop
 
 on:
-  # One production burst is triggered when this workflow first lands on main.
-  # Dream-generated evidence never touches this path, so its own commits cannot recursively retrigger it.
+  # Run once when Dream implementation/workflow changes land on main.
+  # Generated evidence never touches these paths, so Dream commits cannot recursively retrigger it.
   push:
     branches: [main]
     paths:
       - '.github/workflows/dream-loop.yml'
+      - 'ai_lab/dream/**'
   schedule:
     # 03:17 JST daily. Off the top of the hour to reduce scheduled-run congestion.
     - cron: '17 18 * * *'
