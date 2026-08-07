@@ -14,6 +14,7 @@ from typing import Any
 
 from ai_lab.dream import deep_time as legacy
 from ai_lab.dream import prefix_audit
+from ai_lab.dream import strict_geometry as strict
 
 _ORIGINAL_RUN = legacy.run_candidate
 _ORIGINAL_REGISTER = legacy.register_and_run
@@ -36,19 +37,28 @@ def _historical_F_depth(prefix_depth: int, result: dict[str, Any]) -> int:
 
 
 def _prefix_classification(candidate: dict[str, Any], *, quick: bool) -> dict[str, Any]:
-    """Replay exactly the ordinary observation window using the Deep-Time worker's own diagnostics.
+    """Replay exactly the ordinary window and reconstruct both F classification and detector history.
 
-    Deep-Time leads intentionally store only t=0 provenance, not the mass-search reached_level field.
-    Reusing strict._geometry_probe directly would therefore misclassify many legacy leads.  The
-    original Deep-Time worker recomputes Level from its trajectory, so a zero-multiplier run is the
-    correct independent prefix classifier.
+    Stored Deep-Time leads do not contain the mass-search reached_level field.  First let the legacy
+    Deep-Time worker recompute Level from the ordinary-length trajectory, then feed that measured
+    Level into the strict geometry detector so its compact series can be compared with the series
+    recorded by the original ordinary geometry run.
     """
     prefix = _ORIGINAL_RUN(candidate, horizon_multiplier=0.0, quick=quick)
+    measured_level = int(prefix.get("reached_level_for_path_measurement", 0))
+    geometry = strict._geometry_probe({
+        **candidate,
+        "quick": bool(quick),
+        "reached_level": measured_level,
+    })
+    path = geometry.get("zero_to_fission") or {}
     return {
-        "F_depth": int(prefix.get("F_depth", -1)),
-        "F_code": prefix.get("F_code"),
-        "triangle_seen": bool(prefix.get("triangle_seen")),
-        "balance_collapse_seen": bool(prefix.get("balance_collapse_seen")),
+        "F_depth": int(path.get("depth", -1)),
+        "F_code": path.get("depth_code"),
+        "triangle_seen": bool(geometry.get("triangle_seen")),
+        "balance_collapse_seen": bool(geometry.get("balance_collapse_seen")),
+        "observation_digest": prefix_audit.observation_digest(geometry.get("series")),
+        "measured_level": measured_level,
     }
 
 
@@ -56,17 +66,24 @@ def run_candidate(candidate: dict[str, Any], *, horizon_multiplier: float, quick
     result = _ORIGINAL_RUN(candidate, horizon_multiplier=horizon_multiplier, quick=quick)
     baseline = _baseline_depth(candidate)
     prefix = _prefix_classification(candidate, quick=quick)
-    actual_digest = prefix_audit.replay_g001_endpoint(candidate, quick=quick)
-    digest_check = prefix_audit.compare_digest(candidate.get("prefix_state_digest"), actual_digest)
+
+    observation_check = prefix_audit.compare_digest(
+        candidate.get("prefix_observation_digest"), prefix.get("observation_digest")
+    )
+    reconstructed_field = prefix_audit.replay_g001_endpoint(candidate, quick=quick)
+    field_check = prefix_audit.compare_digest(candidate.get("prefix_state_digest"), reconstructed_field)
     classification_match = bool(prefix["F_depth"] == baseline) if baseline >= 0 else True
 
-    if digest_check.get("match") is False:
-        status = "HASH_MISMATCH_QUARANTINED"
+    if observation_check.get("match") is False:
+        status = "OBSERVATION_PREFIX_MISMATCH_QUARANTINED"
+        usable = False
+    elif field_check.get("match") is False:
+        status = "FIELD_RECONSTRUCTION_MISMATCH_QUARANTINED"
         usable = False
     elif not classification_match:
         status = "PREFIX_CLASSIFICATION_MISMATCH_QUARANTINED"
         usable = False
-    elif digest_check.get("match") is True:
+    elif observation_check.get("match") is True:
         status = "MATCH"
         usable = True
     else:
@@ -79,17 +96,19 @@ def run_candidate(candidate: dict[str, Any], *, horizon_multiplier: float, quick
         "raw_full_horizon_F_code": result.get("F_code"),
         "prefix_replay_F_depth": prefix["F_depth"],
         "prefix_replay_F_code": prefix["F_code"],
+        "prefix_replay_measured_level": prefix["measured_level"],
         "baseline_F_depth": baseline,
         "F_depth": corrected_depth,
         "F_code": f"F{corrected_depth}" if corrected_depth >= 0 else None,
         "prefix_identity_audit": {
-            "version": 1,
+            "version": 2,
             "status": status,
             "scientific_usable": usable,
             "baseline_F_depth": baseline,
             "prefix_replay_F_depth": prefix["F_depth"],
             "classification_match": classification_match,
-            "digest": digest_check,
+            "actual_observation_history_check": observation_check,
+            "independent_field_reconstruction_check": field_check,
             "prefix_is_same_t0_family_knobs_seed": True,
             "midrun_shape_seeded": False,
         },
@@ -123,10 +142,11 @@ def _pre_register_with_digest(*, burst_id: str, path_summary: dict[str, Any]) ->
             }
             leads.append(lead)
             changed = True
-        digest = candidate.get("prefix_state_digest")
-        if digest and lead.get("prefix_state_digest") != digest:
-            lead["prefix_state_digest"] = digest
-            changed = True
+        for key_name in ("prefix_observation_digest", "prefix_state_digest"):
+            digest = candidate.get(key_name)
+            if digest and lead.get(key_name) != digest:
+                lead[key_name] = digest
+                changed = True
     if changed:
         legacy._save(doc)
 
@@ -171,6 +191,7 @@ def register_and_run(
     results = out.get("results") or []
     _quarantine_ledger_results(results)
     out["prefix_identity_audit_enabled"] = True
+    out["actual_observation_history_audit_enabled"] = True
     out["historical_F_stage_semantics"] = True
     out["quarantined_prefix_mismatches"] = sum(
         (r.get("prefix_identity_audit") or {}).get("scientific_usable") is False for r in results
