@@ -2,7 +2,8 @@
 
 The production Dream Loop is currently g001-heavy.  This module runs beside it and samples several
 physically different Worlds without influencing promotions, official Levels, hypothesis confidence or
-broad-search allocation.  It is the first safe step toward a true cross-law research director.
+broad-search allocation.  It also runs a small common-observable trajectory layer so recurrent g001
+X-patterns can be compared with transitions in other Worlds without equating their underlying physics.
 """
 from __future__ import annotations
 
@@ -12,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from ai_lab.dream import cross_world_emergence
 from genesis.worlds.integrity import audit_plan
 from genesis.worlds.probes import probe_world
 from genesis.worlds.registry import list_worlds
@@ -58,8 +60,8 @@ def build_shadow_report(*, seed: int = 0, quick: bool = True, pairs=None) -> dic
 
     worlds = [w.to_dict() for w in list_worlds()]
     zeros = [z.to_dict() for z in list_zeros()]
-    return {
-        "version": 1,
+    report = {
+        "version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "mode": "shadow",
         "purpose": "Cross-law observation without changing official science gates or the g001 discovery budget.",
@@ -86,10 +88,25 @@ def build_shadow_report(*, seed: int = 0, quick: bool = True, pairs=None) -> dic
             },
         },
         "interpretation_guard": (
-            "Different laws expose different observables. Shared event labels are candidate fingerprints only; "
-            "they are not evidence of identical physics or universality until independent audits pass."
+            "Different laws expose different observables. Shared event labels or common-observable fingerprints are "
+            "candidate similarities only; they are not evidence of identical physics or universality until independent "
+            "physics and numerical audits pass."
         ),
     }
+    try:
+        report["open_ended_cross_world"] = cross_world_emergence.analyze_shadow_report(report, quick=quick)
+    except Exception as exc:
+        # Cross-world comparison is shadow-only. A comparator bug must be visible but must never erase endpoint observations.
+        report["open_ended_cross_world"] = {
+            "version": 1,
+            "mode": "cross-world-open-ended-shadow",
+            "errors": [{"error": f"{type(exc).__name__}: {exc}"}],
+            "comparator_failed": True,
+            "promotion_effect": False,
+            "official_level_effect": False,
+            "hypothesis_confidence_effect": False,
+        }
+    return report
 
 
 def write_shadow_report(report: dict[str, Any], output: str) -> str:
@@ -115,8 +132,14 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  probes={len(report['observations'])} errors={len(report['errors'])}")
     for obs in report["observations"]:
         print(f"  {obs['world_id']} {obs['zero_id']}: finite={obs['finite']} events={','.join(obs.get('events') or ['none'])}")
+    cross = report.get("open_ended_cross_world") or {}
+    print(
+        f"  cross-world-open: episodes={cross.get('episodes', 0)} "
+        f"g001-matches={len(cross.get('g001_pattern_matches') or [])} "
+        f"strict-ZA={cross.get('strict_zero_aligned_matches', 0)}"
+    )
     print(f"  report={out}")
-    print("  NOTE: shadow mode cannot promote, change official Levels, or alter hypothesis confidence.")
+    print("  NOTE: shadow mode cannot promote, change official Levels, alter hypothesis confidence, or prove universality.")
     return 0 if not report["errors"] else 2
 
 
