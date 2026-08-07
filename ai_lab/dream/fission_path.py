@@ -14,7 +14,7 @@ structures, how far does the following path arise on its own?
 7 the relation network persistently separates into 2+ groups after that instability
 
 Stage 7 is deliberately called a network-fission candidate, NOT biological cell division and NOT
-official Emergence Level 7.  A future morphology/body detector is required before making a stronger
+official Emergence Level 7. A future morphology/body detector is required before making a stronger
 individual-division claim.
 """
 from __future__ import annotations
@@ -89,6 +89,21 @@ def assess_probe(probe: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _frontier_item(item: dict[str, Any]) -> dict[str, Any]:
+    depth = int(item["path"]["depth"])
+    return {
+        "trial_index": item.get("trial_index"),
+        "family": item.get("family"),
+        "knobs": item.get("knobs") or {},
+        "seed": item.get("seed"),
+        "depth": depth,
+        "stage_label": STAGES.get(depth),
+        "next_stage": min(7, depth + 1),
+        "next_stage_label": STAGES.get(min(7, depth + 1)),
+        "source": "zero-to-fission-path",
+    }
+
+
 def summarize(probes: list[dict[str, Any]]) -> dict[str, Any]:
     assessed: list[dict[str, Any]] = []
     for p in probes:
@@ -112,21 +127,10 @@ def summarize(probes: list[dict[str, Any]]) -> dict[str, Any]:
         for i in range(depth + 1):
             counts[str(i)] += 1
 
-    deepest = max((int(x["path"]["depth"]) for x in assessed), default=-1)
-    best = next((x for x in assessed if int(x["path"]["depth"]) == deepest), None)
-    best_frontier = None
-    if best is not None:
-        best_frontier = {
-            "trial_index": best.get("trial_index"),
-            "family": best.get("family"),
-            "knobs": best.get("knobs") or {},
-            "seed": best.get("seed"),
-            "depth": deepest,
-            "stage_label": STAGES.get(deepest),
-            "next_stage": min(7, deepest + 1),
-            "next_stage_label": STAGES.get(min(7, deepest + 1)),
-            "source": "zero-to-fission-path",
-        }
+    assessed.sort(key=lambda x: int(x["path"]["depth"]), reverse=True)
+    deepest = int(assessed[0]["path"]["depth"]) if assessed else -1
+    frontier_candidates = [_frontier_item(x) for x in assessed[:6]]
+    best_frontier = frontier_candidates[0] if frontier_candidates else None
 
     return {
         "version": 1,
@@ -137,6 +141,7 @@ def summarize(probes: list[dict[str, Any]]) -> dict[str, Any]:
         "deepest_contiguous_stage": deepest,
         "deepest_label": STAGES.get(deepest),
         "best_frontier_candidate": best_frontier,
+        "frontier_candidates": frontier_candidates,
         "triangle_is_required": False,
         "triangle_is_one_hypothesis_route": True,
         "network_fission_is_biological_cell_division": False,
