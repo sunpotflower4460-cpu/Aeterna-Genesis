@@ -82,6 +82,7 @@ jobs:
             ai_lab/discoveries/fission_path_leads.json
             ai_lab/discoveries/deep_time_fission.json
             ai_lab/discoveries/emergence_graph.json
+            ai_lab/discoveries/cross_world_emergence.json
             ai_lab/discoveries/question_critic.json
             ai_lab/discoveries/unknown_followups.json
             rooms/candidates
@@ -117,7 +118,9 @@ jobs:
             --max-jobs 12
 
       # Shadow-only: heterogeneous Worlds are observed in a common envelope but cannot change the
-      # g001 search budget, official Levels, promotion gates or hypothesis confidence.
+      # g001 search budget, official Levels, promotion gates or hypothesis confidence. The same step
+      # now also projects recurrent g001 X-patterns into a common observable vocabulary and compares
+      # them with independently evolved trajectories in the other Worlds.
       - name: Run Multi-World Genesis shadow observer
         if: steps.watchdog.outputs.run_burst == 'true'
         run: |
@@ -143,6 +146,7 @@ jobs:
             ai_lab/discoveries/fission_path_leads.json
             ai_lab/discoveries/deep_time_fission.json
             ai_lab/discoveries/emergence_graph.json
+            ai_lab/discoveries/cross_world_emergence.json
             ai_lab/discoveries/question_critic.json
             ai_lab/discoveries/unknown_followups.json
             rooms/candidates
@@ -168,6 +172,7 @@ jobs:
             ai_lab/reports/easy/*/report.md
             ai_lab/reports/multiworld/latest.json
             ai_lab/reports/emergence/latest.json
+            ai_lab/reports/crossworld/latest.json
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
@@ -179,6 +184,7 @@ jobs:
             ai_lab/discoveries/fission_path_leads.json
             ai_lab/discoveries/deep_time_fission.json
             ai_lab/discoveries/emergence_graph.json
+            ai_lab/discoveries/cross_world_emergence.json
             ai_lab/discoveries/question_critic.json
             ai_lab/discoveries/unknown_followups.json
             rooms/candidates
@@ -207,12 +213,14 @@ jobs:
             ai_lab/discoveries/fission_path_leads.json \
             ai_lab/discoveries/deep_time_fission.json \
             ai_lab/discoveries/emergence_graph.json \
+            ai_lab/discoveries/cross_world_emergence.json \
             ai_lab/discoveries/question_critic.json \
             ai_lab/discoveries/unknown_followups.json \
             ai_lab/reports/nightly \
             ai_lab/reports/easy \
             ai_lab/reports/multiworld \
             ai_lab/reports/emergence \
+            ai_lab/reports/crossworld \
             rooms/candidates rooms/rejected_in_3d rooms/jobs \
             app/generated/catalog.json app/public/data || true
           if git diff --cached --quiet; then
