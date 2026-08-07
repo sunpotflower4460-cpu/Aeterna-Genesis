@@ -76,6 +76,7 @@ jobs:
             ai_lab/discoveries/research_decisions.json
             ai_lab/discoveries/native3d_discoveries.json
             ai_lab/discoveries/promising_leads.json
+            ai_lab/discoveries/fission_path_leads.json
             rooms/candidates
             rooms/rejected_in_3d
             rooms/jobs
@@ -83,10 +84,10 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run hourly Adaptive Dream v4 with strict geometry and lead follow-ups
+      - name: Run hourly Adaptive Dream v5 with zero-to-fission frontier research
         if: steps.watchdog.outputs.run_burst == 'true'
         run: |
-          python -m ai_lab.dream.strict_followup_loop \
+          python -m ai_lab.dream.strict_fission_loop \
             --quick \
             --trials 2048 \
             --native3d-trials 100 \
@@ -94,11 +95,13 @@ jobs:
             --repro-top 8 \
             --repro-seeds 3 \
             --compare-native3d-top 12 \
-            --geometry-top 12 \
-            --geometry-broad 12 \
+            --geometry-top 16 \
+            --geometry-broad 32 \
             --followup-trials-2d 256 \
             --followup-trials-3d 32 \
             --followup-max-leads 4 \
+            --fission-path-trials-2d 24 \
+            --fission-path-max-leads 2 \
             --native-variants 1 \
             --max-jobs 12
 
@@ -116,6 +119,7 @@ jobs:
             ai_lab/discoveries/research_decisions.json
             ai_lab/discoveries/native3d_discoveries.json
             ai_lab/discoveries/promising_leads.json
+            ai_lab/discoveries/fission_path_leads.json
             rooms/candidates
             rooms/rejected_in_3d
             rooms/jobs
@@ -145,6 +149,7 @@ jobs:
             ai_lab/discoveries/research_decisions.json
             ai_lab/discoveries/native3d_discoveries.json
             ai_lab/discoveries/promising_leads.json
+            ai_lab/discoveries/fission_path_leads.json
             rooms/candidates
             rooms/rejected_in_3d
             rooms/jobs
@@ -168,6 +173,7 @@ jobs:
             ai_lab/discoveries/research_decisions.json \
             ai_lab/discoveries/native3d_discoveries.json \
             ai_lab/discoveries/promising_leads.json \
+            ai_lab/discoveries/fission_path_leads.json \
             ai_lab/reports/nightly \
             ai_lab/reports/easy \
             rooms/candidates rooms/rejected_in_3d rooms/jobs \

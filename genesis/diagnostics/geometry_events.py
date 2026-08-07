@@ -141,6 +141,19 @@ def _mutual_triad_candidates(points: list[dict[str, Any]], shape: tuple[int, int
     return out
 
 
+def best_mutual_triad(points: list[dict[str, Any]], shape: tuple[int, int]) -> dict[str, Any] | None:
+    """Return the strongest local mutual-nearest triad without deciding that it is a triangle.
+
+    This is useful for observing a relation continuously while its geometry changes.  It deliberately
+    has no triangle/control threshold and therefore cannot by itself support either hypothesis.
+    """
+    candidates = _mutual_triad_candidates(points, shape)
+    if not candidates:
+        return None
+    best = max(candidates, key=lambda m: float(m["triangle_score"]))
+    return {**best, "qualified": True, "kind": "mutual"}
+
+
 def best_triangle(points: list[dict[str, Any]], shape: tuple[int, int]) -> dict[str, Any] | None:
     """Return the best isolated/mutual local three-vortex triangle, if one exists."""
     candidates = _mutual_triad_candidates(points, shape)
