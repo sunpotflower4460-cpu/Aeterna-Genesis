@@ -15,6 +15,7 @@ on:
       - 'tests/test_promising_followups.py'
       - 'tests/test_zero_to_fission_path.py'
       - 'tests/test_multiworld_genesis.py'
+      - 'tests/test_deep_time.py'
       - 'tests/test_dream_watchdog.py'
       - 'tools/collect_app_data.py'
       - 'app/src/components/DreamNightReport.tsx'
@@ -38,7 +39,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
@@ -53,6 +54,7 @@ jobs:
             --geometry-top 2 --geometry-broad 0 \
             --followup-trials-2d 4 --followup-trials-3d 1 --followup-max-leads 1 \
             --fission-path-trials-2d 2 --fission-path-max-leads 1 \
+            --deep-time-max-leads 1 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 43
       - name: Multi-World shadow dry-run
@@ -64,8 +66,10 @@ jobs:
           test -f ai_lab/reports/multiworld/latest.json
           test -f ai_lab/discoveries/promising_leads.json
           test -f ai_lab/discoveries/fission_path_leads.json
+          test -f ai_lab/discoveries/deep_time_fission.json
           grep -q 'promising_followup' ai_lab/reports/easy/latest.json
           grep -q 'zero_to_fission_path' ai_lab/reports/easy/latest.json
+          grep -q 'deep_time_followup' ai_lab/reports/easy/latest.json
           grep -q '"mode": "shadow"' ai_lab/reports/multiworld/latest.json
 
   observatory:
