@@ -136,6 +136,32 @@ def test_historical_F_depth_never_erases_verified_prefix():
     }) == 7
 
 
+def test_legacy_deep_time_regression_is_quarantined_not_rewritten(tmp_path, monkeypatch):
+    ledger = tmp_path / "deep_time.json"
+    ledger.write_text(json.dumps({
+        "version": 1,
+        "leads": [{
+            "lead_id": "deep-old",
+            "baseline_F_depth": 4,
+            "last_rung": 16.0,
+            "status": "VERIFYING",
+            "history": [{"burst_id": "old", "rung": 16.0, "F_depth": 1, "finite": True}],
+        }],
+    }))
+    monkeypatch.setattr(deep_time_v2.legacy, "_LEDGER", ledger)
+    flagged = deep_time_v2._flag_legacy_semantic_regressions()
+    saved = json.loads(ledger.read_text())
+    lead = saved["leads"][0]
+    old = lead["history"][0]
+    assert flagged == 1
+    assert old["F_depth"] == 1  # provenance stays untouched
+    assert old["scientific_usable"] is False
+    assert old["legacy_semantics_unverified"] is True
+    assert lead["status"] == "PREFIX_REAUDIT_REQUIRED"
+    assert lead["last_rung_before_reaudit"] == 16.0
+    assert lead["last_rung"] == 0.0
+
+
 def test_question_critic_challenges_route_and_treats_stability_as_branch(tmp_path, monkeypatch):
     hyp = tmp_path / "hyp.json"
     deep = tmp_path / "deep.json"
