@@ -138,15 +138,18 @@ def install_geometry_digest_wrapper(hourly_module: Any, strict_module: Any) -> N
             (p.get("trial_index"), p.get("seed")): p.get("prefix_state_digest")
             for p in probes if p.get("prefix_state_digest")
         }
-        for item in summary.get("frontier_candidates") or []:
+        path = summary.get("zero_to_fission_path") or {}
+        for item in path.get("frontier_candidates") or []:
             digest = by_key.get((item.get("trial_index"), item.get("seed")))
             if digest:
                 item["prefix_state_digest"] = digest
-        best = summary.get("best_frontier_candidate")
+        best = path.get("best_frontier_candidate")
         if best:
             digest = by_key.get((best.get("trial_index"), best.get("seed")))
             if digest:
                 best["prefix_state_digest"] = digest
+        path["prefix_identity_digest_attached_to_F4_plus"] = True
+        summary["zero_to_fission_path"] = path
         summary["prefix_identity_digest_attached_to_F4_plus"] = True
         return summary
 
