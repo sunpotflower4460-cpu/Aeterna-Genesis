@@ -6,7 +6,8 @@ could therefore appear to 'fall back' from F4 to F1 simply because the much late
 
 v2 treats F-stages as historical observations: first verify that the ordinary prefix replays, then
 append only genuinely later F5/F6/F7 transition evidence.  Prefix mismatches are quarantined instead
-of being interpreted as physics.
+of being interpreted as physics.  Historical records produced before v2 that contradict their own
+verified baseline are explicitly marked unusable until a fresh t=0 re-audit is completed.
 """
 from __future__ import annotations
 
@@ -118,6 +119,47 @@ def run_candidate(candidate: dict[str, Any], *, horizon_multiplier: float, quick
     return result
 
 
+def _flag_legacy_semantic_regressions() -> int:
+    """Quarantine pre-v2 history entries that appear to erase an already observed baseline F stage.
+
+    We do NOT silently rewrite those old measurements.  They are marked scientifically unusable and
+    their lead is reset to the first Deep-Time rung so it is naturally prioritised for a clean t=0
+    re-audit.  The original value remains in the ledger for provenance.
+    """
+    doc = legacy._load()
+    changed = False
+    flagged = 0
+    for lead in doc.get("leads") or []:
+        baseline = int(lead.get("baseline_F_depth", -1))
+        if baseline < 0:
+            continue
+        suspect = []
+        for entry in lead.get("history") or []:
+            depth = int(entry.get("F_depth", -1))
+            already_audited = "prefix_identity_status" in entry or "scientific_usable" in entry
+            if depth < baseline and not already_audited:
+                entry["legacy_semantics_unverified"] = True
+                entry["scientific_usable"] = False
+                entry["quarantine_reason"] = (
+                    "Pre-v2 Deep-Time record fell below its own historical baseline; it may reflect "
+                    "whole-horizon measurement semantics rather than physical regression."
+                )
+                suspect.append(entry)
+                flagged += 1
+                changed = True
+        if suspect:
+            lead["legacy_semantics_reaudit_required"] = True
+            lead["status"] = "PREFIX_REAUDIT_REQUIRED"
+            if not lead.get("reaudit_reset_applied"):
+                lead["last_rung_before_reaudit"] = float(lead.get("last_rung", 0.0))
+                lead["last_rung"] = 0.0
+                lead["reaudit_reset_applied"] = True
+            changed = True
+    if changed:
+        legacy._save(doc)
+    return flagged
+
+
 def _pre_register_with_digest(*, burst_id: str, path_summary: dict[str, Any]) -> None:
     doc = legacy._load()
     leads = doc.setdefault("leads", [])
@@ -151,26 +193,30 @@ def _pre_register_with_digest(*, burst_id: str, path_summary: dict[str, Any]) ->
         legacy._save(doc)
 
 
-def _quarantine_ledger_results(results: list[dict[str, Any]]) -> None:
-    bad = {
-        r.get("candidate_key"): (r.get("prefix_identity_audit") or {}).get("status")
-        for r in results
-        if (r.get("prefix_identity_audit") or {}).get("scientific_usable") is False
+def _annotate_ledger_audit_results(results: list[dict[str, Any]]) -> None:
+    by_key = {
+        r.get("candidate_key"): r.get("prefix_identity_audit") or {}
+        for r in results if r.get("candidate_key")
     }
-    if not bad:
+    if not by_key:
         return
     doc = legacy._load()
     changed = False
     for lead in doc.get("leads") or []:
-        status = bad.get(lead.get("lead_id"))
-        if not status:
+        audit = by_key.get(lead.get("lead_id"))
+        if not audit:
             continue
-        lead["status"] = "PREFIX_MISMATCH_QUARANTINED"
-        lead["prefix_identity_status"] = status
+        usable = bool(audit.get("scientific_usable"))
+        lead["prefix_identity_status"] = audit.get("status")
+        if usable and lead.get("legacy_semantics_reaudit_required"):
+            lead["legacy_semantics_reaudit_required"] = False
+            lead["legacy_semantics_reaudit_completed"] = True
         history = lead.get("history") or []
         if history:
-            history[-1]["prefix_identity_status"] = status
-            history[-1]["scientific_usable"] = False
+            history[-1]["prefix_identity_status"] = audit.get("status")
+            history[-1]["scientific_usable"] = usable
+        if not usable:
+            lead["status"] = "PREFIX_MISMATCH_QUARANTINED"
         changed = True
     if changed:
         legacy._save(doc)
@@ -179,6 +225,7 @@ def _quarantine_ledger_results(results: list[dict[str, Any]]) -> None:
 def register_and_run(
     *, burst_id: str, path_summary: dict[str, Any], max_leads: int = 1, quick: bool = True,
 ) -> dict[str, Any]:
+    legacy_flagged = _flag_legacy_semantic_regressions()
     _pre_register_with_digest(burst_id=burst_id, path_summary=path_summary)
     previous = legacy.run_candidate
     legacy.run_candidate = run_candidate
@@ -189,10 +236,11 @@ def register_and_run(
     finally:
         legacy.run_candidate = previous
     results = out.get("results") or []
-    _quarantine_ledger_results(results)
+    _annotate_ledger_audit_results(results)
     out["prefix_identity_audit_enabled"] = True
     out["actual_observation_history_audit_enabled"] = True
     out["historical_F_stage_semantics"] = True
+    out["legacy_semantic_records_quarantined"] = legacy_flagged
     out["quarantined_prefix_mismatches"] = sum(
         (r.get("prefix_identity_audit") or {}).get("scientific_usable") is False for r in results
     )
