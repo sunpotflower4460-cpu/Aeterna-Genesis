@@ -10,9 +10,10 @@ on:
       - 'ai_lab/dream/**'
       - 'genesis/diagnostics/geometry_events.py'
   schedule:
-    # Evidence burst every hour at :17. The code itself lets the Research Director rethink only
-    # at 03:17 / 09:17 / 15:17 / 21:17 JST; the other 20 bursts only gather more evidence.
+    # Primary evidence burst every hour at :17.
     - cron: '17 * * * *'
+    # Safety-net check at :47. It only runs a burst when the latest completed report is >70 min old.
+    - cron: '47 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   research-burst:
     runs-on: ubuntu-latest
-    # An hourly burst must stay bounded and finish before the next one.
+    # A real research burst must stay bounded and finish before the next one.
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
@@ -37,10 +38,32 @@ jobs:
           python-version: '3.11'
           cache: pip
 
+      - name: Decide whether backup burst is needed
+        id: watchdog
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EXPR: ${{ github.event.schedule }}
+        run: |
+          if [[ "$EVENT_NAME" == "schedule" && "$SCHEDULE_EXPR" == "47 * * * *" ]]; then
+            RUN_BURST="$(python -m ai_lab.dream.watchdog --latest ai_lab/reports/easy/latest.json --max-age-minutes 70)"
+          else
+            RUN_BURST="true"
+            echo "Dream watchdog: primary/push/manual event, run normally." >&2
+          fi
+          echo "run_burst=$RUN_BURST" >> "$GITHUB_OUTPUT"
+          echo "run_burst=$RUN_BURST"
+
+      - name: Backup not needed
+        if: steps.watchdog.outputs.run_burst != 'true'
+        run: echo "A recent completed Dream report exists; the :47 safety-net exits without duplicating research."
+
       - name: Install research dependencies
+        if: steps.watchdog.outputs.run_burst == 'true'
         run: pip install -r requirements.txt
 
       - name: Restore Dream state
+        if: steps.watchdog.outputs.run_burst == 'true'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -61,6 +84,7 @@ jobs:
             dream-state-${{ runner.os }}-
 
       - name: Run hourly Adaptive Dream v4 with strict geometry and lead follow-ups
+        if: steps.watchdog.outputs.run_burst == 'true'
         run: |
           python -m ai_lab.dream.strict_followup_loop \
             --quick \
@@ -79,7 +103,7 @@ jobs:
             --max-jobs 12
 
       - name: Save Dream state
-        if: always()
+        if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
         uses: actions/cache/save@v4
         with:
           path: |
@@ -98,7 +122,7 @@ jobs:
           key: dream-state-${{ runner.os }}-${{ github.run_id }}
 
       - name: Upload reports and discovery evidence
-        if: always()
+        if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: genesis-research-report-${{ github.run_number }}
@@ -130,7 +154,7 @@ jobs:
       # Persist compact knowledge plus useful candidate evidence. Mundane failures are represented by
       # Coverage Atlas, not one file per trial. Easy reports are intentionally kept for human reading.
       - name: Persist generated evidence to repository
-        if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' }}
+        if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' && steps.watchdog.outputs.run_burst == 'true' }}
         shell: bash
         run: |
           git config user.name "aeterna-dream-bot"
