@@ -1,48 +1,36 @@
-"""Production entry point for strict geometry + promising leads + zero-to-fission frontier research."""
+"""Production entry point for Adaptive Dream v6 open-ended emergence research.
+
+Strict triangle/F-path measurements remain available as one bounded reference lane, but they no
+longer override the Research Director's main focus.  Open-ended transition discovery, Question
+Critic, Prefix Identity Audit and the existing broad/3D/follow-up lanes run side by side.
+"""
 from __future__ import annotations
 
-from ai_lab.dream import adaptive
-from ai_lab.dream import adaptive_v5
+from ai_lab.dream import adaptive_loop as base
+from ai_lab.dream import adaptive_v6
+from ai_lab.dream import prefix_audit
+from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream.strict_followup_loop import _install_strict_followup_geometry
 from ai_lab.dream.strict_loop import _install_strict_geometry
 
 
 def _install_path_frontier_focus() -> None:
-    """Let only the bounded hypothesis/boundary lanes notice the deepest path frontier.
+    """Legacy compatibility hook; intentionally a no-op in v6.
 
-    Broad unexplored/random/breaker floors remain enforced by adaptive._normalize.  This does not
-    create a triangle or a split; it simply reuses start conditions from a naturally deeper run.
+    v5 used to let an F4+ candidate replace the Director's generic focus.  That made one human-written
+    route too central.  F-path candidates still receive their own small follow-up/Deep-Time budgets,
+    but broad research direction is no longer rewritten around F-progress.
     """
-    original = adaptive.focus_from_report
-
-    def focus_from_report(report):
-        r = report or {}
-        path = r.get("zero_to_fission_path") or {}
-        if not path:
-            ar = r.get("adaptive_research") or {}
-            path = ar.get("zero_to_fission_path") or ((ar.get("triangle_hypothesis") or {}).get("zero_to_fission_path") or {})
-        candidate = path.get("best_frontier_candidate") or {}
-        depth = int(candidate.get("depth", -1))
-        knobs = candidate.get("knobs") or {}
-        family = candidate.get("family")
-        if depth >= 4 and family and isinstance(knobs, dict) and knobs:
-            return {
-                "family": family,
-                "knobs": knobs,
-                "source_event_id": f"zero-to-fission-depth-{depth}",
-                "source_path_depth": depth,
-                "source": "zero-to-fission-frontier",
-            }
-        return original(report)
-
-    adaptive.focus_from_report = focus_from_report
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:
     _install_strict_geometry()
     _install_strict_followup_geometry()
-    _install_path_frontier_focus()
-    return adaptive_v5.main(argv)
+    # Add an independent t=0 endpoint digest only to the small set of naturally observed F4+ probes.
+    prefix_audit.install_geometry_digest_wrapper(base.hourly, strict)
+    # Deliberately DO NOT call _install_path_frontier_focus().
+    return adaptive_v6.main(argv)
 
 
 if __name__ == "__main__":
