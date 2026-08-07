@@ -16,6 +16,7 @@ on:
       - 'tests/test_zero_to_fission_path.py'
       - 'tests/test_multiworld_genesis.py'
       - 'tests/test_deep_time.py'
+      - 'tests/test_open_ended_emergence.py'
       - 'tests/test_dream_watchdog.py'
       - 'tools/collect_app_data.py'
       - 'app/src/components/DreamNightReport.tsx'
@@ -39,37 +40,47 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream v5 dry-run with relation-fission F-path
+      - name: Tiny strict Adaptive Dream v6 dry-run with open-ended discovery
         run: |
           python -m ai_lab.dream.strict_fission_loop \
-            --quick --trials 4 --native3d-trials 2 --workers 1 \
+            --quick --trials 8 --native3d-trials 2 --workers 1 \
             --repro-top 1 --repro-seeds 3 --compare-native3d-top 1 \
-            --geometry-top 2 --geometry-broad 0 \
+            --geometry-top 2 --geometry-broad 2 \
             --followup-trials-2d 4 --followup-trials-3d 1 --followup-max-leads 1 \
             --fission-path-trials-2d 2 --fission-path-max-leads 1 \
             --deep-time-max-leads 1 \
+            --open-ended-probes 4 --open-ended-max-episodes 2 \
+            --unknown-followup-max-patterns 1 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 43
       - name: Multi-World shadow dry-run
         run: python -m ai_lab.dream.multiworld --quick --seed 44 --output ai_lab/reports/multiworld/latest.json
-      - name: Easy and Multi-World reports were produced
+      - name: Easy, emergence and Multi-World reports were produced
         run: |
           test -f ai_lab/reports/easy/latest.json
           test -f ai_lab/reports/easy/latest.md
           test -f ai_lab/reports/multiworld/latest.json
+          test -f ai_lab/reports/emergence/latest.json
           test -f ai_lab/discoveries/promising_leads.json
           test -f ai_lab/discoveries/fission_path_leads.json
           test -f ai_lab/discoveries/deep_time_fission.json
+          test -f ai_lab/discoveries/emergence_graph.json
+          test -f ai_lab/discoveries/question_critic.json
+          test -f ai_lab/discoveries/unknown_followups.json
           grep -q 'promising_followup' ai_lab/reports/easy/latest.json
           grep -q 'zero_to_fission_path' ai_lab/reports/easy/latest.json
           grep -q 'deep_time_followup' ai_lab/reports/easy/latest.json
+          grep -q 'open_ended_emergence' ai_lab/reports/easy/latest.json
+          grep -q 'unknown_pattern_followup' ai_lab/reports/easy/latest.json
+          grep -q 'question_critic' ai_lab/reports/easy/latest.json
+          grep -q '"known_F_path_is_one_reference_only": true' ai_lab/reports/emergence/latest.json
           grep -q '"mode": "shadow"' ai_lab/reports/multiworld/latest.json
 
   observatory:
