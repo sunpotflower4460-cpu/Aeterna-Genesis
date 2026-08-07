@@ -28,11 +28,12 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
         run: pytest -q tests/test_dream_loop.py tests/test_ai_lab.py tests/test_ai_ledger.py
-      - name: Tiny real 2D Dream dry-run
+      - name: Tiny real Dream dry-run including recorded native lane
         run: |
           python -m ai_lab.dream \
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
-            --no-native --no-record --no-refresh-app --seed 42
+            --native-variants 1 --max-jobs 4 \
+            --no-record --no-refresh-app --seed 42
 
   observatory:
     runs-on: ubuntu-latest
