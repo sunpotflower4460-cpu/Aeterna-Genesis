@@ -7,11 +7,12 @@ on:
       - 'genesis/worlds/**'
       - 'genesis/models/vector_o3.py'
       - 'genesis/models/q_tensor_nematic.py'
-      - 'genesis/diagnostics/geometry_events.py'
+      - 'genesis/diagnostics/**'
       - 'tests/test_dream_loop.py'
       - 'tests/test_adaptive_dream.py'
       - 'tests/test_hourly_discovery.py'
       - 'tests/test_strict_geometry.py'
+      - 'tests/test_vortex_energy_landscape.py'
       - 'tests/test_promising_followups.py'
       - 'tests/test_zero_to_fission_path.py'
       - 'tests/test_multiworld_genesis.py'
@@ -40,14 +41,14 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream v6 dry-run with open-ended discovery
+      - name: Tiny strict Adaptive Dream v6 dry-run with open-ended discovery and local energy
         run: |
           python -m ai_lab.dream.strict_fission_loop \
             --quick --trials 8 --native3d-trials 2 --workers 1 \
@@ -82,6 +83,7 @@ jobs:
           grep -q 'open_ended_emergence' ai_lab/reports/easy/latest.json
           grep -q 'unknown_pattern_followup' ai_lab/reports/easy/latest.json
           grep -q 'question_critic' ai_lab/reports/easy/latest.json
+          grep -q 'local_vortex_energy_question' ai_lab/reports/easy/latest.json
           grep -q '"known_F_path_is_one_reference_only": true' ai_lab/reports/emergence/latest.json
           grep -q '"mode": "shadow"' ai_lab/reports/multiworld/latest.json
           grep -q '"mode": "cross-world-open-ended-shadow"' ai_lab/reports/crossworld/latest.json
