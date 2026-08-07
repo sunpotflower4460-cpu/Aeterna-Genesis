@@ -20,6 +20,11 @@ def vortex_points_2d(psi: np.ndarray) -> list[dict[str, Any]]:
     """Return measured 2D vortex plaquette centres and winding charges (+1/-1)."""
     if psi.ndim != 2:
         raise ValueError("vortex_points_2d expects a 2D complex field")
+    # A purely real field has phase only 0/pi and cannot carry a true 2*pi vortex.  The ordinary
+    # plaquette counter can misread domain-wall junctions as windings, so geometry research excludes
+    # that known control artifact instead of turning it into a false triangle discovery.
+    if float(np.max(np.abs(psi.imag))) <= 1e-14:
+        return []
     theta = np.angle(psi)
     amp = np.abs(psi)
     thr = 0.25 * float(amp.max()) if amp.size else 0.0
