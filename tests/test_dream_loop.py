@@ -7,7 +7,7 @@ from ai_lab.dream.events import (
     events_from_autopilot,
     novelty_score,
 )
-from ai_lab.dream.loop import _native_campaign_doc
+from ai_lab.dream.loop import _executed_job_ids, _native_campaign_doc
 from ai_lab.dream.presets import make_view_preset
 from ai_lab.dream.report import build_report, render_markdown
 
@@ -120,6 +120,16 @@ def test_native_campaign_stops_at_existing_human_gates():
     assert len(doc["seeds"]) == 3
 
 
+def test_executed_job_ids_are_taken_from_worker_results():
+    results = [
+        {"job": {"job_id": "job-a"}},
+        {"job": {"job_id": "job-b"}},
+        {"job": {}},
+        {},
+    ]
+    assert _executed_job_ids(results) == {"job-a", "job-b"}
+
+
 def test_night_report_is_plain_language_and_marks_honesty():
     event = {
         "event_id": "evt-a",
@@ -146,28 +156,42 @@ def test_night_report_is_plain_language_and_marks_honesty():
     assert "official" in md
 
 
-def test_night_report_only_counts_orchestrator_events_from_current_burst():
-    current = {
-        "event_id": "evt-current",
+def _orchestrator_event(event_id, source_key, campaign_id, title):
+    return {
+        "event_id": event_id,
         "kind": "PROMOTION_READY",
         "source": "genesis-orchestrator",
-        "title": "current",
-        "plain": "current",
-        "why": "current",
-        "facts": {"campaign_id": "dream-current", "stage": "local-3d"},
+        "source_key": source_key,
+        "title": title,
+        "plain": title,
+        "why": title,
+        "facts": {"campaign_id": campaign_id, "stage": "local-3d"},
         "scientific_status": "local_3d_passed",
         "visual_interest": "high",
-        "room_id": "room-current",
+        "room_id": "room-" + event_id,
         "parent_room": "room-g001-a",
         "view_preset_id": None,
     }
-    historical = {
-        **current,
-        "event_id": "evt-old",
-        "title": "old",
-        "facts": {"campaign_id": "old-campaign", "stage": "local-3d"},
-        "room_id": "room-old",
-    }
+
+
+def test_night_report_fallback_only_counts_current_campaign_without_worker_ids():
+    current = _orchestrator_event("evt-current", "job-current", "dream-current", "current")
+    historical = _orchestrator_event("evt-old", "job-old", "old-campaign", "old")
+    report = build_report(
+        [historical, current],
+        burst_id="dream-current",
+        expanded_trials=0,
+        native_jobs=1,
+        generated_at="2026-08-07T00:00:00+00:00",
+    )
+    assert report["counts"]["promotion_ready"] == 1
+    assert {event["event_id"] for event in report["events"]} == {"evt-current"}
+
+
+def test_night_report_uses_actual_executed_jobs_including_carried_over_work():
+    current = _orchestrator_event("evt-current", "job-current", "dream-current", "current")
+    carried = _orchestrator_event("evt-carried", "job-carried", "dream-yesterday", "carried")
+    stale = _orchestrator_event("evt-stale", "job-stale", "dream-yesterday", "stale")
     search_event = {
         "event_id": "evt-search",
         "kind": "REPRODUCED",
@@ -183,12 +207,16 @@ def test_night_report_only_counts_orchestrator_events_from_current_burst():
         "view_preset_id": None,
     }
     report = build_report(
-        [historical, current, search_event],
+        [stale, carried, current, search_event],
         burst_id="dream-current",
         expanded_trials=1,
-        native_jobs=1,
+        native_jobs=2,
         generated_at="2026-08-07T00:00:00+00:00",
+        executed_job_ids={"job-current", "job-carried"},
     )
-    assert report["counts"]["promotion_ready"] == 1
+    assert report["counts"]["experiments"] == 3
+    assert report["counts"]["promotion_ready"] == 2
     assert report["counts"]["reproduced"] == 1
-    assert {event["event_id"] for event in report["events"]} == {"evt-current", "evt-search"}
+    assert {event["event_id"] for event in report["events"]} == {
+        "evt-current", "evt-carried", "evt-search"
+    }
