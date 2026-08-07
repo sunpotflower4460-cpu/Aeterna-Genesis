@@ -1,9 +1,10 @@
-"""Stricter geometry hypothesis lane for Adaptive Dream.
+"""Strict geometry lane + observation-only 0->fission path.
 
-The first production probe showed why a naive triangle detector is dangerous: with many vortices,
-some arbitrary three points often look triangular.  This module therefore requires an isolated
-mutual-nearest triad to persist across consecutive snapshots, and compares its later split rate
-against persistent NON-triangular triads before increasing belief in the triangle hypothesis.
+Triangles are never seeded.  This module watches naturally formed mutual-nearest vortex triads,
+keeps matched non-triangle controls, and now also asks a second competing question: is a later split
+better predicted by the LOSS of a previously balanced triangle than by triangle presence itself?
+
+Nothing here changes the field law, official Emergence Levels, success thresholds, or promotion gates.
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ from typing import Any
 import numpy as np
 
 from ai_lab import lab
+from ai_lab.dream import fission_path
 from genesis.diagnostics import geometry_events as geom
 from genesis.models import ginzburg_landau as gl
 
@@ -24,9 +26,11 @@ _HYPOTHESES = _REPO / "ai_lab" / "discoveries" / "hypothesis_ledger.json"
 _EASY = _REPO / "ai_lab" / "reports" / "easy"
 
 
-def _persistent_anchor(snapshots: list[dict[str, Any]], *, kind: str, shape: tuple[int, int]) -> tuple[int, dict[str, Any]] | None:
-    """Find the first same local triad observed in two consecutive snapshots."""
-    key = "triangle" if kind == "triangle" else "control"
+def _persistent_anchor(
+    snapshots: list[dict[str, Any]], *, kind: str, shape: tuple[int, int]
+) -> tuple[int, dict[str, Any]] | None:
+    """Find the first same local relation observed in two consecutive snapshots."""
+    key = {"triangle": "triangle", "control": "control", "relation": "triad"}[kind]
     for i in range(1, len(snapshots)):
         a = snapshots[i - 1].get(key)
         b = snapshots[i].get(key)
@@ -35,7 +39,10 @@ def _persistent_anchor(snapshots: list[dict[str, Any]], *, kind: str, shape: tup
     return None
 
 
-def _split_after(snapshots: list[dict[str, Any]], anchor_index: int, anchor: dict[str, Any], shape: tuple[int, int]) -> bool:
+def _split_after(
+    snapshots: list[dict[str, Any]], anchor_index: int, anchor: dict[str, Any], shape: tuple[int, int]
+) -> bool:
+    """Legacy matched outcome: nearby vortex relation later persists as 2+ connected groups."""
     max_side = max(float(x) for x in anchor["side_lengths"])
     neighbourhood = max(4.0, 1.8 * max_side)
     link = max(2.0, 1.05 * max_side)
@@ -52,6 +59,98 @@ def _split_after(snapshots: list[dict[str, Any]], anchor_index: int, anchor: dic
         else:
             streak = 0
     return False
+
+
+def _near_anchor(triad: dict[str, Any] | None, anchor: dict[str, Any], shape: tuple[int, int]) -> bool:
+    if not triad:
+        return False
+    max_side = max(float(anchor.get("max_side") or 1.0), float(triad.get("max_side") or 1.0))
+    return geom.periodic_distance(triad["centroid"], anchor["centroid"], shape) <= max(2.0, 0.75 * max_side)
+
+
+def _triangle_transition_after(
+    snapshots: list[dict[str, Any]], anchor_index: int, anchor: dict[str, Any], shape: tuple[int, int]
+) -> dict[str, Any]:
+    """Observe balanced triangle -> imbalance while connected -> persistent relation split.
+
+    This is intentionally a relation-network detector, not a cell-body detector.  Requiring the
+    imbalance to occur while the local vortices are still ONE connected group prevents us from
+    calling an already-separated control arrangement a pre-division instability.
+    """
+    max_side = max(float(x) for x in anchor["side_lengths"])
+    neighbourhood = max(4.0, 1.8 * max_side)
+    link = max(2.0, 1.05 * max_side)
+    base_reg = float(anchor.get("regularity") or 0.0)
+    base_area = float(anchor.get("area_ratio") or 0.0)
+
+    collapse_streak = 0
+    one_group_streak = 0
+    split_streak = 0
+    collapse_seen = False
+    pre_split_instability = False
+    split_seen = False
+    collapse_step = None
+    split_step = None
+
+    for snap in snapshots[anchor_index + 2:]:
+        local = geom.local_cluster_count(
+            snap["points"], centre=anchor["centroid"], shape=shape,
+            neighbourhood_radius=neighbourhood, link_radius=link,
+        )
+        triad = snap.get("triad")
+        tracked = triad if _near_anchor(triad, anchor, shape) else None
+        connected_one = local["local_vortices"] >= 3 and local["clusters"] == 1
+
+        # Balance loss can be measured either as a substantial geometry change of the same local
+        # mutual triad, or as persistent loss of the strict triangle qualification while the local
+        # relation is still one connected group.
+        reg_drop = 0.0 if not tracked else base_reg - float(tracked.get("regularity") or 0.0)
+        area_drop = 0.0 if not tracked else base_area - float(tracked.get("area_ratio") or 0.0)
+        balance_lost = bool(
+            connected_one
+            and (
+                reg_drop >= 0.12
+                or area_drop >= 0.08
+                or not bool(snap.get("triangle"))
+            )
+        )
+        snap["path_local"] = local
+        snap["path_tracked_triad"] = tracked
+        snap["path_balance_lost"] = balance_lost
+
+        if balance_lost:
+            collapse_streak += 1
+        else:
+            collapse_streak = 0
+        if collapse_streak >= 2 and not collapse_seen:
+            collapse_seen = True
+            collapse_step = snap["step"]
+
+        if collapse_seen and connected_one:
+            one_group_streak += 1
+            if one_group_streak >= 2:
+                pre_split_instability = True
+        elif not connected_one:
+            one_group_streak = 0
+
+        if local["local_vortices"] >= 2 and local["clusters"] >= 2:
+            split_streak += 1
+            if split_streak >= 2:
+                split_seen = True
+                split_step = snap["step"]
+                break
+        else:
+            split_streak = 0
+
+    return {
+        "balance_collapse_seen": collapse_seen,
+        "balance_collapse_step": collapse_step,
+        "pre_split_instability_candidate": pre_split_instability,
+        "persistent_split_seen": split_seen,
+        "persistent_split_step": split_step,
+        "network_fission_candidate": bool(collapse_seen and pre_split_instability and split_seen),
+        "network_fission_is_biological_cell_division": False,
+    }
 
 
 def _geometry_probe(rec: dict[str, Any]) -> dict[str, Any]:
@@ -80,10 +179,12 @@ def _geometry_probe(rec: dict[str, Any]) -> dict[str, Any]:
         snapshots.append({
             "step": t,
             "points": points,
+            "triad": geom.best_mutual_triad(points, shape),
             "triangle": geom.best_triangle(points, shape),
             "control": geom.best_control_triad(points, shape),
         })
 
+    relation_found = _persistent_anchor(snapshots, kind="relation", shape=shape)
     # A run is a triangle case if a persistent triangle exists. Only runs without one may become
     # non-triangle controls; this prevents the same run from being counted on both sides.
     tri_found = _persistent_anchor(snapshots, kind="triangle", shape=shape)
@@ -92,31 +193,65 @@ def _geometry_probe(rec: dict[str, Any]) -> dict[str, Any]:
     found = tri_found or ctrl_found
     anchor_index, anchor = found if found else (None, None)
     split = bool(found and _split_after(snapshots, int(anchor_index), anchor, shape))
+    transition = (
+        _triangle_transition_after(snapshots, int(tri_found[0]), tri_found[1], shape)
+        if tri_found else {
+            "balance_collapse_seen": False,
+            "balance_collapse_step": None,
+            "pre_split_instability_candidate": False,
+            "persistent_split_seen": False,
+            "persistent_split_step": None,
+            "network_fission_candidate": False,
+            "network_fission_is_biological_cell_division": False,
+        }
+    )
 
-    compact_series = [{
-        "step": s["step"], "vortices": len(s["points"]),
-        "triangle": bool(s["triangle"]), "control": bool(s["control"]),
-    } for s in snapshots]
-    return {
+    compact_series = []
+    for s in snapshots:
+        triad = s.get("triad") or {}
+        local = s.get("path_local") or {}
+        compact_series.append({
+            "step": s["step"],
+            "vortices": len(s["points"]),
+            "relation": bool(s.get("triad")),
+            "triangle": bool(s.get("triangle")),
+            "control": bool(s.get("control")),
+            "regularity": triad.get("regularity"),
+            "area_ratio": triad.get("area_ratio"),
+            "charge_pattern": triad.get("charge_pattern"),
+            "local_clusters": local.get("clusters"),
+            "local_vortices": local.get("local_vortices"),
+            "balance_lost": bool(s.get("path_balance_lost")),
+        })
+
+    out = {
         "trial_index": rec.get("trial_index"),
         "family": rec["family"], "knobs": rec["knobs"], "seed": rec["seed"],
+        "reached_level": rec.get("reached_level"),
         "triad_type": category,
+        "persistent_relation_seen": relation_found is not None,
+        "relation": None if relation_found is None else relation_found[1],
         "triangle_seen": category == "triangle",
         "control_seen": category == "control",
         "triangle": anchor if category == "triangle" else None,
         "control": anchor if category == "control" else None,
         "fission_like_after_triangle": bool(category == "triangle" and split),
         "fission_like_after_control": bool(category == "control" and split),
+        **transition,
         "series": compact_series,
         "honesty": {
             "triangle_was_seeded": False,
+            "division_site_or_time_seeded": False,
             "persistent_two_snapshots_required": True,
             "mutual_nearest_triad_required": True,
             "matched_nontriangle_control": True,
             "fission_like_is_biological_cell_division": False,
+            "network_fission_is_biological_cell_division": False,
             "changes_level_gate": False,
         },
     }
+    out["zero_to_fission"] = fission_path.assess_probe(out)
+    return out
 
 
 def run_geometry_probes(
@@ -146,8 +281,17 @@ def geometry_summary(probes: list[dict[str, Any]]) -> dict[str, Any]:
     tri_rate = len(tri_splits) / len(triangles) if triangles else None
     ctrl_rate = len(ctrl_splits) / len(controls) if controls else None
     excess = None if tri_rate is None or ctrl_rate is None else tri_rate - ctrl_rate
+
+    collapsed = [p for p in triangles if p.get("balance_collapse_seen")]
+    uncollapsed = [p for p in triangles if not p.get("balance_collapse_seen")]
+    collapsed_splits = [p for p in collapsed if p.get("fission_like_after_triangle")]
+    uncollapsed_splits = [p for p in uncollapsed if p.get("fission_like_after_triangle")]
+    collapse_rate = len(collapsed_splits) / len(collapsed) if collapsed else None
+    no_collapse_rate = len(uncollapsed_splits) / len(uncollapsed) if uncollapsed else None
+    collapse_excess = None if collapse_rate is None or no_collapse_rate is None else collapse_rate - no_collapse_rate
+
     return {
-        "detector_version": 2,
+        "detector_version": 3,
         "probed": len(probes),
         "triangle_seen": len(triangles),
         "fission_like_after_triangle": len(tri_splits),
@@ -159,43 +303,40 @@ def geometry_summary(probes: list[dict[str, Any]]) -> dict[str, Any]:
         "rate_given_control": None if ctrl_rate is None else round(ctrl_rate, 4),
         "triangle_excess_rate": None if excess is None else round(excess, 4),
         "comparison_ready": bool(len(triangles) >= 3 and len(controls) >= 3),
-        "note": "Only persistent mutual-nearest triads count. A fission-like event is geometry, not biological cell division.",
+        "balance_collapse_seen": len(collapsed),
+        "split_after_balance_collapse": len(collapsed_splits),
+        "triangle_without_balance_collapse": len(uncollapsed),
+        "split_without_balance_collapse": len(uncollapsed_splits),
+        "rate_given_balance_collapse": None if collapse_rate is None else round(collapse_rate, 4),
+        "rate_without_balance_collapse": None if no_collapse_rate is None else round(no_collapse_rate, 4),
+        "balance_collapse_excess_rate": None if collapse_excess is None else round(collapse_excess, 4),
+        "balance_comparison_ready": bool(len(collapsed) >= 3 and len(uncollapsed) >= 3),
+        "pre_split_instability_candidates": sum(bool(p.get("pre_split_instability_candidate")) for p in probes),
+        "network_fission_candidates": sum(bool(p.get("network_fission_candidate")) for p in probes),
+        "zero_to_fission_path": fission_path.summarize(probes),
+        "note": (
+            "Only persistent mutual-nearest triads count. Relation-network fission is an observation "
+            "candidate, not biological cell division or official Emergence Level 7."
+        ),
     }
 
 
-def update_triangle_hypothesis(doc: dict[str, Any], *, burst_id: str, summary: dict[str, Any]) -> dict[str, Any]:
-    hypotheses = doc.setdefault("hypotheses", [])
-    h = next((x for x in hypotheses if x.get("id") == "three-vortex-triangle-fission"), None)
-    if h is None:
-        h = {
-            "id": "three-vortex-triangle-fission",
-            "statement": "A persistent isolated three-vortex triangle may be followed by local splitting more often than a non-triangular three-vortex arrangement.",
-            "counter_statement": "Triangle shape is incidental; its later split rate is not higher than matched non-triangle triads.",
-            "falsification_condition": "Across repeated bursts, triangle split rate fails to exceed the matched-control split rate.",
-            "status": "TESTING", "support": 0, "contradiction": 0,
-            "support_cycles": [], "confidence": 0.5, "comparison_bursts": 0,
-        }
-        hypotheses.append(h)
-
-    # Do NOT count each split as support. One burst contributes at most one evidence unit, and only
-    # when both triangle and control samples are present. This prevents dense-vortex hours from
-    # overpowering the hypothesis ledger through sample-count inflation.
-    if summary.get("comparison_ready"):
+def _update_binary_burst_hypothesis(
+    h: dict[str, Any], *, burst_id: str, ready: bool, excess: float | None
+) -> None:
+    if ready:
         h["comparison_bursts"] = int(h.get("comparison_bursts", 0)) + 1
-        excess = float(summary.get("triangle_excess_rate") or 0.0)
-        if excess >= 0.10:
+        x = float(excess or 0.0)
+        if x >= 0.10:
             h["support"] = int(h.get("support", 0)) + 1
             cycles = set(h.get("support_cycles") or [])
             cycles.add(burst_id)
             h["support_cycles"] = sorted(cycles)
-        elif excess <= 0.02:
+        elif x <= 0.02:
             h["contradiction"] = int(h.get("contradiction", 0)) + 1
-
     s, c = int(h.get("support", 0)), int(h.get("contradiction", 0))
     cycles = h.get("support_cycles") or []
     cap = 0.65 if len(cycles) < 2 else 0.85
-    # With no comparison burst, keep the prior confidence: insufficient controls are ignorance,
-    # not support and not contradiction.
     if int(h.get("comparison_bursts", 0)) > 0:
         h["confidence"] = round(min(cap, max(0.15, (s + 1) / (s + c + 2))), 4)
     if s >= 2 and c >= 2:
@@ -207,13 +348,58 @@ def update_triangle_hypothesis(doc: dict[str, Any], *, burst_id: str, summary: d
     else:
         h["status"] = "TESTING"
     h["last_burst"] = burst_id
-    h["last_comparison"] = {
+
+
+def update_triangle_hypothesis(doc: dict[str, Any], *, burst_id: str, summary: dict[str, Any]) -> dict[str, Any]:
+    hypotheses = doc.setdefault("hypotheses", [])
+
+    apparatus = next((x for x in hypotheses if x.get("id") == "three-vortex-triangle-fission"), None)
+    if apparatus is None:
+        apparatus = {
+            "id": "three-vortex-triangle-fission",
+            "statement": "A persistent isolated three-vortex triangle may act as a fission apparatus and be followed by local splitting more often than a non-triangular triad.",
+            "counter_statement": "Triangle shape is incidental or stabilizing; its later split rate is not higher than matched non-triangle triads.",
+            "falsification_condition": "Across repeated bursts, triangle split rate fails to exceed the matched-control split rate.",
+            "status": "TESTING", "support": 0, "contradiction": 0,
+            "support_cycles": [], "confidence": 0.5, "comparison_bursts": 0,
+        }
+        hypotheses.append(apparatus)
+    _update_binary_burst_hypothesis(
+        apparatus, burst_id=burst_id, ready=bool(summary.get("comparison_ready")),
+        excess=summary.get("triangle_excess_rate"),
+    )
+    apparatus["last_comparison"] = {
         k: summary.get(k) for k in (
             "triangle_seen", "fission_like_after_triangle", "control_seen",
             "fission_like_after_control", "rate_given_triangle", "rate_given_control",
             "triangle_excess_rate", "comparison_ready",
         )
     }
+
+    balance = next((x for x in hypotheses if x.get("id") == "triangle-balance-break-fission"), None)
+    if balance is None:
+        balance = {
+            "id": "triangle-balance-break-fission",
+            "statement": "A persistent triangle may be a temporary stable relation; loss of its balance while still connected may predict a later split better than triangle presence alone.",
+            "counter_statement": "Apparent balance loss is incidental and does not increase later split probability.",
+            "falsification_condition": "Across repeated matched triangle cases, collapse-before-split is no more predictive than triangles without measured collapse.",
+            "status": "TESTING", "support": 0, "contradiction": 0,
+            "support_cycles": [], "confidence": 0.5, "comparison_bursts": 0,
+        }
+        hypotheses.append(balance)
+    _update_binary_burst_hypothesis(
+        balance, burst_id=burst_id, ready=bool(summary.get("balance_comparison_ready")),
+        excess=summary.get("balance_collapse_excess_rate"),
+    )
+    balance["last_comparison"] = {
+        k: summary.get(k) for k in (
+            "balance_collapse_seen", "split_after_balance_collapse",
+            "triangle_without_balance_collapse", "split_without_balance_collapse",
+            "rate_given_balance_collapse", "rate_without_balance_collapse",
+            "balance_collapse_excess_rate", "balance_comparison_ready",
+        )
+    }
+
     _HYPOTHESES.parent.mkdir(parents=True, exist_ok=True)
     _HYPOTHESES.write_text(json.dumps(doc, indent=2, ensure_ascii=False))
     return doc
@@ -229,6 +415,8 @@ def write_easy_report(
     new_regions = int(((report.get("adaptive_research") or {}).get("coverage_progress") or {}).get("new_regions", 0))
     tn = int(geometry.get("triangle_seen", 0)); ts = int(geometry.get("fission_like_after_triangle", 0))
     cn = int(geometry.get("control_seen", 0)); cs = int(geometry.get("fission_like_after_control", 0))
+    path = geometry.get("zero_to_fission_path") or {}
+    depth = int(path.get("deepest_contiguous_stage", -1))
 
     if geometry.get("comparison_ready"):
         tr = round(100 * float(geometry.get("rate_given_triangle") or 0.0))
@@ -242,8 +430,28 @@ def write_easy_report(
     else:
         one_line = "今回は『3つの渦の三角形』について、結論を出せるだけの例は集まりませんでした。"
 
+    if depth >= 0:
+        path_text = (
+            f"『0から分裂への道』は、同じ実験の中で今のところ段階 {depth} "
+            f"（{path.get('deepest_label')}）まで連続して確認できました。"
+        )
+        if depth < 7:
+            best = path.get("best_frontier_candidate") or {}
+            path_text += f" 次に確かめたいのは段階 {best.get('next_stage', depth + 1)}（{best.get('next_stage_label')}）です。"
+        else:
+            path_text += " ただし段階7はまだ『渦の関係網が分かれた候補』で、細胞分裂そのものではありません。"
+    else:
+        path_text = "今回は、厳しい『0から連続』条件で段階を進めた例はありませんでした。"
+
+    collapse_n = int(geometry.get("balance_collapse_seen", 0))
+    network_n = int(geometry.get("network_fission_candidates", 0))
+    balance_text = (
+        f"三角形ができた後に、まだ1つの集まりのままバランスが崩れた例は {collapse_n} 件。"
+        f" その順序を経て2つ以上へ分かれた『関係網の分裂候補』は {network_n} 件でした。"
+    )
+
     easy = {
-        "version": 2, "burst_id": report.get("burst_id"), "generated_at": report.get("generated_at"),
+        "version": 3, "burst_id": report.get("burst_id"), "generated_at": report.get("generated_at"),
         "one_line": one_line,
         "what_we_did": f"平面の世界で {int(c.get('mass_2d_trials', 0)):,} 通り、立体の世界で {int(c.get('native_3d_trials', 0)):,} 通りを試しました。",
         "what_we_found": f"やり直しても似た結果になった候補は {reproduced} 件。立体から始めた方が強かった候補は {dimension_hits} 件。新しく調べた範囲は {new_regions} 区画です。",
@@ -252,8 +460,14 @@ def write_easy_report(
             f" 三角の3つ組は {tn} 件（その後に分かれたように見えたのは {ts} 件）。"
             f" 三角ではない比較用の3つ組は {cn} 件（分かれたのは {cs} 件）でした。"
         ),
+        "balance_break_question": balance_text,
+        "zero_to_fission_question": path_text,
+        "zero_to_fission_path": path,
         "what_next": "結果をまとめて次の調べ方を考え直しました。" if director_refreshed else "次の大きな見直しまで同じ方針で例を増やします。",
-        "important_note": "『分かれた』は細胞分裂そのものという意味ではありません。また、三角形が原因だとは、比較して差が何度も再現するまで判断しません。",
+        "important_note": (
+            "『分かれた』は細胞分裂そのものという意味ではありません。三角形も分裂位置も最初から置きません。"
+            " 三角形そのものが効く説と、三角形のバランス崩壊が前兆だという説を両方比較します。"
+        ),
         "director_refreshed": bool(director_refreshed), "geometry_summary": geometry,
     }
     out = _EASY / stamp
@@ -263,6 +477,8 @@ def write_easy_report(
     md = "\n".join([
         "# やさしい実験レポート", "", f"**ひとことで：** {one_line}", "",
         "## 今回なにをした？", easy["what_we_did"], "", "## なにが分かった？", easy["what_we_found"], "",
+        "## 0から分裂への道はどこまで進んだ？", path_text, "",
+        "## 三角形のバランスが崩れると？", balance_text, "",
         "## 3つの渦の三角形は？", easy["triangle_question"], "", "## 次は？", easy["what_next"], "",
         f"> {easy['important_note']}", "",
     ])
