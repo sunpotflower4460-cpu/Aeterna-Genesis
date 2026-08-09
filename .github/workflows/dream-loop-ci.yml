@@ -12,6 +12,7 @@ on:
       - 'tests/test_dream_loop.py'
       - 'tests/test_adaptive_dream.py'
       - 'tests/test_hypothesis_evolution.py'
+      - 'tests/test_pure_genesis.py'
       - 'tests/test_hourly_discovery.py'
       - 'tests/test_strict_geometry.py'
       - 'tests/test_vortex_energy_landscape.py'
@@ -43,14 +44,14 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream v7 dry-run with hypothesis evolution
+      - name: Tiny strict Adaptive Dream v8 dry-run with Pure Genesis R0 and hypothesis evolution
         run: |
           python -m ai_lab.dream.strict_goal_loop \
             --quick --trials 8 --native3d-trials 2 --workers 1 \
@@ -62,11 +63,12 @@ jobs:
             --open-ended-probes 4 --open-ended-max-episodes 2 \
             --unknown-followup-max-patterns 1 \
             --max-synthesized-hypotheses 2 \
+            --root-law-trials 6 --root-sizes 6,8 --root-steps 20 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 43
       - name: Multi-World shadow dry-run with cross-world emergence comparison
         run: python -m ai_lab.dream.multiworld --quick --seed 44 --output ai_lab/reports/multiworld/latest.json
-      - name: Easy, emergence, cross-world and Multi-World reports were produced
+      - name: Easy, emergence, cross-world, Pure Genesis and Multi-World reports were produced
         run: |
           test -f ai_lab/reports/easy/latest.json
           test -f ai_lab/reports/easy/latest.md
@@ -90,6 +92,9 @@ jobs:
           grep -q 'hypothesis_evolution_v7' ai_lab/reports/easy/latest.json
           grep -q 'goal_mission_v7' ai_lab/reports/easy/latest.json
           grep -q 'hypothesis_portfolio_v7' ai_lab/reports/easy/latest.json
+          grep -q 'pure_genesis_r0' ai_lab/reports/easy/latest.json
+          grep -q 'root_integrity_audit' ai_lab/reports/easy/latest.json
+          grep -q 'permutation_quotient_enabled' ai_lab/reports/easy/latest.json
           grep -q '"known_F_path_is_one_reference_only": true' ai_lab/reports/emergence/latest.json
           grep -q '"mode": "shadow"' ai_lab/reports/multiworld/latest.json
           grep -q '"mode": "cross-world-open-ended-shadow"' ai_lab/reports/crossworld/latest.json

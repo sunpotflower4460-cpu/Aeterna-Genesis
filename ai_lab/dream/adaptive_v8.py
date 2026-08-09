@@ -20,6 +20,7 @@ from ai_lab.dream import adaptive_v7 as v7
 from ai_lab.dream import hypothesis_evolution
 from ai_lab.dream import portfolio_director
 from ai_lab.dream import pure_genesis
+from ai_lab.dream import root_integrity
 from ai_lab.dream import why_gate
 from ai_lab.dream.report import write_report
 
@@ -56,8 +57,10 @@ def _root_summary(root: dict[str, Any]) -> dict[str, Any]:
             "status": row.get("status"),
             "planning_confidence": row.get("planning_confidence"),
             "priority": row.get("priority"),
+            "raw_priority_before_root_integrity": row.get("raw_priority_before_root_integrity"),
             "regulator_robustness": row.get("regulator_robustness"),
             "observations": row.get("observations") or {},
+            "root_integrity_flags": (row.get("root_integrity") or {}).get("flags") or [],
         })
     return {
         "version": root.get("version"),
@@ -69,6 +72,7 @@ def _root_summary(root: dict[str, Any]) -> dict[str, Any]:
         "steps": root.get("steps"),
         "top_laws": top,
         "why_gate": root.get("why_gate") or {},
+        "root_integrity_audit": root.get("root_integrity_audit") or {},
         "observed_not_seeded": root.get("observed_not_seeded") or [],
         "not_claimed": root.get("not_claimed") or [],
         "brain_from_zero": root.get("brain_from_zero") or {},
@@ -92,6 +96,7 @@ def _enrich_easy(paths: dict[str, str], *, root_summary: dict[str, Any]) -> None
         "reason": why_gate.ROOT_REASON,
         "all_new_root_physical_givens_require_why_chain": True,
         "brain_is_not_seeded_target": True,
+        "root_integrity_uses_permutation_quotient": True,
         "note": "宇宙・生命・脳を別レシピとして置かず、R0から関係がどこまで階層化・再帰できるかを調べます。",
     }
     latest.write_text(json.dumps(easy, indent=2, ensure_ascii=False))
@@ -115,6 +120,9 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
         seed=seed,
         persist=persist,
     )
+    # A raw relation-matrix result is not yet a physical result.  Remove latent-label closure,
+    # global-sign aliases and step-period overinterpretation before research priority is persisted.
+    root = root_integrity.audit_report(root, persist=persist)
     root_summary = _root_summary(root)
 
     # Align existing research questions to R0. This is a planning annotation only. It cannot change
@@ -135,6 +143,7 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
         "reason": why_gate.ROOT_REASON,
         "policy": "新しい物理的前提はR0へのWhy Chainを説明できない限りPure Genesisへ入れない。",
         "methods_and_hypotheses_may_change_freely": True,
+        "root_integrity_uses_permutation_quotient": True,
         "changes_scientific_gate": False,
         "changes_official_level": False,
         "brain_is_seeded_target": False,
@@ -147,6 +156,8 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
     report["honesty"]["pure_genesis_numerical_regulators_are_physical_claims"] = False
     report["honesty"]["brain_from_zero_claimed_achieved"] = False
     report["honesty"]["root_sampling_seed_is_physical_parameter"] = False
+    report["honesty"]["latent_relation_slot_labels_are_physical_entities"] = False
+    report["honesty"]["raw_slot_graph_cycles_are_emergent_geometry"] = False
 
     generated = datetime.fromisoformat(str(report["generated_at"]).replace("Z", "+00:00"))
     stamp = generated.strftime("%Y-%m-%dT%H-%M-%SZ")
@@ -197,10 +208,12 @@ def main(argv: list[str] | None = None) -> int:
     r = result["report"]
     root = r.get("pure_genesis_r0") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
+    critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
     print(f"=== Aeterna Adaptive Dream v8: {r['burst_id']} ===")
     print(f"  R0: {why_gate.ROOT_STATEMENT}")
     print(f"  Pure Genesis laws={root.get('law_trials', 0)} top={len(root.get('top_laws') or [])}")
     print(f"  Why Gate accepted={int((root.get('why_gate') or {}).get('accepted', 0))} unexplained physical givens=0")
+    print(f"  Root Integrity critic questions={len(critic)} permutation-quotient=True")
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
     print("  NOTE: brain/universe/geometry/frequency/vortex are not seeded targets; downstream names are observations only.")
     return 0

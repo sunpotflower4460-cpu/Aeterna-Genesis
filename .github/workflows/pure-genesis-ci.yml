@@ -5,6 +5,7 @@ on:
     paths:
       - 'ai_lab/dream/why_gate.py'
       - 'ai_lab/dream/pure_genesis.py'
+      - 'ai_lab/dream/root_integrity.py'
       - 'ai_lab/dream/adaptive_v8.py'
       - 'ai_lab/dream/strict_goal_loop.py'
       - 'ai_lab/dream/portfolio_director.py'
@@ -30,16 +31,19 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Pure Genesis and portfolio tests
         run: pytest -q tests/test_pure_genesis.py tests/test_hypothesis_evolution.py
-      - name: Tiny R0 law search
+      - name: Tiny R0 law search with integrity audit
         run: |
           python - <<'PY'
-          from ai_lab.dream import pure_genesis
+          from ai_lab.dream import pure_genesis, root_integrity
           r = pure_genesis.run_root_research(
               burst_id='ci-r0', law_trials=6, sizes=(6, 8), steps=20, seed=11, persist=False,
           )
+          r = root_integrity.audit_report(r, persist=False)
           assert r['law_trials'] == 6
           assert r['why_gate']['accepted'] == 6
           assert r['why_gate']['physical_givens_beyond_R0'] == []
           assert r['brain_from_zero']['brain_claim'] is False
-          print('Pure Genesis R0 CI:', r['top_laws'][0]['id'], r['top_laws'][0]['priority'])
+          assert r['root_integrity_audit']['permutation_quotient_enabled'] is True
+          assert r['root_integrity_audit']['raw_label_graph_closure_accepted_as_emergence'] is False
+          print('Pure Genesis R0 CI audited:', r['top_laws'][0]['id'], r['top_laws'][0]['priority'])
           PY
