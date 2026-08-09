@@ -1,5 +1,7 @@
-from pathlib import Path
+import json
+from types import SimpleNamespace
 
+from ai_lab.dream import adaptive_v7
 from ai_lab.dream import evidence_cards
 from ai_lab.dream import goal_engine
 from ai_lab.dream import hypothesis_evolution
@@ -35,6 +37,23 @@ def _legacy():
     }
 
 
+def _focus(pattern="X-test", drive=2.0):
+    return {
+        "family": "white",
+        "knobs": {
+            "noise_amplitude": 0.001,
+            "correlation_length": 4.0,
+            "diffusion_ratio": 1.0,
+            "drive_strength": drive,
+            "quench_duration": 8.0,
+        },
+        "source_pattern_id": pattern,
+        "source_trial_index": 12,
+        "captured_burst": "b0",
+        "target_shape_seeded": False,
+    }
+
+
 def _unknown_specific():
     return {
         "version": 1,
@@ -45,6 +64,7 @@ def _unknown_specific():
                 "exact": {"n": 6, "hit": 5},
                 "local": {"n": 6, "hit": 4},
                 "contrast": {"n": 6, "hit": 0},
+                "search_focus": _focus(),
             }
         },
     }
@@ -71,7 +91,7 @@ def test_quarantined_deep_time_evidence_has_zero_weight():
     assert cards[0]["scientific_usable"] is False
 
 
-def test_specific_x_pattern_automatically_branches_without_causal_claim(tmp_path):
+def test_specific_x_pattern_automatically_branches_and_keeps_only_start_side_focus(tmp_path):
     graph_path = tmp_path / "graph.json"
     history_path = tmp_path / "history.json"
     report = {"burst_id": "b1", "deep_time_followup": {"results": []}}
@@ -87,11 +107,17 @@ def test_specific_x_pattern_automatically_branches_without_causal_claim(tmp_path
     child = nodes["xpattern:X-test:condition-specific"]
     assert child["origin"] == "automatic-branch"
     assert child["status"] in {"CONDITIONAL", "TESTING"}
+    assert child["search_focus"]["family"] == "white"
+    assert child["search_focus"]["target_shape_seeded"] is False
+    assert "seed" not in child["search_focus"]
     assert any(e["relation"] == "refines" for e in result["graph"]["edges"])
 
 
-def test_synthesizer_creates_falsifiable_route_question_not_truth_claim():
-    proposals = hypothesis_synthesizer.propose_from_unknown(_unknown_specific(), burst_id="b1", max_proposals=3)
+def test_synthesizer_creates_falsifiable_route_question_and_inherits_start_focus():
+    unknown = _unknown_specific()
+    graph = hypothesis_evolution.empty_graph()
+    hypothesis_evolution.ingest_unknown_patterns(graph, unknown, burst_id="b1")
+    proposals = hypothesis_synthesizer.propose_from_unknown(unknown, burst_id="b1", max_proposals=3)
     assert len(proposals) == 1
     p = proposals[0]
     ok, problems = hypothesis_synthesizer.validate_proposal(p)
@@ -100,6 +126,10 @@ def test_synthesizer_creates_falsifiable_route_question_not_truth_claim():
     assert p["causal_claim"] is False
     assert p["falsification_condition"]
     assert p["next_test"]
+    hypothesis_synthesizer.insert_proposals(graph, proposals, burst_id="b1")
+    route = graph["nodes"]["route-question:X-test"]
+    assert route["search_focus"]["family"] == "white"
+    assert route["search_focus"]["target_shape_seeded"] is False
 
 
 def test_validator_rejects_threshold_or_target_seeding_shortcuts():
@@ -122,16 +152,18 @@ def test_portfolio_preserves_global_anti_bias_lanes_and_strong_belief_gets_more_
         "h-low": {
             "id": "h-low", "status": "TESTING", "confidence": 0.5,
             "goal_relevance": 0.5, "novelty": 0.5, "evidence_ids": [],
-            "support_weight": 0.0,
+            "support_weight": 0.0, "search_focus": _focus("X-low", 1.5),
         },
         "h-high": {
             "id": "h-high", "status": "GROWING", "confidence": 0.8,
             "goal_relevance": 0.5, "novelty": 0.5, "evidence_ids": ["e1", "e2"],
-            "support_weight": 2.0,
+            "support_weight": 2.0, "search_focus": _focus("X-high", 3.0),
         },
     }
     portfolio = portfolio_director.build_portfolio(graph)
     assert portfolio["hypothesis_budget_cap"] <= 0.35
+    assert portfolio["runnable_focuses"] == 2
+    assert all(x["runnable_focus"] for x in portfolio["active"])
     anti = portfolio["anti_bias"]
     assert anti["minimum_unexplored_fraction"] >= 0.20
     assert anti["minimum_assumption_breaker_fraction"] >= 0.10
@@ -148,7 +180,105 @@ def test_portfolio_preserves_global_anti_bias_lanes_and_strong_belief_gets_more_
     assert sum(x["effective_lane_share"] for x in out["next_plan"]["hypothesis_portfolio"]) <= 0.300001
 
 
-def test_goal_engine_never_treats_f7_alone_as_cell_division(tmp_path):
+def test_weighted_integer_budget_never_loses_trials():
+    items = [
+        {"hypothesis_id": "a", "w": 0.6},
+        {"hypothesis_id": "b", "w": 0.3},
+        {"hypothesis_id": "c", "w": 0.1},
+    ]
+    split = adaptive_v7._weighted_counts(17, items, weight_key="w")
+    assert sum(n for _, n in split) == 17
+    counts = {item["hypothesis_id"]: n for item, n in split}
+    assert counts["a"] > counts["b"] > counts["c"]
+
+
+def test_route_plan_preserves_exact_global_lane_counts_while_splitting_hypotheses():
+    allocation = {"unexplored": 0.25, "boundary": 0.20, "hypothesis": 0.30, "breaker": 0.15, "random": 0.10}
+    portfolio = {
+        "active": [
+            {
+                "hypothesis_id": "h1", "hypothesis_budget_share": 0.25, "challenge_pressure": 0.9,
+                "search_focus": _focus("X-1", 2.0),
+            },
+            {
+                "hypothesis_id": "h2", "hypothesis_budget_share": 0.10, "challenge_pressure": 0.2,
+                "search_focus": _focus("X-2", 4.0),
+            },
+        ]
+    }
+    plan = adaptive_v7.build_portfolio_route_plan(
+        n=100, allocation=allocation, ordinary_focus=_focus("ordinary"), portfolio=portfolio,
+    )
+    assert plan["enabled"] is True
+    assert sum(x["n"] for x in plan["blocks"]) == 100
+    by_lane = {}
+    for block in plan["blocks"]:
+        by_lane[block["lane"]] = by_lane.get(block["lane"], 0) + block["n"]
+    assert by_lane == adaptive_v7._lane_counts(100, allocation)
+    exploit = [x for x in plan["blocks"] if x["role"] == "exploit"]
+    challenge = [x for x in plan["blocks"] if x["role"] == "challenge"]
+    assert len(exploit) == 2
+    assert len(challenge) == 2
+    assert sum(x["n"] for x in exploit) == 30
+    assert sum(x["n"] for x in challenge) == 15
+    assert plan["global_lane_counts_changed"] is False
+    assert plan["target_outcome_seeded"] is False
+
+
+def test_route_plan_falls_back_cleanly_without_runnable_focus():
+    allocation = {"unexplored": 0.35, "boundary": 0.20, "hypothesis": 0.20, "breaker": 0.15, "random": 0.10}
+    plan = adaptive_v7.build_portfolio_route_plan(
+        n=37,
+        allocation=allocation,
+        ordinary_focus=_focus("ordinary"),
+        portfolio={"active": [{"hypothesis_id": "h", "hypothesis_budget_share": 0.35, "challenge_pressure": 0.8}]},
+    )
+    assert plan["enabled"] is False
+    assert sum(x["n"] for x in plan["blocks"]) == 37
+    assert sum(x["n"] for x in plan["blocks"] if x["lane"] == "hypothesis") == adaptive_v7._lane_counts(37, allocation)["hypothesis"]
+
+
+def test_installed_router_executes_all_trials_and_marks_exploit_and_challenge(tmp_path, monkeypatch):
+    portfolio_path = tmp_path / "portfolio.json"
+    portfolio_path.write_text(json.dumps({
+        "active": [
+            {"hypothesis_id": "h1", "hypothesis_budget_share": 0.25, "challenge_pressure": 0.8, "search_focus": _focus("X-1", 2.0)},
+            {"hypothesis_id": "h2", "hypothesis_budget_share": 0.10, "challenge_pressure": 0.3, "search_focus": _focus("X-2", 4.0)},
+        ]
+    }))
+    monkeypatch.setattr(adaptive_v7, "_PORTFOLIO", portfolio_path)
+
+    calls = []
+    def fake_run_mass_2d(*, start_index, n, workers, allocation, focus, master_seed, quick):
+        lane = next((k for k, v in allocation.items() if float(v) > 0), "unexplored")
+        calls.append((lane, n, focus))
+        rows = [
+            {"trial_index": start_index + i, "score": float(start_index + i), "lane": lane}
+            for i in range(n)
+        ]
+        return {"results": rows, "n": n, "next_index": start_index + n}
+
+    fake = SimpleNamespace(
+        run_mass_2d=fake_run_mass_2d,
+        lab=SimpleNamespace(_score_key=lambda r: r["score"]),
+    )
+    adaptive_v7.install_portfolio_routing(fake)
+    result = fake.run_mass_2d(
+        start_index=100, n=40, workers=1,
+        allocation={"unexplored": 0.25, "boundary": 0.20, "hypothesis": 0.30, "breaker": 0.15, "random": 0.10},
+        focus=_focus("ordinary"), master_seed=7, quick=True,
+    )
+    assert result["n"] == 40
+    assert result["next_index"] == 140
+    assert len({r["trial_index"] for r in result["results"]}) == 40
+    assert any(r.get("portfolio_role") == "exploit" for r in result["results"])
+    assert any(r.get("portfolio_role") == "challenge" for r in result["results"])
+    assert sum(n for _, n, _ in calls) == 40
+    assert adaptive_v7._LAST_ROUTING["fallback_to_v6_single_focus"] is False
+    assert adaptive_v7._LAST_ROUTING["global_lane_counts_changed"] is False
+
+
+def test_goal_engine_never_treats_f7_alone_as_cell_division():
     contract = {
         "mission_id": "test",
         "requirements": [

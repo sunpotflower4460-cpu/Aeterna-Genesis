@@ -107,6 +107,16 @@ def run_recurrent_followups(
             "contrast": {"n": 0, "hit": 0},
             "status": "VERIFYING",
         })
+        # Persist the start-side condition that produced this recurrent pattern in the current mass
+        # population. v7 may use it on a later burst as a research focus, never as a target morphology.
+        row["search_focus"] = {
+            "family": source_rec.get("family"),
+            "knobs": _clip_knobs(source_rec.get("knobs") or {}),
+            "source_pattern_id": pid,
+            "source_trial_index": source_rec.get("trial_index"),
+            "captured_burst": burst_id,
+            "target_shape_seeded": False,
+        }
         pattern_results = []
         for rec in variants(source_rec, pattern_id=pid, burst_id=burst_id):
             probe = open_ended._probe({**rec, "quick": bool(quick)})
@@ -137,7 +147,12 @@ def run_recurrent_followups(
         else:
             row["status"] = "VERIFYING"
         row["last_burst"] = burst_id
-        out_rows.append({"pattern_id": pid, "status": row["status"], "results": pattern_results})
+        out_rows.append({
+            "pattern_id": pid,
+            "status": row["status"],
+            "search_focus": row.get("search_focus"),
+            "results": pattern_results,
+        })
 
     open_ended._LEDGER.parent.mkdir(parents=True, exist_ok=True)
     open_ended._LEDGER.write_text(json.dumps(graph, indent=2, ensure_ascii=False))

@@ -77,6 +77,24 @@ def propose_from_unknown(unknown: dict[str, Any], *, burst_id: str, max_proposal
     return out
 
 
+def _inherited_focus(nodes: dict[str, Any], parent_ids: list[str]) -> dict[str, Any] | None:
+    """Reuse only a parent's start-side search focus; never inherit a target outcome."""
+    for parent_id in parent_ids:
+        parent = nodes.get(str(parent_id)) or {}
+        focus = parent.get("search_focus")
+        if not isinstance(focus, dict) or not focus.get("family") or not isinstance(focus.get("knobs"), dict):
+            continue
+        return {
+            "family": focus.get("family"),
+            "knobs": dict(focus.get("knobs") or {}),
+            "source_pattern_id": focus.get("source_pattern_id"),
+            "source_trial_index": focus.get("source_trial_index"),
+            "captured_burst": focus.get("captured_burst"),
+            "target_shape_seeded": False,
+        }
+    return None
+
+
 def insert_proposals(graph: dict[str, Any], proposals: list[dict[str, Any]], *, burst_id: str) -> dict[str, Any]:
     nodes = graph.setdefault("nodes", {})
     edges = graph.setdefault("edges", [])
@@ -85,6 +103,8 @@ def insert_proposals(graph: dict[str, Any], proposals: list[dict[str, Any]], *, 
         if not ok:
             continue
         pid = str(p["id"])
+        parents = [str(x) for x in (p.get("parent_ids") or [])]
+        inherited_focus = _inherited_focus(nodes, parents)
         if pid not in nodes:
             nodes[pid] = {
                 **p,
@@ -95,7 +115,11 @@ def insert_proposals(graph: dict[str, Any], proposals: list[dict[str, Any]], *, 
                 "independent_conditions": 0,
                 "last_updated_burst": burst_id,
             }
-        for parent in p.get("parent_ids") or []:
+        node = nodes[pid]
+        if inherited_focus and not node.get("search_focus"):
+            node["search_focus"] = inherited_focus
+        node["last_updated_burst"] = burst_id
+        for parent in parents:
             if not any(e.get("source") == parent and e.get("target") == pid and e.get("relation") == "suggests-test" for e in edges):
                 edges.append({"source": parent, "target": pid, "relation": "suggests-test", "created_burst": burst_id})
     return graph
