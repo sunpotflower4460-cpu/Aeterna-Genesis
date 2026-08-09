@@ -113,13 +113,25 @@ def migrate_legacy(graph: dict[str, Any], legacy: dict[str, Any], *, burst_id: s
                 "contradiction": int(h.get("contradiction", 0)),
             }
             nodes[hid]["last_updated_burst"] = burst_id
-    # Existing balance-break hypothesis is naturally a refinement of the broader triangle hypothesis.
     if "three-vortex-triangle-fission" in nodes and "triangle-balance-break-fission" in nodes:
         child = nodes["triangle-balance-break-fission"]
         if "three-vortex-triangle-fission" not in child.setdefault("parent_ids", []):
             child["parent_ids"].append("three-vortex-triangle-fission")
         _edge(graph, "three-vortex-triangle-fission", "triangle-balance-break-fission", "refines", burst_id=burst_id)
     return graph
+
+
+def _clean_focus(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict) or not isinstance(raw.get("knobs"), dict) or not raw.get("family"):
+        return None
+    return {
+        "family": raw.get("family"),
+        "knobs": dict(raw.get("knobs") or {}),
+        "source_pattern_id": raw.get("source_pattern_id"),
+        "source_trial_index": raw.get("source_trial_index"),
+        "captured_burst": raw.get("captured_burst"),
+        "target_shape_seeded": False,
+    }
 
 
 def ingest_unknown_patterns(graph: dict[str, Any], unknown: dict[str, Any], *, burst_id: str) -> dict[str, Any]:
@@ -153,8 +165,10 @@ def ingest_unknown_patterns(graph: dict[str, Any], unknown: dict[str, Any], *, b
         node["followup_status"] = row.get("status")
         exact, local, contrast = row.get("exact") or {}, row.get("local") or {}, row.get("contrast") or {}
         node["followup_counts"] = {"exact": exact, "nearby": local, "contrast": contrast}
+        focus = _clean_focus(row.get("search_focus"))
+        if focus:
+            node["search_focus"] = focus
 
-        # Automatic branch: a recurrent pattern with zero contrast hits gets a narrower condition-specific child.
         evidence_hit = int(exact.get("hit", 0)) + int(local.get("hit", 0))
         contrast_hit = int(contrast.get("hit", 0))
         if evidence_hit >= 2 and contrast_hit == 0:
@@ -179,6 +193,8 @@ def ingest_unknown_patterns(graph: dict[str, Any], unknown: dict[str, Any], *, b
             })
             child["last_updated_burst"] = burst_id
             child["branch_reason"] = "exact_or_nearby_recurrence_with_zero_contrast_hits"
+            if focus:
+                child["search_focus"] = focus
             _edge(graph, hid, child_id, "refines", burst_id=burst_id)
     return graph
 
@@ -190,7 +206,7 @@ def _status(node: dict[str, Any]) -> str:
     if c >= 3.0 and s < 0.75:
         return "WEAKENED"
     if conf >= 0.72 and s >= 1.5:
-        return "CHALLENGED"  # strong beliefs receive more falsification pressure
+        return "CHALLENGED"
     if conf >= 0.62 and s >= 1.0:
         return "GROWING"
     if s + c < 0.5:
@@ -204,7 +220,6 @@ def apply_evidence(graph: dict[str, Any], cards: list[dict[str, Any]], *, burst_
         hid = str(card.get("hypothesis_id") or "")
         node = nodes.get(hid)
         if node is None:
-            # Deep-Time integrity cards may refer to a lead rather than an explanatory hypothesis.
             continue
         eid = str(card.get("evidence_id") or "")
         if not eid or eid in set(node.get("evidence_ids") or []):
@@ -221,7 +236,6 @@ def apply_evidence(graph: dict[str, Any], cards: list[dict[str, Any]], *, burst_
         s = float(node.get("support_weight", 0.0))
         c = float(node.get("contradiction_weight", 0.0))
         if s + c > 0:
-            # Bounded Bayesian-like bookkeeping; planning confidence, never a scientific truth probability.
             node["confidence"] = round(min(0.85, max(0.15, (s + 1.0) / (s + c + 2.0))), 4)
         node["status"] = _status(node)
     graph["last_updated_burst"] = burst_id
