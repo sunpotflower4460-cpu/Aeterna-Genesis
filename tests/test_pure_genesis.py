@@ -1,4 +1,4 @@
-from ai_lab.dream import pure_genesis, why_gate
+from ai_lab.dream import adaptive_v8, pure_genesis, why_gate
 
 
 def test_why_gate_rejects_brain_as_root_given():
@@ -47,3 +47,13 @@ def test_root_alignment_prefers_observation_first_over_human_reference():
     x = {"origin": "open-ended-x-pattern", "statement": "X-pattern repeats"}
     f = {"origin": "human-reference-hypothesis", "statement": "triangle route"}
     assert why_gate.root_alignment(x)["root_relevance"] > why_gate.root_alignment(f)["root_relevance"]
+
+
+def test_production_unspecified_seed_becomes_reproducible_sampling_regulator():
+    a = adaptive_v8._root_seed(None, burst_id="dream-test-001")
+    b = adaptive_v8._root_seed(None, burst_id="dream-test-001")
+    c = adaptive_v8._root_seed(None, burst_id="dream-test-002")
+    assert isinstance(a, int)
+    assert a == b
+    assert a != c
+    assert adaptive_v8._root_seed(43, burst_id="ignored") == 43

@@ -97,7 +97,7 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run hourly Adaptive Dream v7 hypothesis-evolution research
+      - name: Run hourly Adaptive Dream v8 Pure Genesis R0 research
         if: steps.watchdog.outputs.run_burst == 'true'
         run: |
           python -m ai_lab.dream.strict_goal_loop \
@@ -120,6 +120,9 @@ jobs:
             --open-ended-max-episodes 3 \
             --unknown-followup-max-patterns 2 \
             --max-synthesized-hypotheses 3 \
+            --root-law-trials 24 \
+            --root-sizes 8,12,16 \
+            --root-steps 48 \
             --native-variants 1 \
             --max-jobs 12
 
@@ -178,6 +181,7 @@ jobs:
             ai_lab/reports/nightly/*/events.json
             ai_lab/reports/easy/latest.json
             ai_lab/reports/easy/latest.md
+            ai_lab/reports/easy/root_latest.json
             ai_lab/reports/easy/*/report.json
             ai_lab/reports/easy/*/report.md
             ai_lab/reports/multiworld/latest.json
@@ -202,6 +206,7 @@ jobs:
             ai_lab/discoveries/hypothesis_portfolio.json
             ai_lab/discoveries/goal_progress.json
             ai_lab/missions/zero_to_division_like.json
+            ai_lab/missions/pure_genesis_r0.json
             rooms/candidates
             rooms/rejected_in_3d
             rooms/jobs

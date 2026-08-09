@@ -8,6 +8,7 @@ observation-first questions without weakening unexplored/breaker/random floors.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,19 @@ _PORTFOLIO = _REPO / "ai_lab" / "discoveries" / "hypothesis_portfolio.json"
 def _write(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False))
+
+
+def _root_seed(value: Any, *, burst_id: str) -> int:
+    """Resolve the root-search sampling seed without turning it into a physical parameter.
+
+    Production historically leaves ``--seed`` unspecified (None).  In that case derive a deterministic
+    regulator seed from the burst id so successive bursts vary anonymous pair/sign sampling while a
+    rerun of the same burst remains reproducible.
+    """
+    if value is not None:
+        return int(value)
+    digest = hashlib.sha256(str(burst_id).encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], "big") & 0x7FFFFFFF
 
 
 def _root_summary(root: dict[str, Any]) -> dict[str, Any]:
@@ -91,7 +105,7 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
     report = base["report"]
     burst_id = str(report.get("burst_id") or "unknown")
     persist = bool(kwargs.get("record", True))
-    seed = int(kwargs.get("seed", 0))
+    seed = _root_seed(kwargs.get("seed"), burst_id=burst_id)
 
     root = pure_genesis.run_root_research(
         burst_id=burst_id,
@@ -132,6 +146,7 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
     report["honesty"]["pure_genesis_adds_unexplained_physical_givens"] = False
     report["honesty"]["pure_genesis_numerical_regulators_are_physical_claims"] = False
     report["honesty"]["brain_from_zero_claimed_achieved"] = False
+    report["honesty"]["root_sampling_seed_is_physical_parameter"] = False
 
     generated = datetime.fromisoformat(str(report["generated_at"]).replace("Z", "+00:00"))
     stamp = generated.strftime("%Y-%m-%dT%H-%M-%SZ")
