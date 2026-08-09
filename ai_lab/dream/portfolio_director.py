@@ -1,7 +1,9 @@
-"""Hypothesis portfolio allocation for Adaptive Dream v7.
+"""Hypothesis portfolio allocation for Adaptive Dream v8-compatible planning.
 
-The portfolio only subdivides research attention among hypothesis nodes.  Global anti-bias floors
-remain outside this module and must never be reduced by portfolio confidence.
+The portfolio only subdivides research attention among hypothesis nodes. Global anti-bias floors
+remain outside this module and must never be reduced by portfolio confidence.  v8 adds R0-root
+relevance as a planning factor so observation-first questions are preferred over downstream reference
+routes, without changing scientific truth gates.
 """
 from __future__ import annotations
 
@@ -30,14 +32,19 @@ def _status_factor(status: str) -> float:
 
 
 def priority(node: dict[str, Any]) -> float:
-    """Information-value proxy, not truth probability."""
+    """Information-value proxy, not truth probability.
+
+    ``root_relevance`` is a north-star planning annotation only.  It never changes a measurement or
+    success gate.  Nodes without v8 annotation retain a neutral 0.5 value for backward compatibility.
+    """
     conf = float(node.get("confidence", 0.5))
     uncertainty = _uncertainty(conf)
+    root = min(1.0, max(0.0, float(node.get("root_relevance", 0.5))))
     goal = min(1.0, max(0.0, float(node.get("goal_relevance", 0.5))))
     novelty = min(1.0, max(0.0, float(node.get("novelty", 0.5))))
     evidence = len(node.get("evidence_ids") or [])
     evidence_term = min(1.0, math.log1p(evidence) / math.log(6.0)) if evidence else 0.0
-    raw = 0.38 * uncertainty + 0.28 * goal + 0.20 * novelty + 0.14 * evidence_term
+    raw = 0.32 * uncertainty + 0.28 * root + 0.10 * goal + 0.18 * novelty + 0.12 * evidence_term
     return max(0.0, raw * _status_factor(str(node.get("status") or "TESTING")))
 
 
@@ -68,13 +75,17 @@ def build_portfolio(graph: dict[str, Any], *, hypothesis_budget: float = 0.35, m
             "runnable_focus": bool(focus and focus.get("family") and isinstance(focus.get("knobs"), dict)),
             "reason": {
                 "uncertainty": round(_uncertainty(float(n.get("confidence", 0.5))), 4),
+                "root_relevance": float(n.get("root_relevance", 0.5)),
+                "root_alignment_class": n.get("root_alignment_class"),
                 "goal_relevance": float(n.get("goal_relevance", 0.5)),
                 "novelty": float(n.get("novelty", 0.5)),
                 "evidence_cards": len(n.get("evidence_ids") or []),
             },
         })
     return {
-        "version": 2,
+        "version": 3,
+        "research_north_star": "R0",
+        "root_relevance_is_scientific_truth_probability": False,
         "hypothesis_budget_cap": float(hypothesis_budget),
         "active": items,
         "runnable_focuses": sum(bool(x.get("runnable_focus")) for x in items),
@@ -111,5 +122,6 @@ def attach_to_decision(decision: dict[str, Any], portfolio: dict[str, Any]) -> d
         "can_reduce_unexplored_floor": False,
         "can_reduce_breaker_floor": False,
         "can_reduce_random_floor": False,
+        "root_relevance_changes_scientific_gate": False,
     }
     return out
