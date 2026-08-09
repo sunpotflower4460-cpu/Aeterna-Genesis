@@ -37,7 +37,6 @@ def priority(node: dict[str, Any]) -> float:
     novelty = min(1.0, max(0.0, float(node.get("novelty", 0.5))))
     evidence = len(node.get("evidence_ids") or [])
     evidence_term = min(1.0, math.log1p(evidence) / math.log(6.0)) if evidence else 0.0
-    # Reward informative uncertainty, mission relevance, novelty and some evidence; never just confidence.
     raw = 0.38 * uncertainty + 0.28 * goal + 0.20 * novelty + 0.14 * evidence_term
     return max(0.0, raw * _status_factor(str(node.get("status") or "TESTING")))
 
@@ -57,6 +56,7 @@ def build_portfolio(graph: dict[str, Any], *, hypothesis_budget: float = 0.35, m
     items = []
     for n, score in zip(ranked, scores):
         share = float(hypothesis_budget) * score / denom
+        focus = n.get("search_focus") if isinstance(n.get("search_focus"), dict) else None
         items.append({
             "hypothesis_id": n.get("id"),
             "status": n.get("status"),
@@ -64,6 +64,8 @@ def build_portfolio(graph: dict[str, Any], *, hypothesis_budget: float = 0.35, m
             "priority": round(score, 6),
             "hypothesis_budget_share": round(share, 6),
             "challenge_pressure": round(challenge_pressure(n), 6),
+            "search_focus": focus,
+            "runnable_focus": bool(focus and focus.get("family") and isinstance(focus.get("knobs"), dict)),
             "reason": {
                 "uncertainty": round(_uncertainty(float(n.get("confidence", 0.5))), 4),
                 "goal_relevance": float(n.get("goal_relevance", 0.5)),
@@ -72,9 +74,10 @@ def build_portfolio(graph: dict[str, Any], *, hypothesis_budget: float = 0.35, m
             },
         })
     return {
-        "version": 1,
+        "version": 2,
         "hypothesis_budget_cap": float(hypothesis_budget),
         "active": items,
+        "runnable_focuses": sum(bool(x.get("runnable_focus")) for x in items),
         "anti_bias": {
             "minimum_unexplored_fraction": 0.20,
             "minimum_assumption_breaker_fraction": 0.10,
@@ -92,7 +95,6 @@ def attach_to_decision(decision: dict[str, Any], portfolio: dict[str, Any]) -> d
     out = dict(decision)
     next_plan = dict(out.get("next_plan") or {})
     allocation = dict(next_plan.get("allocation") or {})
-    # v7 currently subdivides only the already-bounded hypothesis lane.  The broad lane contract stays intact.
     available = min(0.35, max(0.0, float(allocation.get("hypothesis", 0.0))))
     active = portfolio.get("active") or []
     total = sum(float(x.get("hypothesis_budget_share", 0.0)) for x in active) or 1.0
