@@ -1,3 +1,6 @@
+import json
+from types import SimpleNamespace
+
 from ai_lab.dream import adaptive_v7
 from ai_lab.dream import evidence_cards
 from ai_lab.dream import goal_engine
@@ -233,6 +236,46 @@ def test_route_plan_falls_back_cleanly_without_runnable_focus():
     assert plan["enabled"] is False
     assert sum(x["n"] for x in plan["blocks"]) == 37
     assert sum(x["n"] for x in plan["blocks"] if x["lane"] == "hypothesis") == adaptive_v7._lane_counts(37, allocation)["hypothesis"]
+
+
+def test_installed_router_executes_all_trials_and_marks_exploit_and_challenge(tmp_path, monkeypatch):
+    portfolio_path = tmp_path / "portfolio.json"
+    portfolio_path.write_text(json.dumps({
+        "active": [
+            {"hypothesis_id": "h1", "hypothesis_budget_share": 0.25, "challenge_pressure": 0.8, "search_focus": _focus("X-1", 2.0)},
+            {"hypothesis_id": "h2", "hypothesis_budget_share": 0.10, "challenge_pressure": 0.3, "search_focus": _focus("X-2", 4.0)},
+        ]
+    }))
+    monkeypatch.setattr(adaptive_v7, "_PORTFOLIO", portfolio_path)
+
+    calls = []
+    def fake_run_mass_2d(*, start_index, n, workers, allocation, focus, master_seed, quick):
+        lane = next((k for k, v in allocation.items() if float(v) > 0), "unexplored")
+        calls.append((lane, n, focus))
+        rows = [
+            {"trial_index": start_index + i, "score": float(start_index + i), "lane": lane}
+            for i in range(n)
+        ]
+        return {"results": rows, "n": n, "next_index": start_index + n}
+
+    fake = SimpleNamespace(
+        run_mass_2d=fake_run_mass_2d,
+        lab=SimpleNamespace(_score_key=lambda r: r["score"]),
+    )
+    adaptive_v7.install_portfolio_routing(fake)
+    result = fake.run_mass_2d(
+        start_index=100, n=40, workers=1,
+        allocation={"unexplored": 0.25, "boundary": 0.20, "hypothesis": 0.30, "breaker": 0.15, "random": 0.10},
+        focus=_focus("ordinary"), master_seed=7, quick=True,
+    )
+    assert result["n"] == 40
+    assert result["next_index"] == 140
+    assert len({r["trial_index"] for r in result["results"]}) == 40
+    assert any(r.get("portfolio_role") == "exploit" for r in result["results"])
+    assert any(r.get("portfolio_role") == "challenge" for r in result["results"])
+    assert sum(n for _, n, _ in calls) == 40
+    assert adaptive_v7._LAST_ROUTING["fallback_to_v6_single_focus"] is False
+    assert adaptive_v7._LAST_ROUTING["global_lane_counts_changed"] is False
 
 
 def test_goal_engine_never_treats_f7_alone_as_cell_division():
