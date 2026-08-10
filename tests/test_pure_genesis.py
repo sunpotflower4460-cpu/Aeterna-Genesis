@@ -93,3 +93,17 @@ def test_production_unspecified_seed_becomes_reproducible_sampling_regulator():
     assert a == b
     assert a != c
     assert adaptive_v8._root_seed(43, burst_id="ignored") == 43
+
+
+def test_final_observatory_sync_runs_only_when_enabled(monkeypatch):
+    calls = []
+
+    def fake_refresh():
+        calls.append("refresh")
+        return None
+
+    monkeypatch.setattr(adaptive_v8.v3, "_refresh_observatory", fake_refresh)
+    assert adaptive_v8._refresh_final_observatory(False) is None
+    assert calls == []
+    assert adaptive_v8._refresh_final_observatory(True) is None
+    assert calls == ["refresh"]

@@ -47,6 +47,17 @@ def _root_seed(value: Any, *, burst_id: str) -> int:
     return int.from_bytes(digest[:4], "big") & 0x7FFFFFFF
 
 
+def _refresh_final_observatory(enabled: bool) -> str | None:
+    """Copy the *final* v8 report to the Observatory after all v8 enrichments are complete.
+
+    Lower layers refresh the app before Pure Genesis, Root Integrity and human_summary are appended.
+    v8 therefore deliberately performs one final presentation-only sync.  This never changes physics.
+    """
+    if not enabled:
+        return None
+    return v3._refresh_observatory()
+
+
 def _root_summary(root: dict[str, Any]) -> dict[str, Any]:
     top = []
     for row in (root.get("top_laws") or [])[:5]:
@@ -175,6 +186,13 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
     stamp = generated.strftime("%Y-%m-%dT%H-%M-%SZ")
     base["paths"] = write_report(str(v3._REPO), report, stamp=stamp)
     _enrich_easy(base["easy_paths"], root_summary=root_summary)
+
+    # v7/lower layers may have refreshed app/public/data before the v8-only fields above existed.
+    # Re-copy only after the final human report is on disk so the Observatory and Markdown agree.
+    final_refresh_error = _refresh_final_observatory(bool(kwargs.get("refresh_app", True)))
+    if final_refresh_error:
+        report["observatory_final_sync_warning"] = final_refresh_error
+        Path(base["paths"]["latest"]).write_text(json.dumps(report, indent=2, ensure_ascii=False))
     return base
 
 
