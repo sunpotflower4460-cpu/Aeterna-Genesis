@@ -1,0 +1,143 @@
+name: Dream Loop CI
+
+on:
+  pull_request:
+    paths:
+      - 'ai_lab/dream/**'
+      - 'ai_lab/missions/**'
+      - 'genesis/worlds/**'
+      - 'genesis/models/vector_o3.py'
+      - 'genesis/models/q_tensor_nematic.py'
+      - 'genesis/diagnostics/**'
+      - 'tests/test_dream_loop.py'
+      - 'tests/test_dream_state_recovery.py'
+      - 'tests/test_ceiling_and_saturation.py'
+      - 'tests/test_dry_run_and_archive.py'
+      - 'tests/test_adaptive_dream.py'
+      - 'tests/test_hypothesis_evolution.py'
+      - 'tests/test_pure_genesis.py'
+      - 'tests/test_frontier_expander.py'
+      - 'tests/test_hourly_discovery.py'
+      - 'tests/test_strict_geometry.py'
+      - 'tests/test_vortex_energy_landscape.py'
+      - 'tests/test_promising_followups.py'
+      - 'tests/test_zero_to_fission_path.py'
+      - 'tests/test_multiworld_genesis.py'
+      - 'tests/test_deep_time.py'
+      - 'tests/test_open_ended_emergence.py'
+      - 'tests/test_dream_watchdog.py'
+      - 'tools/collect_app_data.py'
+      - 'app/src/components/DreamNightReport.tsx'
+      - 'app/src/components/Inbox.tsx'
+      - 'app/src/lib/dream.ts'
+      - '.github/workflows/dream-loop*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Dream Loop unit tests
+        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+      - name: Unit tests must not touch tracked scientific evidence
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::Unit tests modified tracked scientific evidence. Tests must persist only in temporary/scratch paths."
+            exit 1
+          fi
+      - name: Tiny legacy Dream dry-run
+        run: |
+          python -m ai_lab.dream \
+            --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
+            --native-variants 1 --max-jobs 4 \
+            --no-record --no-refresh-app --seed 42
+      - name: Tiny strict Adaptive Dream v8 dry-run with Pure Genesis R0, frontier expansion and hypothesis evolution
+        run: |
+          python -m ai_lab.dream.strict_goal_loop \
+            --quick --trials 8 --native3d-trials 2 --workers 1 \
+            --repro-top 1 --repro-seeds 3 --compare-native3d-top 1 \
+            --geometry-top 2 --geometry-broad 2 \
+            --followup-trials-2d 4 --followup-trials-3d 1 --followup-max-leads 1 \
+            --fission-path-trials-2d 2 --fission-path-max-leads 1 \
+            --deep-time-max-leads 1 \
+            --open-ended-probes 4 --open-ended-max-episodes 2 \
+            --unknown-followup-max-patterns 1 \
+            --max-synthesized-hypotheses 2 \
+            --root-law-trials 6 --root-sizes 6,8 --root-steps 20 \
+            --frontier-experiments 6 \
+            --native-variants 1 --max-jobs 4 \
+            --no-record --no-refresh-app --seed 43
+      - name: Multi-World shadow dry-run with cross-world emergence comparison
+        run: python -m ai_lab.dream.multiworld --quick --seed 44 --no-record --output ai_lab/reports/multiworld/latest.json
+      - name: A dry run must not touch the working tree
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::--no-record wrote into the repository; a dry run must stay in runtime/dry-run/"
+            exit 1
+          fi
+          echo "Dry runs left the working tree clean."
+      - name: Easy, emergence, cross-world, Pure Genesis and Multi-World reports were produced
+        env:
+          DRY: runtime/dry-run/latest
+        run: |
+          echo "--- dry-run scratch inventory ---"
+          find "$DRY" -type f -print | sort
+          test -f $DRY/ai_lab/reports/easy/latest.json
+          test -f $DRY/ai_lab/reports/easy/latest.md
+          test -f $DRY/ai_lab/reports/multiworld/latest.json
+          test -f $DRY/ai_lab/reports/emergence/latest.json
+          test -f $DRY/ai_lab/reports/crossworld/latest.json
+          test -f $DRY/ai_lab/discoveries/promising_leads.json
+          test -f $DRY/ai_lab/discoveries/fission_path_leads.json
+          test -f $DRY/ai_lab/discoveries/deep_time_fission.json
+          test -f $DRY/ai_lab/discoveries/emergence_graph.json
+          test -f $DRY/ai_lab/discoveries/cross_world_emergence.json
+          test -f $DRY/ai_lab/discoveries/unknown_followups.json
+          grep -q 'promising_followup' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'zero_to_fission_path' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'deep_time_followup' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'open_ended_emergence' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'unknown_pattern_followup' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'question_critic' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'local_vortex_energy_question' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'hypothesis_evolution_v7' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'goal_mission_v7' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'hypothesis_portfolio_v7' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'pure_genesis_r0' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'root_integrity_audit' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'permutation_quotient_enabled' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'autonomous_frontier_expansion' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'destination_fixed_methods_adaptive' $DRY/ai_lab/reports/easy/latest.json
+          grep -q '"known_F_path_is_one_reference_only": true' $DRY/ai_lab/reports/emergence/latest.json
+          grep -q '"mode": "shadow"' $DRY/ai_lab/reports/multiworld/latest.json
+          grep -q '"mode": "cross-world-open-ended-shadow"' $DRY/ai_lab/reports/crossworld/latest.json
+          grep -q '"universality_claim": false' $DRY/ai_lab/reports/crossworld/latest.json
+
+  observatory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build

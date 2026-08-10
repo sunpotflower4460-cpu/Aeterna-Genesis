@@ -1,6 +1,7 @@
 import { useStore } from '../store'
 import type { CandidateRoom, Job, Promotion } from '../lib/types'
 import { candidateBadge } from './ui'
+import DreamNightReport from './DreamNightReport'
 
 const STAGE_LABEL: Record<string, string> = {
   exploration_2d: '2D screen', local_3d: 'local 3D', coarse_global_3d: 'coarse 3D', full_3d: 'full 3D',
@@ -144,6 +145,8 @@ export default function Inbox() {
           AI / Live Runner が親 Room の始原条件を変えて実計算した候補。<b>正式 Room とは区別</b>され、
           <b>自己昇格しない</b>。始原条件の差・到達 Level の親比・昇格パイプラインを示す。
         </p>
+
+        <DreamNightReport />
 
         {running.length > 0 && (
           <div className="glass" style={{ padding: '10px 12px', marginBottom: 16, border: '1px solid rgba(79,227,224,.3)', background: 'var(--accent-dim)' }}>
