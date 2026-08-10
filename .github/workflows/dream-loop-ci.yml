@@ -92,6 +92,8 @@ jobs:
         env:
           DRY: runtime/dry-run/latest
         run: |
+          echo "--- dry-run scratch inventory ---"
+          find "$DRY" -type f -print | sort
           test -f $DRY/ai_lab/reports/easy/latest.json
           test -f $DRY/ai_lab/reports/easy/latest.md
           test -f $DRY/ai_lab/reports/multiworld/latest.json
