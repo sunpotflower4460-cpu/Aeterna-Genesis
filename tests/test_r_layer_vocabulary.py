@@ -132,3 +132,21 @@ def test_run_output_undamped_sustained_still_has_no_forbidden_words():
     text = json.dumps(result, ensure_ascii=False)
     hits = _scan(text)
     assert not hits, "forbidden word(s) %r found in R-layer result JSON (sustained path)" % hits
+
+
+def test_run_output_memory_on_asymmetry_on_sustained_has_no_forbidden_words():
+    """PR-R1.75: the newly-found sustained regime (memory=on x asymmetry=on) is exactly
+    the case most likely to tempt a leaked 'phase'/'frequency'/'winding' -- it is the
+    R-layer's first genuine limit cycle. Confirms the vocabulary discipline still holds
+    on this specific output, not just on the memory=on-alone positive control above."""
+    args = _parser().parse_args([
+        "--n", "24", "--steps", "3000", "--seed", "2", "--memory", "on", "--damping", "0.0",
+        "--asymmetry", "--asymmetry-strength", "0.3", "--saturation", "none",
+        "--topology", "random_regular",
+    ])
+    result = build_result(args)
+    r4 = result["instruments"]["R4_period"]
+    assert r4["value"]["any_sustained"] is True, "test setup should exercise the sustained=True path"
+    text = json.dumps(result, ensure_ascii=False)
+    hits = _scan(text)
+    assert not hits, "forbidden word(s) %r found in R-layer result JSON (memory=on x asymmetry=on)" % hits

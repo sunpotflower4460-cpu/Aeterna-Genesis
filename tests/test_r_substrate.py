@@ -223,3 +223,47 @@ def test_asymmetry_is_present_in_kwargs_and_result_dict():
     assert d["asymmetry"] is True
     assert d["asymmetry_strength"] == 0.4
     assert d["w_is_symmetric"] is False
+
+
+# --- PR-R1.75: Gershgorin bound (AUDIT.md Sec.10.2) -----------------------------------------
+#
+# Structural claim: for ANY non-negative W built by this construction (symmetric or
+# asymmetrized), L = D - W (D = row-sum degree) has every eigenvalue with Re >= 0, at any
+# asymmetry strength. This is a direct consequence of Q = -L being a zero-row-sum,
+# non-negative-off-diagonal matrix (a CTMC generator), not something that could fail for a
+# large-enough strength -- these tests check that unconditionally, well past the strengths
+# {0.3, 0.6, 0.9} used elsewhere in this file.
+
+def test_gershgorin_bound_holds_for_symmetric_w():
+    W = topology.build_topology("random_regular", n=20, degree=4, seed=11)
+    L = np.diag(W.sum(axis=1)) - W
+    eig = np.linalg.eigvals(L)
+    assert eig.real.min() > -1e-8
+
+
+@pytest.mark.parametrize("strength", [0.5, 2.0, 8.0, 30.0, 100.0])
+@pytest.mark.parametrize("topo", ["random_regular", "erdos_renyi", "watts_strogatz", "barabasi_albert"])
+def test_gershgorin_bound_holds_for_asymmetric_w_at_any_strength(topo, strength):
+    kwargs = {
+        "random_regular": dict(degree=4),
+        "erdos_renyi": dict(p=0.3),
+        "watts_strogatz": dict(k=4, beta=0.3),
+        "barabasi_albert": dict(m=2),
+    }[topo]
+    W0 = topology.build_topology(topo, n=20, seed=3, **kwargs)
+    Wa = substrate._asymmetrize(W0, strength, seed=3)
+    assert not np.allclose(Wa, Wa.T)   # actually asymmetric, not a no-op
+    L = np.diag(Wa.sum(axis=1)) - Wa
+    eig = np.linalg.eigvals(L)
+    # Gershgorin's own disc radius is 0 at the rightmost point (Re(disc_center) + radius ==
+    # 0 exactly for a zero-row-sum matrix), so this is a tight bound, not a loose one --
+    # floating point noise is the only slack allowed.
+    assert eig.real.min() > -1e-6, "L must have no negative-real-part eigenvalue at strength=%s (topo=%s)" % (strength, topo)
+
+
+def test_asymmetrize_preserves_non_negativity_at_extreme_strength():
+    W0 = topology.build_topology("random_regular", n=16, degree=4, seed=1)
+    Wa = substrate._asymmetrize(W0, strength=1000.0, seed=1)
+    assert (Wa >= 0).all()
+    # edges are neither created nor destroyed even at an extreme strength
+    assert np.array_equal(W0 > 0, (Wa > 0) | (Wa.T > 0))

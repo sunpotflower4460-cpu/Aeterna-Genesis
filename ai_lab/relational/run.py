@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ai_lab/relational/run.py -- CLI for the R-layer substrate + first four instruments
-(PR-R1 + PR-R1.5).
+(PR-R1 + PR-R1.5 + PR-R1.75).
 
-MODULE:      relational_r1 (ai_lab/relational, PR-R1 + PR-R1.5 addendum)
+MODULE:      relational_r1 (ai_lab/relational, PR-R1 + PR-R1.5 + PR-R1.75 addenda)
 QUESTION:    Starting from only node indices, a relation graph, and a real-valued per-node
              state (no coordinates, no complex numbers, no phase, no S^1): (a) does pure
              first-order relaxation ("memory off") with a SYMMETRIC relation (w_ij == w_ji)
@@ -11,9 +11,14 @@ QUESTION:    Starting from only node indices, a relation graph, and a real-value
              answer, since the symmetric case's proof no longer applies? (c) when a period
              IS detected (memory=on, or asymmetry=on), is it SUSTAINED oscillation or a
              decaying transient relaxing to a fixed point (PR-R1.5's envelope instrument)?
-             PR-R1 originally asked only a version of (a)/naive-(b) without the symmetry
-             precondition or the sustained/decaying distinction; PR-R1.5 corrected the scope
-             -- see AUDIT.md Sec.9.
+             (d) does memory=on, symmetric W, ALSO provably fail to sustain for any damping
+             gamma>0 (not just fail to be observed), and does the one combination PR-R1.5
+             left untested -- memory=on x asymmetry=on -- actually produce sustained
+             oscillation, and if so, exactly which analytic condition on L's eigenvalues
+             predicts it (PR-R1.75)? PR-R1 originally asked only a version of (a)/naive-(b)
+             without the symmetry precondition or the sustained/decaying distinction;
+             PR-R1.5 corrected the scope; PR-R1.75 supplies the missing proof for (c)'s
+             memory=on side and answers (d) -- see AUDIT.md Sec.9-10.
 PUT IN:      node count N; a relation graph G (w_ij >= 0) from a disclosed generator rule
              (random_regular / erdos_renyi / watts_strogatz / barabasi_albert -- never a
              grid by default); real per-node state x_i in R^m (default m=1, no complex
@@ -26,86 +31,134 @@ PUT IN:      node count N; a relation graph G (w_ij >= 0) from a disclosed gener
              disclosed, switchable ingredient axis, OFF by default); a fixed timestep dt (a
              numerical regulator, not a physical input); a small i.i.d. random initial
              inhomogeneity epsilon (no shape, no pattern, v(0)=0 identically when
-             memory=on); a finite node count N.
+             memory=on); a finite node count N. PR-R1.75 adds no new ingredient axis -- it
+             only combines the two that already existed (memory=on, asymmetry=on together)
+             and adds analysis (proofs, an eigenvalue threshold) of the existing equations.
 EMERGED:     (measured) memory=off, W symmetric, produces zero genuine, sustained periods
              across a broad sweep (30 seeds x 4 topologies x 2 saturation settings = 240
              runs x 24 nodes = 5760 node-checks, 0 R4-defined; see AUDIT.md Sec.3.3 for two
              independently-motivated instrument bugfixes found and fixed along the way, not
              hidden). PR-R1.5: memory=off, W asymmetric (360 runs / 8640 node-checks, 3
-             asymmetry strengths x 4 topologies x 30 seeds) ALSO produced zero periods --
-             this specific construction did not reproduce the review's non-reciprocity
-             hypothesis within the range tried (see AUDIT.md Sec.9.1 for what is and is not
-             ruled out by that). Separately, PR-R1.5's new sustained/decaying instrument,
+             asymmetry strengths x 4 topologies x 30 seeds) ALSO produced zero periods.
+             PR-R1.75 (Sec.10.2) proves this is not a range-of-strengths artifact: by the
+             Gershgorin circle theorem, the graph Laplacian's row-sum construction forces
+             every eigenvalue of L to have Re >= 0 for ANY non-negative W, symmetric or
+             asymmetric, at ANY strength -- so no finite asymmetry can ever destabilize
+             memory=off under this construction; verified numerically out to strengths of
+             100 (300 stress-test cases, worst min(Re(eigenvalue)) = -7.8e-14, i.e. zero up
+             to floating-point noise). Separately, PR-R1.5's sustained/decaying instrument,
              re-applied to PR-R1's original memory=on sweep (10 seeds x 5 damping values),
              found 0/1200 of the previously-"periodic" node-checks are actually sustained --
-             every one is a decaying transient (a damped spiral relaxing to the fixed
-             point). The instrument's own positive control (memory=on, damping=0.0, a
-             genuinely undamped/conservative run) DOES register sustained oscillation on
-             20/24 nodes, confirming the instrument detects sustained periods when they are
-             actually present rather than always reporting "decaying." Net: no configuration
-             tried so far -- memory=off (symmetric or asymmetric) or memory=on with any
-             tested nonzero damping -- has been shown to produce sustained oscillation.
-CLAIM TIER:  measured (memory=off/symmetric-W: provable gradient flow, matched empirically
-             0/5760; memory=off/asymmetric-W: 0/8640, a genuine negative result within the
-             tested range; memory=on's ORIGINAL "period found" numbers, now understood to be
-             decaying transients: 0/1200 sustained) ; observed (the specific period/damping
-             relationship for memory=on's decaying transients -- no external reference value
-             exists) ; interpretive (any framing of "what produces sustained oscillation
-             here" -- still open, see AUDIT.md Sec.9.3, NOT concluded to be memory, since
-             the one sustained case found is an undamped positive control, not a swept
-             result).
-KNOWN MATCH: N/A -- first measurement of the R-layer. The symmetric-W memory=off result is
-             qualitatively consistent with the textbook dynamical-systems fact that
-             gradient/relaxation flows admit no limit cycles (a strictly decreasing
-             Lyapunov function forbids periodic orbits); the asymmetric-W and memory=on
-             sustained-oscillation questions are first measurements with no established
-             external match to check against.
+             every one is a decaying transient. PR-R1.75 (Sec.10.1) proves this is not an
+             artifact either: for memory=on with symmetric W, the mechanical energy
+             E = (1/2)|v|^2 + (1/2)x^T L x + (a/4)Sum x_i^4 satisfies dE/dt = -gamma|v|^2 <=
+             0 exactly (derived from substrate.py's actual deriv2, not assumed), so by
+             LaSalle's invariance principle every trajectory converges to a fixed point --
+             sustained oscillation is impossible whenever gamma>0 and W=W^T, matching the
+             empirical 0/1200 exactly. PR-R1.75 then measured the one combination left
+             untested by PR-R1.5: memory=on x asymmetry=on (damping in {0.0, 0.05}, 4
+             topologies, asymmetry strength in {0.3,1.0,3.0,8.0,20.0}, 15 seeds, n=24,
+             steps=3000 -- 600 runs / 14400 node-checks). Result: 373/600 runs any period
+             defined, and **133/600 runs (708/14400 node-checks) SUSTAINED** -- the
+             R-layer's first genuine sustained-oscillation result. Sec.10.3 derives exactly
+             why: writing an eigenvalue of L as mu = p + iq (Gershgorin guarantees p >= 0),
+             the second-order characteristic equation lambda^2 + gamma*lambda + mu = 0 gives
+             Re(lambda) > 0 (linear instability, later capped by the cubic/bounded-degree
+             nonlinearity into a limit cycle) exactly when q^2 > p*gamma^2 -- inertia
+             converts a Gershgorin-marginal (p~0) rotational mode, which the first-order
+             system can only carry forever at constant amplitude, into genuine exponential
+             growth. This derived sign was checked against direct eigenvalue computation and
+             matched in 11/12 configurations (1 floating-point boundary tie). Net: sustained
+             oscillation requires BOTH memory (inertia) AND asymmetry together; neither alone
+             produces it in any configuration measured across PR-R1, PR-R1.5, or PR-R1.75,
+             and this is now proven, not just unobserved, for both single-ingredient cases.
+CLAIM TIER:  proven (memory=off, any W built by this construction, any strength: Gershgorin,
+             Sec.10.2; memory=on, symmetric W, any gamma>0: energy/Lyapunov + LaSalle,
+             Sec.10.1) ; measured (memory=off/symmetric-W: 0/5760, matches the proof exactly;
+             memory=off/asymmetric-W: 0/8640, matches the Gershgorin proof exactly;
+             memory=on/symmetric-W's ORIGINAL "period found" numbers, now understood to be
+             decaying transients: 0/1200 sustained, matches the energy proof exactly;
+             memory=on x asymmetry=on: 133/600 runs sustained, a genuine positive result) ;
+             observed (the specific period/damping relationship for decaying transients --
+             no external reference value exists) ; interpretive (the q^2 > p*gamma^2
+             threshold's generality beyond the one topology/seed pair it was directly
+             cross-validated against -- 11/12 sign matches is supportive, not yet a
+             held-out-sweep confirmation; see AUDIT.md Sec.10.5).
+KNOWN MATCH: N/A -- first measurement of the R-layer. The symmetric-W memory=off/on
+             no-period results are qualitatively consistent with the textbook facts that
+             gradient flows admit no limit cycles and that damped second-order systems with
+             no forcing converge to equilibria; the memory=on x asymmetry=on
+             sustained-oscillation mechanism (inertia turning a Gershgorin-marginal complex
+             eigenvalue into genuine growth) is a first measurement in this graph-relational
+             form, though it is a specific instance of the general dynamical-systems fact
+             that adding inertia to a non-normal (non-symmetric) linear operator can
+             destabilize modes the first-order operator alone cannot -- not claimed as a new
+             mathematical result in general, only newly measured and derived here.
 AUDIT (7):   1. Rule names the result?                 No  -- the update rule is Sum_j
                 w_ij(x_j-x_i) [+ optional a*g(x_i)] [+ optional -gamma*v]; nothing in it,
                 nor the asymmetry construction (a per-edge magnitude-only split, average
                 preserved), references "period", "reversal", "sustained", or any
-                instrument's output.
+                instrument's output. The q^2 > p*gamma^2 threshold (PR-R1.75) is derived
+                algebraically from this same rule's characteristic equation after the fact,
+                not built to hit a target ratio.
              2. Faithful/reasonable local dynamics?      Yes -- graph-Laplacian diffusion
                 (textbook consensus/heat-equation form) plus, when enabled, a standard
                 damped second-order extension, a standard cubic saturation nonlinearity, and
                 a standard non-reciprocal-coupling construction (splits each edge's coupling
                 asymmetrically while preserving its average); none of these were built or
-                tuned to manufacture periodicity.
+                tuned to manufacture periodicity. Both PR-R1.75 proofs (Sec.10.1 energy,
+                Sec.10.2 Gershgorin) are derived from these same, already-disclosed
+                equations -- no new dynamics were introduced to make the proofs work.
              3. Result already in the initial condition? No -- x_i(0) is i.i.d. Gaussian
                 noise (scale epsilon only, no shape); v(0)=0 identically for memory=on; the
                 asymmetry perturbation chi_ij is drawn from a disjoint RNG stream so it does
                 not correlate with x_i(0) for a given seed (verified).
              4. Untargeted companion phenomena appear?   Partial/not fully assessed -- only
-                R1-R4 exist, so the fuller phenomenology (R5-R11) cannot be checked yet.
+                R1-R4 exist, so the fuller phenomenology (R5-R11) cannot be checked yet. This
+                is now the most load-bearing open item: PR-R1.75 finally produced a genuine
+                sustained-oscillation regime (133/600 runs) that R5-R8 (period diversity,
+                phase, winding) could characterize, but those instruments do not exist yet.
              5. Matches reality with real numbers?        Yes for memory=off/symmetric-W --
-                0/5760 node-checks defined, matching an EXACT analytic guarantee (dx/dt =
-                -grad V(x), V = (1/2) x^T L x + (a/4) Sum x_i^4, a provable gradient flow
-                with no limit cycles, valid only for W=W^T; see AUDIT.md Sec.3.1/9.1).
-                "Observed" for memory=off/asymmetric-W (0/8640, no external theory value to
-                check it against) and for memory=on's decaying-transient numbers.
+                0/5760 matching an exact analytic guarantee (Sec.3.1/10.1). Yes for
+                memory=off/asymmetric-W -- 0/8640 matching the Gershgorin proof exactly
+                (Sec.10.2, not merely "observed" as PR-R1.5 first reported it). Yes for
+                memory=on/symmetric-W's decaying-transient numbers -- 0/1200 sustained
+                matching the energy/Lyapunov proof exactly (Sec.10.1). "Measured" (not yet
+                matched to an independent external formula) for memory=on x asymmetry=on's
+                133/600 positive count, though the derived q^2>p*gamma^2 sign was
+                cross-checked against direct eigenvalue computation (11/12 match).
              6. Robust to changing IC/parameters?         Yes -- swept 30 seeds x 4
                 topologies x 2 saturation settings (memory=off/symmetric, 0/5760), 30 seeds
                 x 4 topologies x 3 asymmetry strengths (memory=off/asymmetric, 0/8640,
-                PR-R1.5), and 10 seeds x 5 damping values (memory=on, 605/1200 defined but
-                0/1200 sustained, PR-R1.5's re-check of PR-R1's own sweep).
+                PR-R1.5; plus 300 additional stress-test cases at strengths up to 100,
+                PR-R1.75), 10 seeds x 5 damping values (memory=on/symmetric, 605/1200
+                defined but 0/1200 sustained), and (PR-R1.75) 15 seeds x 4 topologies x 5
+                asymmetry strengths x 2 damping values (memory=on x asymmetry=on, 373/600
+                defined, 133/600 sustained).
              7. Code asserts or discovers the conclusion? Discovers -- run.py calls
                 instruments.measure_all() and reports whatever comes back, including
                 `sustained` alongside `defined` so a caller cannot read "period found" as
                 "structure found" without also seeing the decay verdict. PR-R1.5's
-                correction of PR-R1's own memory=on headline was written into AUDIT.md
-                rather than quietly revised away.
-STATUS:      YELLOW. Not RED: the symmetric-W no-period side has an exact analytic proof,
-             matched exactly (0/5760) empirically, and the sustained/decaying instrument is
-             validated by both synthetic positive controls and a physical (damping=0)
-             positive control. Not GREEN: item 4 is not fully assessable with only R1-R4
-             built, PR-R1.5 turned "memory=on produces period" into an open question rather
-             than a closed one (605/1200 defined, 0/1200 sustained), and the
-             non-reciprocity-produces-oscillation hypothesis is narrowed but not resolved.
+                correction of PR-R1's own memory=on headline, and PR-R1.75's positive
+                133/600 sustained result, were both written into AUDIT.md with the same
+                weight as the negative results (Sec.10.4) rather than the positive result
+                being played up or the negative ones played down.
+STATUS:      YELLOW. Not RED: three of the four cells now have exact analytic proofs
+             (memory=off any-W: Gershgorin, Sec.10.2; memory=on symmetric-W: energy/
+             Lyapunov, Sec.10.1) matched exactly by the sweeps (0/5760, 0/8640, 0/1200), and
+             the fourth cell's positive result (memory=on x asymmetry=on, 133/600 sustained)
+             has both a derived mechanism (q^2>p*gamma^2) and empirical support, not just a
+             raw count. Not GREEN: item 4 is now the binding constraint -- R5-R8 do not exist
+             yet to characterize the sustained-oscillation regime PR-R1.75 just found (period
+             diversity, phase, winding are all still unmeasured), and the q^2>p*gamma^2
+             threshold's cross-validation (11/12 sign matches) is limited to one topology/
+             seed pair, not yet a held-out confirmation sweep.
 A_OR_B:      (B)-leaning, but not (B). Still hand-set: the existence of the node set / the
              relation-graph generation rule / the update rule's functional form / the
              timestep / the initial small inhomogeneity / the finite node count / (PR-R1.5)
              the asymmetry perturbation's distribution (Uniform(-1,1) per edge) when
-             asymmetry=True.
+             asymmetry=True. PR-R1.75 added no new hand-set input -- only proofs and a sweep
+             over the existing (memory, asymmetry) combination.
 
 CLI only. NOT wired into any hourly loop, multiworld registration, or report pipeline in
 this PR (that is PR-R4's scope). --no-record is intended to call

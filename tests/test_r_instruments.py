@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from ai_lab.relational import instruments, substrate
+from ai_lab.relational import instruments, substrate, topology
 
 
 def test_reading_has_exact_spec_fields():
@@ -207,3 +207,75 @@ def test_reversal_carries_per_node_envelope():
     assert len(envs) == 12
     for e in envs:
         assert e["classification"] in ("sustained", "decaying", "growing", "undefined")
+
+
+# ---------------------------------------------------------------------------
+# PR-R1.75: memory=on x asymmetry=on -- the untested cell (AUDIT.md Sec.10.3)
+# ---------------------------------------------------------------------------
+
+def test_memory_on_asymmetry_on_positive_control_produces_sustained_oscillation():
+    """The one combination PR-R1.5 left unmeasured. This is a positive control from
+    AUDIT.md Sec.10.3's own sweep parameters (damping=0.0, strength=0.3, random_regular,
+    n=24) at a seed confirmed (by direct exploration, not cherry-picked from the sweep
+    average) to land in the sustained regime -- unlike the earlier memory=on positive
+    control, absence here would NOT be surprising on its own (373/600 runs in the sweep
+    were not sustained), so this test exists to catch a regression in the sustained path
+    for the asymmetry x memory combination specifically, not to re-litigate the sweep's
+    aggregate rate."""
+    res = substrate.run(
+        n=24, steps=3000, dt=0.05, seed=2, memory="on", damping=0.0,
+        asymmetry=True, asymmetry_strength=0.3, saturation="none",
+        topology="random_regular",
+    )
+    assert res.w_is_symmetric is False
+    r4 = instruments.period(res.x_traj, res.dt)
+    assert r4.defined is True
+    assert r4.value["any_sustained"] is True
+    assert r4.value["n_sustained_periodic_nodes"] > 0
+
+
+def test_memory_off_asymmetry_on_same_seed_does_not_sustain():
+    """The Gershgorin-barred counterpart of the test above: the identical relation graph
+    and asymmetry, but memory=off, must NOT produce sustained oscillation (AUDIT.md
+    Sec.10.2) -- isolating that inertia, not asymmetry alone, is what crosses into the
+    sustained regime."""
+    res = substrate.run(
+        n=24, steps=3000, dt=0.05, seed=2, memory="off",
+        asymmetry=True, asymmetry_strength=0.3, saturation="none",
+        topology="random_regular",
+    )
+    r4 = instruments.period(res.x_traj, res.dt)
+    if r4.defined:
+        assert r4.value["any_sustained"] is False
+
+
+# ---------------------------------------------------------------------------
+# PR-R1.75: the q^2 > p*gamma^2 instability threshold (AUDIT.md Sec.10.3), checked
+# directly against L's eigenvalues and the second-order characteristic equation --
+# independent of the substrate simulation and the R4 instrument entirely.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("gamma", [0.05, 0.08, 0.2])
+@pytest.mark.parametrize("strength", [0.1, 0.3, 1.0, 3.0, 8.0])
+def test_q2_gt_p_gamma2_threshold_matches_direct_eigenvalue_computation(strength, gamma):
+    W0 = topology.build_topology("random_regular", n=24, degree=4, seed=1)
+    Wa = substrate._asymmetrize(W0, strength, seed=1)
+    L = np.diag(Wa.sum(axis=1)) - Wa
+    mu = np.linalg.eigvals(L)
+
+    # derived prediction: unstable iff q^2 > p*gamma^2 for some eigenvalue mu = p + iq
+    p, q = mu.real, mu.imag
+    predicted_unstable = bool(np.any(q**2 > p * gamma**2 + 1e-9))
+
+    # direct computation: roots of lambda^2 + gamma*lambda + mu = 0 for every mu
+    disc = gamma**2 - 4.0 * mu
+    sqrt_disc = np.sqrt(disc.astype(complex))
+    lam_plus = (-gamma + sqrt_disc) / 2.0
+    lam_minus = (-gamma - sqrt_disc) / 2.0
+    max_re = float(np.max(np.concatenate([lam_plus.real, lam_minus.real])))
+    actual_unstable = max_re > 1e-9
+
+    assert predicted_unstable == actual_unstable, (
+        "q^2 > p*gamma^2 sign mismatch at strength=%s gamma=%s (max_re=%.3e)"
+        % (strength, gamma, max_re)
+    )
