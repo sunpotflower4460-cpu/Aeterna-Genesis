@@ -302,12 +302,13 @@ def _cfl_substeps(Du, base_dt, ndim=2, dx=1.0, cap=8):
     return int(min(cap, max(1, np.ceil(base_dt / safe_dt))))
 
 
-def _screen_ic(family, knobs, seed, quick=True):
+def _screen_ic(family, knobs, seed, quick=True, window=None):
     """REAL 2D screen from t=0 with an IC family + start-side knobs. Level via measures.assess_level
     (imported, NOT redefined); adds a non-saturating complexity + score for RANKING only. CFL-sub-steps
     for numerical stability and flags genuinely non-finite runs as 'unstable' (an honest numerical
     failure, NOT a physical Level-0 result)."""
-    edge, steps, nsnap = STEPS_2D[bool(quick)]
+    # ``window`` changes only numerical observation regulators; physics/IC/law stay unchanged.
+    edge, steps, nsnap = tuple(window) if window is not None else STEPS_2D[bool(quick)]
     shape = (edge, edge)
     p = _apply_knobs(dict(gl.DEFAULTS), knobs)
     base_dt = p["dt"]

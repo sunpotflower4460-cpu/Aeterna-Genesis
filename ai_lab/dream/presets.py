@@ -10,6 +10,8 @@ import json
 import os
 from typing import Any
 
+from ai_lab.dream import ledger_archive
+
 
 def _measured(event: dict[str, Any]) -> dict[str, Any]:
     facts = event.get("facts") or {}
@@ -61,22 +63,26 @@ def make_view_preset(event: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Hot window for view presets; old recipes are immutable evidence, not discarded.
+PRESET_KEEP = 400
+
+
 def merge_presets(path: str, events: list[dict[str, Any]]) -> dict[str, Any]:
-    """Upsert deterministic presets by preset_id and persist them."""
+    """Upsert deterministic presets, keeping old entries in immutable cold storage."""
     if os.path.exists(path):
         doc = json.load(open(path))
     else:
-        doc = {
-            "preset_version": 1,
-            "note": "Observation presets only; they never alter physics or scientific status.",
-            "presets": [],
-        }
+        doc = {"preset_version": 1, "note": "Observation presets only; they never alter physics or scientific status.", "presets": []}
+    cold = ledger_archive.archived_ids(doc)
     by_id = {p["preset_id"]: p for p in doc.get("presets", [])}
     for event in events:
         preset = make_view_preset(event)
-        by_id[preset["preset_id"]] = preset
         event["view_preset_id"] = preset["preset_id"]
+        if preset["preset_id"] not in cold:
+            by_id[preset["preset_id"]] = preset
     doc["presets"] = sorted(by_id.values(), key=lambda p: p["preset_id"])
+    ledger_archive.roll(doc, list_key="presets", id_key="preset_id", keep=PRESET_KEEP,
+                        archive_dir=ledger_archive.archive_dir_for(path), name="presets")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(doc, f, indent=2, ensure_ascii=False)

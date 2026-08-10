@@ -32,6 +32,8 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from ai_lab import lab  # noqa: E402
+from ai_lab.dream import dry_run  # noqa: E402
+from ai_lab.dream import ledger_archive  # noqa: E402
 from ai_lab.dream.events import classify_search_candidate, events_from_autopilot  # noqa: E402
 from ai_lab.dream.presets import merge_presets  # noqa: E402
 from ai_lab.dream.report import build_report, write_report  # noqa: E402
@@ -95,13 +97,23 @@ def _load_event_ledger() -> dict[str, Any]:
     )
 
 
+# Hot window for human-facing events. Older evidence is sealed into immutable archive parts.
+EVENT_LEDGER_KEEP = 400
+
+
 def _save_event_ledger(ledger: dict[str, Any], new_events: list[dict[str, Any]], seen: set[str], burst_id: str) -> None:
+    cold = ledger_archive.archived_ids(ledger)
     by_id = {e["event_id"]: e for e in ledger.get("events", []) if e.get("event_id")}
     for event in new_events:
-        by_id[event["event_id"]] = event
+        if event["event_id"] not in cold:
+            by_id[event["event_id"]] = event
     ledger["events"] = sorted(by_id.values(), key=lambda e: e["event_id"])
     ledger["seen_job_ids"] = sorted(seen)
     ledger["last_burst"] = burst_id
+    ledger_archive.roll(
+        ledger, list_key="events", id_key="event_id", keep=EVENT_LEDGER_KEEP,
+        archive_dir=ledger_archive.archive_dir_for(_EVENT_LEDGER), name="events", burst_id=burst_id,
+    )
     _atomic_json(_EVENT_LEDGER, ledger)
 
 
@@ -349,6 +361,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.no_record:
+        dry_run.activate()
     result = run_burst(
         mode=args.mode,
         trials=max(0, args.trials),
@@ -360,7 +374,7 @@ def main(argv: list[str] | None = None) -> int:
         quick=args.quick,
         record=not args.no_record,
         native=not args.no_native,
-        refresh_app=not args.no_refresh_app,
+        refresh_app=(not args.no_refresh_app and not args.no_record),
     )
     report = result["report"]
     c = report["counts"]

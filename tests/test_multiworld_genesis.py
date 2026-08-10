@@ -132,7 +132,10 @@ def test_common_change_detector_uses_neutral_feature_names():
     assert "amp_std" not in episodes[0]["fingerprint"]
 
 
-def test_multiworld_shadow_report_is_non_promoting_and_cross_law():
+def test_multiworld_shadow_report_is_non_promoting_and_cross_law(tmp_path, monkeypatch):
+    # This test exercises a comparator that normally persists its shadow ledger. Keep that persistence
+    # in a temporary scratch root so the test suite itself cannot dirty tracked scientific evidence.
+    monkeypatch.setenv("AETERNA_DRY_RUN_ROOT", str(tmp_path))
     report = build_shadow_report(seed=7, quick=True)
     assert report["mode"] == "shadow"
     assert report["errors"] == []

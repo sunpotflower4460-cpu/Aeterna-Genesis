@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from ai_lab.dream import cross_world_emergence
+from ai_lab.dream import dry_run
 from genesis.worlds.integrity import audit_plan
 from genesis.worlds.probes import probe_world
 from genesis.worlds.registry import list_worlds
@@ -121,11 +122,16 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--output", default="ai_lab/reports/multiworld/latest.json")
+    ap.add_argument("--no-record", action="store_true", help="redirect all repository writes to runtime/dry-run/")
     return ap
 
 
 def main(argv: list[str] | None = None) -> int:
     a = build_parser().parse_args(argv)
+    if a.no_record:
+        # The general scratch redirect covers the Multi-World report. The Cross-World comparator also
+        # resolves its own two durable paths from the same environment as a second integrity barrier.
+        dry_run.activate()
     report = build_shadow_report(seed=a.seed, quick=a.quick)
     out = write_shadow_report(report, a.output)
     print("=== Multi-World Genesis shadow ===")

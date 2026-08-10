@@ -23,6 +23,7 @@ from typing import Any
 from ai_lab.dream import adaptive
 from ai_lab.dream import adaptive_loop as v3
 from ai_lab.dream import adaptive_v7 as v7
+from ai_lab.dream import dry_run
 from ai_lab.dream import frontier_expander
 from ai_lab.dream import human_report
 from ai_lab.dream import hypothesis_evolution
@@ -252,13 +253,15 @@ def build_parser():
 
 def main(argv: list[str] | None = None) -> int:
     a = build_parser().parse_args(argv)
+    if a.no_record:
+        dry_run.activate()
     result = run_adaptive_v8(
         trials=max(0, a.trials), native3d_trials=max(0, a.native3d_trials), workers=max(1, a.workers),
         repro_top=max(0, a.repro_top), repro_seeds=max(1, a.repro_seeds),
         compare_native3d_top=max(0, a.compare_native3d_top), geometry_top=max(0, a.geometry_top),
         geometry_broad=max(0, a.geometry_broad), native_variants=max(0, a.native_variants),
         max_jobs=max(0, a.max_jobs), seed=a.seed, quick=a.quick,
-        record=not a.no_record, refresh_app=not a.no_refresh_app,
+        record=not a.no_record, refresh_app=(not a.no_refresh_app and not a.no_record),
         followup_trials_2d=max(0, a.followup_trials_2d), followup_trials_3d=max(0, a.followup_trials_3d),
         followup_max_leads=max(0, a.followup_max_leads),
         fission_path_trials_2d=max(0, a.fission_path_trials_2d),

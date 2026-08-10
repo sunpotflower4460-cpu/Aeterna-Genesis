@@ -40,6 +40,14 @@ DEFAULT_ALLOCATION = {
 }
 _PRIMES = (2, 3, 5, 7, 11)
 
+# A region is saturated by sampling count only -- never by reached Level, score, status, or outcome.
+SATURATION_TRIALS = 200
+# Large deterministic stride so coverage spill lands in a genuinely different Halton location.
+_RESAMPLE_STRIDE = 7919
+# Focus-following lanes may still concentrate, but no more than this share of a burst in saturated cells.
+SATURATED_FOCUS_SHARE = 0.15
+_FOCUS_LANES = ("hypothesis", "boundary", "breaker")
+
 
 def _load(path: Path, default: Any) -> Any:
     if not path.exists():
@@ -199,32 +207,118 @@ def _focus_trial(focus: dict[str, Any], index: int, width: float, invert: bool) 
     return family, _knobs(unit), _seed(index, "focus-seed")
 
 
-def make_trial_plan(*, start_index: int, n: int, allocation: dict[str, float], focus: dict[str, Any] | None, master_seed: int) -> list[dict[str, Any]]:
-    lanes = list(DEFAULT_ALLOCATION); counts = {k: int(n*float(allocation.get(k, 0))) for k in lanes}; counts["unexplored"] += n-sum(counts.values())
+def plan_region_key(family: str, knobs: dict[str, float], dimension: str = "2d") -> str:
+    """Coverage-atlas region of a not-yet-run trial; family + knobs are sufficient."""
+    return _region({"family": family, "knobs": knobs}, dimension)
+
+
+def saturated_regions(
+    atlas: dict[str, Any], *, min_trials: int = SATURATION_TRIALS, dimension: str = "2d"
+) -> set[str]:
+    """Return over-sampled cells using sample count only, never a measured physical outcome."""
+    return {
+        key
+        for key, cell in (atlas.get("regions") or {}).items()
+        if cell.get("dimension") == dimension and int(cell.get("tested") or 0) >= int(min_trials)
+    }
+
+
+def _halton_trial(idx: int, master_seed: int, offset: int = 0) -> tuple[str, dict[str, float], int]:
+    base = idx + master_seed + offset
+    return lab.IC_FAMILIES[base % len(lab.IC_FAMILIES)], _knobs(_halton(base)), _seed(base, "halton")
+
+
+def _cap_saturated_focus(
+    plan: list[dict[str, Any]], *, saturated: set[str], n: int, master_seed: int
+) -> list[dict[str, Any]]:
+    """Cap focus-lane re-drilling of saturated cells without reading outcomes.
+
+    Focus lanes are allowed to concentrate. Only overflow beyond the burst-wide cap becomes
+    coverage sampling. The random floor is never redirected.
+    """
+    budget = max(1, int(n * SATURATED_FOCUS_SHARE))
+    spent = 0
+    out: list[dict[str, Any]] = []
+    for row in plan:
+        if row["lane"] in _FOCUS_LANES and plan_region_key(row["family"], row["knobs"]) in saturated:
+            spent += 1
+            if spent > budget:
+                idx = int(row["trial_index"])
+                family, knobs, seed = _halton_trial(idx, master_seed, _RESAMPLE_STRIDE)
+                for attempt in range(2, 10):
+                    if plan_region_key(family, knobs) not in saturated:
+                        break
+                    family, knobs, seed = _halton_trial(idx, master_seed, attempt * _RESAMPLE_STRIDE)
+                out.append({
+                    "family": family, "knobs": knobs, "seed": seed, "lane": "unexplored",
+                    "trial_index": idx, "spilled_from_saturated_focus": row["lane"],
+                })
+                continue
+        out.append(row)
+    return out
+
+
+def make_trial_plan(
+    *, start_index: int, n: int, allocation: dict[str, float], focus: dict[str, Any] | None,
+    master_seed: int, saturated: set[str] | None = None, max_resample: int = 8,
+) -> list[dict[str, Any]]:
+    lanes = list(DEFAULT_ALLOCATION)
+    counts = {k: int(n * float(allocation.get(k, 0))) for k in lanes}
+    counts["unexplored"] += n - sum(counts.values())
     out, idx = [], int(start_index)
     for lane in lanes:
         for _ in range(max(0, counts[lane])):
-            if lane == "hypothesis" and focus: family, knobs, seed = _focus_trial(focus, idx, 0.10, False)
-            elif lane == "boundary" and focus: family, knobs, seed = _focus_trial(focus, idx, 0.28, False)
-            elif lane == "breaker" and focus: family, knobs, seed = _focus_trial(focus, idx, 0.20, True)
+            resampled = 0
+            if lane == "hypothesis" and focus:
+                family, knobs, seed = _focus_trial(focus, idx, 0.10, False)
+            elif lane == "boundary" and focus:
+                family, knobs, seed = _focus_trial(focus, idx, 0.28, False)
+            elif lane == "breaker" and focus:
+                family, knobs, seed = _focus_trial(focus, idx, 0.20, True)
             elif lane == "random":
-                rng = random.Random(_seed(idx+master_seed, "random")); family = lab.IC_FAMILIES[rng.randrange(len(lab.IC_FAMILIES))]; knobs = _knobs([rng.random() for _ in range(5)]); seed = rng.randrange(1_000_000)
+                rng = random.Random(_seed(idx + master_seed, "random"))
+                family = lab.IC_FAMILIES[rng.randrange(len(lab.IC_FAMILIES))]
+                knobs = _knobs([rng.random() for _ in range(5)])
+                seed = rng.randrange(1_000_000)
             else:
-                family = lab.IC_FAMILIES[(idx+master_seed) % len(lab.IC_FAMILIES)]; knobs = _knobs(_halton(idx+master_seed)); seed = _seed(idx+master_seed, "halton")
-            out.append({"family": family, "knobs": knobs, "seed": seed, "lane": lane, "trial_index": idx}); idx += 1
-    random.Random(master_seed ^ start_index ^ n).shuffle(out); return out
+                family, knobs, seed = _halton_trial(idx, master_seed)
+                if saturated and lane == "unexplored":
+                    for attempt in range(1, max(0, int(max_resample)) + 1):
+                        if plan_region_key(family, knobs) not in saturated:
+                            break
+                        family, knobs, seed = _halton_trial(idx, master_seed, attempt * _RESAMPLE_STRIDE)
+                        resampled = attempt
+            row = {"family": family, "knobs": knobs, "seed": seed, "lane": lane, "trial_index": idx}
+            if resampled:
+                row["resampled_from_saturated"] = resampled
+            out.append(row)
+            idx += 1
+    if saturated:
+        out = _cap_saturated_focus(out, saturated=saturated, n=n, master_seed=master_seed)
+    random.Random(master_seed ^ start_index ^ n).shuffle(out)
+    return out
 
 
 def _screen2d(tr: dict[str, Any]) -> dict[str, Any]:
     r = lab._screen_ic(tr["family"], tr["knobs"], int(tr["seed"]), quick=bool(tr["quick"])); return {**tr, **r}
 
 
-def run_mass_2d(*, start_index: int, n: int, workers: int, allocation: dict[str, float], focus: dict[str, Any] | None, master_seed: int, quick: bool) -> dict[str, Any]:
-    payload = [{**x, "quick": bool(quick)} for x in make_trial_plan(start_index=start_index, n=n, allocation=allocation, focus=focus, master_seed=master_seed)]
-    if workers <= 1: results = [_screen2d(x) for x in payload]
+def run_mass_2d(
+    *, start_index: int, n: int, workers: int, allocation: dict[str, float], focus: dict[str, Any] | None,
+    master_seed: int, quick: bool, saturated: set[str] | None = None,
+) -> dict[str, Any]:
+    plan = make_trial_plan(start_index=start_index, n=n, allocation=allocation, focus=focus,
+                           master_seed=master_seed, saturated=saturated)
+    payload = [{**x, "quick": bool(quick)} for x in plan]
+    if workers <= 1:
+        results = [_screen2d(x) for x in payload]
     else:
-        with ProcessPoolExecutor(max_workers=workers) as pool: results = list(pool.map(_screen2d, payload, chunksize=max(1, len(payload)//(workers*8))))
-    results.sort(key=lab._score_key, reverse=True); return {"results": results, "n": len(results), "next_index": start_index+len(payload)}
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            results = list(pool.map(_screen2d, payload, chunksize=max(1, len(payload)//(workers*8))))
+    results.sort(key=lab._score_key, reverse=True)
+    return {"results": results, "n": len(results), "next_index": start_index+len(payload),
+            "redirected_from_saturated": sum(1 for x in plan if x.get("resampled_from_saturated")),
+            "spilled_from_saturated_focus": sum(1 for x in plan if x.get("spilled_from_saturated_focus"))}
 
 
 def _native3d(tr: dict[str, Any]) -> dict[str, Any]:

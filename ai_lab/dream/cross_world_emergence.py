@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,38 @@ _REPO = Path(__file__).resolve().parents[2]
 _G001_LEDGER = _REPO / "ai_lab" / "discoveries" / "emergence_graph.json"
 _LEDGER = _REPO / "ai_lab" / "discoveries" / "cross_world_emergence.json"
 _REPORT = _REPO / "ai_lab" / "reports" / "crossworld" / "latest.json"
+
+
+def _storage_path(path: Path, *, for_write: bool = False) -> Path:
+    """Honor the process dry-run root explicitly for comparator persistence.
+
+    The generic dry-run I/O redirect remains the broad safety net, but this comparator owns two
+    durable files and therefore resolves them explicitly as a second integrity barrier.
+    """
+    root = os.environ.get("AETERNA_DRY_RUN_ROOT")
+    if not root:
+        return path
+    root_path = Path(root).resolve()
+    try:
+        resolved = path.resolve()
+        # Multi-World may already have rebound this endpoint to the scratch tree.
+        # Never wrap an already-scratch path a second time.
+        resolved.relative_to(root_path)
+        return path
+    except ValueError:
+        pass
+    except OSError:
+        return path
+    try:
+        relative = resolved.relative_to(_REPO)
+    except (OSError, ValueError):
+        return path
+    twin = root_path / relative
+    if for_write:
+        twin.parent.mkdir(parents=True, exist_ok=True)
+        return twin
+    return twin if twin.exists() else path
+
 
 OBSERVABLE_DEFINITION_VERSION = 2
 COMMON_FEATURES = (
@@ -343,6 +376,7 @@ def project_g001_fingerprint(fingerprint: str | None) -> dict[str, Any]:
 
 
 def _load_json(path: Path, fallback: Any) -> Any:
+    path = _storage_path(path, for_write=False)
     if path.exists():
         try:
             return json.loads(path.read_text())
@@ -395,8 +429,9 @@ def _update_cross_ledger(*, burst_id: str, episodes: list[dict[str, Any]]) -> di
         "observable_definition_version": OBSERVABLE_DEFINITION_VERSION,
         "note": "Shared common-observable fingerprints are research leads, not universality or identical-physics claims.",
     })
-    _LEDGER.parent.mkdir(parents=True, exist_ok=True)
-    _LEDGER.write_text(json.dumps(ledger, indent=2, ensure_ascii=False))
+    ledger_path = _storage_path(_LEDGER, for_write=True)
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text(json.dumps(ledger, indent=2, ensure_ascii=False))
     return ledger
 
 
@@ -488,6 +523,7 @@ def analyze_shadow_report(report: dict[str, Any], *, quick: bool = True, max_epi
             "defect physics, conserved quantities, microscopic laws, or claim universality."
         ),
     }
-    _REPORT.parent.mkdir(parents=True, exist_ok=True)
-    _REPORT.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
+    report_path = _storage_path(_REPORT, for_write=True)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
     return summary

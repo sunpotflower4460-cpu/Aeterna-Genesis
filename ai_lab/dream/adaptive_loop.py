@@ -18,6 +18,7 @@ from typing import Any
 
 from ai_lab import lab
 from ai_lab.dream import adaptive
+from ai_lab.dream import dry_run
 from ai_lab.dream import hourly_features as hourly
 from ai_lab.dream.events import classify_search_candidate
 from ai_lab.dream.loop import (
@@ -178,6 +179,11 @@ def run_adaptive_burst(
 
     allocation = plan_used["next_plan"]["allocation"]
     focus = plan_used.get("focus")
+
+    # Feed the coverage atlas back into planning. Saturation is sample-count-only.
+    atlas = adaptive.load_coverage()
+    atlas_before = copy.deepcopy(atlas)
+    saturated = adaptive.saturated_regions(atlas)
     history_doc = lab.load_ledger()
     history = list(history_doc.get("search_discoveries", []))
     parent_level = _parent_level()
@@ -190,6 +196,7 @@ def run_adaptive_burst(
         focus=focus,
         master_seed=master_seed,
         quick=quick,
+        saturated=saturated,
     )
     stable = [r for r in mass["results"] if r.get("score") is not None]
     selected = stable[:max(0, repro_top)]
@@ -268,12 +275,20 @@ def run_adaptive_burst(
     report["counts"]["fission_like_after_triangle"] = int(triangle_summary.get("fission_like_after_triangle", 0))
     report["counts"]["experiments"] += int(native3d.get("n", 0))
 
-    atlas = adaptive.load_coverage()
-    before = copy.deepcopy(atlas)
     adaptive.update_coverage(atlas, records=mass["results"], dimension="2d", burst_id=burst_id)
     adaptive.update_coverage(atlas, records=native3d["results"], dimension="native_3d", burst_id=burst_id)
     adaptive.save_coverage(atlas)
-    coverage = adaptive.coverage_progress(before, atlas)
+    coverage = adaptive.coverage_progress(atlas_before, atlas)
+    coverage["saturated_regions_known"] = len(saturated)
+    coverage["coverage_lane_redirected"] = int(mass.get("redirected_from_saturated", 0))
+    coverage["spilled_from_saturated_focus"] = int(mass.get("spilled_from_saturated_focus", 0))
+    coverage["saturation_threshold_trials"] = adaptive.SATURATION_TRIALS
+    report.setdefault("honesty", {}).update({
+        "coverage_saturation_reads_measured_outcome": False,
+        "coverage_saturation_changes_success_gate": False,
+        "coverage_saturation_applies_to_random_floor": False,
+        "coverage_saturation_is_planning_only": True,
+    })
     native_summary = adaptive.native_summary(native3d["results"], paired3d)
     hypotheses = adaptive.update_hypotheses(hypotheses, burst_id=burst_id, native_summary=native_summary)
     hypotheses = hourly.update_triangle_hypothesis(hypotheses, burst_id=burst_id, summary=triangle_summary)
@@ -406,13 +421,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     a = build_parser().parse_args(argv)
+    if a.no_record:
+        dry_run.activate()
     result = run_adaptive_burst(
         trials=max(0, a.trials), native3d_trials=max(0, a.native3d_trials), workers=max(1, a.workers),
         repro_top=max(0, a.repro_top), repro_seeds=max(1, a.repro_seeds),
         compare_native3d_top=max(0, a.compare_native3d_top),
         geometry_top=max(0, a.geometry_top), geometry_broad=max(0, a.geometry_broad),
         native_variants=max(0, a.native_variants), max_jobs=max(0, a.max_jobs),
-        seed=a.seed, quick=a.quick, record=not a.no_record, refresh_app=not a.no_refresh_app,
+        seed=a.seed, quick=a.quick, record=not a.no_record,
+        refresh_app=(not a.no_refresh_app and not a.no_record),
     )
     r = result["report"]
     c = r["counts"]
