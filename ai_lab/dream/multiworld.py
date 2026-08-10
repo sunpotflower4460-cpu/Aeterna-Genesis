@@ -21,6 +21,8 @@ from genesis.worlds.registry import list_worlds
 from genesis.worlds.time_horizon import HorizonPlan, default_tau_ref
 from genesis.worlds.zero_registry import list_zeros
 
+_REPO = Path(__file__).resolve().parents[2]
+
 DEFAULT_SHADOW_PAIRS = (
     ("g001-tdgl", "Z-A"),
     ("g001-tdgl", "Z-B"),
@@ -28,6 +30,28 @@ DEFAULT_SHADOW_PAIRS = (
     ("o3-vector", "Z-A"),
     ("q2-nematic", "Z-A"),
 )
+
+
+def _redirect_crossworld_storage_for_dry_run(scratch: Path) -> None:
+    """Point Cross-World's durable outputs at scratch while preserving its prior ledger as input.
+
+    The general dry-run redirect catches ordinary Path/open writes. Cross-World also keeps module-level
+    output Path objects and is a scientific accumulator, so make the two persistence endpoints explicit
+    here instead of relying on an implicit monkeypatch. The existing ledger is copied as the starting
+    history; only this process's writes go to runtime/dry-run/.
+    """
+    real_ledger = Path(cross_world_emergence._LEDGER)
+    scratch_ledger = scratch / real_ledger.resolve().relative_to(_REPO)
+    scratch_ledger.parent.mkdir(parents=True, exist_ok=True)
+    if not scratch_ledger.exists() and real_ledger.exists():
+        scratch_ledger.write_bytes(real_ledger.read_bytes())
+
+    real_report = Path(cross_world_emergence._REPORT)
+    scratch_report = scratch / real_report.resolve().relative_to(_REPO)
+    scratch_report.parent.mkdir(parents=True, exist_ok=True)
+
+    cross_world_emergence._LEDGER = scratch_ledger
+    cross_world_emergence._REPORT = scratch_report
 
 
 def _event_index(observations: list[dict[str, Any]]) -> dict[str, list[str]]:
@@ -129,7 +153,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     a = build_parser().parse_args(argv)
     if a.no_record:
-        dry_run.activate()
+        scratch = dry_run.activate()
+        _redirect_crossworld_storage_for_dry_run(scratch)
     report = build_shadow_report(seed=a.seed, quick=a.quick)
     out = write_shadow_report(report, a.output)
     print("=== Multi-World Genesis shadow ===")
