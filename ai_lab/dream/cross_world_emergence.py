@@ -40,11 +40,22 @@ def _storage_path(path: Path, *, for_write: bool = False) -> Path:
     root = os.environ.get("AETERNA_DRY_RUN_ROOT")
     if not root:
         return path
+    root_path = Path(root).resolve()
     try:
-        relative = path.resolve().relative_to(_REPO)
+        resolved = path.resolve()
+        # Multi-World may already have rebound this endpoint to the scratch tree.
+        # Never wrap an already-scratch path a second time.
+        resolved.relative_to(root_path)
+        return path
+    except ValueError:
+        pass
+    except OSError:
+        return path
+    try:
+        relative = resolved.relative_to(_REPO)
     except (OSError, ValueError):
         return path
-    twin = Path(root) / relative
+    twin = root_path / relative
     if for_write:
         twin.parent.mkdir(parents=True, exist_ok=True)
         return twin
