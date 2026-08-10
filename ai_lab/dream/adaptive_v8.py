@@ -17,6 +17,7 @@ from typing import Any
 from ai_lab.dream import adaptive
 from ai_lab.dream import adaptive_loop as v3
 from ai_lab.dream import adaptive_v7 as v7
+from ai_lab.dream import human_report
 from ai_lab.dream import hypothesis_evolution
 from ai_lab.dream import portfolio_director
 from ai_lab.dream import pure_genesis
@@ -99,9 +100,15 @@ def _enrich_easy(paths: dict[str, str], *, root_summary: dict[str, Any]) -> None
         "root_integrity_uses_permutation_quotient": True,
         "note": "宇宙・生命・脳を別レシピとして置かず、R0から関係がどこまで階層化・再帰できるかを調べます。",
     }
+    easy["human_summary"] = human_report.build_summary(easy)
+    human_md = human_report.render_markdown(easy["human_summary"])
+
     latest.write_text(json.dumps(easy, indent=2, ensure_ascii=False))
+    latest.with_suffix(".md").write_text(human_md)
     if paths.get("json"):
         Path(paths["json"]).write_text(json.dumps(easy, indent=2, ensure_ascii=False))
+    if paths.get("markdown"):
+        Path(paths["markdown"]).write_text(human_md)
 
 
 def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = (8, 12, 16),
@@ -158,6 +165,11 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
     report["honesty"]["root_sampling_seed_is_physical_parameter"] = False
     report["honesty"]["latent_relation_slot_labels_are_physical_entities"] = False
     report["honesty"]["raw_slot_graph_cycles_are_emergent_geometry"] = False
+    report["honesty"]["human_report_changes_scientific_evidence"] = False
+
+    # Reader-facing prose is generated only after all scientific/root audits.  It never replaces the
+    # technical JSON; it adds an orientation layer on top of the same evidence.
+    report["human_summary"] = human_report.build_summary(report)
 
     generated = datetime.fromisoformat(str(report["generated_at"]).replace("Z", "+00:00"))
     stamp = generated.strftime("%Y-%m-%dT%H-%M-%SZ")
