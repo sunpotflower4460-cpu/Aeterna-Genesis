@@ -1,0 +1,183 @@
+"""Tests for ai_lab/relational/substrate.py (PR-R1).
+
+Covers: ingredient axes present in both kwargs and result dict; the difference-only hard
+constraint's observable consequence (Sum(x) conservation for the pure diffusive default);
+grid's geometry_was_given honesty flag; and the PR's one central empirical question --
+does memory=off genuinely fail to produce reversal/period while memory=on produces them?
+"""
+
+import numpy as np
+import pytest
+
+from ai_lab.relational import instruments, substrate, topology
+
+
+def test_all_ingredient_axes_in_result_dict():
+    res = substrate.run(n=10, steps=20, seed=1)
+    d = res.to_dict(include_trajectory=False)
+    for axis in ("memory", "saturation", "conservation", "plasticity", "topology", "m"):
+        assert axis in d, "ingredient axis %r missing from result dict" % axis
+    assert d["memory"] == substrate.DEFAULT_MEMORY == "off"
+    assert d["saturation"] == substrate.DEFAULT_SATURATION == "none"
+    assert d["conservation"] == substrate.DEFAULT_CONSERVATION is False
+    assert d["plasticity"] == substrate.DEFAULT_PLASTICITY is False
+    assert d["topology"] == substrate.DEFAULT_TOPOLOGY == "random_regular"
+    assert d["m"] == substrate.DEFAULT_M == 1
+
+
+def test_ingredient_axes_are_constructor_kwargs():
+    # every axis must be settable, not just reported
+    res = substrate.run(
+        n=12, steps=10, seed=2, memory="on", saturation="cubic", conservation=True,
+        plasticity=True, topology="erdos_renyi", m=1,
+    )
+    d = res.to_dict(include_trajectory=False)
+    assert d["memory"] == "on"
+    assert d["saturation"] == "cubic"
+    assert d["conservation"] is True
+    assert d["plasticity"] is True
+    assert d["topology"] == "erdos_renyi"
+
+
+def test_default_topology_is_not_grid():
+    assert substrate.DEFAULT_TOPOLOGY != "grid"
+    assert topology.DEFAULT_TOPOLOGY != "grid"
+
+
+def test_grid_sets_geometry_was_given_when_selected():
+    res_default = substrate.run(n=10, steps=5, seed=1)
+    assert res_default.geometry_was_given is False
+
+    res_grid = substrate.run(n=9, steps=5, seed=1, topology="grid", topology_kwargs={"dim": 1})
+    assert res_grid.geometry_was_given is True
+    d = res_grid.to_dict(include_trajectory=False)
+    assert d["geometry_was_given"] is True
+
+
+def test_state_space_has_no_complex_or_angle_content():
+    res = substrate.run(n=8, steps=5, seed=1, m=2)
+    assert not np.iscomplexobj(res.x_traj)
+    assert res.x_traj.dtype.kind == "f"
+
+
+@pytest.mark.parametrize("topo_name", ["random_regular", "erdos_renyi", "watts_strogatz", "barabasi_albert"])
+def test_pure_diffusion_conserves_sum_x_for_symmetric_graphs(topo_name):
+    # Hard-constraint consequence: the default (conservation=False, saturation=none) rule is
+    # exactly -L@x, which sums to zero for symmetric W -- Sum(x) should stay constant even
+    # though we never told it to.
+    res = substrate.run(n=16, steps=800, dt=0.05, seed=3, epsilon=0.2, topology=topo_name,
+                         memory="off", saturation="none", conservation=False)
+    sums = res.x_traj.sum(axis=(1, 2))
+    assert np.allclose(sums, sums[0], atol=1e-6), "Sum(x) drifted under the pure diffusive default"
+
+
+def test_conservation_flag_holds_sum_x_even_with_saturation_on():
+    # saturation="cubic" alone breaks conservation; conservation=True should restore it.
+    res_off = substrate.run(n=16, steps=400, dt=0.05, seed=4, epsilon=0.3, memory="off",
+                             saturation="cubic", saturation_strength=0.2, conservation=False)
+    sums_off = res_off.x_traj.sum(axis=(1, 2))
+    assert not np.allclose(sums_off, sums_off[0], atol=1e-4), (
+        "expected saturation to break Sum(x) conservation when conservation=False"
+    )
+
+    res_on = substrate.run(n=16, steps=400, dt=0.05, seed=4, epsilon=0.3, memory="off",
+                            saturation="cubic", saturation_strength=0.2, conservation=True)
+    sums_on = res_on.x_traj.sum(axis=(1, 2))
+    assert np.allclose(sums_on, sums_on[0], atol=1e-6), (
+        "conservation=True should hold Sum(x) constant even with saturation on"
+    )
+
+
+def test_plasticity_changes_weights():
+    res = substrate.run(n=10, steps=300, dt=0.05, seed=5, epsilon=0.3, plasticity=True,
+                         plasticity_rate=0.5)
+    assert not np.allclose(res.W_initial, res.W_final)
+    assert np.all(res.W_final >= 0)
+    assert np.allclose(res.W_final, res.W_final.T)
+
+
+# ---------------------------------------------------------------------------
+# The central PR-R1 question: memory=off vs memory=on on R3(reversal)/R4(period).
+# ---------------------------------------------------------------------------
+
+def _sweep_memory_off(n_seeds=8):
+    """Fraction of (run, node) pairs where R4 finds a defined period under memory=off."""
+    total_nodes = 0
+    periodic_nodes = 0
+    for seed in range(n_seeds):
+        for topo_name in ("random_regular", "erdos_renyi", "watts_strogatz", "barabasi_albert"):
+            res = substrate.run(n=20, steps=1500, dt=0.05, seed=seed, epsilon=0.1,
+                                 memory="off", topology=topo_name)
+            readings = instruments.measure_all(res.x_traj, res.W_initial, res.dt)
+            r4 = readings["R4_period"]
+            total_nodes += res.n
+            if r4.defined:
+                periodic_nodes += r4.value["n_periodic_nodes"]
+    return periodic_nodes, total_nodes
+
+
+def _sweep_memory_on(n_seeds=8, damping=0.06):
+    """Fraction of (run, node) pairs where R4 finds a defined period under memory=on."""
+    total_nodes = 0
+    periodic_nodes = 0
+    runs_with_any = 0
+    for seed in range(n_seeds):
+        res = substrate.run(n=20, steps=2500, dt=0.05, seed=seed, epsilon=0.1,
+                             memory="on", damping=damping)
+        readings = instruments.measure_all(res.x_traj, res.W_initial, res.dt)
+        r4 = readings["R4_period"]
+        total_nodes += res.n
+        if r4.defined:
+            runs_with_any += 1
+            periodic_nodes += r4.value["n_periodic_nodes"]
+    return periodic_nodes, total_nodes, runs_with_any
+
+
+def test_memory_off_does_not_produce_sustained_period():
+    """Core PR-R1 result: pure first-order relaxation should almost never show R4-defined
+    period, and never more than a small, disclosed noise floor (see AUDIT.md Sec.3.3).
+    This is an aggregate/statistical assertion (not "exactly zero every single run") because
+    a small, investigated, and explained false-positive rate exists and should not make this
+    test flaky -- see AUDIT.md for the investigation of why that residual is not real
+    periodicity.
+    """
+    periodic, total = _sweep_memory_off(n_seeds=8)
+    frac = periodic / total
+    assert frac < 0.05, (
+        "memory=off produced defined periods on %.4f of nodes (%d/%d) -- expected a very "
+        "small residual (analytically, this should be exactly zero; see AUDIT.md Sec.3.1's "
+        "Lyapunov argument for why memory=off cannot sustain a periodic orbit)" % (frac, periodic, total)
+    )
+
+
+def test_memory_on_produces_sustained_period():
+    """Core PR-R1 result: second-order (inertial) dynamics with damping should reliably
+    produce a defined R4 period on most nodes, in most/all runs.
+    """
+    periodic, total, runs_with_any = _sweep_memory_on(n_seeds=8, damping=0.06)
+    frac = periodic / total
+    assert runs_with_any >= 7, "expected almost every memory=on run to show at least one periodic node"
+    assert frac > 0.3, (
+        "memory=on produced defined periods on only %.4f of nodes (%d/%d) -- expected a "
+        "clear majority" % (frac, periodic, total)
+    )
+
+
+def test_memory_on_vs_off_contrast_same_initial_condition_family():
+    """Same seed, same topology, same small-random-inhomogeneity initial condition family --
+    only `memory` differs. This isolates memory as the ingredient responsible for the
+    reversal/period contrast (the actual PR-R1 question), not some confound like topology or
+    seed.
+    """
+    common = dict(n=20, steps=2000, dt=0.05, seed=7, epsilon=0.1, topology="random_regular")
+    res_off = substrate.run(memory="off", **common)
+    res_on = substrate.run(memory="on", damping=0.06, **common)
+
+    r_off = instruments.measure_all(res_off.x_traj, res_off.W_initial, res_off.dt)
+    r_on = instruments.measure_all(res_on.x_traj, res_on.W_initial, res_on.dt)
+
+    off_periodic = r_off["R4_period"].value["n_periodic_nodes"] if r_off["R4_period"].defined else 0
+    on_periodic = r_on["R4_period"].value["n_periodic_nodes"] if r_on["R4_period"].defined else 0
+
+    assert on_periodic > off_periodic
+    assert on_periodic >= res_on.n // 2, "expected memory=on to make at least half the nodes periodic here"
