@@ -13,6 +13,7 @@ on:
       - 'tests/test_adaptive_dream.py'
       - 'tests/test_hypothesis_evolution.py'
       - 'tests/test_pure_genesis.py'
+      - 'tests/test_frontier_expander.py'
       - 'tests/test_hourly_discovery.py'
       - 'tests/test_strict_geometry.py'
       - 'tests/test_vortex_energy_landscape.py'
@@ -44,14 +45,14 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_dream_loop.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream v8 dry-run with Pure Genesis R0 and hypothesis evolution
+      - name: Tiny strict Adaptive Dream v8 dry-run with Pure Genesis R0, frontier expansion and hypothesis evolution
         run: |
           python -m ai_lab.dream.strict_goal_loop \
             --quick --trials 8 --native3d-trials 2 --workers 1 \
@@ -64,6 +65,7 @@ jobs:
             --unknown-followup-max-patterns 1 \
             --max-synthesized-hypotheses 2 \
             --root-law-trials 6 --root-sizes 6,8 --root-steps 20 \
+            --frontier-experiments 6 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 43
       - name: Multi-World shadow dry-run with cross-world emergence comparison
@@ -95,6 +97,8 @@ jobs:
           grep -q 'pure_genesis_r0' ai_lab/reports/easy/latest.json
           grep -q 'root_integrity_audit' ai_lab/reports/easy/latest.json
           grep -q 'permutation_quotient_enabled' ai_lab/reports/easy/latest.json
+          grep -q 'autonomous_frontier_expansion' ai_lab/reports/easy/latest.json
+          grep -q 'destination_fixed_methods_adaptive' ai_lab/reports/easy/latest.json
           grep -q '"known_F_path_is_one_reference_only": true' ai_lab/reports/emergence/latest.json
           grep -q '"mode": "shadow"' ai_lab/reports/multiworld/latest.json
           grep -q '"mode": "cross-world-open-ended-shadow"' ai_lab/reports/crossworld/latest.json
