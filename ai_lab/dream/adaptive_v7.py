@@ -163,7 +163,7 @@ def install_portfolio_routing(adaptive_module: Any) -> None:
     original = current
 
     def wrapped(*, start_index: int, n: int, workers: int, allocation: dict[str, float],
-                focus: dict[str, Any] | None, master_seed: int, quick: bool):
+                focus: dict[str, Any] | None, master_seed: int, quick: bool, **extra: Any):
         previous_portfolio = _read(_PORTFOLIO, {"version": 1, "active": []})
         route = build_portfolio_route_plan(
             n=n, allocation=allocation, ordinary_focus=focus, portfolio=previous_portfolio,
@@ -172,7 +172,7 @@ def install_portfolio_routing(adaptive_module: Any) -> None:
         if not route["enabled"]:
             result = original(
                 start_index=start_index, n=n, workers=workers, allocation=allocation, focus=focus,
-                master_seed=master_seed, quick=quick,
+                master_seed=master_seed, quick=quick, **extra,
             )
             _LAST_ROUTING = {
                 **route,
@@ -182,6 +182,8 @@ def install_portfolio_routing(adaptive_module: Any) -> None:
             return result
 
         combined: list[dict[str, Any]] = []
+        redirected = 0
+        spilled = 0
         cursor = int(start_index)
         executed_blocks = []
         for block in route["blocks"]:
@@ -197,7 +199,10 @@ def install_portfolio_routing(adaptive_module: Any) -> None:
                 focus=block.get("focus"),
                 master_seed=master_seed,
                 quick=quick,
+                **extra,
             )
+            redirected += int(sub.get("redirected_from_saturated", 0))
+            spilled += int(sub.get("spilled_from_saturated_focus", 0))
             rows = list(sub.get("results") or [])
             for row in rows:
                 row["portfolio_hypothesis_id"] = block.get("hypothesis_id")
@@ -218,7 +223,8 @@ def install_portfolio_routing(adaptive_module: Any) -> None:
             "executed_blocks": executed_blocks,
             "fallback_to_v6_single_focus": False,
         }
-        return {"results": combined, "n": len(combined), "next_index": int(start_index) + max(0, int(n))}
+        return {"results": combined, "n": len(combined), "next_index": int(start_index) + max(0, int(n)),
+                "redirected_from_saturated": redirected, "spilled_from_saturated_focus": spilled}
 
     wrapped._v7_portfolio_routing = True
     wrapped._v7_original = original
