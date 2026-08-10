@@ -27,6 +27,18 @@ export interface DreamEvent {
   view_preset_id: string | null
 }
 
+export interface HumanResearchSummary {
+  version: number
+  purpose: string
+  destination: string
+  current_position: string
+  achieved_this_time: string[]
+  not_achieved_yet: string[]
+  next_questions: string[]
+  reading_note: string
+  technical_details_preserved_elsewhere: boolean
+}
+
 export interface DreamReport {
   report_version: number
   burst_id: string
@@ -49,6 +61,7 @@ export interface DreamReport {
   headline: DreamEvent | null
   events: DreamEvent[]
   honesty: Record<string, boolean>
+  human_summary?: HumanResearchSummary
 }
 
 export interface ViewPreset {
