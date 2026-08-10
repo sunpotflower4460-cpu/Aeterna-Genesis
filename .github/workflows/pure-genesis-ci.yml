@@ -6,6 +6,7 @@ on:
       - 'ai_lab/dream/why_gate.py'
       - 'ai_lab/dream/pure_genesis.py'
       - 'ai_lab/dream/root_integrity.py'
+      - 'ai_lab/dream/frontier_expander.py'
       - 'ai_lab/dream/human_report.py'
       - 'ai_lab/dream/report.py'
       - 'ai_lab/dream/adaptive_v8.py'
@@ -15,6 +16,7 @@ on:
       - 'docs/GENESIS_ROOT.md'
       - 'docs/HUMAN_REPORTING.md'
       - 'tests/test_pure_genesis.py'
+      - 'tests/test_frontier_expander.py'
       - 'tests/test_human_report.py'
       - '.github/workflows/pure-genesis-ci.yml'
   workflow_dispatch:
@@ -33,8 +35,8 @@ jobs:
           python-version: '3.11'
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Pure Genesis, reporting and portfolio tests
-        run: pytest -q tests/test_pure_genesis.py tests/test_human_report.py tests/test_hypothesis_evolution.py
+      - name: Pure Genesis, frontier expansion, reporting and portfolio tests
+        run: pytest -q tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_human_report.py tests/test_hypothesis_evolution.py
       - name: Tiny R0 law search with integrity audit
         run: |
           python - <<'PY'
