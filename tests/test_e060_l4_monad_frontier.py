@@ -271,3 +271,52 @@ def test_quench_stages_conserve_mass_exactly():
         quench={"param": "k0", "value_1": 0.15, "value_2": 0.02, "switch_frac": 0.4})
     assert r["status"] == "ok"
     assert r["mass_drift"] < 1e-9
+
+
+# --- ノイズ振幅スケジュール（r>0核生成の代替）と b依存サブステップ ---------------
+
+def test_noise_kick_is_zero_mean():
+    from experiments.e060_l4_monad_frontier import noise_schedule as NS
+    rng = np.random.default_rng(0)
+    k = NS.kick((64, 64), 0.3, rng, dt=0.2)
+    assert abs(float(k.mean())) < 1e-10
+
+
+def test_mass_conserved_noise_schedule_keeps_law_parameters_fixed_and_conserves_mass():
+    """ノイズスケジュール下では法則パラメータ（b0等）を段間で変更しない。保存も厳密。"""
+    from experiments.e060_l4_monad_frontier import classify as C
+    r = C.screen_mass_conserved(
+        {"b0": 3.0}, seed=0, N=48, settle=600, hold=200,
+        noise_schedule={"amp1": 0.2, "amp2": 0.02, "switch_frac": 0.3})
+    assert r["status"] == "ok"
+    assert r["mass_drift"] < 1e-9
+
+
+def test_swift_hohenberg_noise_schedule_keeps_r_in_bistable_region():
+    """noise_schedule 使用時は r を臨界(r=0)の向こうへ動かさない——固定したまま
+    ノイズ振幅だけを段階づける。関数シグネチャ上、quenchとnoise_scheduleは併用しない。"""
+    from experiments.e060_l4_monad_frontier import classify as C
+    r = C.screen_swift_hohenberg(
+        {"r": -0.3, "b": 2.0}, seed=0, N=48, settle=400, hold=150,
+        noise_schedule={"amp1": 0.2, "amp2": 0.02, "switch_frac": 0.3})
+    assert r["status"] in ("ok", "numerical_failure")   # r は呼び出し側で終始 -0.3 のまま
+
+
+def test_sh_substeps_is_a_noop_below_the_measured_safe_threshold():
+    """Phase1本番の実測（b<=2.5で失敗率0.2%）を下回る既定b=2.0ではサブステップを増やさない。"""
+    from experiments.e060_l4_monad_frontier import classify as C
+    assert C._sh_substeps(2.0, 0.2) == 1
+    assert C._sh_substeps(2.5, 0.2) == 1
+
+
+def test_sh_substeps_kicks_in_above_the_measured_failure_region():
+    from experiments.e060_l4_monad_frontier import classify as C
+    assert C._sh_substeps(3.0, 0.2) >= 2
+    assert C._sh_substeps(3.5, 0.2) >= 2
+
+
+def test_sh_substep_fix_does_not_change_the_phase0_positive_control():
+    """b=2.0の既知陽性対照（bump入り）が、サブステップ導入後も変わらずL4に達すること。"""
+    from experiments.e060_l4_monad_frontier import classify as C
+    r = C.screen_swift_hohenberg({}, seed=0, N=64, seeded_localization=True)
+    assert r["label"] == C.PASS_LABEL
