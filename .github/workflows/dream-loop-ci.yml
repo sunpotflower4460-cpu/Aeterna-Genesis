@@ -11,6 +11,8 @@ on:
       - 'genesis/diagnostics/**'
       - 'tests/test_dream_loop.py'
       - 'tests/test_dream_state_recovery.py'
+      - 'tests/test_ceiling_and_saturation.py'
+      - 'tests/test_dry_run_and_archive.py'
       - 'tests/test_adaptive_dream.py'
       - 'tests/test_hypothesis_evolution.py'
       - 'tests/test_pure_genesis.py'
@@ -46,7 +48,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
@@ -70,40 +72,50 @@ jobs:
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 43
       - name: Multi-World shadow dry-run with cross-world emergence comparison
-        run: python -m ai_lab.dream.multiworld --quick --seed 44 --output ai_lab/reports/multiworld/latest.json
-      - name: Easy, emergence, cross-world, Pure Genesis and Multi-World reports were produced
+        run: python -m ai_lab.dream.multiworld --quick --seed 44 --no-record --output ai_lab/reports/multiworld/latest.json
+      - name: A dry run must not touch the working tree
         run: |
-          test -f ai_lab/reports/easy/latest.json
-          test -f ai_lab/reports/easy/latest.md
-          test -f ai_lab/reports/multiworld/latest.json
-          test -f ai_lab/reports/emergence/latest.json
-          test -f ai_lab/reports/crossworld/latest.json
-          test -f ai_lab/discoveries/promising_leads.json
-          test -f ai_lab/discoveries/fission_path_leads.json
-          test -f ai_lab/discoveries/deep_time_fission.json
-          test -f ai_lab/discoveries/emergence_graph.json
-          test -f ai_lab/discoveries/cross_world_emergence.json
-          test -f ai_lab/discoveries/question_critic.json
-          test -f ai_lab/discoveries/unknown_followups.json
-          grep -q 'promising_followup' ai_lab/reports/easy/latest.json
-          grep -q 'zero_to_fission_path' ai_lab/reports/easy/latest.json
-          grep -q 'deep_time_followup' ai_lab/reports/easy/latest.json
-          grep -q 'open_ended_emergence' ai_lab/reports/easy/latest.json
-          grep -q 'unknown_pattern_followup' ai_lab/reports/easy/latest.json
-          grep -q 'question_critic' ai_lab/reports/easy/latest.json
-          grep -q 'local_vortex_energy_question' ai_lab/reports/easy/latest.json
-          grep -q 'hypothesis_evolution_v7' ai_lab/reports/easy/latest.json
-          grep -q 'goal_mission_v7' ai_lab/reports/easy/latest.json
-          grep -q 'hypothesis_portfolio_v7' ai_lab/reports/easy/latest.json
-          grep -q 'pure_genesis_r0' ai_lab/reports/easy/latest.json
-          grep -q 'root_integrity_audit' ai_lab/reports/easy/latest.json
-          grep -q 'permutation_quotient_enabled' ai_lab/reports/easy/latest.json
-          grep -q 'autonomous_frontier_expansion' ai_lab/reports/easy/latest.json
-          grep -q 'destination_fixed_methods_adaptive' ai_lab/reports/easy/latest.json
-          grep -q '"known_F_path_is_one_reference_only": true' ai_lab/reports/emergence/latest.json
-          grep -q '"mode": "shadow"' ai_lab/reports/multiworld/latest.json
-          grep -q '"mode": "cross-world-open-ended-shadow"' ai_lab/reports/crossworld/latest.json
-          grep -q '"universality_claim": false' ai_lab/reports/crossworld/latest.json
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::--no-record wrote into the repository; a dry run must stay in runtime/dry-run/"
+            exit 1
+          fi
+          echo "Dry runs left the working tree clean."
+      - name: Easy, emergence, cross-world, Pure Genesis and Multi-World reports were produced
+        env:
+          DRY: runtime/dry-run/latest
+        run: |
+          test -f $DRY/ai_lab/reports/easy/latest.json
+          test -f $DRY/ai_lab/reports/easy/latest.md
+          test -f $DRY/ai_lab/reports/multiworld/latest.json
+          test -f $DRY/ai_lab/reports/emergence/latest.json
+          test -f $DRY/ai_lab/reports/crossworld/latest.json
+          test -f $DRY/ai_lab/discoveries/promising_leads.json
+          test -f $DRY/ai_lab/discoveries/fission_path_leads.json
+          test -f $DRY/ai_lab/discoveries/deep_time_fission.json
+          test -f $DRY/ai_lab/discoveries/emergence_graph.json
+          test -f $DRY/ai_lab/discoveries/cross_world_emergence.json
+          test -f $DRY/ai_lab/discoveries/question_critic.json
+          test -f $DRY/ai_lab/discoveries/unknown_followups.json
+          grep -q 'promising_followup' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'zero_to_fission_path' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'deep_time_followup' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'open_ended_emergence' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'unknown_pattern_followup' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'question_critic' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'local_vortex_energy_question' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'hypothesis_evolution_v7' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'goal_mission_v7' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'hypothesis_portfolio_v7' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'pure_genesis_r0' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'root_integrity_audit' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'permutation_quotient_enabled' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'autonomous_frontier_expansion' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'destination_fixed_methods_adaptive' $DRY/ai_lab/reports/easy/latest.json
+          grep -q '"known_F_path_is_one_reference_only": true' $DRY/ai_lab/reports/emergence/latest.json
+          grep -q '"mode": "shadow"' $DRY/ai_lab/reports/multiworld/latest.json
+          grep -q '"mode": "cross-world-open-ended-shadow"' $DRY/ai_lab/reports/crossworld/latest.json
+          grep -q '"universality_claim": false' $DRY/ai_lab/reports/crossworld/latest.json
 
   observatory:
     runs-on: ubuntu-latest
