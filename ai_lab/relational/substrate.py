@@ -49,6 +49,8 @@ DEFAULT_CONSERVATION = False        # off by default
 DEFAULT_PLASTICITY = False          # off by default
 DEFAULT_TOPOLOGY = topo.DEFAULT_TOPOLOGY  # "random_regular" -- never "grid" by default
 DEFAULT_M = 1                       # real dimension of node state, default minimal
+DEFAULT_ASYMMETRY = False           # off by default -- w_ij == w_ji (PR-R1.5, see _asymmetrize)
+DEFAULT_ASYMMETRY_STRENGTH = 0.5    # only used when asymmetry=True; kept < 1 so weights stay >= 0
 
 def _default_random_regular_degree(n: int) -> int:
     """Pick a degree <= min(4, n-1). Any value here works: if n is even, n*degree is even
@@ -83,8 +85,59 @@ def initial_state(n: int, m: int, epsilon: float, seed: Optional[int]) -> np.nda
     return rng.normal(loc=0.0, scale=epsilon, size=(n, m))
 
 
+def _asymmetrize(W: np.ndarray, strength: float, seed: Optional[int]) -> np.ndarray:
+    """PR-R1.5: break w_ij == w_ji without changing which edges exist or the per-edge
+    AVERAGE coupling (w_ij + w_ji)/2 == the original symmetric weight.
+
+    Reasoning (per review): the memory=off no-periodicity proof (Sec.3.1 of AUDIT.md) needs
+    W symmetric -- that is what makes dx/dt = -Lx a gradient flow with a strictly-decreasing
+    Lyapunov function. An asymmetric W makes -L a non-symmetric operator; it is no longer, in
+    general, -grad(V) for any scalar V, so the proof simply does not apply and periodicity
+    (e.g. from a directed inhibition loop) is not analytically excluded. This is why the
+    correct question PR-R1 answered is narrower than first stated: "does memory=off fail to
+    oscillate WHEN W IS SYMMETRIC", not "...for any relation".
+
+    Construction: for each edge (i<j) with base weight w = W0[i,j] = W0[j,i], draw one scalar
+    chi_ij ~ Uniform(-1, 1) (a magnitude given per edge, like the initial epsilon -- no
+    direction/shape/position is placed) and set
+        w_ij' = w * (1 + strength * chi_ij)
+        w_ji' = w * (1 - strength * chi_ij)
+    so edge EXISTENCE (the topology-generation rule's output) is untouched, and the pair's
+    average coupling is unchanged -- only how much flows i->j vs j->i differs. `strength` is
+    clamped to [0, 1) by the caller-facing default (0.5) so both signs stay >= 0 without
+    clipping in the typical case; a clip is applied anyway as a numerical safety net (spec's
+    `w_ij >= 0` constraint), not as a shape/direction choice.
+
+    A dedicated RNG stream (seed offset, disjoint from `initial_state`'s stream) is used so
+    turning asymmetry on/off does not change the initial condition draw for a given seed.
+    """
+    if not strength or strength <= 0:
+        return W.copy()
+    n = W.shape[0]
+    rng = np.random.default_rng(None if seed is None else int(seed) + 97_003)
+    chi = rng.uniform(-1.0, 1.0, size=(n, n))
+    chi = np.triu(chi, k=1)
+    chi = chi - chi.T                      # antisymmetric: chi_ji = -chi_ij
+    Wa = W * (1.0 + strength * chi)
+    Wa = np.clip(Wa, 0.0, None)
+    np.fill_diagonal(Wa, 0.0)
+    return Wa * (W > 0)                    # never create an edge that did not already exist
+
+
+def is_symmetric(W: np.ndarray, atol: float = 1e-12) -> bool:
+    """Whether the coupling actually used for dynamics is symmetric this run -- the exact
+    precondition of the Sec.3.1 Lyapunov argument. Computed from the matrix, not asserted."""
+    return bool(np.allclose(W, W.T, atol=atol))
+
+
 def _laplacian_diffusion(x: np.ndarray, W: np.ndarray) -> np.ndarray:
-    """Sum_j w_ij (x_j - x_i) for every node i, i.e. -L @ x. Difference-only, no absolute term."""
+    """Sum_j w_ij (x_j - x_i) for every node i, i.e. -L @ x. Difference-only, no absolute term.
+
+    Valid for symmetric OR asymmetric W (row-wise out-degree deg_i = sum_j w_ij either way).
+    When W is symmetric this is the standard graph Laplacian and the flow is gradient
+    (Sec.3.1 of AUDIT.md); when W is asymmetric (asymmetry=True) this is a generalized,
+    non-symmetric difference operator and the gradient-flow argument no longer applies.
+    """
     deg = W.sum(axis=1)
     return (W @ x) - deg[:, None] * x
 
@@ -120,6 +173,12 @@ def _plasticity_step(x: np.ndarray, W: np.ndarray, mask: np.ndarray, eta: float,
 
     Depends only on the pairwise difference and the current weight -- never on an absolute
     node value or a global aggregate.
+
+    KNOWN INTERACTION (not fixed, out of PR-R1.5 scope): this step forces W back to exact
+    symmetry every call. Combined with asymmetry=True, plasticity=True would erase the
+    asymmetry after the first plastic update. The memory=off x asymmetry=on measurement this
+    PR reports uses plasticity=False (the default), so the interaction does not affect it;
+    flagged here so a future PR does not rediscover it the hard way.
     """
     diff = x[None, :, :] - x[:, None, :]          # diff[i, j] = x_j - x_i
     sq = np.sum(diff ** 2, axis=-1)                # sum over the m state dimensions
@@ -175,6 +234,9 @@ class SubstrateResult:
     topology: str
     topology_kwargs: Dict[str, Any]
     geometry_was_given: bool
+    asymmetry: bool
+    asymmetry_strength: float
+    w_is_symmetric: bool
 
     def to_dict(self, include_trajectory: bool = True) -> Dict[str, Any]:
         d: Dict[str, Any] = {
@@ -195,6 +257,11 @@ class SubstrateResult:
             "topology": self.topology,
             "topology_kwargs": self.topology_kwargs,
             "geometry_was_given": self.geometry_was_given,
+            "asymmetry": self.asymmetry,
+            "asymmetry_strength": self.asymmetry_strength,
+            # computed diagnostic (not an input): whether the Sec.3.1 Lyapunov/no-period
+            # proof's precondition (W symmetric) actually held this run.
+            "w_is_symmetric": self.w_is_symmetric,
             "sum_x_initial": float(self.x_traj[0].sum()),
             "sum_x_final": float(self.x_traj[-1].sum()),
         }
@@ -221,6 +288,8 @@ def run(
     plasticity_rate: float = 0.02,
     m: int = DEFAULT_M,
     damping: float = 0.08,
+    asymmetry: bool = DEFAULT_ASYMMETRY,
+    asymmetry_strength: float = DEFAULT_ASYMMETRY_STRENGTH,
 ) -> SubstrateResult:
     """Run the R-layer substrate. Every ingredient axis defaults to its minimal side.
 
@@ -229,6 +298,12 @@ def run(
                   dx_i/dt = v_i
     where g(x_i) = -saturation_strength * x_i^3 when saturation="cubic" (spec Sec.4.2's
     "a*g(x_i)" term, with a folded into saturation_strength -- see `_saturation`), else 0.
+
+    asymmetry=True (PR-R1.5, off by default): w_ij != w_ji is allowed (see `_asymmetrize`).
+    This does not change which edges exist, only the split of each edge's coupling between
+    its two directions. It matters because the memory=off no-periodicity argument (AUDIT.md
+    Sec.3.1) requires W symmetric; with asymmetry on, that argument's precondition no longer
+    holds, and memory=off x asymmetry=on becomes a genuinely open question, not a corollary.
     """
     if memory not in ("off", "on"):
         raise ValueError("memory must be 'off' or 'on'")
@@ -240,7 +315,7 @@ def run(
     tk = dict(topology_kwargs) if topology_kwargs else _default_topology_kwargs(topology, n)
     W0 = topo.build_topology(topology, n, seed=seed, **tk)
     mask = (W0 > 0).astype(float)
-    W = W0.copy()
+    W = _asymmetrize(W0, asymmetry_strength, seed) if asymmetry else W0.copy()
 
     x0 = initial_state(n, m, epsilon, seed)
     x = x0.copy()
@@ -301,4 +376,7 @@ def run(
         topology=topology,
         topology_kwargs=tk,
         geometry_was_given=topo.geometry_was_given(topology),
+        asymmetry=asymmetry,
+        asymmetry_strength=asymmetry_strength if asymmetry else 0.0,
+        w_is_symmetric=is_symmetric(W),   # the coupling actually used for dynamics
     )

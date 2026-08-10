@@ -181,3 +181,45 @@ def test_memory_on_vs_off_contrast_same_initial_condition_family():
 
     assert on_periodic > off_periodic
     assert on_periodic >= res_on.n // 2, "expected memory=on to make at least half the nodes periodic here"
+
+
+# --- PR-R1.5: asymmetry axis ---------------------------------------------------------------
+
+def test_asymmetry_default_off_keeps_w_symmetric():
+    r = substrate.run(n=12, steps=50, seed=1, memory="off", asymmetry=False)
+    assert r.asymmetry is False
+    assert r.asymmetry_strength == 0.0
+    assert r.w_is_symmetric is True
+    assert np.allclose(r.W_final, r.W_final.T)
+
+
+def test_asymmetry_on_breaks_symmetry_but_preserves_edges_and_average():
+    r0 = substrate.run(n=12, steps=50, seed=3, memory="off", asymmetry=False)
+    r1 = substrate.run(n=12, steps=50, seed=3, memory="off", asymmetry=True, asymmetry_strength=0.6)
+    assert r1.asymmetry is True
+    assert r1.asymmetry_strength == 0.6
+    assert r1.w_is_symmetric is False
+    assert not np.allclose(r1.W_final, r1.W_final.T)
+    # edge existence unchanged
+    base_edges = r0.W_initial > 0
+    asym_edges = (r1.W_final > 0) | (r1.W_final.T > 0)
+    assert np.array_equal(base_edges, asym_edges)
+    # per-edge average preserved (average-preserving split, not a magnitude change)
+    avg = 0.5 * (r1.W_final + r1.W_final.T)
+    assert np.allclose(avg[base_edges], r0.W_initial[base_edges])
+    # weights stay non-negative
+    assert (r1.W_final >= 0).all()
+
+
+def test_asymmetry_does_not_change_initial_condition_for_same_seed():
+    r0 = substrate.run(n=12, steps=1, seed=5, memory="off", asymmetry=False)
+    r1 = substrate.run(n=12, steps=1, seed=5, memory="off", asymmetry=True, asymmetry_strength=0.5)
+    assert np.allclose(r0.x_traj[0], r1.x_traj[0])
+
+
+def test_asymmetry_is_present_in_kwargs_and_result_dict():
+    r = substrate.run(n=10, steps=20, seed=0, asymmetry=True, asymmetry_strength=0.4)
+    d = r.to_dict(include_trajectory=False)
+    assert d["asymmetry"] is True
+    assert d["asymmetry_strength"] == 0.4
+    assert d["w_is_symmetric"] is False

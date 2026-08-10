@@ -153,3 +153,57 @@ def test_measure_all_returns_all_four_readings_in_order():
     assert list(out.keys()) == ["R1_difference", "R2_direction", "R3_reversal", "R4_period"]
     for reading in out.values():
         assert isinstance(reading, instruments.Reading)
+
+
+# ---------------------------------------------------------------------------
+# PR-R1.5: envelope trend (sustained / decaying / growing)
+# ---------------------------------------------------------------------------
+
+def test_envelope_trend_positive_controls_on_synthetic_signals():
+    t = np.linspace(0, 40, 2000)
+    sustained = np.sin(2 * np.pi * t / 3.0)
+    decaying = np.exp(-0.05 * t) * np.sin(2 * np.pi * t / 3.0)
+    growing = np.exp(0.02 * t) * np.sin(2 * np.pi * t / 3.0)
+
+    s = instruments._envelope_trend(sustained, trim=50)
+    d = instruments._envelope_trend(decaying, trim=50)
+    g = instruments._envelope_trend(growing, trim=50)
+
+    assert s["classification"] == "sustained" and s["sustained"] is True
+    assert d["classification"] == "decaying" and d["sustained"] is False
+    assert g["classification"] == "growing" and g["sustained"] is False
+    assert d["ratio"] < 1.0 - instruments._ENVELOPE_SUSTAIN_TOL
+    assert g["ratio"] > 1.0 + instruments._ENVELOPE_SUSTAIN_TOL
+
+
+def test_period_carries_sustained_flag_whenever_defined():
+    """R4 must always carry `sustained` alongside `defined` -- a decaying transient must
+    not be reportable as if it were structurally equivalent to genuine periodic structure."""
+    res = substrate.run(n=24, steps=3000, dt=0.05, seed=7, memory="on", damping=0.08)
+    r4 = instruments.period(res.x_traj, res.dt)
+    assert r4.defined is True   # a period WAS detected (autocorrelation peak found)
+    for entry in r4.value["per_node"]:
+        assert "sustained" in entry
+        if entry["defined"]:
+            assert isinstance(entry["sustained"], bool)
+            assert "envelope" in entry
+
+
+def test_period_sustained_positive_control_undamped_oscillator():
+    """memory=on with damping=0.0 (no dissipation, no external input) is a genuinely
+    conservative system -- the sustained detector must actually fire here, confirming it
+    is not simply always reporting 'decaying'."""
+    res = substrate.run(n=24, steps=3000, dt=0.05, seed=7, memory="on", damping=0.0)
+    r4 = instruments.period(res.x_traj, res.dt)
+    assert r4.value["any_sustained"] is True
+    assert r4.value["n_sustained_periodic_nodes"] > 0
+
+
+def test_reversal_carries_per_node_envelope():
+    res = substrate.run(n=12, steps=2000, dt=0.05, seed=2, memory="on", damping=0.05)
+    r3 = instruments.reversal(res.x_traj)
+    assert r3.defined is True
+    envs = r3.value["per_node_envelope"]
+    assert len(envs) == 12
+    for e in envs:
+        assert e["classification"] in ("sustained", "decaying", "growing", "undefined")

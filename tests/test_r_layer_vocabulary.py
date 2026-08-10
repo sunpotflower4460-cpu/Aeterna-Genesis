@@ -105,3 +105,30 @@ def test_r4_uses_rate_key_not_frequency_key():
     assert "rate" in node0
     assert "frequency" not in node0
     assert node0["rate"] is not None
+
+
+def test_run_output_with_asymmetry_still_has_no_forbidden_words():
+    """PR-R1.5: the new asymmetry axis and envelope (sustained/decaying/growing) output
+    must not leak any forbidden word either -- exercises _envelope_trend's actual JSON."""
+    args = _parser().parse_args([
+        "--n", "16", "--steps", "1500", "--seed", "2", "--memory", "off",
+        "--asymmetry", "--asymmetry-strength", "0.6",
+    ])
+    result = build_result(args)
+    text = json.dumps(result, ensure_ascii=False)
+    hits = _scan(text)
+    assert not hits, "forbidden word(s) %r found in R-layer result JSON (asymmetry=True)" % hits
+
+
+def test_run_output_undamped_sustained_still_has_no_forbidden_words():
+    """Exercises the sustained=True path (envelope classification 'sustained') specifically,
+    since 'phase' is exactly the kind of word an envelope/oscillation description could leak."""
+    args = _parser().parse_args([
+        "--n", "16", "--steps", "3000", "--seed", "7", "--memory", "on", "--damping", "0.0",
+    ])
+    result = build_result(args)
+    r4 = result["instruments"]["R4_period"]
+    assert r4["value"]["any_sustained"] is True, "test setup should exercise the sustained=True path"
+    text = json.dumps(result, ensure_ascii=False)
+    hits = _scan(text)
+    assert not hits, "forbidden word(s) %r found in R-layer result JSON (sustained path)" % hits

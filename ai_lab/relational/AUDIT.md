@@ -1,13 +1,16 @@
-# ai_lab/relational (R-layer) -- PR-R1 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 AUDIT
 
 ```yaml
 id: relational_r1
-role: E                     # candidate Emergence; see "Role & STATUS" below for the honest caveat
-claim_tier: measured        # for the memory=off vs memory=on R3/R4 contrast specifically
+role: E                     # symmetric-W no-sustained-period side only; see Sec.8/9 for the honest split
+claim_tier: measured        # for R1-R4 as measurement instruments; the memory/asymmetry
+                             # CONTRAST claim is now scoped (Sec.9) to "sustained oscillation
+                             # was not found in any configuration tried, except an undamped
+                             # positive control" -- see Sec.9.3
 target_encoded: false
-known_match: "N/A -- first measurement. Qualitatively consistent with the textbook fact that
-  gradient/relaxation flows admit no limit cycles while damped 2nd-order systems generically
-  ring; not a new mathematical result, but not previously measured in this graph-relational,
+known_match: "N/A -- first measurement. The symmetric-W memory=off result is qualitatively
+  consistent with the textbook fact that gradient/relaxation flows admit no limit cycles;
+  not a new mathematical result, but not previously measured in this graph-relational,
   coordinate-free form in this repo."
 open_issues:
   - "R3 (reversal) needed two real bugfixes during PR-R1's own test-writing, both found by
@@ -17,8 +20,16 @@ open_issues:
      biases the average there and could otherwise flag a spurious reversal for even a
      perfectly monotone series. After both fixes, the R4 false-positive rate measured under
      memory=off (Sec.3.3) dropped from 4/5760 node-checks (0.07%) to 0/5760 in the same
-     sweep. See 'The memory=off false positives' below for why this is a legitimate
-     instrument fix, not gate-tuning toward a preferred outcome."
+     sweep. See Sec.3.3 for why this is a legitimate instrument fix (an independent analytic
+     proof, Sec.3.1, predicted exactly zero before any sweep was run), not gate-tuning toward
+     a preferred outcome."
+  - "PR-R1.5 (Sec.9): the memory=off no-period proof requires W symmetric; the question was
+     narrower than PR-R1 first stated. Measured memory=off x asymmetry=on (360 runs / 8640
+     node-checks): 0 periods found, sustained or not -- narrows but does not close the
+     review's non-reciprocity hypothesis. Separately, re-checking PR-R1's own memory=on sweep
+     with the new sustained/decaying instrument found 0/1200 previously-'periodic'
+     node-checks are actually sustained -- all are decaying transients. This corrects, not
+     just nuances, Sec.3.2's original headline; see Sec.9.2."
   - "ai_lab/dream/ (human_report.py, ceiling_ladder.py, multiworld.py, dry_run.py) does not
      exist in this repository. The spec's Sec.8.1 request to absorb
      ceiling_ladder.instrument_max_level() into instrument_audit.py was therefore skipped,
@@ -27,6 +38,10 @@ open_issues:
      before measuring; this is adequate for PR-R1's m=1 default but is a deliberately
      unrefined placeholder for m>=2 (rotational-symmetry auditing is explicitly PR-R2 scope,
      spec Sec.4.5)."
+  - "asymmetry=True + plasticity=True is a known, undesigned interaction:
+     _plasticity_step re-symmetrizes W every call, so plasticity would erase asymmetry after
+     one step. Not fixed (out of PR-R1.5 scope); the reported asymmetry sweep uses
+     plasticity=False (the default)."
 ```
 
 ---
@@ -199,8 +214,29 @@ and this is the investigation and the resulting fix:
   finite sweep could ever show a short-lag artifact again; Sec.3.1's Lyapunov argument is the
   actual guarantee, and the instrument now matches it exactly in every case checked.
 
-**Conclusion on the one question PR-R1 must answer:** `memory=off` does not produce genuine,
-sustained reversal/period; `memory=on` does, robustly and on a large fraction of nodes.
+**Why the bugfixes are legitimate and not post-hoc gate-tuning (stated explicitly, per
+review):** the reason to trust "0/5760 after the fixes" rather than suspect it was tuned to
+produce a preferred number is that **the target value was never free to choose** -- Sec.3.1's
+Lyapunov argument independently and analytically predicts EXACTLY ZERO sustained periods
+under `memory=off` (symmetric W), derived without reference to this instrument, this sweep,
+or this codebase at all. The three fixes were each individually justified against evidence
+that had nothing to do with that target: (1) and (2) were caught and fixed using a plain
+two-node monotone-series unit test that never touches the memory question; (3)'s threshold
+was calibrated against `memory=off`'s own already-known-zero ground truth specifically
+because that ground truth exists independently of the instrument being calibrated. What
+makes this a bugfix and not gate-tuning is that we had an external, instrument-independent
+answer (zero) BEFORE writing R3/R4, and fixing real defects brought the measurement into
+agreement with that pre-existing answer -- the opposite of adjusting a threshold until an
+observed number matches a preference formed after seeing the data. A tuning exercise with no
+independent target to check against would not have this property; this one does.
+
+**Conclusion on the one question PR-R1 must answer, corrected in scope (see PR-R1.5,
+Sec.9):** `memory=off` does not produce genuine, sustained reversal/period **when W is
+symmetric** -- Sec.3.1's proof requires that precondition, and PR-R1.5 (Sec.9 below) found
+that removing it changes the answerable question. Separately, PR-R1.5 also found that
+`memory=on`'s own "period found" claim above needs a caveat: see Sec.9.2 -- none of the
+605/1200 node-checks reported here are SUSTAINED oscillation once amplitude-envelope
+disambiguation exists.
 
 ---
 
@@ -287,14 +323,149 @@ so a later CI check can grep it mechanically, per spec Sec.8's requirement.
 
 ## 8. Role & STATUS (honest, not inflated)
 
-Per the current LAW.md role system (E/V/S/N/F/Q), this PR's central result -- "memory=off
-does not produce sustained period; memory=on does" -- most resembles a candidate **E**
-(faithful emergence: the rule doesn't name the result, the initial condition is generic, and
-the negative side has an exact analytic proof) rather than **V** (no established external
-reference value exists to validate the memory=on numbers against) or **S** (no external
-oracle or hand-wired switch is involved). It is explicitly **not yet GREEN**: `STATUS:
-YELLOW` in `run.py`'s header, because (a) item 4 of the 7-audit can't be fully assessed with
-only R1-R4 built, and (b) R4 carries a disclosed, nonzero (not eliminated) false-positive
-rate. Promotion to GREEN, if warranted, should happen after R5-R8 exist (PR-R2) and the
-companion-phenomena question (item 4) can actually be answered, not by re-tuning R4's
-threshold until the residual disappears.
+Per the current LAW.md role system (E/V/S/N/F/Q), this PR's central result -- corrected in
+scope by PR-R1.5 (Sec.9) to **"memory=off does not produce sustained period when W is
+symmetric (proved); no configuration tried so far, including memory=on and memory=off with
+asymmetric W, has been shown to produce SUSTAINED oscillation -- everything found is either
+undetected or a decaying transient, except a damping=0 positive control that exists only to
+validate the instrument itself"** -- most resembles a candidate **E** for the symmetric
+no-period side (exact analytic proof, generic IC) and **N** (honest negative result) for
+`memory=on`'s and `memory=off x asymmetry=on`'s sustained-oscillation question specifically,
+rather than **V** (no external reference value exists) or **S** (no oracle/hand-wired
+switch). It is explicitly **not yet GREEN**: `STATUS: YELLOW` in `run.py`'s header, because
+(a) item 4 of the 7-audit can't be fully assessed with only R1-R4 built, (b) R4 carries a
+disclosed, nonzero (not eliminated) false-positive rate, and (c) per Sec.9, the sustained-
+oscillation question is now open rather than closed either way. Promotion to GREEN, if
+warranted, should happen after R5-R8 exist (PR-R2) and the companion-phenomena question
+(item 4) can actually be answered, not by re-tuning a threshold until a residual disappears.
+
+---
+
+## 9. PR-R1.5 (post-review addendum): symmetry precondition + sustained/decaying
+
+Two additions requested by review, both completed before PR-R2. Full sweep data:
+`ai_lab/relational/results_pr_r1_5.json`.
+
+### 9.1 Asymmetry axis (`substrate.py::_asymmetrize`) and the corrected question
+
+Sec.3.1's Lyapunov argument needs `W` symmetric -- that is exactly what makes
+`dx/dt = -Lx - a*x^3` a gradient flow (`-Lx = -grad((1/2) x^T L x)` requires `L = L^T`, i.e.
+`W = W^T`). An asymmetric `W` makes `-L` a non-symmetric linear operator; `dx/dt = -Lx` is,
+in general, no longer `-grad(V)` for any scalar `V`, so the proof's conclusion is not implied
+-- a directed inhibition loop (`w_ij != w_ji`) is exactly the textbook route to complex
+eigenvalues (oscillatory, undamped-in-principle solutions) without needing inertia at all.
+**The question PR-R1 actually answered is therefore narrower than first stated: "does
+memory=off fail to oscillate when the relation is symmetric (mutual)", not "...for any
+relation."** Sec.3's text above and the YAML header's `known_match` have been read in that
+corrected scope; no prior sentence was deleted, this section makes the scope explicit.
+
+`asymmetry` (bool, default `False`) and `asymmetry_strength` (float, default `0.5`) are new
+ingredient axes (both kwargs and result-dict keys, per spec Sec.4.3's requirement). For each
+edge with base weight `w` from the topology-generation rule, a single scalar
+`chi_ij ~ Uniform(-1, 1)` is drawn per edge (a magnitude given, not a direction/shape --
+same standing as the initial epsilon) and `w_ij' = w(1 + s*chi_ij)`, `w_ji' = w(1 - s*chi_ij)`
+-- edge EXISTENCE is untouched and the pair's AVERAGE coupling is preserved; only the
+forward/backward split differs. Verified directly (not just by construction): edge existence
+identical to the symmetric base, average of `w_ij'` and `w_ji'` matches the base weight,
+all weights non-negative, and the initial condition draw for a given seed is byte-identical
+regardless of `asymmetry` (a disjoint RNG stream is used). A computed (not asserted)
+diagnostic `w_is_symmetric` is now carried on every `SubstrateResult`/result dict, so any
+claim relying on Sec.3.1's precondition can be checked mechanically rather than assumed.
+
+**Measurement: memory=off x asymmetry=on.** 30 seeds x 4 topologies x asymmetry_strength in
+{0.3, 0.6, 0.9}, n=24, steps=2000, saturation=none (matching the linear case the proof
+concerns) -- 360 runs, 8640 node-checks.
+
+| | runs | node-checks |
+|---|---|---|
+| any period defined | **0 / 360** | **0 / 8640** |
+| any sustained | 0 / 360 | 0 / 8640 |
+
+Matched control (same 30 seeds x 4 topologies, `asymmetry=False`, otherwise identical): 0/120
+runs defined, confirming this is the same known-zero baseline, not a sweep-configuration
+artifact. `w_is_symmetric` was confirmed `False` for every asymmetry=on run and `True` for
+every control run (the flag itself is exercised, not just assumed).
+
+**Honest reading:** within the strengths tried (0.3-0.9, i.e. the two directions of an edge
+differing by up to +/-90% of the base weight), this specific asymmetrization construction did
+not produce ANY detected period, sustained or not -- not "produced decaying periods instead
+of sustained ones" (Sec.9.2's finding for `memory=on`), but no period at all. This narrows,
+but does not close, the review's hypothesis that non-reciprocity is a cheaper route to
+oscillation than memory: either (a) this particular construction (average-preserving,
+per-edge-independent skew) does not push the operator's eigenvalues far enough off the real
+axis at these strengths/graph sizes, or (b) a genuinely oscillatory regime exists at higher
+strength / different graph structure / larger n and this sweep did not reach it, or (c) it
+does not exist for this update rule at all. None of these can be distinguished from a single
+sweep; per the 9th audit (instrument_audit), R4's `expressible_max` (L/2 = 1000 steps here)
+comfortably covers the tested window, so this is a genuine "not found in this range," not an
+instrument ceiling -- but it is a claim about THIS sweep's range, not an exhaustive no-go.
+
+### 9.2 Sustained vs. decaying (`instruments.py::_envelope_trend`) and its consequence
+
+Rationale (per review): with `memory=on` and no external driving, damping (`gamma > 0`)
+means every trajectory relaxes to a fixed point eventually -- a detected "period" (R4's
+autocorrelation peak) may be a damped spiral's decaying ripple, not sustained structure.
+Deriving a phase from a decaying transient (planned for R7/PR-R2) would measure the decay
+rate, not the structure. `_envelope_trend` classifies a node's oscillation as
+`sustained` / `decaying` / `growing` from the Hilbert-transform envelope MAGNITUDE only
+(the angle half of the analytic signal is computed by `scipy.signal.hilbert` but never read
+or reported -- "phase" stays undefined/unused until R7, respecting spec Sec.5's forbidden
+vocabulary), comparing mean envelope amplitude in the second half vs. first half of the
+trimmed recording window against a fixed, disclosed 15% tolerance
+(`_ENVELOPE_SUSTAIN_TOL`, identical for every call). `R4_period`'s per-node entries now
+always carry `sustained: bool` alongside `defined: bool` whenever `defined=True` -- exactly
+the review's requirement that a decaying transient not be silently reported as if it were
+equivalent to genuine periodic structure. `R3_reversal` also carries an unconditional
+per-node `envelope` diagnostic (growing/decaying/sustained), independent of whether R4 later
+finds a period on that node.
+
+**Positive control (does the instrument actually detect "sustained" when it is genuinely
+present, or does it just always say "decaying"?):** a synthetic pure sine (no decay) is
+classified `sustained=True` (envelope ratio 1.01); a synthetic decaying sine, `sustained=False`
+(ratio 0.40); a synthetic growing sine, `sustained=False`/`"growing"` (ratio 1.47). Physically,
+`memory=on` with `damping=0.0` (a genuinely conservative, undamped run, n=24, steps=3000,
+seed=7) gives `any_sustained=True`, `n_sustained_periodic_nodes=20/24` -- the instrument does
+detect sustained oscillation when the physics actually has it.
+
+**Re-examining Sec.3.2's own `memory=on` sweep (10 seeds x damping in {0.03,0.05,0.1,0.15,0.2},
+n=24, steps=3000 -- the exact sweep already reported as "50/50 runs, 605/1200 node-checks
+periodic"):**
+
+| damping | node-checks defined | node-checks sustained |
+|---|---|---|
+| 0.03 | 170 | **0** |
+| 0.05 | 148 | **0** |
+| 0.10 | 106 | **0** |
+| 0.15 | 94 | **0** |
+| 0.20 | 87 | **0** |
+| **total** | **605 / 1200** | **0 / 1200** |
+
+**This corrects Sec.3.2's headline, not just adds nuance to it: of the 605 node-checks
+originally reported as "period found" for `memory=on`, zero are sustained oscillation at any
+damping value tested.** Every one is a damped spiral's decaying ripple during relaxation to
+the fixed point -- exactly the review's predicted failure mode
+("γ>0で外部入力がなければ全て固定点へ落ちる"). Sec.3.2's original table is left unedited above
+(the numbers are correct as measured) but must now be read as "period WAS DETECTED, not that
+it is sustained" -- the distinction this PR-R1.5 addendum exists to make. The instrument's
+own positive control (damping=0.0, previous paragraph) confirms this is a real physical
+absence in the damped sweep's parameter range, not an instrument bug hiding sustained
+oscillation from view.
+
+### 9.3 Combined honest statement (supersedes Sec.3's closing line for the sustained question)
+
+No configuration measured in PR-R1 or PR-R1.5 -- `memory=off` (symmetric or asymmetric W) or
+`memory=on` with any damping in {0.03, ..., 0.2} -- produces SUSTAINED oscillation. The one
+condition that does (`memory=on, damping=0.0`) is an undamped conservative system with no
+dissipation and no external input, included here only as an instrument positive control, not
+as a claim about which ingredient axis "causes" sustained periodicity -- that question is
+still open and is a natural target for PR-R2 or a further PR-R1.x, not resolved here.
+
+### 9.4 9th-audit re-check on this section's own claims
+
+"0/8640 node-checks periodic" (Sec.9.1) and "0/1200 node-checks sustained" (Sec.9.2): R4's
+`expressible_max` (L/2 steps: 1000 for the n=24/steps=2000 asymmetry sweep, 1500 for the
+n=24/steps=3000 memory=on re-check) is well above any period this repo's own positive
+controls have shown (lag_steps in the tens, per Sec.3.3), so these are legitimate
+non-achievement claims within the tested window, not instrument-ceiling artifacts --
+checked via `instrument_audit.audit_nonachievement_claim` on representative Readings from
+both sweeps before writing this section.

@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from scipy.signal import hilbert
 
 
 @dataclass
@@ -167,6 +168,52 @@ def _moving_average(series: np.ndarray, window: int) -> np.ndarray:
 
 _REVERSAL_NOISE_REL_TOL = 1e-6  # fixed, disclosed noise floor -- same for every run, not tuned per outcome
 
+# Fixed, disclosed tolerance band for the envelope sustained/decaying/growing classification
+# below (PR-R1.5). Same constant for every run regardless of outcome -- not tuned per call.
+_ENVELOPE_SUSTAIN_TOL = 0.15
+
+
+def _envelope_trend(series: np.ndarray, trim: int) -> Dict[str, Any]:
+    """PR-R1.5: is an oscillation SUSTAINED, DECAYING, or GROWING, distinct from whether a
+    period was detected at all (R4's own question).
+
+    Rationale (per review): with memory=off and no damping term, the classic route to
+    "period without memory" is a directed loop whose linear operator has a genuinely
+    imaginary eigenvalue (a sustained limit-cycle-like oscillation) -- but a MUCH more common
+    outcome for a linear system relaxing toward a fixed point is a damped spiral: the
+    envelope shrinks toward zero even though R4's autocorrelation peak still finds a period.
+    Reporting only "period: defined=True" would conflate these. This function distinguishes
+    them without ever computing or reporting a PHASE angle (forbidden vocabulary, spec
+    Sec.5, until R7 exists) -- only the analytic-signal MAGNITUDE (envelope) is used; the
+    angle half of the Hilbert transform is discarded unread.
+
+    Method: Hilbert-transform envelope |analytic_signal(series - mean)| over the same
+    edge-trimmed interior window R3 already uses (edge-padding bias applies here too), split
+    into first/second half, compare mean envelope magnitude between halves. Tolerance
+    (_ENVELOPE_SUSTAIN_TOL = 15%) is fixed and disclosed, identical for every call.
+    """
+    y = series - series.mean()
+    interior = y[trim: len(y) - trim] if trim > 0 else y
+    if len(interior) < 8 or np.allclose(interior, 0.0):
+        return {"ratio": None, "classification": "undefined", "sustained": False,
+                "note": "interior window too short or flat to estimate an envelope"}
+    env = np.abs(hilbert(interior))       # magnitude only -- angle() is never called
+    half = len(env) // 2
+    a1 = float(env[:half].mean())
+    a2 = float(env[half:].mean())
+    if a1 <= 0.0:
+        return {"ratio": None, "classification": "undefined", "sustained": False,
+                "note": "first-half envelope amplitude is zero"}
+    ratio = a2 / a1
+    if ratio < 1.0 - _ENVELOPE_SUSTAIN_TOL:
+        cls = "decaying"
+    elif ratio > 1.0 + _ENVELOPE_SUSTAIN_TOL:
+        cls = "growing"
+    else:
+        cls = "sustained"
+    return {"ratio": _native(ratio), "classification": cls, "sustained": cls == "sustained",
+            "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=%.2f" % _ENVELOPE_SUSTAIN_TOL}
+
 
 def reversal(x_traj: np.ndarray, r1: Optional[Reading] = None, window: Optional[int] = None) -> Reading:
     """R3: per-node zero-crossing count around that node's own moving average.
@@ -210,6 +257,7 @@ def reversal(x_traj: np.ndarray, r1: Optional[Reading] = None, window: Optional[
     # window's worth from each side before counting sign changes.
     trim = min(win, max(0, L // 2 - 1))
     counts = np.zeros(n, dtype=int)
+    envelopes: List[Dict[str, Any]] = []
     for i in range(n):
         # collapse m state dims to a scalar per node via the sum (keeps this well-defined
         # for m=1, the only case PR-R1's empirical test exercises; m>=2 handling beyond this
@@ -232,14 +280,19 @@ def reversal(x_traj: np.ndarray, r1: Optional[Reading] = None, window: Optional[
         s_nz = s[s != 0]
         if len(s_nz) < 2:
             counts[i] = 0
-            continue
-        counts[i] = int(np.sum(s_nz[1:] != s_nz[:-1]))
+        else:
+            counts[i] = int(np.sum(s_nz[1:] != s_nz[:-1]))
+        # PR-R1.5: general envelope trend for this node, independent of whether R4 later
+        # finds a period -- lets a caller see "growing/decaying/sustained fluctuation" even
+        # on a node R4 will reject for having too few reversals.
+        envelopes.append({"node": i, **_envelope_trend(series, trim)})
     return Reading(
         name="reversal",
         value=_native({
             "per_node_count": counts,
             "mean_count": float(counts.mean()),
             "max_count": int(counts.max()),
+            "per_node_envelope": envelopes,
             "window": win,
         }),
         defined=True,
@@ -319,31 +372,47 @@ def period(x_traj: np.ndarray, dt: float, r3: Optional[Reading] = None) -> Readi
         )
     counts = np.array(r3.value["per_node_count"])
     n = x_traj.shape[1]
+    # Same window/trim convention as R3 (reversal), so the envelope's edge-trim matches the
+    # window this instrument's own precondition (R3) was computed with.
+    win = max(5, L // 20)
+    trim = min(win, max(0, L // 2 - 1))
     per_node: List[Dict[str, Any]] = []
     any_defined = False
+    any_sustained = False
     for i in range(n):
         entry: Dict[str, Any] = {"node": i}
         if counts[i] < 2:
-            entry.update(defined=False, T=None, rate=None,
+            entry.update(defined=False, T=None, rate=None, sustained=False,
                          reason="R3 precondition not met for this node (reversal_count=%d < 2)" % counts[i])
             per_node.append(entry)
             continue
         series = x_traj[:, i, :].sum(axis=-1)
         lag = _first_autocorr_peak(series, max_lag_steps)
         if lag is None:
-            entry.update(defined=False, T=None, rate=None,
+            entry.update(defined=False, T=None, rate=None, sustained=False,
                          reason="no autocorrelation peak found within the expressible window "
                                 "(L/2 steps) -- either genuinely aperiodic, or the period "
                                 "exceeds what this instrument can represent")
             per_node.append(entry)
             continue
         T = lag * dt
+        # PR-R1.5: a period being DETECTED (autocorrelation peak found) does not mean it is
+        # SUSTAINED -- a damped spiral relaxing to a fixed point also produces a genuine,
+        # detectable autocorrelation peak while its amplitude shrinks to zero. `sustained`
+        # is always carried explicitly alongside `defined` so a later PR (R7's phase
+        # derivation) does not mistake a decaying transient's ripple for structure.
+        env = _envelope_trend(series, trim)
         entry.update(defined=True, T=_native(T), rate=_native(1.0 / T) if T > 0 else None,
-                     lag_steps=lag, reason="ok")
+                     lag_steps=lag, reason="ok", sustained=bool(env["sustained"]),
+                     envelope=env)
         any_defined = True
+        any_sustained = any_sustained or env["sustained"]
         per_node.append(entry)
     defined_Ts = [e["T"] for e in per_node if e["defined"]]
+    sustained_Ts = [e["T"] for e in per_node if e["defined"] and e["sustained"]]
     value = {
+        "any_sustained": any_sustained,
+        "n_sustained_periodic_nodes": len(sustained_Ts),
         "per_node": per_node,
         "any_defined": any_defined,
         "n_periodic_nodes": len(defined_Ts),
