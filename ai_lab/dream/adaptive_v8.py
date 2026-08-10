@@ -5,6 +5,12 @@ experimenter whose only physical starting hypothesis is R0 (distinguishability +
 The root layer cannot seed space, geometry, dimension, frequency, phase, vortex, life, neuron or brain.
 It also annotates the shared hypothesis graph with R0 relevance so the *next* v7 portfolio favors
 observation-first questions without weakening unexplored/breaker/random floors.
+
+The autonomous frontier expander sits above those layers.  It treats the destination as fixed while
+allowing methods and hypotheses to change: recurrent unknown transitions trigger mechanism tests,
+deep F-reference candidates trigger start-side intervention studies, root laws trigger ablations, and
+missing destination capabilities trigger requests for new measurement instruments.  None of those
+planning actions can weaken scientific integrity or turn scaffolded experiments into Pure Genesis proof.
 """
 from __future__ import annotations
 
@@ -17,6 +23,7 @@ from typing import Any
 from ai_lab.dream import adaptive
 from ai_lab.dream import adaptive_loop as v3
 from ai_lab.dream import adaptive_v7 as v7
+from ai_lab.dream import frontier_expander
 from ai_lab.dream import human_report
 from ai_lab.dream import hypothesis_evolution
 from ai_lab.dream import portfolio_director
@@ -93,7 +100,9 @@ def _root_summary(root: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _enrich_easy(paths: dict[str, str], *, root_summary: dict[str, Any]) -> None:
+def _enrich_easy(
+    paths: dict[str, str], *, root_summary: dict[str, Any], frontier_summary: dict[str, Any],
+) -> None:
     latest = Path(paths.get("latest") or "")
     if not latest.exists():
         return
@@ -102,6 +111,7 @@ def _enrich_easy(paths: dict[str, str], *, root_summary: dict[str, Any]) -> None
     except (OSError, json.JSONDecodeError):
         return
     easy["pure_genesis_r0"] = root_summary
+    easy["autonomous_frontier_expansion"] = frontier_summary
     easy["research_north_star"] = {
         "root_id": why_gate.ROOT_ID,
         "statement": why_gate.ROOT_STATEMENT,
@@ -109,7 +119,9 @@ def _enrich_easy(paths: dict[str, str], *, root_summary: dict[str, Any]) -> None
         "all_new_root_physical_givens_require_why_chain": True,
         "brain_is_not_seeded_target": True,
         "root_integrity_uses_permutation_quotient": True,
-        "note": "宇宙・生命・脳を別レシピとして置かず、R0から関係がどこまで階層化・再帰できるかを調べます。",
+        "destination_fixed_methods_adaptive": True,
+        "scaffolded_parallel_experiments_may_inform_but_not_prove_pure_genesis": True,
+        "note": "宇宙・生命・脳を別レシピとして置かず、R0から関係がどこまで階層化・再帰・成長・適応できるかを調べます。",
     }
     easy["human_summary"] = human_report.build_summary(easy)
     human_md = human_report.render_markdown(easy["human_summary"])
@@ -122,8 +134,10 @@ def _enrich_easy(paths: dict[str, str], *, root_summary: dict[str, Any]) -> None
         Path(paths["markdown"]).write_text(human_md)
 
 
-def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = (8, 12, 16),
-                    root_steps: int = 48, **kwargs: Any) -> dict[str, Any]:
+def run_adaptive_v8(
+    *, root_law_trials: int = 24, root_sizes: tuple[int, ...] = (8, 12, 16),
+    root_steps: int = 48, frontier_experiments: int = 24, **kwargs: Any,
+) -> dict[str, Any]:
     base = v7.run_adaptive_v7(**kwargs)
     report = base["report"]
     burst_id = str(report.get("burst_id") or "unknown")
@@ -138,14 +152,26 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
         seed=seed,
         persist=persist,
     )
-    # A raw relation-matrix result is not yet a physical result.  Remove latent-label closure,
+    # A raw relation-matrix result is not yet a physical result. Remove latent-label closure,
     # global-sign aliases and step-period overinterpretation before research priority is persisted.
     root = root_integrity.audit_report(root, persist=persist)
     root_summary = _root_summary(root)
 
-    # Align existing research questions to R0. This is a planning annotation only. It cannot change
-    # measurements, official Levels, Rooms, or any anti-bias lane floor.
+    # The frontier expander reacts to the evidence that actually exists in this burst.  It is not an
+    # F6->F7 script: absent F evidence simply donates budget to recurrent-X or root mechanism questions.
+    frontier = frontier_expander.run_frontier_expansion(
+        report=report,
+        root_report=root,
+        burst_id=burst_id,
+        max_experiments=max(0, int(frontier_experiments)),
+        persist=persist,
+    )
+
+    # Align existing research questions to R0 and inject the new falsifiable mechanism questions.
+    # This is planning only. It cannot change measurements, official Levels, Rooms, or anti-bias floors.
     graph = hypothesis_evolution.load_graph()
+    why_gate.annotate_graph(graph)
+    frontier_expander.inject_planning_hypotheses(graph, frontier, burst_id=burst_id)
     why_gate.annotate_graph(graph)
     if persist:
         hypothesis_evolution._save(hypothesis_evolution._GRAPH, graph)
@@ -155,12 +181,17 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
         _write(_PORTFOLIO, {**portfolio, "last_burst": burst_id})
 
     report["pure_genesis_r0"] = root_summary
+    report["autonomous_frontier_expansion"] = frontier
     report["research_north_star"] = {
         "root_id": why_gate.ROOT_ID,
         "statement": why_gate.ROOT_STATEMENT,
         "reason": why_gate.ROOT_REASON,
+        "destination": "R0から結果形状を与えず、宇宙・脳・種からの成長に必要な機能が自発的に成立するところまで進む。",
         "policy": "新しい物理的前提はR0へのWhy Chainを説明できない限りPure Genesisへ入れない。",
         "methods_and_hypotheses_may_change_freely": True,
+        "destination_fixed_methods_adaptive": True,
+        "scaffolded_parallel_experiments_allowed": True,
+        "scaffolded_parallel_experiments_count_as_pure_genesis_proof": False,
         "root_integrity_uses_permutation_quotient": True,
         "changes_scientific_gate": False,
         "changes_official_level": False,
@@ -177,15 +208,18 @@ def run_adaptive_v8(*, root_law_trials: int = 24, root_sizes: tuple[int, ...] = 
     report["honesty"]["latent_relation_slot_labels_are_physical_entities"] = False
     report["honesty"]["raw_slot_graph_cycles_are_emergent_geometry"] = False
     report["honesty"]["human_report_changes_scientific_evidence"] = False
+    report["honesty"]["frontier_expansion_changes_truth_gate"] = False
+    report["honesty"]["frontier_expansion_seeds_target_outcome"] = False
+    report["honesty"]["scaffolded_analogy_counts_as_pure_genesis_proof"] = False
 
-    # Reader-facing prose is generated only after all scientific/root audits.  It never replaces the
-    # technical JSON; it adds an orientation layer on top of the same evidence.
+    # Reader-facing prose is generated only after all scientific/root/frontier audits. It never
+    # replaces technical JSON; it adds an orientation layer on top of the same evidence.
     report["human_summary"] = human_report.build_summary(report)
 
     generated = datetime.fromisoformat(str(report["generated_at"]).replace("Z", "+00:00"))
     stamp = generated.strftime("%Y-%m-%dT%H-%M-%SZ")
     base["paths"] = write_report(str(v3._REPO), report, stamp=stamp)
-    _enrich_easy(base["easy_paths"], root_summary=root_summary)
+    _enrich_easy(base["easy_paths"], root_summary=root_summary, frontier_summary=frontier)
 
     # v7/lower layers may have refreshed app/public/data before the v8-only fields above existed.
     # Re-copy only after the final human report is on disk so the Observatory and Markdown agree.
@@ -207,10 +241,12 @@ def _parse_sizes(raw: str) -> tuple[int, ...]:
 
 def build_parser():
     ap = v7.build_parser()
-    ap.description = "Aeterna Adaptive Dream v8 — Pure Genesis R0 north star + v7 hypothesis evolution"
+    ap.description = "Aeterna Adaptive Dream v8 — Pure Genesis R0 + autonomous frontier expansion"
     ap.add_argument("--root-law-trials", type=int, default=24)
     ap.add_argument("--root-sizes", default="8,12,16", help="comma-separated finite-size regulators")
     ap.add_argument("--root-steps", type=int, default=48)
+    ap.add_argument("--frontier-experiments", type=int, default=24,
+                    help="bounded extra mechanism/intervention budget chosen adaptively from current evidence")
     return ap
 
 
@@ -233,19 +269,21 @@ def main(argv: list[str] | None = None) -> int:
         unknown_followup_max_patterns=max(0, a.unknown_followup_max_patterns),
         max_synthesized_hypotheses=max(0, a.max_synthesized_hypotheses),
         root_law_trials=max(0, a.root_law_trials), root_sizes=_parse_sizes(a.root_sizes),
-        root_steps=max(8, a.root_steps),
+        root_steps=max(8, a.root_steps), frontier_experiments=max(0, a.frontier_experiments),
     )
     r = result["report"]
     root = r.get("pure_genesis_r0") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
+    frontier = r.get("autonomous_frontier_expansion") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
     print(f"=== Aeterna Adaptive Dream v8: {r['burst_id']} ===")
     print(f"  R0: {why_gate.ROOT_STATEMENT}")
     print(f"  Pure Genesis laws={root.get('law_trials', 0)} top={len(root.get('top_laws') or [])}")
     print(f"  Why Gate accepted={int((root.get('why_gate') or {}).get('accepted', 0))} unexplained physical givens=0")
     print(f"  Root Integrity critic questions={len(critic)} permutation-quotient=True")
+    print(f"  frontier mechanism experiments={int((frontier.get('budget') or {}).get('executed', 0))}")
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
-    print("  NOTE: brain/universe/geometry/frequency/vortex are not seeded targets; downstream names are observations only.")
+    print("  NOTE: destination is fixed, methods are adaptive; target shapes/outcomes are never seeded as Pure Genesis evidence.")
     return 0
 
 
