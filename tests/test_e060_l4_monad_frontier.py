@@ -233,3 +233,41 @@ def test_l1_growth_is_measured_from_t0(monkeypatch):
     l1 = ladder.measure_l1(t0, late)
     assert l1["mean_amplitude_growth"] > 5.0
     assert l1["level1_passed"] is True
+
+
+# --- 二段クエンチ軸の配線（Phase1本番） -----------------------------------------
+
+def test_phase1_sample_includes_quench_axes_by_default():
+    from experiments.e060_l4_monad_frontier import phase1 as P1
+    conds = P1.sample("mass_conserved", 4, sobol_seed=0)
+    for c in conds:
+        assert "__quench_value1" in c and "__quench_switch_frac" in c
+
+
+def test_phase1_build_quench_reuses_the_base_axis_as_final_value():
+    """段2（保持）の値は通常軸と二重定義しない。"""
+    from experiments.e060_l4_monad_frontier import phase1 as P1
+    from experiments.e060_l4_monad_frontier import quench as Q
+    cond = {"k0": 0.05, "__quench_value1": 0.3, "__quench_switch_frac": 0.2}
+    q = P1._build_quench("mass_conserved", cond)
+    assert q["param"] == Q.QUENCHABLE["mass_conserved"][0] == "k0"
+    assert q["value_2"] == cond["k0"]
+    assert q["value_1"] == cond["__quench_value1"]
+
+
+def test_phase1_no_quench_mode_has_no_quench_dict():
+    from experiments.e060_l4_monad_frontier import phase1 as P1
+    conds = P1.sample("swift_hohenberg", 4, sobol_seed=0, with_quench=False)
+    for c in conds:
+        assert "__quench_value1" not in c
+        assert P1._build_quench("swift_hohenberg", c) is None
+
+
+def test_quench_stages_conserve_mass_exactly():
+    """二段クエンチ下でも a+b の保存が厳密であること（G0）。"""
+    from experiments.e060_l4_monad_frontier import classify as C
+    r = C.screen_mass_conserved(
+        {"b0": 3.0}, seed=0, N=48, settle=600, hold=200,
+        quench={"param": "k0", "value_1": 0.15, "value_2": 0.02, "switch_frac": 0.4})
+    assert r["status"] == "ok"
+    assert r["mass_drift"] < 1e-9
