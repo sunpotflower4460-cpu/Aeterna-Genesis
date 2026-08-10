@@ -34,3 +34,4 @@ new = '''    root = os.environ.get("AETERNA_DRY_RUN_ROOT")
 if old not in s:
     raise SystemExit('expected storage fragment not found')
 p.write_text(s.replace(old, new, 1))
+# one-shot helper: workflow commits only the target source file
