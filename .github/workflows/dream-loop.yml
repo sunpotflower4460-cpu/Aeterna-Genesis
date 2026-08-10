@@ -35,7 +35,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Enough history to rebase generated evidence onto a feature commit, without
+          # cloning an ever-growing evidence history every hour.
+          fetch-depth: 50
 
       - uses: actions/setup-python@v5
         with:
@@ -70,36 +72,19 @@ jobs:
         if: steps.watchdog.outputs.run_burst == 'true'
         uses: actions/cache/restore@v4
         with:
-          path: |
-            runtime/dream
-            ai_lab/discoveries/ledger.json
-            ai_lab/discoveries/event_ledger.json
-            ai_lab/discoveries/view_presets.json
-            ai_lab/discoveries/coverage_atlas.json
-            ai_lab/discoveries/hypothesis_ledger.json
-            ai_lab/discoveries/research_decisions.json
-            ai_lab/discoveries/native3d_discoveries.json
-            ai_lab/discoveries/promising_leads.json
-            ai_lab/discoveries/fission_path_leads.json
-            ai_lab/discoveries/deep_time_fission.json
-            ai_lab/discoveries/emergence_graph.json
-            ai_lab/discoveries/cross_world_emergence.json
-            ai_lab/discoveries/question_critic.json
-            ai_lab/discoveries/unknown_followups.json
-            ai_lab/discoveries/hypothesis_graph.json
-            ai_lab/discoveries/hypothesis_history.json
-            ai_lab/discoveries/hypothesis_portfolio.json
-            ai_lab/discoveries/goal_progress.json
-            ai_lab/discoveries/frontier_expansion.json
-            rooms/candidates
-            rooms/rejected_in_3d
-            rooms/jobs
+          # Only untracked runtime artifacts belong in the cache. Tracked ledgers, reports and rooms
+          # arrive with the checkout; restoring an older cached copy over them would silently roll back
+          # committed evidence and then re-commit the rollback.
+          path: runtime/dream
           key: dream-state-${{ runner.os }}-${{ github.run_id }}
           restore-keys: |
             dream-state-${{ runner.os }}-
 
       - name: Run hourly Adaptive Dream v8 Pure Genesis R0 research
         if: steps.watchdog.outputs.run_burst == 'true'
+        # Leave headroom inside the 50-minute job so state save, artifacts and the evidence commit
+        # still run when a burst overruns, instead of being killed with it.
+        timeout-minutes: 38
         run: |
           python -m ai_lab.dream.strict_goal_loop \
             --quick \
@@ -144,30 +129,10 @@ jobs:
         if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
         uses: actions/cache/save@v4
         with:
-          path: |
-            runtime/dream
-            ai_lab/discoveries/ledger.json
-            ai_lab/discoveries/event_ledger.json
-            ai_lab/discoveries/view_presets.json
-            ai_lab/discoveries/coverage_atlas.json
-            ai_lab/discoveries/hypothesis_ledger.json
-            ai_lab/discoveries/research_decisions.json
-            ai_lab/discoveries/native3d_discoveries.json
-            ai_lab/discoveries/promising_leads.json
-            ai_lab/discoveries/fission_path_leads.json
-            ai_lab/discoveries/deep_time_fission.json
-            ai_lab/discoveries/emergence_graph.json
-            ai_lab/discoveries/cross_world_emergence.json
-            ai_lab/discoveries/question_critic.json
-            ai_lab/discoveries/unknown_followups.json
-            ai_lab/discoveries/hypothesis_graph.json
-            ai_lab/discoveries/hypothesis_history.json
-            ai_lab/discoveries/hypothesis_portfolio.json
-            ai_lab/discoveries/goal_progress.json
-            ai_lab/discoveries/frontier_expansion.json
-            rooms/candidates
-            rooms/rejected_in_3d
-            rooms/jobs
+          # Only untracked runtime artifacts belong in the cache. Tracked ledgers, reports and rooms
+          # arrive with the checkout; restoring an older cached copy over them would silently roll back
+          # committed evidence and then re-commit the rollback.
+          path: runtime/dream
           key: dream-state-${{ runner.os }}-${{ github.run_id }}
 
       - name: Upload reports and discovery evidence
@@ -227,6 +192,7 @@ jobs:
           git config user.name "aeterna-dream-bot"
           git config user.email "aeterna-dream-bot@users.noreply.github.com"
           git add \
+            ai_lab/discoveries/dream_state.json \
             ai_lab/discoveries/ledger.json \
             ai_lab/discoveries/event_ledger.json \
             ai_lab/discoveries/view_presets.json \
@@ -255,7 +221,24 @@ jobs:
             app/generated/catalog.json app/public/data || true
           if git diff --cached --quiet; then
             echo "No generated Dream evidence changed."
-          else
-            git commit -m "record hourly Adaptive Dream evidence"
-            git push
+            exit 0
           fi
+          git commit -m "record hourly Adaptive Dream evidence"
+          # A feature commit can land while a 30-50 minute burst is running. Rebase the generated
+          # evidence on top of it rather than discarding an entire burst to a rejected push.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Dream evidence pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); rebasing onto origin/main."
+            git fetch --depth=50 origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Dream evidence conflicts with a human commit on main; not overwriting it."
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not push Dream evidence after 3 attempts."
+          exit 1

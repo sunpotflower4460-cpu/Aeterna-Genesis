@@ -37,7 +37,10 @@ from ai_lab.dream.presets import merge_presets  # noqa: E402
 from ai_lab.dream.report import build_report, write_report  # noqa: E402
 from genesis_orchestrator import campaign, db, worker  # noqa: E402
 
-_STATE = _REPO / "runtime" / "dream" / "state.json"
+# The burst counter and the 2D/native-3D search cursors must survive an Actions cache miss, so
+# they live in a git-tracked path. Only genuinely disposable runtime artifacts stay under runtime/.
+_STATE = _REPO / "ai_lab" / "discoveries" / "dream_state.json"
+_LEGACY_STATE = _REPO / "runtime" / "dream" / "state.json"
 _DB = _REPO / "runtime" / "dream" / "dream.sqlite3"
 _EVENT_LEDGER = _REPO / "ai_lab" / "discoveries" / "event_ledger.json"
 _PRESETS = _REPO / "ai_lab" / "discoveries" / "view_presets.json"
@@ -58,7 +61,15 @@ def _atomic_json(path: Path, value: Any) -> None:
 
 
 def load_state() -> dict[str, Any]:
-    return _load_json(_STATE, {"state_version": 1, "run_number": 0})
+    """Load the Dream counter/cursor state.
+
+    The tracked file is authoritative. The legacy runtime/ copy is still read when the tracked
+    file does not exist yet, so migrating does not restart run_number or the search cursors.
+    """
+    default = {"state_version": 1, "run_number": 0}
+    if _STATE.exists():
+        return _load_json(_STATE, default)
+    return _load_json(_LEGACY_STATE, default)
 
 
 def save_state(state: dict[str, Any]) -> None:

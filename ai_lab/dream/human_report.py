@@ -116,7 +116,7 @@ def build_summary(report: dict[str, Any]) -> dict[str, Any]:
 
     gaps = [str(x) for x in (frontier_human.get("largest_gaps") or []) if x]
     if gaps:
-        not_yet = [f"{label}ところまでは、まだ本物の物理として確認できていません。" for label in gaps]
+        not_yet = [f"「{label}」までは、まだ本物の物理として確認できていません。" for label in gaps]
     else:
         not_yet = [
             "最初の小さな違いを大きくするだけでなく、新しい種類の違いそのものを自力で増やせるかはまだ途中です。",

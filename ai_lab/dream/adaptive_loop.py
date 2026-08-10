@@ -11,6 +11,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -50,6 +51,20 @@ def _read_json(path: Path, default: Any) -> Any:
         return json.loads(path.read_text())
     except (OSError, json.JSONDecodeError):
         return default
+
+
+def _run_number_from_report(path: Path) -> int:
+    """Recover the burst counter from the last completed report.
+
+    dream_state.json is the primary counter, but a lost or rolled-back state must never restart burst
+    ids at 0001. That would collide with an existing burst id, reuse its derived seed, and reset the
+    2D/native-3D search cursors so already-covered regions are searched again.
+    """
+    doc = _read_json(path, None)
+    if not isinstance(doc, dict):
+        return 0
+    match = re.search(r"-(\d+)\s*$", str(doc.get("burst_id") or ""))
+    return int(match.group(1)) if match else 0
 
 
 def _next_cycle(cycle: str) -> str:
@@ -134,7 +149,7 @@ def run_adaptive_burst(
     refresh_app: bool = True,
 ) -> dict[str, Any]:
     state = load_state()
-    run_number = int(state.get("run_number", 0)) + 1
+    run_number = max(int(state.get("run_number", 0)), _run_number_from_report(_LATEST)) + 1
     now = datetime.now(timezone.utc)
     master_seed = int(seed if seed is not None else int(now.strftime("%Y%m%d")) * 100 + run_number)
     burst_id = f"dream-{now.strftime('%Y%m%d')}-{run_number:04d}"
