@@ -7,6 +7,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
+from ai_lab.dream import human_report
+
 _PRIORITY = {
     "PROMOTION_READY": 100,
     "STAGE_PROMOTED": 95,
@@ -144,15 +146,16 @@ def _facts_line(event: dict[str, Any]) -> str:
     return " / ".join(bits)
 
 
-def render_markdown(report: dict[str, Any]) -> str:
+def render_technical_markdown(report: dict[str, Any]) -> str:
+    """Render the old detail-heavy report for audit/debug use, not as the first-read document."""
     c = report["counts"]
     lines = [
-        "# 🌙 Genesis Night Report",
+        "# Genesis technical research record",
         "",
         f"Burst: `{report['burst_id']}`  ",
         f"Generated: `{report['generated_at']}`",
         "",
-        "## 昨夜の研究",
+        "## 実験記録",
         "",
         f"- 実験・ジョブ: **{c['experiments']}**",
         f"- 新規候補: **{c['new_behavior']}**",
@@ -167,7 +170,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     if report.get("headline"):
         h = report["headline"]
         lines.extend([
-            "## ✨ 今回もっとも注目すべきこと",
+            "## 今回もっとも注目すべきこと",
             "",
             f"**{h['title']}**",
             "",
@@ -206,6 +209,18 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_markdown(report: dict[str, Any]) -> str:
+    """Render the default human-facing report.
+
+    Once a human summary exists, the default Markdown is intentionally orientation-first.  Detailed IDs,
+    counts and raw measurements remain in summary/events JSON and in technical-report.md.
+    """
+    summary = report.get("human_summary")
+    if isinstance(summary, dict):
+        return human_report.render_markdown(summary)
+    return render_technical_markdown(report)
+
+
 def write_report(root: str, report: dict[str, Any], *, stamp: str) -> dict[str, str]:
     base = os.path.join(root, "ai_lab", "reports", "nightly")
     out = os.path.join(base, stamp)
@@ -213,13 +228,24 @@ def write_report(root: str, report: dict[str, Any], *, stamp: str) -> dict[str, 
     summary_path = os.path.join(out, "summary.json")
     events_path = os.path.join(out, "events.json")
     md_path = os.path.join(out, "report.md")
+    technical_md_path = os.path.join(out, "technical-report.md")
     with open(summary_path, "w") as f:
         json.dump({k: v for k, v in report.items() if k != "events"}, f, indent=2, ensure_ascii=False)
     with open(events_path, "w") as f:
         json.dump(report["events"], f, indent=2, ensure_ascii=False)
     with open(md_path, "w") as f:
         f.write(render_markdown(report))
+    if isinstance(report.get("human_summary"), dict):
+        with open(technical_md_path, "w") as f:
+            f.write(render_technical_markdown(report))
     latest_path = os.path.join(base, "latest.json")
     with open(latest_path, "w") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
-    return {"dir": out, "summary": summary_path, "events": events_path, "markdown": md_path, "latest": latest_path}
+    return {
+        "dir": out,
+        "summary": summary_path,
+        "events": events_path,
+        "markdown": md_path,
+        "technical_markdown": technical_md_path,
+        "latest": latest_path,
+    }
