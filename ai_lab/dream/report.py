@@ -150,7 +150,7 @@ def render_technical_markdown(report: dict[str, Any]) -> str:
     """Render the old detail-heavy report for audit/debug use, not as the first-read document."""
     c = report["counts"]
     lines = [
-        "# Genesis technical research record",
+        "# 🌙 Genesis Night Report",
         "",
         f"Burst: `{report['burst_id']}`  ",
         f"Generated: `{report['generated_at']}`",
