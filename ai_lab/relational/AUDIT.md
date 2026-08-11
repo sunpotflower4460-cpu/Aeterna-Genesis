@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 AUDIT
 
 ```yaml
 id: relational_r1
@@ -6,14 +6,19 @@ role: E                     # candidate E across the board: exact proofs for bot
                              # sides (Sec.3.1, Sec.10.1), a structural proof for why
                              # memory=off+asymmetry also finds nothing (Sec.10.2), and a
                              # derived-not-fitted mechanism for the one case that DOES
-                             # sustain (Sec.10.3) -- see Sec.8/10 for the full split
+                             # sustain (Sec.10.3) -- see Sec.8/10 for the full split.
+                             # PR-R1.9 (Sec.11) refines the positive claim (settled, not just
+                             # sustained) and measures, rather than assumes, its spatial
+                             # precondition for R8.
 claim_tier: measured        # memory=off (symmetric or asymmetric): proven + measured zero.
                              # memory=on, symmetric W: proven + measured zero (Sec.10.1/9.2).
-                             # memory=on x asymmetry=on: measured positive (133/600 runs
-                             # sustained, Sec.10.3), with an analytically-derived threshold
-                             # (q^2 > p*gamma^2) independently matching the sweep's sign in
-                             # 11/12 direct checks -- not yet cross-validated against a
-                             # second, held-out sweep, so "measured" not "established".
+                             # memory=on x asymmetry=on: measured positive, corrected in
+                             # PR-R1.9 from 133/600 runs sustained (Sec.10.3) to 116/600 runs
+                             # sustained-AND-settled (Sec.11.1) after adding the settled check
+                             # review requested; the settled regime clusters locally (20x
+                             # above an independence null) but covers only 1.5% of the
+                             # relation graph's fundamental cycles (Sec.11.2), so R8's
+                             # precondition is not yet met and R8 was not built this PR.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -60,6 +65,18 @@ open_issues:
      _plasticity_step re-symmetrizes W every call, so plasticity would erase asymmetry after
      one step. Not fixed (out of PR-R1.5 scope); the reported asymmetry sweep uses
      plasticity=False (the default)."
+  - "PR-R1.9 (Sec.11): adding `settled` (a trailing-quarter-only check, distinct from
+     `sustained`'s whole-window halves check) shrinks Sec.10.3's headline from 133/600 runs
+     (708/14400 node-checks) to 116/600 runs (396/14400 node-checks) sustained-AND-settled --
+     17 runs' sustained signal was entirely still-growing within the recorded window, not yet
+     plateaued. Measuring R8's spatial precondition (do settled nodes cover entire cycles):
+     only 41/2660 (1.5%) of the relation graph's fundamental cycles have every node
+     sustained-and-settled, though this is ~20x the rate an independent-node null predicts
+     (settled nodes cluster locally, in cycles of length <=5, not across extended loops).
+     Per review's own instruction, R8 (winding number) was NOT built this PR -- 1.5%,
+     concentrated on short local loops, is too close to zero to be structurally meaningful;
+     'why does the settled regime stay local instead of propagating' is the open question
+     carried forward instead of a ceiling claim."
 ```
 
 ---
@@ -715,3 +732,156 @@ derive it from -- phase and winding), not before.
   dynamics + `L`'s definition), not a new rule invented to match the data. The sweep itself
   (Sec.10.3) was run and reported in full (373/600, 133/600) rather than only reporting
   configurations that "worked."
+
+## 11. PR-R1.9 (third post-review addendum): settled vs. still-growing, and where the
+sustained regime lives spatially
+
+Requested by review, before starting PR-R2, in this order: (1) measure whether
+sustained-and-settled nodes concentrate on closed loops (R8's precondition), (2) add a
+`settled` check distinguishing a genuinely plateaued oscillation from one still climbing
+toward its eventual limit-cycle amplitude, and restrict any future R7/R8 to settled nodes,
+(3) report where in the 600-run sweep the 133 sustained runs actually come from. All three
+done. Analysis code and full per-run output: `topology.py::fundamental_cycles`,
+`instruments.py::_envelope_trend`'s new `settled`/`settled_ratio` fields, and the rerun
+script logged in this PR's commit (raw per-run JSON is reproducible from
+`results_pr_r1_75.json`'s `kw`+`seed` for every run -- not itself re-committed, to avoid a
+second multi-hundred-KB trajectory-adjacent artifact for data that regenerates
+deterministically from the first one).
+
+### 11.1 `settled`: a still-growing transient is not the same as a plateaued oscillation
+
+Sec.10.3's `sustained` classification compares mean Hilbert-envelope magnitude between the
+first and second HALF of the recorded window. Review's concern: a node that crossed
+`q^2 > p*gamma^2` partway through the window and is still climbing toward its eventual
+capped amplitude can average out to "roughly the same magnitude in each half" (most of the
+window is already near-plateau) while its TRAILING portion is still visibly moving --
+exactly the growing-transient mistake already avoided on the decaying side (Sec.9.2), now
+on the growing side.
+
+`_envelope_trend` (`instruments.py`) now also compares the mean envelope magnitude of the
+LAST quarter of the window against the quarter immediately before it (not the whole first
+half), with its own fixed tolerance (`_ENVELOPE_SETTLED_TOL = 10%`, disclosed, same for
+every call). A synthetic positive control (flat-amplitude oscillation throughout) is both
+`sustained` and `settled`; a synthetic negative control (flat for the first half, then a
+25%-over-the-second-half ramp) passes the whole-window `sustained` check (ratio ~1.12, under
+15%) while correctly failing `settled` (trailing-quarter ratio ~1.11, over 10%) -- this is
+the exact failure mode review flagged, reproduced and caught (`tests/test_r_instruments.py`,
+`test_envelope_settled_flags_a_still_growing_tail_even_when_sustained_by_halves`).
+
+Re-running Sec.10.3's own 600-config sweep (identical `kw`+`seed` per run, so this is an
+exact recheck, not a new sample) with the settled-aware instrument:
+
+| | runs | node-checks |
+|---|---|---|
+| any sustained (Sec.10.3's original criterion, re-verified identical) | 133 / 600 | 708 / 14400 |
+| **any sustained AND settled** | **116 / 600** | **396 / 14400** |
+
+The `any_sustained` recheck reproduced Sec.10.3's 133/600 exactly (a determinism check on
+the rerun itself, not just a restatement). Adding `settled`: 17 of the 133 runs' sustained
+signal turns out to be entirely still-growing (no node in those runs plateaus within the
+recorded window) -- a real correction, not a rounding difference. At the node-check level,
+396/708 (56%) of the previously-"sustained" node-checks are genuinely plateaued; the
+remaining 44% were caught mid-ramp. **The headline conclusion is not overturned** --
+sustained oscillation still requires memory+asymmetry together, and a majority of the
+originally-reported sustained node-checks survive the stricter check -- but the true
+"finished settling into a limit cycle within this window" count is 396/14400 (2.75%), not
+708/14400 (4.9%), and Sec.10.4's "133/600" headline should be read from here on as "133/600
+runs showed a sustained signal, 116/600 of which had at least one node that had actually
+settled by the end of the window."
+
+### 11.2 Spatial distribution: does the settled regime concentrate on closed loops? (R8's precondition)
+
+R8 (a future PR, winding number) needs a phase defined at every node around some closed
+loop in the relation graph -- if settled nodes are scattered rather than clustered along a
+cycle, R8 would have nothing to compute on even once built. Measured directly, not assumed:
+
+**Method** (disclosed, not tuned to the answer): for each of the 116 any-settled-sustained
+runs, rebuild the relation graph (edge existence only -- asymmetry never changes which edges
+exist, `tests/test_r_topology.py::test_fundamental_cycles_unaffected_by_asymmetrization`),
+compute its **fundamental cycle basis** (`topology.fundamental_cycles`: one cycle per
+non-spanning-tree edge -- the standard, linear-time, well-defined stand-in for "the graph's
+cycles"; enumerating every simple cycle is combinatorially infeasible in general and was
+never attempted), and check whether every node on each cycle is `sustained_and_settled`.
+
+**Result:** across all 116 runs, 2660 fundamental cycles were examined (mean length 4.92,
+range 3-13 nodes). Only **41 / 2660 (1.5%)** have every node on the cycle
+sustained-and-settled.
+
+**This is close to zero, as review anticipated** -- but not featureless zero, and the shape
+of the non-zero part matters for what comes next. The node-level density of
+sustained-and-settled nodes among these 116 runs is p=14.2% (396/2784 node-checks, restricted
+to just the qualifying runs). Under an independence null (nodes sustained-and-settled at
+random with this same marginal probability, uncorrelated with their neighbours), the
+expected fraction of length-L cycles fully covered is `p^L`; averaged over the actual
+observed cycle lengths this predicts 0.077% (about 2 cycles out of 2660), roughly **20x
+below** the observed 1.5%. So sustained-and-settled nodes are NOT scattered independently --
+they cluster locally, more than chance would produce, consistent with the underlying
+mechanism being a per-eigenmode phenomenon (Sec.10.3: a single unstable eigenvector of `L`
+has spatially-correlated support, not i.i.d. per-node noise) rather than independent
+per-node coin flips. But the clustering is SHORT-RANGE only: every one of the 41 fully-
+covered cycles has length <= 5 (the shortest ones available in these graphs -- triangles and
+near-triangles); no fully-covered cycle of length > 5 was found even though cycles up to
+length 13 were examined. Sustained-and-settled nodes form small local neighbourhoods; they
+do not organize into extended loops.
+
+**Conclusion for R8 (per review's own conditional):** 1.5%, concentrated entirely on
+short local loops, is close enough to zero that implementing R8 now would mostly return
+"undefined," and on the rare loop where it did not, the loop would almost always be a
+length-3-to-5 local cluster rather than a structurally interesting extended cycle -- not
+evidence of anything R8 was built to measure. **Per review's instruction, this PR stops at
+R7 (phase) and does not build R8.** The next question this raises, to take up before or
+alongside R7: **why does the sustained-and-settled regime cluster into small local
+neighbourhoods (20x above chance) rather than propagating along the graph to occupy an
+extended loop?** -- not answered here; flagged as the open question PR-R1.9 leaves behind,
+per review's own framing of what a near-zero (but non-random) result should become.
+
+### 11.3 Where the 133/600 (and 116/600 settled-sustained) sustained runs actually are
+
+From `results_pr_r1_75.json`'s per-run records (`kw`+`seed`, not re-aggregated by hand):
+
+| axis | breakdown (sustained runs / 300 or /150 as noted) |
+|---|---|
+| damping | 0.0: **109/300** vs 0.05: 24/300 -- damping=0.0 accounts for 82% of all sustained runs |
+| topology | barabasi_albert: **47**, erdos_renyi: 35, random_regular: 27, watts_strogatz: 24 (each /150) |
+| asymmetry_strength | 0.3: **51**, 20.0: **38**, 8.0: **29**, 3.0: 11, 1.0: 4 (each /120) -- non-monotonic, a dip at 1.0-3.0, high at both the low (0.3) and high (8-20) ends, consistent with Sec.10.3's note that raising strength moves both `p` and `q` in the `q^2 > p*gamma^2` inequality, not `q` alone |
+
+**Recommendation for PR-R2's scope:** concentrate on `damping=0.0`, `topology` in
+`{barabasi_albert, erdos_renyi}`, `asymmetry_strength` in `{0.3, 8.0, 20.0}` (skip the
+1.0-3.0 dip) -- this is where the sustained-and-settled signal actually lives; a full grid
+sweep at PR-R2's presumably finer resolution is not needed and would mostly re-discover the
+same near-empty regions Sec.10.3/11.3 already characterized.
+
+### 11.4 Combined honest statement
+
+Sustained oscillation (Sec.10.3) is real but, once "settled" is required, smaller than
+first reported (116/600 runs and 396/14400 node-checks, not 133/600 and 708/14400) -- a
+correction applied with the same rigor Sec.9.2 applied to PR-R1's own headline, not
+smoothed over. Spatially, the settled regime clusters into small local neighbourhoods
+(20x above an independent-node null) but does not extend to loops longer than 5 nodes, so
+R8 (winding number) is not attemptable yet in any structurally meaningful way -- per
+review's own conditional, this PR stops at R7 and leaves "why does clustering stay local"
+as the next question, not "the ceiling," since nothing here rules out a longer-range
+regime existing outside the sweep windows examined (Sec.10.3's 5 strengths, 2 damping
+values, 4 topologies, 15 seeds -- a bounded, disclosed sample, not an exhaustive one).
+
+### 11.5 9th-audit and 8th-audit re-check on Sec.11's own claims
+
+- **9th audit:** "1.5% of cycles fully settled-sustained" and "116/600 runs, not 133/600"
+  are both non-achievement-flavored claims (the near-zero R8 precondition; the shrinkage
+  from Sec.10.3's headline), so the 9th audit does apply here. Instrument expressibility
+  check: `fundamental_cycles` enumerates a well-defined complete basis (not a truncated or
+  sampled subset -- every non-tree edge contributes exactly one cycle, verified in
+  `tests/test_r_topology.py::test_cycle_space_dimension_matches_e_minus_n_plus_components`
+  against the standard `E - N + components` formula), so "1.5%, not more" is not an artifact
+  of under-searching the cycle space. `settled`'s own expressibility is bounded by the same
+  window-length constraints as `sustained` (documented in `_envelope_trend`'s docstring;
+  needs >=16 interior samples, well under the ~2900-sample windows these runs use).
+- **8th audit:** does `_ENVELOPE_SETTLED_TOL = 10%` or the fundamental-cycle-basis choice
+  encode the answer? Neither was tuned against Sec.10.3's sweep outcome: the tolerance was
+  fixed before rerunning the sweep (chosen to be tighter than, but the same kind of
+  constant as, `_ENVELOPE_SUSTAIN_TOL`), and the fundamental cycle basis is a standard
+  graph-theory construction with no free parameter to tune -- the same basis is returned
+  regardless of which nodes end up sustained-and-settled. The 20x-above-null clustering
+  finding was computed, not assumed, against a pre-specified independence null (`p^L`
+  averaged over the actual observed lengths), not a null chosen after seeing the 1.5%
+  figure.

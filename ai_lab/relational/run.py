@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ai_lab/relational/run.py -- CLI for the R-layer substrate + first four instruments
-(PR-R1 + PR-R1.5 + PR-R1.75).
+(PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9).
 
-MODULE:      relational_r1 (ai_lab/relational, PR-R1 + PR-R1.5 + PR-R1.75 addenda)
+MODULE:      relational_r1 (ai_lab/relational, PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 addenda)
 QUESTION:    Starting from only node indices, a relation graph, and a real-valued per-node
              state (no coordinates, no complex numbers, no phase, no S^1): (a) does pure
              first-order relaxation ("memory off") with a SYMMETRIC relation (w_ij == w_ji)
@@ -15,10 +15,15 @@ QUESTION:    Starting from only node indices, a relation graph, and a real-value
              gamma>0 (not just fail to be observed), and does the one combination PR-R1.5
              left untested -- memory=on x asymmetry=on -- actually produce sustained
              oscillation, and if so, exactly which analytic condition on L's eigenvalues
-             predicts it (PR-R1.75)? PR-R1 originally asked only a version of (a)/naive-(b)
-             without the symmetry precondition or the sustained/decaying distinction;
-             PR-R1.5 corrected the scope; PR-R1.75 supplies the missing proof for (c)'s
-             memory=on side and answers (d) -- see AUDIT.md Sec.9-10.
+             predicts it (PR-R1.75)? (e) of the nodes found "sustained," how many have
+             actually SETTLED into a plateaued amplitude rather than still climbing toward it
+             (PR-R1.9's stricter envelope check), and do settled nodes cover entire closed
+             loops in the relation graph -- R8's (future) precondition (PR-R1.9)? PR-R1
+             originally asked only a version of (a)/naive-(b) without the symmetry
+             precondition or the sustained/decaying distinction; PR-R1.5 corrected the scope;
+             PR-R1.75 supplies the missing proof for (c)'s memory=on side and answers (d);
+             PR-R1.9 answers (e) and, per its own result, does NOT proceed to build R8 this
+             PR -- see AUDIT.md Sec.9-11.
 PUT IN:      node count N; a relation graph G (w_ij >= 0) from a disclosed generator rule
              (random_regular / erdos_renyi / watts_strogatz / barabasi_albert -- never a
              grid by default); real per-node state x_i in R^m (default m=1, no complex
@@ -72,18 +77,42 @@ EMERGED:     (measured) memory=off, W symmetric, produces zero genuine, sustaine
              oscillation requires BOTH memory (inertia) AND asymmetry together; neither alone
              produces it in any configuration measured across PR-R1, PR-R1.5, or PR-R1.75,
              and this is now proven, not just unobserved, for both single-ingredient cases.
+             PR-R1.9 (AUDIT.md Sec.11) added `settled` -- a trailing-quarter-only envelope
+             check, distinct from `sustained`'s whole-window halves check, catching a node
+             that is still climbing toward its eventual limit-cycle amplitude but happens to
+             average out as "roughly flat" over the whole window. Re-running PR-R1.75's exact
+             600-config sweep (same kw+seed, an exact recheck): `any_sustained` reproduced
+             133/600 (708/14400 node-checks) identically, but **sustained-AND-settled is
+             116/600 runs (396/14400 node-checks)** -- 17 runs' sustained signal was entirely
+             still-growing, and 44% of the originally-sustained node-checks were caught
+             mid-ramp. The headline is not overturned (a genuine plateaued-oscillation regime
+             still exists, memory+asymmetry are still both required) but its true size is
+             116/600, not 133/600. Separately, PR-R1.9 measured R8's (future) spatial
+             precondition directly: building each settled run's relation graph's
+             **fundamental cycle basis** (topology.fundamental_cycles, spanning-tree+chords,
+             not an exhaustive simple-cycle enumeration) and checking whether every node on a
+             cycle is sustained-and-settled found only **41/2660 (1.5%) of fundamental cycles
+             fully covered** -- ~20x the rate an independent-node null predicts (settled
+             nodes DO cluster, more than chance), but every fully-covered cycle has length
+             <=5 (no long loop was found covered). Per review's own instruction, this PR
+             stopped at R7 scope and did NOT build R8 -- 1.5%, concentrated on short local
+             loops, is too close to zero to be structurally meaningful yet.
 CLAIM TIER:  proven (memory=off, any W built by this construction, any strength: Gershgorin,
              Sec.10.2; memory=on, symmetric W, any gamma>0: energy/Lyapunov + LaSalle,
              Sec.10.1) ; measured (memory=off/symmetric-W: 0/5760, matches the proof exactly;
              memory=off/asymmetric-W: 0/8640, matches the Gershgorin proof exactly;
              memory=on/symmetric-W's ORIGINAL "period found" numbers, now understood to be
              decaying transients: 0/1200 sustained, matches the energy proof exactly;
-             memory=on x asymmetry=on: 133/600 runs sustained, a genuine positive result) ;
-             observed (the specific period/damping relationship for decaying transients --
-             no external reference value exists) ; interpretive (the q^2 > p*gamma^2
-             threshold's generality beyond the one topology/seed pair it was directly
-             cross-validated against -- 11/12 sign matches is supportive, not yet a
-             held-out-sweep confirmation; see AUDIT.md Sec.10.5).
+             memory=on x asymmetry=on: 116/600 runs sustained-AND-settled, PR-R1.9's
+             corrected version of PR-R1.75's 133/600, a genuine positive result; 1.5% of
+             fundamental cycles fully settled-sustained, ~20x an independence-null baseline
+             but concentrated on cycles of length <=5) ; observed (the specific
+             period/damping relationship for decaying transients -- no external reference
+             value exists) ; interpretive (the q^2 > p*gamma^2 threshold's generality beyond
+             the one topology/seed pair it was directly cross-validated against -- 11/12 sign
+             matches is supportive, not yet a held-out-sweep confirmation, AUDIT.md Sec.10.5;
+             and why the settled regime clusters locally instead of propagating along the
+             graph -- open, not attempted, AUDIT.md Sec.11.2).
 KNOWN MATCH: N/A -- first measurement of the R-layer. The symmetric-W memory=off/on
              no-period results are qualitatively consistent with the textbook facts that
              gradient flows admit no limit cycles and that damped second-order systems with
@@ -114,10 +143,13 @@ AUDIT (7):   1. Rule names the result?                 No  -- the update rule is
                 asymmetry perturbation chi_ij is drawn from a disjoint RNG stream so it does
                 not correlate with x_i(0) for a given seed (verified).
              4. Untargeted companion phenomena appear?   Partial/not fully assessed -- only
-                R1-R4 exist, so the fuller phenomenology (R5-R11) cannot be checked yet. This
-                is now the most load-bearing open item: PR-R1.75 finally produced a genuine
-                sustained-oscillation regime (133/600 runs) that R5-R8 (period diversity,
-                phase, winding) could characterize, but those instruments do not exist yet.
+                R1-R4 exist, so the fuller phenomenology (R5-R11) cannot be checked yet.
+                PR-R1.9 measured, rather than assumed, whether R8's precondition (settled
+                nodes spanning entire closed loops) is met: only 1.5% of fundamental cycles
+                qualify, so PR-R1.9 deliberately stopped at R7 scope and left R8 unbuilt --
+                the load-bearing open item is now R5-R7 (period diversity, phase), plus the
+                new question PR-R1.9 raised: why does the settled regime cluster locally
+                (20x above chance) instead of propagating along the graph.
              5. Matches reality with real numbers?        Yes for memory=off/symmetric-W --
                 0/5760 matching an exact analytic guarantee (Sec.3.1/10.1). Yes for
                 memory=off/asymmetric-W -- 0/8640 matching the Gershgorin proof exactly
@@ -125,40 +157,59 @@ AUDIT (7):   1. Rule names the result?                 No  -- the update rule is
                 memory=on/symmetric-W's decaying-transient numbers -- 0/1200 sustained
                 matching the energy/Lyapunov proof exactly (Sec.10.1). "Measured" (not yet
                 matched to an independent external formula) for memory=on x asymmetry=on's
-                133/600 positive count, though the derived q^2>p*gamma^2 sign was
-                cross-checked against direct eigenvalue computation (11/12 match).
+                116/600 sustained-AND-settled count (PR-R1.9's correction of PR-R1.75's
+                133/600), though the derived q^2>p*gamma^2 sign was cross-checked against
+                direct eigenvalue computation (11/12 match). "Measured" for the 1.5%
+                fundamental-cycle coverage figure, cross-checked against a pre-specified
+                independence-null baseline (predicted 0.077%, observed 20x higher).
              6. Robust to changing IC/parameters?         Yes -- swept 30 seeds x 4
                 topologies x 2 saturation settings (memory=off/symmetric, 0/5760), 30 seeds
                 x 4 topologies x 3 asymmetry strengths (memory=off/asymmetric, 0/8640,
                 PR-R1.5; plus 300 additional stress-test cases at strengths up to 100,
                 PR-R1.75), 10 seeds x 5 damping values (memory=on/symmetric, 605/1200
-                defined but 0/1200 sustained), and (PR-R1.75) 15 seeds x 4 topologies x 5
+                defined but 0/1200 sustained), (PR-R1.75) 15 seeds x 4 topologies x 5
                 asymmetry strengths x 2 damping values (memory=on x asymmetry=on, 373/600
-                defined, 133/600 sustained).
+                defined, 133/600 sustained), and (PR-R1.9) the identical 600-config sweep
+                rechecked with the settled instrument (116/600 sustained-AND-settled) plus
+                2660 fundamental cycles examined across all 4 topologies for the spatial
+                coverage figure.
              7. Code asserts or discovers the conclusion? Discovers -- run.py calls
                 instruments.measure_all() and reports whatever comes back, including
-                `sustained` alongside `defined` so a caller cannot read "period found" as
-                "structure found" without also seeing the decay verdict. PR-R1.5's
-                correction of PR-R1's own memory=on headline, and PR-R1.75's positive
-                133/600 sustained result, were both written into AUDIT.md with the same
-                weight as the negative results (Sec.10.4) rather than the positive result
-                being played up or the negative ones played down.
+                `sustained` alongside `defined`, and (PR-R1.9) `settled` and
+                `sustained_and_settled` alongside `sustained`, so a caller cannot read
+                "period found" as "structure found," nor "sustained by the whole-window
+                check" as "actually plateaued," without seeing every verdict explicitly.
+                PR-R1.5's correction of PR-R1's own memory=on headline, PR-R1.75's positive
+                133/600 sustained result, and PR-R1.9's own downward correction of that
+                figure to 116/600 (plus the near-zero 1.5% cycle-coverage finding) were all
+                written into AUDIT.md with the same weight as each other -- PR-R1.9
+                deliberately did not build R8 despite review's hypothesis being directionally
+                right (settled nodes DO cluster above chance), because the measured coverage
+                did not support it structurally.
 STATUS:      YELLOW. Not RED: three of the four cells now have exact analytic proofs
              (memory=off any-W: Gershgorin, Sec.10.2; memory=on symmetric-W: energy/
-             Lyapunov, Sec.10.1) matched exactly by the sweeps (0/5760, 0/8640, 0/1200), and
-             the fourth cell's positive result (memory=on x asymmetry=on, 133/600 sustained)
-             has both a derived mechanism (q^2>p*gamma^2) and empirical support, not just a
-             raw count. Not GREEN: item 4 is now the binding constraint -- R5-R8 do not exist
-             yet to characterize the sustained-oscillation regime PR-R1.75 just found (period
-             diversity, phase, winding are all still unmeasured), and the q^2>p*gamma^2
-             threshold's cross-validation (11/12 sign matches) is limited to one topology/
-             seed pair, not yet a held-out confirmation sweep.
+             Lyapunov, Sec.10.1) matched exactly by the sweeps (0/5760, 0/8640, 0/1200), the
+             fourth cell's positive result (memory=on x asymmetry=on, now 116/600
+             sustained-AND-settled after PR-R1.9's correction) has both a derived mechanism
+             (q^2>p*gamma^2) and empirical support, and PR-R1.9's own claims (settled
+             regression tests, the fundamental-cycle-coverage figure) were checked against
+             synthetic positive/negative controls and an independence-null baseline rather
+             than asserted. Not GREEN: item 4 is still the binding constraint -- R5-R7 do
+             not exist yet to characterize the sustained-and-settled regime, R8 was
+             deliberately not built pending a better understanding of WHY the regime
+             clusters locally instead of propagating (AUDIT.md Sec.11.2's open question),
+             and the q^2>p*gamma^2 threshold's cross-validation (11/12 sign matches) is
+             still limited to one topology/seed pair.
 A_OR_B:      (B)-leaning, but not (B). Still hand-set: the existence of the node set / the
              relation-graph generation rule / the update rule's functional form / the
              timestep / the initial small inhomogeneity / the finite node count / (PR-R1.5)
              the asymmetry perturbation's distribution (Uniform(-1,1) per edge) when
              asymmetry=True. PR-R1.75 added no new hand-set input -- only proofs and a sweep
-             over the existing (memory, asymmetry) combination.
+             over the existing (memory, asymmetry) combination. PR-R1.9 added one: the
+             fundamental-cycle-basis construction (spanning-tree-plus-chords) used to define
+             "the graph's cycles" for the R8-precondition check -- a standard, disclosed,
+             parameter-free graph-theory choice (AUDIT.md Sec.11.2), not tuned to the
+             coverage figure it produced.
 
 CLI only. NOT wired into any hourly loop, multiworld registration, or report pipeline in
 this PR (that is PR-R4's scope). --no-record is intended to call

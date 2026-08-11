@@ -19,7 +19,8 @@ repo already requires.
 
 from __future__ import annotations
 
-from typing import Optional
+from collections import deque
+from typing import List, Optional
 
 import numpy as np
 
@@ -232,3 +233,74 @@ def build_topology(name: str, n: int, seed: Optional[int] = None, **kwargs) -> n
 def geometry_was_given(name: str) -> bool:
     """True iff selecting this topology hands the system geometry for free (spec Sec.4.4)."""
     return name in GEOMETRY_GIVING_TOPOLOGIES
+
+
+def fundamental_cycles(W: np.ndarray, atol: float = 0.0) -> List[List[int]]:
+    """PR-R1.9: a fundamental cycle basis of the relation graph (edge existence only,
+    W_ij > atol, undirected -- asymmetry, Sec.9.1, never changes which edges exist, only
+    how a weight is split between the two directions, so this is well-defined for both
+    symmetric and asymmetrized W).
+
+    Disclosed choice, not tuned to any downstream answer: "the graph's cycles" is,
+    combinatorially, an infeasibly large set to enumerate in general (the number of simple
+    cycles can be exponential in n). The FUNDAMENTAL cycle basis -- one cycle per non-tree
+    ("chord") edge, relative to a BFS spanning tree/forest -- is the standard, well-defined,
+    linear-time-computable stand-in used throughout graph theory (it spans the graph's cycle
+    space; every other cycle is an XOR-combination of these). Built via: BFS spanning
+    forest (one tree per connected component) -> for every edge NOT in the forest, its
+    fundamental cycle is the tree-path between its two endpoints plus that edge. This is
+    used by the AUDIT.md Sec.11 "does the sustained/settled regime concentrate on a closed
+    loop" pre-check for R8 (winding number needs phase to be defined all the way around some
+    closed loop); it is not itself R8 and does not compute or return any phase/winding
+    value -- only node-index lists.
+
+    Returns a list of cycles, each a list of node indices in cycle order (closing back to
+    the first index implicitly, i.e. edges (c[0],c[1]), (c[1],c[2]), ..., (c[-1],c[0])).
+    A tree/forest with no chord edges returns an empty list (no cycles exist, honestly).
+    """
+    n = W.shape[0]
+    adj: List[List[int]] = [[] for _ in range(n)]
+    edges = set()
+    iu, ju = np.triu_indices(n, k=1)
+    present = (W[iu, ju] > atol) | (W[ju, iu] > atol)
+    for i, j in zip(iu[present], ju[present]):
+        i, j = int(i), int(j)
+        adj[i].append(j)
+        adj[j].append(i)
+        edges.add((i, j))
+
+    parent = [None] * n
+    visited = [False] * n
+    tree_edges = set()
+    for start in range(n):
+        if visited[start]:
+            continue
+        visited[start] = True
+        q = deque([start])
+        while q:
+            u = q.popleft()
+            for v in adj[u]:
+                if not visited[v]:
+                    visited[v] = True
+                    parent[v] = u
+                    tree_edges.add((u, v) if u < v else (v, u))
+                    q.append(v)
+
+    def _path_to_root(node: int) -> List[int]:
+        path = [node]
+        while parent[path[-1]] is not None:
+            path.append(parent[path[-1]])
+        return path
+
+    cycles: List[List[int]] = []
+    for (i, j) in sorted(edges):
+        if (i, j) in tree_edges:
+            continue
+        path_i = _path_to_root(i)
+        path_j = _path_to_root(j)
+        set_i = set(path_i)
+        lca = next(node for node in path_j if node in set_i)
+        pi = path_i[: path_i.index(lca) + 1]
+        pj = path_j[: path_j.index(lca)]
+        cycles.append(pi + list(reversed(pj)))
+    return cycles

@@ -199,6 +199,44 @@ def test_period_sustained_positive_control_undamped_oscillator():
     assert r4.value["n_sustained_periodic_nodes"] > 0
 
 
+def test_envelope_settled_flags_a_still_growing_tail_even_when_sustained_by_halves():
+    """PR-R1.9: the exact risk review flagged -- a whole-window halves comparison can call a
+    node 'sustained' (ratio within tol) while its amplitude is still visibly climbing right
+    up to the end of the recording, because most of the growth happened earlier and the
+    coarse two-halves average dilutes it. `settled` must catch this: a flat envelope for the
+    first half, then a steady ramp for the second half, passes the whole-window `sustained`
+    check (ratio ~1.12, under the 15% tolerance) but must NOT be `settled` (its trailing
+    quarter is still moving by ~11%, over the 10% settled tolerance)."""
+    t = np.linspace(0, 40, 4000)
+    amp = np.where(t < 20, 1.0, 1.0 + 0.25 * (t - 20) / 20.0)
+    sig = amp * np.sin(2 * np.pi * t / 3.0)
+    r = instruments._envelope_trend(sig, trim=50)
+    assert r["classification"] == "sustained" and r["sustained"] is True
+    assert r["settled"] is False
+
+
+def test_envelope_settled_true_for_a_genuinely_plateaued_oscillation():
+    """Positive control: a signal that is flat-amplitude for its entire recorded window
+    (nothing still moving anywhere, not just on average) must be both sustained AND settled."""
+    t = np.linspace(0, 40, 4000)
+    sig = np.sin(2 * np.pi * t / 3.0)
+    r = instruments._envelope_trend(sig, trim=50)
+    assert r["sustained"] is True
+    assert r["settled"] is True
+
+
+def test_period_carries_settled_and_sustained_and_settled_whenever_defined():
+    res = substrate.run(n=24, steps=3000, dt=0.05, seed=7, memory="on", damping=0.0)
+    r4 = instruments.period(res.x_traj, res.dt)
+    assert "any_settled_sustained" in r4.value
+    assert "n_settled_sustained_periodic_nodes" in r4.value
+    for entry in r4.value["per_node"]:
+        assert "settled" in entry
+        if entry["defined"]:
+            assert "sustained_and_settled" in entry
+            assert entry["sustained_and_settled"] == (entry["sustained"] and entry["settled"])
+
+
 def test_reversal_carries_per_node_envelope():
     res = substrate.run(n=12, steps=2000, dt=0.05, seed=2, memory="on", damping=0.05)
     r3 = instruments.reversal(res.x_traj)

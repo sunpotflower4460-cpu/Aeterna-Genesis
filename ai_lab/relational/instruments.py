@@ -172,10 +172,17 @@ _REVERSAL_NOISE_REL_TOL = 1e-6  # fixed, disclosed noise floor -- same for every
 # below (PR-R1.5). Same constant for every run regardless of outcome -- not tuned per call.
 _ENVELOPE_SUSTAIN_TOL = 0.15
 
+# PR-R1.9: fixed, disclosed tolerance for `settled` (see _envelope_trend docstring) -- a
+# narrower, trailing-quarter-only check, deliberately independent of _ENVELOPE_SUSTAIN_TOL's
+# whole-window halves comparison. Same constant for every call regardless of outcome.
+_ENVELOPE_SETTLED_TOL = 0.10
+_ENVELOPE_SETTLED_MIN_LEN = 16  # need >=4 samples per quarter for the trailing-quarter check to mean anything
+
 
 def _envelope_trend(series: np.ndarray, trim: int) -> Dict[str, Any]:
     """PR-R1.5: is an oscillation SUSTAINED, DECAYING, or GROWING, distinct from whether a
-    period was detected at all (R4's own question).
+    period was detected at all (R4's own question). PR-R1.9 adds `settled`, a narrower and
+    independent check (see below).
 
     Rationale (per review): with memory=off and no damping term, the classic route to
     "period without memory" is a directed loop whose linear operator has a genuinely
@@ -191,11 +198,28 @@ def _envelope_trend(series: np.ndarray, trim: int) -> Dict[str, Any]:
     edge-trimmed interior window R3 already uses (edge-padding bias applies here too), split
     into first/second half, compare mean envelope magnitude between halves. Tolerance
     (_ENVELOPE_SUSTAIN_TOL = 15%) is fixed and disclosed, identical for every call.
+
+    `settled` (PR-R1.9) asks a DIFFERENT question than `sustained`: not "is the whole
+    window's amplitude roughly the same at the end as at the start" but "has the amplitude
+    actually stopped moving by the time the recording stopped". A trajectory that is still
+    climbing toward its eventual limit-cycle amplitude (e.g. shortly after linear instability
+    crosses q^2 > p*gamma^2, AUDIT.md Sec.10.3) can pass the whole-window halves check --
+    most of the window is already near-plateau -- while its TRAILING quarter is still
+    trending upward. Treating that as equivalent to a genuine plateau would make the same
+    mistake review flagged for decaying transients, just on the growing side: deriving
+    structure (a future PR's phase/winding) from a still-changing amplitude, not a settled
+    one. `settled` compares the mean envelope of the LAST quarter of the window against the
+    quarter immediately before it (not the whole first half) -- only a node whose amplitude
+    has plateaued specifically at the END of the recorded window is settled, independent of
+    what the whole-window `sustained` classification says. Fixed tolerance
+    _ENVELOPE_SETTLED_TOL=10%, needs >=_ENVELOPE_SETTLED_MIN_LEN=16 interior samples (>=4 per
+    quarter) or is reported False (insufficient resolution to judge, not "unsettled").
     """
     y = series - series.mean()
     interior = y[trim: len(y) - trim] if trim > 0 else y
     if len(interior) < 8 or np.allclose(interior, 0.0):
         return {"ratio": None, "classification": "undefined", "sustained": False,
+                "settled": False, "settled_ratio": None,
                 "note": "interior window too short or flat to estimate an envelope"}
     env = np.abs(hilbert(interior))       # magnitude only -- angle() is never called
     half = len(env) // 2
@@ -203,6 +227,7 @@ def _envelope_trend(series: np.ndarray, trim: int) -> Dict[str, Any]:
     a2 = float(env[half:].mean())
     if a1 <= 0.0:
         return {"ratio": None, "classification": "undefined", "sustained": False,
+                "settled": False, "settled_ratio": None,
                 "note": "first-half envelope amplitude is zero"}
     ratio = a2 / a1
     if ratio < 1.0 - _ENVELOPE_SUSTAIN_TOL:
@@ -211,8 +236,23 @@ def _envelope_trend(series: np.ndarray, trim: int) -> Dict[str, Any]:
         cls = "growing"
     else:
         cls = "sustained"
+
+    settled = False
+    settled_ratio = None
+    if len(env) >= _ENVELOPE_SETTLED_MIN_LEN:
+        quarter = len(env) // 4
+        q3 = float(env[-2 * quarter:-quarter].mean())
+        q4 = float(env[-quarter:].mean())
+        if q3 > 0.0:
+            settled_ratio = q4 / q3
+            settled = abs(settled_ratio - 1.0) <= _ENVELOPE_SETTLED_TOL
+
     return {"ratio": _native(ratio), "classification": cls, "sustained": cls == "sustained",
-            "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=%.2f" % _ENVELOPE_SUSTAIN_TOL}
+            "settled": bool(settled), "settled_ratio": _native(settled_ratio),
+            "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=%.2f; "
+                    "settled = last-quarter/third-quarter magnitude ratio within tol=%.2f "
+                    "of 1 (trailing-window trend check, independent of the halves ratio "
+                    "above)" % (_ENVELOPE_SUSTAIN_TOL, _ENVELOPE_SETTLED_TOL)}
 
 
 def reversal(x_traj: np.ndarray, r1: Optional[Reading] = None, window: Optional[int] = None) -> Reading:
@@ -379,17 +419,18 @@ def period(x_traj: np.ndarray, dt: float, r3: Optional[Reading] = None) -> Readi
     per_node: List[Dict[str, Any]] = []
     any_defined = False
     any_sustained = False
+    any_settled_sustained = False
     for i in range(n):
         entry: Dict[str, Any] = {"node": i}
         if counts[i] < 2:
-            entry.update(defined=False, T=None, rate=None, sustained=False,
+            entry.update(defined=False, T=None, rate=None, sustained=False, settled=False,
                          reason="R3 precondition not met for this node (reversal_count=%d < 2)" % counts[i])
             per_node.append(entry)
             continue
         series = x_traj[:, i, :].sum(axis=-1)
         lag = _first_autocorr_peak(series, max_lag_steps)
         if lag is None:
-            entry.update(defined=False, T=None, rate=None, sustained=False,
+            entry.update(defined=False, T=None, rate=None, sustained=False, settled=False,
                          reason="no autocorrelation peak found within the expressible window "
                                 "(L/2 steps) -- either genuinely aperiodic, or the period "
                                 "exceeds what this instrument can represent")
@@ -401,18 +442,29 @@ def period(x_traj: np.ndarray, dt: float, r3: Optional[Reading] = None) -> Readi
         # detectable autocorrelation peak while its amplitude shrinks to zero. `sustained`
         # is always carried explicitly alongside `defined` so a later PR (R7's phase
         # derivation) does not mistake a decaying transient's ripple for structure.
+        # PR-R1.9: `settled` is carried alongside `sustained` for the same reason, on the
+        # opposite failure mode -- a node that is still growing into its eventual limit-cycle
+        # amplitude can pass the whole-window `sustained` check while its trailing edge is
+        # still moving (see _envelope_trend's docstring). R7/R8 must gate on
+        # `sustained AND settled`, not `sustained` alone.
         env = _envelope_trend(series, trim)
+        sustained_and_settled = bool(env["sustained"]) and bool(env["settled"])
         entry.update(defined=True, T=_native(T), rate=_native(1.0 / T) if T > 0 else None,
                      lag_steps=lag, reason="ok", sustained=bool(env["sustained"]),
+                     settled=bool(env["settled"]), sustained_and_settled=sustained_and_settled,
                      envelope=env)
         any_defined = True
         any_sustained = any_sustained or env["sustained"]
+        any_settled_sustained = any_settled_sustained or sustained_and_settled
         per_node.append(entry)
     defined_Ts = [e["T"] for e in per_node if e["defined"]]
     sustained_Ts = [e["T"] for e in per_node if e["defined"] and e["sustained"]]
+    settled_sustained_Ts = [e["T"] for e in per_node if e["defined"] and e.get("sustained_and_settled")]
     value = {
         "any_sustained": any_sustained,
         "n_sustained_periodic_nodes": len(sustained_Ts),
+        "any_settled_sustained": any_settled_sustained,
+        "n_settled_sustained_periodic_nodes": len(settled_sustained_Ts),
         "per_node": per_node,
         "any_defined": any_defined,
         "n_periodic_nodes": len(defined_Ts),
