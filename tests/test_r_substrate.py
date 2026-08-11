@@ -267,3 +267,53 @@ def test_asymmetrize_preserves_non_negativity_at_extreme_strength():
     assert (Wa >= 0).all()
     # edges are neither created nor destroyed even at an extreme strength
     assert np.array_equal(W0 > 0, (Wa > 0) | (Wa.T > 0))
+
+
+# --- PR-R2 pre-check (AUDIT.md Sec.12.2): saturation="none" cannot produce a genuine
+# bounded oscillation for memory=on x asymmetry=on -- only saturation="cubic" can ---------
+
+def test_memory_on_asymmetry_on_saturation_none_diverges_over_a_longer_window():
+    """AUDIT.md Sec.12.2: memory=on with saturation='none' is an EXACTLY LINEAR ODE (no
+    a*x^3 term), so any config with Re(lambda_max) > 0 (essentially every asymmetric config
+    swept in Sec.10.3/11 -- see Sec.12.2) cannot have a bounded limit cycle; it must diverge
+    without bound given a long enough window, however 'settled' it looks in a short one.
+    This is a regression/documentation test protecting that finding: a config previously
+    reported sustained_and_settled at steps=3000 shows unmistakable, unbounded growth once
+    the window is extended -- not evidence of a code bug, evidence that saturation='none'
+    genuinely cannot cap growth."""
+    kw = dict(n=24, dt=0.05, seed=5, memory="on", damping=0.05, asymmetry=True,
+              asymmetry_strength=0.3, topology="random_regular")
+    node = 22  # AUDIT.md Sec.12.2's spot-checked node for this exact (seed, kw)
+    short = substrate.run(steps=3000, saturation="none", **kw)
+    long = substrate.run(steps=20000, saturation="none", **kw)
+    series_short = short.x_traj[:, node, :].sum(axis=-1)
+    series_long = long.x_traj[:, node, :].sum(axis=-1)
+    # within the original (short) window, amplitude stays modest -- this is what PR-R1.9's
+    # settled check saw and correctly reported as flat FOR THAT WINDOW.
+    assert np.max(np.abs(series_short)) < 1.0
+    # extended far past that window, the SAME trajectory (same seed, same physics) is
+    # unmistakably diverging -- more than two orders of magnitude beyond the short window's
+    # peak, confirming this was a slow transient, not a true attractor.
+    assert np.max(np.abs(series_long[-len(series_long) // 10:])) > 100.0
+
+
+def test_memory_on_asymmetry_on_saturation_cubic_stays_bounded_on_the_same_config():
+    """Positive control for the test above: the ONLY change from the diverging config is
+    saturation='cubic' (the codebase's existing nonlinear cap, unused in Sec.10.3/11's
+    sweep) -- on the identical (seed, topology, strength, damping), this must plateau
+    rather than diverge, confirming saturation='cubic' is the missing ingredient for a
+    genuine bounded oscillation, not a coincidence of this one config."""
+    kw = dict(n=24, dt=0.05, seed=5, memory="on", damping=0.05, asymmetry=True,
+              asymmetry_strength=0.3, topology="random_regular",
+              saturation="cubic", saturation_strength=0.1)
+    node = 22
+    res = substrate.run(steps=20000, **kw)
+    series = res.x_traj[:, node, :].sum(axis=-1)
+    L = len(series)
+    second_half_max = np.max(np.abs(series[L // 2:]))
+    last_quarter_max = np.max(np.abs(series[3 * L // 4:]))
+    # bounded and plateaued: the last quarter's peak is not meaningfully larger than the
+    # second half's overall peak (no further growth once past the initial transient), and
+    # both are orders of magnitude below where the saturation='none' twin ends up.
+    assert last_quarter_max < 2.0 * second_half_max
+    assert last_quarter_max < 50.0

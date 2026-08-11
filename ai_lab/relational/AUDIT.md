@@ -1,24 +1,29 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2-precheck AUDIT
 
 ```yaml
 id: relational_r1
-role: E                     # candidate E across the board: exact proofs for both no-period
-                             # sides (Sec.3.1, Sec.10.1), a structural proof for why
-                             # memory=off+asymmetry also finds nothing (Sec.10.2), and a
-                             # derived-not-fitted mechanism for the one case that DOES
-                             # sustain (Sec.10.3) -- see Sec.8/10 for the full split.
-                             # PR-R1.9 (Sec.11) refines the positive claim (settled, not just
-                             # sustained) and measures, rather than assumes, its spatial
-                             # precondition for R8.
-claim_tier: measured        # memory=off (symmetric or asymmetric): proven + measured zero.
-                             # memory=on, symmetric W: proven + measured zero (Sec.10.1/9.2).
-                             # memory=on x asymmetry=on: measured positive, corrected in
-                             # PR-R1.9 from 133/600 runs sustained (Sec.10.3) to 116/600 runs
-                             # sustained-AND-settled (Sec.11.1) after adding the settled check
-                             # review requested; the settled regime clusters locally (20x
-                             # above an independence null) but covers only 1.5% of the
-                             # relation graph's fundamental cycles (Sec.11.2), so R8's
-                             # precondition is not yet met and R8 was not built this PR.
+role: E                     # candidate E for the proofs (Sec.3.1, Sec.10.1, Sec.10.2) and
+                             # for the negative/structural findings -- but the ONE positive
+                             # claim (memory=on x asymmetry=on sustains) is DOWNGRADED as of
+                             # Sec.12.2: under saturation="none" (what Sec.10.3/11 actually
+                             # swept), 10/11 of the damping=0.05 "sustained_and_settled" flags
+                             # are shown, by direct 20x-longer re-integration, to be
+                             # pre-blowup linear-instability transients, not genuine bounded
+                             # oscillation -- see Sec.12 before trusting Sec.10.3/10.4/11's
+                             # positive numbers as "a limit cycle exists."
+claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
+                             # UNCHANGED, unaffected by Sec.12 (saturation is irrelevant to a
+                             # provably-zero result). memory=on, symmetric W: proven +
+                             # measured zero (Sec.10.1/9.2) -- also unaffected. memory=on x
+                             # asymmetry=on x saturation="none": Sec.10.3/11's "116/600 runs
+                             # sustained-AND-settled" is CORRECTED by Sec.12.2 -- these are
+                             # measured-but-misinterpreted: analytically Re(lambda_max)>0 for
+                             # essentially all of them, and extending the integration window
+                             # 20x confirms unbounded growth in 10/11 spot-checked
+                             # damping=0.05 cases (the 11th decays). memory=on x asymmetry=on
+                             # x saturation="cubic": NOT yet swept -- two spot-checks
+                             # (Sec.12.2) confirm genuine bounded oscillation exists there,
+                             # but this is anecdotal (n=2), not measured across a sweep.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -76,6 +81,27 @@ open_issues:
      Per review's own instruction, R8 (winding number) was NOT built this PR -- 1.5%,
      concentrated on short local loops, is too close to zero to be structurally meaningful;
      'why does the settled regime stay local instead of propagating' is the open question
+     -- SUPERSEDED IN PART by Sec.12.2's finding below, see that bullet first.
+  - "PR-R2 pre-check (Sec.12): review asked to verify the strength=1.0-3.0 dip in sustained-
+     run count was not numerical before designing PR-R2's sweep around it. It is not (0/600
+     non-finite, RK4 CFL margin >7x inside the stable region) -- but the investigation
+     surfaced a bigger problem: Sec.10.3/11's sweep used saturation='none', which makes the
+     memory=on ODE EXACTLY LINEAR, so no configuration with Re(lambda_max)>0 (essentially
+     all of them -- only 34/600 configs are within floating-point noise of the marginal
+     Re=0 boundary) can have a true bounded limit cycle; there is no nonlinearity to cap
+     growth. Extending 3 spot-checked damping=0.05 runs' integration window 20x confirms
+     this directly: 10/11 previously-'sustained_and_settled' flagged nodes diverge
+     unboundedly (one grows from 0.2 to 1.6e9), the 11th (the one near-exactly-marginal
+     case) decays instead of sustaining. Re-running the same 2 divergent configs with
+     saturation='cubic' (the codebase's existing, unused-in-this-sweep nonlinear cap)
+     produces genuine, durable bounded oscillation over the same extended window. Separately
+     (Sec.12.3), the 20x cycle-clustering enrichment (Sec.11.2) is confirmed NOT a
+     barabasi_albert-hub artifact -- random_regular (no hubs) shows an even higher
+     enrichment ratio (22.3x vs BA's 12.9x). Net: Sec.10.3/10.4/11's positive
+     sustained-oscillation numbers, as measured under saturation='none', mostly describe
+     slow pre-blowup transients rather than genuine limit cycles; R7 should not be built
+     against that data without first re-sweeping under saturation='cubic'. Flagged for
+     review rather than unilaterally re-swept and re-decided.
      carried forward instead of a ceiling claim."
 ```
 
@@ -885,3 +911,173 @@ values, 4 topologies, 15 seeds -- a bounded, disclosed sample, not an exhaustive
   finding was computed, not assumed, against a pre-specified independence null (`p^L`
   averaged over the actual observed lengths), not a null chosen after seeing the 1.5%
   figure.
+
+## 12. PR-R2 pre-checks: is the strength=1.0-3.0 dip numerical, is the cycle-clustering a
+BA-hub artifact, and what does "settled" actually license before R7
+
+Requested by review, before starting R7, in this order: (1) refocus the primary sustained
+target on `damping=0.05` (dissipative), keeping `damping=0.0` (no dissipation channel) as a
+control, not the main object -- review's reasoning: only `damping=0.05` has all three
+ingredients of a genuine limit cycle (asymmetry injects, damping removes, a nonlinearity
+caps), which is the mechanism that could plausibly connect to D3 (a loop that sustains
+itself by running); (2) verify the 1.0-3.0 asymmetry-strength dip is not a numerical
+artifact before designing around it; (3) verify the 20x cycle-clustering enrichment
+(Sec.11.2) is not a `barabasi_albert`-hub artifact. All three were checked. (2) surfaced a
+larger and more consequential finding than "is the dip numerical" -- reported in full below,
+since burying it under (1)/(3)'s answers would violate the same equal-weight-reporting
+standard applied throughout this PR series.
+
+### 12.1 Refocusing on `damping=0.05` shrinks the sustained-and-settled count further
+
+Re-filtering Sec.11.1's settled recheck to `damping=0.05` only: of the 24 runs Sec.11.3
+originally reported as `any_sustained` at `damping=0.05`, only **11/24** are
+`any_settled_sustained` once PR-R1.9's stricter check is applied (13 were still-growing, not
+yet plateaued -- a substantially higher drop rate than `damping=0.0`'s 109->105, consistent
+with review's own reasoning: with less dissipation to fight the asymmetry-driven growth,
+`damping=0.05` runs take longer to visibly plateau within a fixed window, so more of them
+were still mid-ramp at step 3000).
+
+### 12.2 The strength=1.0-3.0 dip is NOT a numerical-integrity problem -- but "sustained" at
+`saturation="none"` does not mean what it was reported to mean
+
+**What was checked, exactly as requested:** re-running all 600 of Sec.10.3's configs and
+recording, per run: whether `x_traj` is entirely finite; the trajectory's maximum absolute
+value; the maximum-absolute-value ratio between the trajectory's first and last deciles (a
+full-window growth check, coarser than but independent of `settled`'s quarter-only check);
+and the analytically exact dominant growth rate `Re(lambda_max)` from the same
+`lambda^2 + gamma*lambda + mu = 0` characteristic equation Sec.10.3 already derived (an
+exact value, not a numerical estimate) plus the RK4 step's `dt*|lambda_max|` as a stability
+margin.
+
+**Result on the literal question asked:**
+- **No NaN/Inf anywhere**: 0/600 runs have any non-finite value in `x_traj`.
+- **No RK4 integration-stability problem**: `dt*|lambda_max|` ranges from ~0 to 0.363 across
+  all 600 configs -- RK4's stability region extends to about 2.79 on the real axis and 2.83
+  on the imaginary axis, so every config here sits more than 7x inside the stable region.
+  The integrator is accurately resolving whatever the true ODE solution is; it is not
+  introducing spurious growth or instability of its own.
+
+**What those two clean results were actually measuring, though, exposed something bigger:**
+`_max|x|` at strength>=1.0 is not merely large -- it is **astronomically** large (mean
+`max|x|` climbs from ~1 at strength=0.3 to ~10^20 at strength=1.0, ~10^43 at strength=3.0,
+~10^68 at strength=8.0, ~10^102 at strength=20.0, at `damping=0.05`; `damping=0.0` is
+similar). These are IEEE-754-finite floating point numbers, so the naive
+"finite = healthy" check above passes cleanly -- but a value of 10^100 is not a bounded
+oscillation by any physical reading; it is mid-blowup. Investigating why: **`saturation="none"`
+makes the `memory=on` ODE EXACTLY LINEAR** (`dv/dt = -Lx - gamma*v`, no `a*x^3` term when
+`a=0`). A linear time-invariant ODE with any eigenvalue `Re(lambda) > 0` cannot have a
+bounded limit cycle -- full stop, this is not a numerical claim, it is the textbook fact
+that linear systems either decay, sit at a fixed point, orbit marginally (measure-zero,
+`Re(lambda)=0` exactly), or diverge without any bound; there is no fourth option, because
+there is no nonlinearity to cap growth. Checking directly: **only 34/600 configs (and 19/60
+at the specific cell `damping=0.05, strength=0.3`) have `Re(lambda_max)` within floating-
+point noise of exactly zero; every other config, INCLUDING every strength=0.3 config that
+is not one of those 19, has a strictly positive `Re(lambda_max)`** (small at low strength --
+e.g. 0.0011 to 0.046 at strength=0.3 -- but strictly positive, not zero).
+
+**Direct confirmation by extending the integration window 20x** (steps=60000 instead of
+3000, same `kw`+seed, so the same exact trajectory continued): every checked
+`damping=0.05, strength=0.3` run previously classified `sustained_and_settled` (11 total; 3
+spot-checked in full: `random_regular` seed=5, `erdos_renyi` seed=9, and the one
+`Re(lambda_max)~=0` case, `random_regular` seed=12) shows one of two things once the window
+is long enough to see past the original 150-time-unit recording:
+- **10 of the 11** have `Re(lambda_max)` strictly positive (however small) and, when
+  continued to 20x the original window, show **unmistakable, unbounded exponential
+  growth** -- e.g. `random_regular` seed=5's flagged node grows from a max of 0.199 (within
+  the original window, correctly reported as "settled" there) to 1.64x10^9 by the same
+  point 20x further out; `erdos_renyi` seed=9 similarly grows from 0.196 to 648. The
+  apparent "settling" PR-R1.9 measured was real WITHIN the recorded window -- not a coding
+  bug -- but it reflects the window (150 time units) being short relative to the growth
+  timescale (e-folding time ~22-900 time units at these strengths), not a genuine
+  attractor.
+- **The 1 case with `Re(lambda_max)~=0`** (`random_regular` seed=12, the sole
+  quasi-marginal one of the 11) does NOT sustain either when extended 20x -- it decays
+  (0.148 -> 0.020 over the extended window), meaning it is not on the unstable side of
+  marginal, it is on the (very slowly) stable side.
+
+**None of the 11 `damping=0.05` `sustained_and_settled` flags, extended past their original
+window, represent a genuine indefinite limit cycle under `saturation="none"`.**
+
+**Constructive confirmation -- the missing capping mechanism is exactly `saturation="cubic"`,
+already in the codebase but not used in Sec.10.3/11's sweep.** Re-running both spot-checked
+divergent configs (`random_regular` seed=5, `erdos_renyi` seed=9) with the ONLY change being
+`saturation="cubic"` (default strength=0.1), same 20x-extended window: both grow initially
+identically to their `saturation="none"` twins (confirming the early transient is unaffected
+by the change -- the cubic term is genuinely small while amplitude is small) and then
+**plateau and hold** -- seed=5's node settles into oscillating within roughly [3.9, 4.8] for
+segments 4 through 19 (t=750 to t=3000, 15x the original window, no further growth); seed=9
+similarly plateaus around [1.1, 1.5] after an initial rise. This is a real, durable, bounded
+oscillation -- the thing `saturation="none"` cannot produce for any `Re(lambda_max)>0`
+configuration, and does produce once the nonlinear cap Sec.10.4 assumed was "implicit" is
+made explicit.
+
+**Answer to the literal question (is the dip numerical):** the dip is not an integration bug
+-- but the entire premise "count of sustained runs per strength measures where a real
+limit-cycle mechanism operates" does not hold for `saturation="none"`. What that count
+actually measures is closer to "how often was this strength's growth rate slow enough that a
+3000-step window failed to reveal it" -- a window-length artifact, not evidence of two
+distinct physical regimes. The non-monotonic pattern across strength is not explained by
+this PR and should not be trusted as a real feature until re-measured under
+`saturation="cubic"`.
+
+**Consequence for R7:** R7 (phase) must not be built against `saturation="none"` sustained/
+settled results -- there is essentially nothing genuinely sustained there to derive a phase
+from; 10/11 of the current `damping=0.05` positive flags are pre-blowup transients and the
+11th decays. Before R7 can proceed on solid ground, the `memory=on x asymmetry=on` sweep
+needs to be re-run with `saturation="cubic"` (confirmed above to produce genuine bounded
+oscillation on two independent spot-checks) so R7 has an actual attractor to measure, not a
+slow transient. This is flagged here rather than decided unilaterally -- see the open
+question this leaves for review.
+
+### 12.3 The 20x cycle-clustering enrichment is NOT a `barabasi_albert`-hub artifact
+
+Re-running Sec.11.2's fundamental-cycle-coverage analysis separately per topology (same
+116 `any_settled_sustained` runs, same fundamental-cycle-basis method, no change):
+
+| topology | any-settled-sustained runs | node density p | cycles examined | covered | fraction | observed/null ratio |
+|---|---|---|---|---|---|---|
+| `barabasi_albert` (hub-heavy) | 42 | 17.2% | 924 | 25 | 2.71% | **12.9x** |
+| `erdos_renyi` | 30 | 17.8% | 636 | 12 | 1.89% | 18.4x |
+| `random_regular` (**no hubs -- every node the same degree**) | 23 | 9.4% | 575 | 1 | 0.17% | **22.3x** |
+| `watts_strogatz` | 21 | 8.5% | 525 | 3 | 0.57% | 29.1x |
+| all pooled (Sec.11.2 baseline) | 116 | 14.2% | 2660 | 41 | 1.54% | 20.0x |
+
+`random_regular`, which has NO hub structure at all (every node has identical degree), shows
+an observed/null enrichment ratio (22.3x) that is not just present but HIGHER than
+`barabasi_albert`'s own ratio (12.9x). If the clustering were an artifact of settled nodes
+landing preferentially near BA's high-degree hubs (where short cycles concentrate
+structurally), a hub-free topology should show a ratio close to 1x (no enrichment); it does
+not. **The above-chance clustering (Sec.11.2) is not a BA-hub artifact -- it survives, and
+is if anything stronger, in the topology with no hubs.** (Caveat carried over from Sec.12.2:
+since this reuses the same `saturation="none"` `sustained_and_settled` flags, the clustering
+finding inherits the same "measuring a slow transient, not a settled attractor" caveat and
+should be re-checked once `saturation="cubic"` data exists -- flagged, not re-derived here,
+since re-deriving Sec.11.2 under new data is R2 scope, not this pre-check's.)
+
+### 12.4 Open question for review before R7 proceeds
+
+Sec.12.2's finding is a course-correction, not a green light to keep going as planned: the
+`damping=0.05` cell review asked to focus on does not currently contain a genuine sustained
+oscillation under `saturation="none"`, and the fix (switch to `saturation="cubic"`) is
+confirmed to work on two spot-checks but has not been swept. This PR stops here, before
+building R7 or re-running the full sweep under `saturation="cubic"`, to report this rather
+than silently substituting a different sweep than the one review asked to focus on.
+
+### 12.5 9th-audit and 8th-audit re-check on Sec.12's own claims
+
+- **9th audit:** "the dip is not numerical" and "the BA-hub clustering is not an artifact"
+  are both non-achievement claims (rebutting a suspected problem), so the 9th audit applies:
+  the finiteness check covers the entire `x_traj` array, not a subsample, and the CFL-margin
+  check compares against RK4's documented stability region rather than an ad hoc threshold.
+  The deeper "sustained is actually pre-blowup" finding is a positive discovery (a
+  previously-unknown failure mode), not a non-achievement claim, but was still verified by
+  direct 20x-window re-integration and an independent nonlinear-capping confirmation, not
+  asserted from the analytic growth rate alone.
+- **8th audit:** was the 20x extension window, the `saturation="cubic"` comparison, or the
+  choice of which 3 configs to spot-check tuned to produce this result? The 20x figure was
+  chosen before running any extended integration (a round, disclosed multiple, not fit to
+  the data); the `saturation="cubic"` strength (0.1) is the codebase's existing default, not
+  a value searched for; the 3 spot-checked configs were the first-listed
+  `random_regular`/`erdos_renyi` runs plus the one exact-zero-growth-rate case (a
+  structurally distinguished choice, not a cherry-picked one) -- and the finding (10/11
+  diverge, 1/11 decays) was reported as a full count, not a curated example set.
