@@ -71,3 +71,19 @@ def test_check_attractor_recovery_reports_all_disclosed_fields():
     for key in ("achieved", "control_plateau_amplitude", "damaged_plateau_amplitude",
                 "perturb_factor", "relative_difference", "tolerance"):
         assert key in result
+
+
+def test_check_attractor_recovery_false_for_known_damping_zero_orbit_family():
+    """AUDIT.md Sec.13.7's negative control: damping=0.0 removes the only linear
+    dissipation channel, so saturation='cubic' alone caps growth into a BOUNDED but still
+    energy-parametrized family of periodic orbits, not a unique attracting amplitude. This
+    specific config (barabasi_albert seed=0, damping=0.0) was one of 8 sampled
+    damping=0.0 cases in Sec.13.7's disclosed sample, and did not recover (relative
+    difference ~0.59, far outside tolerance) -- locked in here as a regression test for the
+    100%-vs-25% (damping=0.05 vs damping=0.0) split that section reports."""
+    kw = dict(n=24, steps=3000, dt=0.05, memory="on", damping=0.0, asymmetry=True,
+              asymmetry_strength=0.3, topology="barabasi_albert", saturation="cubic",
+              saturation_strength=0.1)
+    result = verify.check_attractor_recovery(kw, seed=0, node=1)
+    assert result["achieved"] is False
+    assert result["relative_difference"] > 0.3
