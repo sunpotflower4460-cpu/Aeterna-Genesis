@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 AUDIT
 
 ```yaml
 id: relational_r1
@@ -18,6 +18,22 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # reported persistent density is very likely understated by a
                              # factor of roughly 2.6-7.8x -- not yet confirmed exhaustively,
                              # but no longer safely assumed to be a minor correction either.
+                             # PR-R2.7 (Sec.19) answered R8's viability DIRECTLY instead of
+                             # via density: exact cycle-coverage counting on the expanded
+                             # candidate pool (an upper bound) found exactly 2 length-5
+                             # cycles covered, both from one run, both long-window verified
+                             # TRUE -- R8's first-ever confirmed coverage in this series --
+                             # but the measured winding on both is null (0, failing the
+                             # smoothness gate). Also found the 24.0%-vs-30% comparison used
+                             # mismatched denominators (conditional vs unconditional) and is
+                             # not a valid comparison either way -- moot, since the direct
+                             # count above already answers the question it was a proxy for.
+                             # Also found (Sec.19.3) that long-window verification, batched
+                             # per run instead of per node (`verify_long_window_all_nodes`,
+                             # new), is ~13-17x cheaper than every prior PR in this series
+                             # assumed -- exhaustive verification of the full sweep is ~58
+                             # minutes, not many hours -- weakening the case for screening as
+                             # currently used, though not acted on: S-015 remains PENDING.
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -34,11 +50,17 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # AND achieved" tier, not just "observed." Cycle-clustering
                              # (Sec.14.3): reframed, not retracted -- verified oscillation
                              # localizes in degree-heterogeneous (hub-like) regions.
-                             # R8 (winding): STILL BLOCKED (Sec.15, S-012) -- not by sample
-                             # count but by cycle SHAPE: all 3 fully-covered cycles are
-                             # triangles, and triangles have a high, length-RISING null rate
-                             # (0.25 at N=3 to 0.57 at N=10) and cannot distinguish
-                             # |winding|>1 (Sec.15). PR-R2.4 (Sec.16) adds the SMOOTHNESS
+                             # R8 (winding): BLOCKED at time of writing (Sec.15, S-012) -- not
+                             # by sample count but by cycle SHAPE: all 3 fully-covered cycles
+                             # (as then known) are triangles, and triangles have a high,
+                             # length-RISING null rate (0.25 at N=3 to 0.57 at N=10) and
+                             # cannot distinguish |winding|>1 (Sec.15). PR-R2.7 (Sec.19.1)
+                             # LATER found the first length>=5 fully-covered cycle in this
+                             # series (2 overlapping cycles, one run, both long-window
+                             # verified) -- structurally no longer blocked the same way, but
+                             # the measured winding on that one example is null (0, fails the
+                             # smoothness gate) -- see below for the full account.
+                             # PR-R2.4 (Sec.16) adds the SMOOTHNESS
                              # GATE review specified (winding!=0 AND max step < pi/2) --
                              # structurally requires N>=5 (not just "probably better than
                              # 3"), and collapses the null rate to <0.05% (5-100x below
@@ -79,7 +101,18 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # explicitly marked PENDING (a 2-sample estimate, not an
                              # exhaustive resweep) not settled. Density-increasing
                              # implementation remains explicitly NOT pursued pending review's
-                             # decision on how to act on this correction.
+                             # decision on how to act on this correction. CORRECTED by
+                             # PR-R2.7 (Sec.19.2): the "24.0% close to 30%" comparison above
+                             # used mismatched denominators (24.0% unconditional over 7200;
+                             # ~30% conditional, matching 9.3%=223/2400's convention) and was
+                             # not a valid comparison -- superseded by PR-R2.7's DIRECT cycle-
+                             # coverage count (Sec.19.1), which answers R8's viability without
+                             # needing density resolved: exactly 2 length-5 cycles (one run)
+                             # are covered by even the generous candidate upper bound, both
+                             # long-window verify TRUE, but both show null (0) winding that
+                             # fails the smoothness gate when actually measured. S-015 stays
+                             # PENDING either way (Sec.19.4) -- not needed for this
+                             # determination, not resolved.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -265,11 +298,42 @@ open_issues:
      and does not rule out exceeding, the ~30% Sec.15 estimated as necessary for a length-6
      cycle's full-coverage probability to become non-negligible -- R8's outlook may change
      substantially, matching review's own prediction, but this is a 2-sample estimate, not
-     an exhaustive resweep, so it is recorded PENDING, not settled. The 48 frustration cases
-     from Sec.17.2 were preserved (not discarded) in a new d0_registry.json, registered
-     under destination D0 (open-ended exploration, no pre-chosen target shape) per review's
-     explicit instruction. Density-increasing implementation remains explicitly NOT
-     pursued, per review's instruction, pending review's decision on this correction."
+     an exhaustive resweep, so it is recorded PENDING, not settled. CORRECTED by PR-R2.7
+     (Sec.19.2): the '24.0% is close to 30%' comparison above uses MISMATCHED denominators
+     (24.0%=1729/7200 unconditional; the ~30% figure is conditional, 9.3%=223/2400's style)
+     and is not actually a valid comparison -- see Sec.19.2, and Sec.19.1 for the direct
+     measurement that answers R8's viability without needing this comparison resolved. The
+     48 frustration cases from Sec.17.2 were preserved (not discarded) in a new
+     d0_registry.json, registered under destination D0 (open-ended exploration, no
+     pre-chosen target shape) per review's explicit instruction. Density-increasing
+     implementation remains explicitly NOT pursued, per review's instruction, pending
+     review's decision on this correction."
+  - "PR-R2.7 (Sec.19): per review's instruction, did NOT pursue firming up the density
+     estimate; instead directly counted what density was always a proxy for. Across all 300
+     damping=0.05 configs, 4155 fundamental cycles of length>=5 exist; using the free-fix
+     candidate pool (settled=True, an upper-bound superset of true-verified) as the covering
+     set, exactly 2 are fully covered -- both from ONE run (erdos_renyi, seed=4), sharing 4
+     of 5 nodes. Long-window-verifying only those cycles' nodes (via the new
+     verify_long_window_all_nodes, Sec.19.3): both verify TRUE, 2/2 -- the first confirmed
+     length>=5 fully-covered cycle in this PR series. Applying winding_precheck.py (still
+     explicitly NOT R8) to the real instantaneous phases: BOTH give winding=0 and fail the
+     smoothness gate (one from tight local phase clustering, the other from a single
+     outlier node's large phase jump) -- a disclosed null result on the one measurable
+     example, reported with the same weight a positive result would get. Sec.19.2 confirmed
+     review's suspicion that the 24.0%-vs-30% comparison used mismatched denominators
+     (unconditional vs conditional) and is not valid either way -- moot, since Sec.19.1's
+     direct count already answers what that comparison was a proxy for. Sec.19.3 found
+     every long-window check run so far in this series called verify_long_window once PER
+     NODE despite one rerun computing all 24 nodes' results at once; batching (new
+     verify_long_window_all_nodes) measures a ~13-17x cost reduction, making exhaustive
+     verification of the full 7200-node-check sweep ~58 minutes, not ~13-17 hours -- and
+     found screening's own false-negative rate is comparable at the run level (37.5% within
+     a small n=8 zero-candidate-run sample) to the node level, so run-level screening would
+     not have rescued the problem either. Recommends screening's current use as a permanent
+     filter is not well justified given these numbers, but this was NOT acted on --
+     exhaustive verification was not run, per the standing instruction not to pursue firming
+     up the density estimate. S-015 remains PENDING (Sec.19.4): not needed for this PR's R8
+     determination, not resolved either."
 ```
 
 ---
@@ -2382,3 +2446,208 @@ here.
   lower 20% rate is the one carrying the bulk of the correction's WEIGHT (6025 vs 752 in
   population size), so if anything the larger, less dramatic-looking rate dominates the
   final number, not a cherry-picked favorable one.
+
+## 19. PR-R2.7: density is a proxy -- direct cycle-coverage counting answers R8's viability
+without it; the two comparisons ("30%" vs "24.0%") were never on the same footing; and the
+screening step's own cost/benefit case is weaker than assumed once verification is batched
+correctly
+
+Per review's explicit instruction: this PR does NOT pursue firming up the density estimate.
+S-015 stays PENDING (Sec.18). Instead, review asked for the measurement density was always
+a PROXY for -- direct cycle coverage -- counted exactly, plus a consistency check on the
+30%-vs-24.0% comparison, plus a cost/benefit re-assessment of the screening step itself.
+
+### 19.1 Direct cycle coverage, counted exactly, on the expanded (free-fix) candidate pool
+
+**Method**: candidates (`settled=True` under the free-fix criterion, Sec.18.1) are a
+SUPERSET of true long-window-verified nodes -- every verified node is a candidate, but not
+every candidate verifies. This makes the candidate set a valid UPPER BOUND for cycle
+coverage: if zero length>=5 cycles are covered even by the generous candidate set, zero can
+possibly be covered by the smaller true-verified set, and the question is settled without
+needing to know the exact verified count at all.
+
+For each of the 300 `damping=0.05` configs: rebuilt the topology directly
+(`topology.build_topology`, no dynamics needed for graph structure) and extracted every
+fundamental cycle of length >= 5 (`topology.fundamental_cycles`); separately reran the
+config at its original (short) window and computed the corrected candidate mask
+(`settled=True`, the same free fix as Sec.18.1, ~91s total for all 300 configs including
+the topology work -- effectively free). Checked which length>=5 cycles have EVERY node in
+the candidate mask.
+
+**Result**:
+
+| | value |
+|---|---|
+| total length>=5 fundamental cycles, across all 300 configs | **4155** |
+| by length | 5: 1505, 6: 1315, 7: 820, 8: 175, 9: 130, 10: 115, 11: 55, 12: 15, 13: 25 |
+| total candidate node-checks (damping=0.05, `settled=True`) | 1175 |
+| cycles fully covered by the CANDIDATE (upper-bound) set | **2** |
+
+Both covered cycles come from the SAME single run (`erdos_renyi`, seed=4,
+`asymmetry_strength=8.0`) and share 4 of their 5 nodes (`[6, 20, 4, 9, 13]` and
+`[6, 20, 4, 9, 22]` -- nodes 6, 20, 4, 9 in common, differing only in the 5th). This is
+**one run out of 300, not multiple independent examples** -- reported exactly as such, not
+rounded up to "multiple cycles" just because the raw count is 2.
+
+**Long-window verification of exactly those 2 cycles' nodes** (not the 1175-candidate pool
+-- only the 6 distinct nodes these 2 cycles touch, using the new
+`verify_long_window_all_nodes`, Sec.19.3): **both cycles verify TRUE, 2/2** -- every node in
+both cycles is genuinely long-window sustained, not just short-window-candidate. This is
+the first length>=5 fully-covered cycle found anywhere in this PR series; R8's previously
+stated launch precondition ("multiple fully-covered cycles of length >=5", Sec.16.4) is
+technically met at n=2, though from a single run, which is a materially weaker form of
+"multiple" than independent examples from different runs/seeds would be.
+
+**Applying `winding_precheck.py` (explicitly NOT R8) to the real, confirmed example** -- the
+same method Sec.15.2 used on the earlier triangle (analytic-signal angle at the midpoint of
+R7's phase-analysis window, fixed graph cyclic order):
+
+| cycle | phases (rad) | winding | max adjacent step | smoothness gate |
+|---|---|---|---|---|
+| `[6, 20, 4, 9, 13]` | all within `[-2.57, -2.47]` (0.08 rad span) | **0** | 0.080 | fails (winding=0) |
+| `[6, 20, 4, 9, 22]` | 4 nodes near -2.5, node 22 at +0.60 | **0** | 3.118 | **fails** (>pi/2) |
+
+Both cycles give **winding=0** -- one from tight local phase clustering (same pattern as
+the earlier triangle, Sec.15.2), the other from a single outlier node (22) producing one
+large jump that both breaks the smoothness gate and, by construction, does not accumulate a
+net rotation either. Neither example shows anything resembling genuine winding. This is a
+disclosed NULL result on the one real, confirmed length>=5 example available -- reported
+with the same weight as a positive result would carry, not downplayed for being negative.
+
+**Bottom line for R8's viability**: coverage now exists (a first, for this PR series), so
+R8 is not structurally dead the way Sec.15 found triangles to be -- but the sample is a
+single run producing 2 overlapping cycles, and the one measurement made on it is null.
+This does not resolve whether R8 is viable in general; it resolves that the CURRENT sweep
+gives exactly one place to look, and that one place does not show winding.
+
+### 19.2 Denominator alignment: "30%" and "24.0%" were never comparable, and this is now moot
+
+Review asked whether the ~30% threshold (Sec.15.3(c)) and the 24.0% corrected density
+(Sec.18.3) share a denominator before treating "24.0% is close to 30%" as meaningful.
+Checked directly against Sec.15.3(c)'s own text: **they do not.**
+
+- The ~30% figure was derived from **p = 9.3% = 223/2400** -- Sec.14.2's density
+  CONDITIONAL on the run already having >=1 verified node (100 runs x 24 = 2400) -- combined
+  with the observed 15x clustering enrichment (Sec.14.3), in a `p^N` independence-style
+  model. Sec.15.3(c) states this explicitly: "The observed density is p=0.093 (9.3%,
+  Sec.14.2's 223/2400)... Reaching even a 1%-per-cycle chance at N=6 would require p~0.30."
+- The 24.0% figure (Sec.18.3) is **1729/7200** -- the UNCONDITIONAL density across the
+  entire 300-config damping=0.05 sweep, matching the OLD 3.1% (223/7200) figure's
+  denominator, NOT the 9.3% one.
+
+These are genuinely different quantities: 9.3%/30% describe density WITHIN graphs that
+already show persistent structure; 3.1%/24.0% describe density across the full swept
+parameter space, most of which has no persistent structure at all. **Comparing 24.0%
+directly to 30% and concluding "getting close" is not a valid inference** -- review's
+instinct to check this before trusting that comparison was correct.
+
+Recomputing a properly conditional (2400-style) version of the corrected estimate would
+require knowing which SPECIFIC runs the ~554 newly-confirmed-but-previously-screened-out
+node-checks (from Sec.18.3's sampling) belong to -- whether they cluster into a few runs
+(raising the conditional density sharply) or spread thinly across many (barely moving it).
+That is not derivable from the disclosed samples already in hand without either exhaustive
+re-verification (the direction review explicitly said not to pursue this PR) or a new,
+separately-disclosed sampling pass (also not run here, for the same reason).
+
+**This mismatch turns out not to matter**: Sec.19.1's direct count does not depend on the
+`p^N` independence model, the enrichment factor, or either density percentage at all -- it
+is an exact enumeration against the real graph structure and the real (upper-bound)
+candidate mask, for every one of the 300 configs. It already answers the question the
+density comparison was a PROXY for. Per review's own framing (instruction 4): the direct
+measurement settles what the debate over 24.0%-vs-30% was trying to approximate, so that
+debate does not need to be resolved further this PR. Flagged for any future work that DOES
+want a conditional density figure: use the SAME (2400-style, structure-conditional)
+denominator on both sides of any such comparison -- not done here.
+
+### 19.3 Screening's cost/benefit, re-examined -- and a real inefficiency found along the way
+
+While investigating verification cost, found that every long-window check run so far in
+this PR series (Sec.13 onward, including all of PR-R2.6's sampling) called
+`verify_long_window` once PER NODE -- even when many nodes from the identical (seed,
+run_kwargs) needed checking. `verify_long_window` reruns `substrate.run` in full each call;
+one rerun's R4 (`instruments.period`) already computes every node's `settled` status at
+once, so calling it once per node repeats the IDENTICAL rerun `n` (24) times for no reason.
+Added `verify.verify_long_window_all_nodes` (tested, `tests/test_r_verify.py`): the same
+criterion, reading every node's result off one rerun.
+
+**Measured cost, both ways, on real damping=0.05 configs** (not extrapolated from a single
+earlier timing -- benchmarked directly, 12 runs):
+
+| step | cost | for all 7200 node-checks (300 runs) |
+|---|---|---|
+| short-window screening (settled-only, free fix) | ~0.20-0.30 s/run | **~61-91 s total** |
+| long-window verify, PER-NODE (as every prior PR in this series did it) | 6.5-8.4 s/**node** (measured across PR-R2.6's 3 sampling runs) | **~13.1-16.7 hours** |
+| long-window verify, BATCHED per run (`verify_long_window_all_nodes`, this PR, 12-run benchmark) | ~11.7 s/**run** | **~3505 s (~58 minutes)** |
+
+Batching by run instead of by node measures out to a **~13-17x** empirical cost reduction
+(structurally up to n=24x, since one rerun now serves all 24 nodes instead of 1; the
+measured multiplier is somewhat below the theoretical 24x, most likely per-call/Hilbert-
+transform overhead that does not scale perfectly with how many of a run's nodes are read
+off it) -- exhaustively long-window-verifying the ENTIRE 7200-node-check sweep is
+affordable in under an hour, not the many-hours figure the per-node pattern used throughout
+this series would imply. This was not run this PR (see below -- explicitly not pursued, per
+review's instruction not to firm up the density estimate), but the cost figure itself is
+now measured, not assumed.
+
+**Does screening still net a benefit, given its own ~20% false-negative rate (Sec.18.3)?**
+Checked two things directly, no new sampling (reusing Sec.18's already-collected data):
+
+- **Run-level screening does not rescue the FNR either.** 34/300 damping=0.05 runs have
+  ALL 24 nodes screened out (zero candidates) under the corrected criterion. Within
+  Sec.18.3's sample_A (screened-out node-checks), splitting by whether the node's run had
+  zero candidates elsewhere or at least one: 3/8 (37.5%) of zero-candidate-run node-checks
+  verified true anyway, versus 12/67 (17.9%) for screened-out nodes in runs that DO have
+  other candidates. The small zero-candidate-run sample (n=8) is too small to trust the
+  exact 37.5% figure, but directionally, skipping entire runs with zero short-window
+  candidates would NOT have solved the false-negative problem -- it is at least as large at
+  the run level as at the node level, not a node-level-only artifact.
+- **Screening's cost saving is smaller than its false-negative cost suggests it should be.**
+  Because the expensive step's cost is essentially PER RUN (once batched), not per
+  candidate node, screening's node-level filtering provides no computational benefit for
+  the long-window step at all -- the only lever screening has left is skipping whole runs
+  with zero candidates, which saves at most 34/300 (~11%) of the exhaustive cost while (per
+  the point above) still discarding real persistent nodes at a comparable rate to the
+  general population.
+
+**Conclusion, disclosed as a recommendation, not acted on this PR**: for a ONE-TIME
+measurement pass (which is what this project's sweeps are), screening's net benefit is
+weak -- it is nearly free to run (~61-91s) but so is exhaustive batched verification
+(~58 minutes), and screening's false-negative rate (~20%, comparable at the run level) means
+its survivors should not be treated as a ground-truth population for density claims without
+the kind of correction Sec.18 had to apply after the fact. Screening remains useful as a
+cheap FIRST-PASS triage (e.g., for prioritizing which runs to look at, or in a setting where
+the same sweep is re-run repeatedly and the ~24x-57x cost difference compounds), but this
+project's screening-then-only-occasionally-spot-check pattern is not well justified by the
+numbers measured here. Whether to actually run the now-affordable exhaustive pass (which
+would also resolve S-015 outright) is left to review's decision -- not run this PR, per the
+standing instruction not to pursue firming up the density estimate.
+
+### 19.4 S-015's status is unchanged by this section, exactly as review anticipated
+
+Per review's instruction 4: S-015 (Sec.18) remains PENDING. Sec.19.1's direct measurement
+did not need it -- R8's viability question was answered (for the current sweep: coverage
+exists in exactly one run, and the one measurable example shows null winding) without
+resolving the corrected-density point estimate or its conditional-denominator alignment.
+S-015 is recorded as "not required for this PR's R8 determination," not as resolved,
+superseded, or no longer worth investigating -- a future PR may still want the exhaustive
+figure for other reasons (e.g., quantifying screening's true FNR precisely, or informing
+substrate-parameter search), now known to be affordable (Sec.19.3) whenever review wants it.
+
+### 19.5 9th-audit and 8th-audit re-check on Sec.19's own claims
+
+- **9th audit:** "2 candidate-covered cycles, both truly verified, both null winding" is
+  reported at exactly the resolution the data supports -- explicitly flagged as ONE run,
+  not "multiple independent cycles," and the winding result is reported as null with the
+  same directness a positive winding value would get, not hedged into ambiguity. The
+  denominator-mismatch finding (19.2) is a NEGATIVE finding about the review's own prior
+  framing (24.0% is not validly "close to" 30%) and is stated as such, not soft-pedaled
+  because it complicates an otherwise encouraging picture (coverage now exists).
+- **8th audit:** was the erdos_renyi/seed=4 example, or the specific 2 cycles reported,
+  selected in any way? No -- it is the ONLY run out of 300 whose candidate mask fully
+  covers any length>=5 cycle; there was no alternative example to choose between. The
+  cost-benchmark configs (12 runs) were the first 12 damping=0.05 entries in the existing
+  sweep file in stored order, not selected for a favorable number -- and the resulting
+  recommendation (screening's benefit is weak) is not the "protect existing infrastructure"
+  answer a motivated selection might have produced; it recommends work (exhaustive
+  verification) beyond what review asked to be run this PR, and says so plainly rather than
+  either quietly running it or quietly avoiding the recommendation.

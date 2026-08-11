@@ -1,0 +1,619 @@
+{
+  "pr_round": "PR-R2.7",
+  "step1_direct_cycle_coverage": {
+    "description": "Directly count length>=5 fundamental cycles across all 300 damping=0.05 configs, and check which are FULLY covered by the free-fix-corrected CANDIDATE pool (settled=True, upper bound superset of true-verified). If a candidate-covered cycle exists, long-window-verify ONLY that cycle's nodes.",
+    "total_length_ge5_cycles": 4155,
+    "cycles_by_length": {
+      "6": 1315,
+      "7": 820,
+      "5": 1505,
+      "8": 175,
+      "9": 130,
+      "10": 115,
+      "11": 55,
+      "13": 25,
+      "12": 15
+    },
+    "n_candidate_node_checks_damping_0_05": 1175,
+    "cycles_covered_by_candidates_upper_bound": [
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          13
+        ],
+        "length": 5
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          22
+        ],
+        "length": 5
+      }
+    ],
+    "n_cycles_covered_by_candidates": 2
+  },
+  "step1b_long_window_verification_of_covered_cycles": {
+    "description": "Long-window-verified every node in the 2 candidate-covered cycles (not the whole 1175-candidate pool).",
+    "n_candidate_covered_cycles": 2,
+    "n_truly_covered_cycles": 2,
+    "per_node_verify_results": [
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          13
+        ],
+        "node": 6,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 6,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0014206781880126,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999151307302427,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          13
+        ],
+        "node": 20,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 20,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0015701187149963,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999230471687991,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          13
+        ],
+        "node": 4,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 4,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.001204944128173,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999269343377202,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          13
+        ],
+        "node": 9,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 9,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0023937997488623,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999239253855002,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          13
+        ],
+        "node": 13,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 13,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0009660417785617,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999337354791165,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          22
+        ],
+        "node": 6,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 6,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0014206781880126,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999151307302427,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          22
+        ],
+        "node": 20,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 20,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0015701187149963,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999230471687991,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          22
+        ],
+        "node": 4,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 4,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.001204944128173,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999269343377202,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          22
+        ],
+        "node": 9,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 9,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0023937997488623,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999239253855002,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      },
+      {
+        "seed": 4,
+        "kw": {
+          "n": 24,
+          "steps": 3000,
+          "dt": 0.05,
+          "memory": "on",
+          "damping": 0.05,
+          "asymmetry": true,
+          "asymmetry_strength": 8.0,
+          "topology": "erdos_renyi",
+          "saturation": "cubic",
+          "saturation_strength": 0.1
+        },
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          22
+        ],
+        "node": 22,
+        "verify_result": {
+          "verified_sustained": true,
+          "long_entry": {
+            "node": 22,
+            "defined": true,
+            "T": 2.1,
+            "rate": 0.47619047619047616,
+            "lag_steps": 42,
+            "reason": "ok",
+            "sustained": true,
+            "settled": true,
+            "sustained_and_settled": true,
+            "envelope": {
+              "ratio": 1.0000585092882759,
+              "classification": "sustained",
+              "sustained": true,
+              "settled": true,
+              "settled_ratio": 0.9999808316907387,
+              "note": "second-half/first-half mean Hilbert-envelope magnitude ratio, tol=0.15; settled = last-quarter/third-quarter magnitude ratio within tol=0.10 of 1 (trailing-window trend check, independent of the halves ratio above)"
+            }
+          },
+          "base_steps": 3000,
+          "long_steps": 45000,
+          "extend_factor": 15
+        }
+      }
+    ]
+  },
+  "step1c_winding_on_the_real_confirmed_example": {
+    "description": "Applied winding_precheck.py (explicitly NOT R8) to the actual instantaneous phase of the 2 truly-verified length-5 cycles -- same method as Sec.15.2 used on the earlier triangle example (analytic-signal angle at the midpoint of R7's phase-analysis window, fixed graph cyclic order, NOT phase-sorted).",
+    "kw": {
+      "n": 24,
+      "steps": 3000,
+      "dt": 0.05,
+      "memory": "on",
+      "damping": 0.05,
+      "asymmetry": true,
+      "asymmetry_strength": 8.0,
+      "topology": "erdos_renyi",
+      "saturation": "cubic",
+      "saturation_strength": 0.1
+    },
+    "seed": 4,
+    "node_phase": {
+      "4": -2.5274127160758266,
+      "6": -2.51389877177869,
+      "9": -2.4868773561343405,
+      "13": -2.5670332134025546,
+      "20": -2.46690877820296,
+      "22": 0.6037300624732327
+    },
+    "results": [
+      {
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          13
+        ],
+        "phases": [
+          -2.51389877177869,
+          -2.46690877820296,
+          -2.5274127160758266,
+          -2.4868773561343405,
+          -2.5670332134025546
+        ],
+        "winding": 0,
+        "max_adjacent_step": 0.08015585726821417,
+        "is_smooth_winding": false
+      },
+      {
+        "cycle": [
+          6,
+          20,
+          4,
+          9,
+          22
+        ],
+        "phases": [
+          -2.51389877177869,
+          -2.46690877820296,
+          -2.5274127160758266,
+          -2.4868773561343405,
+          0.6037300624732327
+        ],
+        "winding": 0,
+        "max_adjacent_step": 3.1176288342519225,
+        "is_smooth_winding": false
+      }
+    ]
+  }
+}

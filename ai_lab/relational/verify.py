@@ -1,6 +1,7 @@
-"""ai_lab/relational/verify.py -- PR-R2.1/PR-R2.4 pre-checks (AUDIT.md Sec.13, Sec.16).
+"""ai_lab/relational/verify.py -- PR-R2.1/PR-R2.4/PR-R2.7 pre-checks (AUDIT.md Sec.13,
+Sec.16, Sec.19).
 
-Three tools:
+Four tools:
 
 1. `verify_long_window`: bakes a 10-20x window re-check into the DEFINITION of
    `sustained`, rather than treating it as an optional follow-up. Two prior positive-result
@@ -29,7 +30,15 @@ Three tools:
    read or write frontier_expansion.json or any ai_lab/dream/ file. `achieved` is this
    module's own explicit flag, scoped to the R-layer result it was computed from.
 
-3. `check_driven_vs_self_sustaining` (PR-R2.4, AUDIT.md Sec.16.2): review's priority
+3. `verify_long_window_all_nodes` (PR-R2.7, AUDIT.md Sec.19.3): the SAME check as
+   `verify_long_window`, but reads every node's result off ONE rerun instead of rerunning
+   once per node. `verify_long_window` alone was, until this PR, always called once per
+   (seed, run_kwargs, node) even when many nodes from the same run needed checking (e.g.
+   PR-R2.6's sampling scripts) -- a ~24x cost multiplier for n=24 that was not noticed
+   until Sec.19.3 measured it directly. Use this whenever more than one node from the same
+   run needs long-window verification.
+
+4. `check_driven_vs_self_sustaining` (PR-R2.4, AUDIT.md Sec.16.2): review's priority
    question after PR-R2.3's amplitude-propagation finding (non-verified direct neighbors of
    a verified node retain 72% of the verified node's amplitude, non-adjacent nodes 61%) --
    is that retained amplitude evidence the neighbor is ITSELF a self-sustaining oscillator,
@@ -106,6 +115,49 @@ def verify_long_window(
         "long_steps": kw["steps"],
         "extend_factor": extend_factor,
     }
+
+
+def verify_long_window_all_nodes(
+    run_kwargs: Dict[str, Any],
+    seed: Optional[int],
+    extend_factor: int = LONG_WINDOW_EXTEND_FACTOR,
+) -> "list[Dict[str, Any]]":
+    """Same criterion as `verify_long_window`, for every node in ONE rerun.
+
+    `verify_long_window` reruns `substrate.run` in full for a single `node`, even though
+    one rerun's R4 (`instruments.period`) already computes every node's `settled` status at
+    once. Calling it once per node (as PR-R2.6's sampling scripts did) repeats the IDENTICAL
+    rerun `n` times for no reason -- AUDIT.md Sec.19.3 measured this as a ~24x cost
+    multiplier for n=24 (one rerun ~8-11s regardless of whether 1 or 24 nodes' results are
+    read off it). Use this whenever more than one node from the SAME (seed, run_kwargs)
+    needs long-window verification -- e.g. exhaustively verifying an entire sweep, or every
+    node in a candidate-covered cycle.
+
+    Returns a list of `n` dicts (one per node, `run_kwargs["n"]` long), each with the same
+    fields and `verified_sustained` semantics as `verify_long_window`'s return value, plus
+    `"node"`.
+    """
+    kw = dict(run_kwargs)
+    base_steps = kw["steps"]
+    kw["steps"] = base_steps * extend_factor
+    res = substrate.run(seed=seed, **kw)
+    r4 = instruments.period(res.x_traj, res.dt)
+    n = run_kwargs["n"]
+    if not r4.defined:
+        return [
+            {"verified_sustained": False, "long_entry": None, "base_steps": base_steps,
+             "long_steps": kw["steps"], "extend_factor": extend_factor, "node": i}
+            for i in range(n)
+        ]
+    out = []
+    for i in range(n):
+        entry = r4.value["per_node"][i] if i < len(r4.value["per_node"]) else None
+        verified = bool(entry) and bool(entry.get("defined", False)) and bool(entry.get("settled", False))
+        out.append({
+            "verified_sustained": verified, "long_entry": entry, "node": i,
+            "base_steps": base_steps, "long_steps": kw["steps"], "extend_factor": extend_factor,
+        })
+    return out
 
 
 def _plateau_amplitude(x_traj: np.ndarray, node: int, tail_fraction: float = 0.25) -> float:

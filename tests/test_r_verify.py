@@ -128,6 +128,43 @@ def test_check_driven_vs_self_sustaining_reports_expected_fields():
         assert mask[entry["node"]] is False  # only non-verified nodes are ever checked
 
 
+# ---------------------------------------------------------------------------
+# PR-R2.7: verify_long_window_all_nodes -- one rerun verifying every node, not one
+# rerun per node (AUDIT.md Sec.19.3's ~24x cost-multiplier finding).
+# ---------------------------------------------------------------------------
+
+def test_verify_long_window_all_nodes_matches_per_node_calls():
+    """The batched all-nodes result must agree EXACTLY, node by node, with calling
+    verify_long_window once per node -- same criterion, same trajectory (both are RK4-
+    deterministic given the same seed/kw), just computed once instead of n times."""
+    kw = dict(_KW_SATURATION_CUBIC, steps=200)
+    all_nodes = verify.verify_long_window_all_nodes(kw, _SEED, extend_factor=3)
+    assert len(all_nodes) == kw["n"]
+    for node in (0, 5, _NODE % kw["n"]):
+        single = verify.verify_long_window(kw, _SEED, node, extend_factor=3)
+        assert all_nodes[node]["verified_sustained"] == single["verified_sustained"]
+        assert all_nodes[node]["node"] == node
+
+
+def test_verify_long_window_all_nodes_accepts_known_bounded_config():
+    """Same known-good config as test_verify_long_window_accepts_saturation_cubic_known_
+    bounded_config (Sec.12.2) -- node 22 must verify True when read from the batched call."""
+    result = verify.verify_long_window_all_nodes(_KW_SATURATION_CUBIC, _SEED)
+    assert result[_NODE]["verified_sustained"] is True
+    assert result[_NODE]["long_entry"]["settled"] is True
+
+
+def test_verify_long_window_all_nodes_reports_all_disclosed_fields_per_node():
+    kw = dict(_KW_SATURATION_CUBIC, steps=200)
+    result = verify.verify_long_window_all_nodes(kw, _SEED, extend_factor=2)
+    assert len(result) == kw["n"]
+    for i, entry in enumerate(result):
+        assert entry["node"] == i
+        assert isinstance(entry["verified_sustained"], bool)
+        for key in ("base_steps", "long_steps", "extend_factor"):
+            assert key in entry
+
+
 def test_check_driven_vs_self_sustaining_empty_mask_checks_nothing():
     kw = dict(n=24, steps=3000, dt=0.05, memory="on", damping=0.05, asymmetry=True,
               asymmetry_strength=0.3, topology="random_regular", saturation="cubic",
