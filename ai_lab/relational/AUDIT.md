@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 AUDIT
 
 ```yaml
 id: relational_r1
@@ -32,8 +32,20 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # per run instead of per node (`verify_long_window_all_nodes`,
                              # new), is ~13-17x cheaper than every prior PR in this series
                              # assumed -- exhaustive verification of the full sweep is ~58
-                             # minutes, not many hours -- weakening the case for screening as
-                             # currently used, though not acted on: S-015 remains PENDING.
+                             # minutes, not many hours. PR-R2.8 (Sec.20) RAN that exhaustive
+                             # verification: S-015 is now MEASURED, not pending (27.7%/31.6%
+                             # density, exceeding even PR-R2.6's sampled 24.0%). This also
+                             # falsified PR-R2.7 Sec.19.1's "candidates are an upper bound"
+                             # assumption (only 44.3% of candidates truly verify; 73.9% of
+                             # true positives were never candidates) -- recomputing cycle
+                             # coverage on the TRUE verified set found 178 covered length>=5
+                             # cycles (not 2), across 35 independent runs and all 4
+                             # topologies: material is abundant, not scarce. Winding measured
+                             # on all 178: 86 (48.3%) show nonzero raw winding, but 0/178
+                             # pass the smoothness gate -- R8's determination is recorded as
+                             # "this substrate's diffusive coupling does not produce a cycle
+                             # on which winding survives the smoothness gate," not "material
+                             # doesn't exist" and not "R8 is impossible."
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -50,17 +62,25 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # AND achieved" tier, not just "observed." Cycle-clustering
                              # (Sec.14.3): reframed, not retracted -- verified oscillation
                              # localizes in degree-heterogeneous (hub-like) regions.
-                             # R8 (winding): BLOCKED at time of writing (Sec.15, S-012) -- not
-                             # by sample count but by cycle SHAPE: all 3 fully-covered cycles
-                             # (as then known) are triangles, and triangles have a high,
-                             # length-RISING null rate (0.25 at N=3 to 0.57 at N=10) and
-                             # cannot distinguish |winding|>1 (Sec.15). PR-R2.7 (Sec.19.1)
-                             # LATER found the first length>=5 fully-covered cycle in this
-                             # series (2 overlapping cycles, one run, both long-window
-                             # verified) -- structurally no longer blocked the same way, but
-                             # the measured winding on that one example is null (0, fails the
-                             # smoothness gate) -- see below for the full account.
-                             # PR-R2.4 (Sec.16) adds the SMOOTHNESS
+                             # R8 (winding): DETERMINATION RECORDED (Sec.20, PR-R2.8) -- NOT
+                             # "impossible" and NOT "no material" (that was Sec.15/Sec.19.1's
+                             # framing, both since superseded): the exhaustive TRUE-verified
+                             # set covers 178 length>=5 cycles (35 independent runs, all 4
+                             # topologies) -- material is ABUNDANT. Winding measured on all
+                             # 178: 86 (48.3%) show nonzero raw winding, but 0/178 pass the
+                             # smoothness gate (winding!=0 AND max step<pi/2) -- far below the
+                             # <0.05% null rate expected under random phases at N>=5, so this
+                             # is a real structural finding: this substrate's diffusive
+                             # coupling clusters phases locally rather than permitting smooth
+                             # spatial rotation. Recorded as "in this substrate/coupling-form/
+                             # topology, no cycle currently produces winding that survives the
+                             # smoothness gate" -- a substrate-specific null result, not a
+                             # general claim about winding-number measurement. (History:
+                             # Sec.15/S-012 found only triangles, structurally too short;
+                             # PR-R2.7/Sec.19.1 found "2 covered cycles, both null" but that
+                             # was later shown (Sec.20.2) to rest on a false "candidates are
+                             # an upper bound" assumption and undercounted true coverage by
+                             # ~89x.) PR-R2.4 (Sec.16) adds the SMOOTHNESS
                              # GATE review specified (winding!=0 AND max step < pi/2) --
                              # structurally requires N>=5 (not just "probably better than
                              # 3"), and collapses the null rate to <0.05% (5-100x below
@@ -105,14 +125,13 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # PR-R2.7 (Sec.19.2): the "24.0% close to 30%" comparison above
                              # used mismatched denominators (24.0% unconditional over 7200;
                              # ~30% conditional, matching 9.3%=223/2400's convention) and was
-                             # not a valid comparison -- superseded by PR-R2.7's DIRECT cycle-
-                             # coverage count (Sec.19.1), which answers R8's viability without
-                             # needing density resolved: exactly 2 length-5 cycles (one run)
-                             # are covered by even the generous candidate upper bound, both
-                             # long-window verify TRUE, but both show null (0) winding that
-                             # fails the smoothness gate when actually measured. S-015 stays
-                             # PENDING either way (Sec.19.4) -- not needed for this
-                             # determination, not resolved.
+                             # not a valid comparison -- moot regardless, since PR-R2.8's
+                             # EXHAUSTIVE, exact verification (Sec.20) superseded density-
+                             # estimation entirely: S-015 is RESOLVED at 27.7%/31.6%, and
+                             # cycle coverage recomputed on the TRUE verified set (not the
+                             # candidate proxy Sec.19.1 used, which undercounted by ~89x)
+                             # finds 178 covered cycles, not 2 -- see Sec.20 for the final
+                             # account, including the winding measurement on all 178.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -333,7 +352,29 @@ open_issues:
      filter is not well justified given these numbers, but this was NOT acted on --
      exhaustive verification was not run, per the standing instruction not to pursue firming
      up the density estimate. S-015 remains PENDING (Sec.19.4): not needed for this PR's R8
-     determination, not resolved either."
+     determination, not resolved either." RESOLVED by PR-R2.8 immediately next: S-015 is now
+     MEASURED (27.7%/31.6%), not pending -- see below.
+  - "PR-R2.8 (Sec.20): ran the now-affordable exhaustive verification (Sec.19.3), the
+     single largest thing this PR series had left unmeasured. S-015 is RESOLVED: exact
+     density is 27.7% unconditional / 31.6% conditional (both exceed even Sec.18.3's
+     sampled 24.0%). This also exactly falsified PR-R2.7 Sec.19.1's 'candidates are an
+     upper bound' assumption (only 44.3% of candidates truly verify; 73.9% of true
+     positives were never candidates) -- annotated as a correction in place, not silently
+     fixed. Recomputing length>=5 cycle coverage on the TRUE (not candidate) verified set:
+     178 covered cycles (not 2), spanning 35 independent runs and all 4 topologies --
+     material is abundant, overturning review's own working assumption going into this PR.
+     Computed winding on all 178 (batched, 35 reruns, ~100s): 86/178 (48.3%) show nonzero
+     raw winding, but 0/178 pass the smoothness gate -- far below the <0.05% null rate
+     Sec.16.2 predicts for RANDOM phases at N>=5, so this is a real structural finding, not
+     insufficient sampling. R8's determination is recorded per review's requested framing:
+     NOT 'R8 is impossible,' NOT 'material doesn't exist' (it does, abundantly) -- but 'in
+     this substrate, under diffusive coupling, on these topologies, no cycle currently
+     produces winding that survives the smoothness gate.' Item 2 (coupling-form axis)'s
+     literal trigger condition ('still ~1-2 cycles') was not met, so it was NOT implemented
+     this PR -- but Sec.20.4's 0/178 smoothness-gate pass rate is flagged as strong,
+     at-scale evidence for exactly the mechanism review's own hypothesis for that axis
+     proposed, left as an explicit open decision for review rather than acted on
+     unilaterally."
 ```
 
 ---
@@ -2459,12 +2500,25 @@ a PROXY for -- direct cycle coverage -- counted exactly, plus a consistency chec
 
 ### 19.1 Direct cycle coverage, counted exactly, on the expanded (free-fix) candidate pool
 
-**Method**: candidates (`settled=True` under the free-fix criterion, Sec.18.1) are a
-SUPERSET of true long-window-verified nodes -- every verified node is a candidate, but not
-every candidate verifies. This makes the candidate set a valid UPPER BOUND for cycle
-coverage: if zero length>=5 cycles are covered even by the generous candidate set, zero can
-possibly be covered by the smaller true-verified set, and the question is settled without
-needing to know the exact verified count at all.
+**CORRECTED by PR-R2.8 (Sec.20.2): the "candidates are a SUPERSET of true-verified" claim
+below is WRONG, and this section's "2 covered cycles" result is consequently a severe
+undercount (the true figure, Sec.20.3, is 178).** Candidate status is computed from a
+SHORT-window trailing-quarter check; true-verified status is computed from a LONG-window
+(15x) trailing-quarter check -- these are DIFFERENT segments of the same trajectory (steps
+~2250-3000 vs ~33750-45000), not a strict/relaxed version of the same check, so neither is a
+superset of the other. PR-R2.8's exact cross-tabulation (Sec.20.2) found only 520/1175
+(44.3%) of candidates are truly verified, and 1472/1992 (73.9%) of truly-verified nodes were
+NOT candidates -- the assumption below does not hold empirically. Left in place, uncorrected
+in its original wording, as a disclosed record of the error; do not trust its "2 covered
+cycles" conclusion. See Sec.20 for the corrected determination.
+
+**Method** (as originally written, now known to rest on a false premise): candidates
+(`settled=True` under the free-fix criterion, Sec.18.1) are a SUPERSET of true
+long-window-verified nodes -- every verified node is a candidate, but not every candidate
+verifies. This makes the candidate set a valid UPPER BOUND for cycle coverage: if zero
+length>=5 cycles are covered even by the generous candidate set, zero can possibly be
+covered by the smaller true-verified set, and the question is settled without needing to
+know the exact verified count at all.
 
 For each of the 300 `damping=0.05` configs: rebuilt the topology directly
 (`topology.build_topology`, no dynamics needed for graph structure) and extracted every
@@ -2514,11 +2568,13 @@ net rotation either. Neither example shows anything resembling genuine winding. 
 disclosed NULL result on the one real, confirmed length>=5 example available -- reported
 with the same weight as a positive result would carry, not downplayed for being negative.
 
-**Bottom line for R8's viability**: coverage now exists (a first, for this PR series), so
-R8 is not structurally dead the way Sec.15 found triangles to be -- but the sample is a
-single run producing 2 overlapping cycles, and the one measurement made on it is null.
-This does not resolve whether R8 is viable in general; it resolves that the CURRENT sweep
-gives exactly one place to look, and that one place does not show winding.
+**Bottom line for R8's viability** (as originally written -- SUPERSEDED, see Sec.20.3-20.4
+for the corrected determination on the exhaustive TRUE-verified set: 178 covered cycles,
+not 2): coverage now exists (a first, for this PR series), so R8 is not structurally dead
+the way Sec.15 found triangles to be -- but the sample is a single run producing 2
+overlapping cycles, and the one measurement made on it is null. This does not resolve
+whether R8 is viable in general; it resolves that the CURRENT sweep gives exactly one place
+to look, and that one place does not show winding.
 
 ### 19.2 Denominator alignment: "30%" and "24.0%" were never comparable, and this is now moot
 
@@ -2651,3 +2707,164 @@ substrate-parameter search), now known to be affordable (Sec.19.3) whenever revi
   answer a motivated selection might have produced; it recommends work (exhaustive
   verification) beyond what review asked to be run this PR, and says so plainly rather than
   either quietly running it or quietly avoiding the recommendation.
+
+## 20. PR-R2.8: R8's final determination -- 178 covered cycles exist (not 2), nonzero
+winding occurs on 48% of them, but ZERO pass the smoothness gate; Sec.19.1's "candidates
+are an upper bound" assumption was wrong and is corrected here
+
+Per review's instruction: ran the now-affordable (Sec.19.3) exhaustive, batched long-window
+verification of the FULL 300-config damping=0.05 sweep -- the single largest outstanding
+gap this PR series had left unmeasured because it was assumed too expensive. Also computed
+winding on the resulting real, abundant material (not requested in so many words, but a
+direct, cheap, disclosed extension of the same "measure before theorize" pattern review has
+required throughout, now applied at scale instead of to one example).
+
+### 20.1 Exhaustive verification: S-015 resolved from estimate to exact measurement
+
+`verify.verify_long_window_all_nodes` (PR-R2.7), one call per run (not per node), across all
+300 `damping=0.05` configs. Wall-clock: 2875s (~48 minutes, close to Sec.19.3's ~58-minute
+projection).
+
+| | value |
+|---|---|
+| total verified node-checks (TRUE, long-window) | **1992 / 7200** |
+| density, unconditional (7200-denominator, "3.1%/24.0%-style") | **27.7%** |
+| runs with >=1 verified node | 263 / 300 |
+| density, conditional on run having >=1 verified (2400/9.3%-style) | **31.6%** |
+
+**S-015 is no longer pending -- it is MEASURED.** Both figures exceed every prior estimate
+in this series: the original 3.1% (223/7200), the original 9.3% (223/2400), and even
+Sec.18.3's own sampled correction of 24.0%. The sampled estimate was directionally correct
+(density is much higher than 3.1%/9.3% suggested) but, being a 2-population sample, modestly
+UNDERSHOT the true figure (24.0% vs the now-measured 27.7%) -- reported here for the record,
+not to claim the earlier estimate was wrong in kind, only in degree, which is exactly the
+kind of gap a "PENDING" label exists to cover.
+
+### 20.2 Exact screening precision/recall -- and Sec.19.1's error, found and corrected
+
+Cross-tabulated the free-fix candidate mask (short window, Sec.18.1) against the TRUE
+(long-window) verified mask, exactly, for all 7200 node-checks:
+
+| | candidate | not candidate |
+|---|---|---|
+| **true-verified** | 520 (TP) | 1472 (FN) |
+| **not true-verified** | 655 (FP) | 4553 (TN) |
+
+- exact screening precision (TP / all candidates): **44.3%** -- more than half of
+  short-window candidates (655/1175, 55.7%) do NOT hold up at long window.
+- exact FNR of all true-verified nodes: **73.9%** -- nearly 3 in 4 genuinely persistent
+  nodes were NOT short-window candidates at all.
+- exact FNR within the screened_out population specifically: **24.4%** -- close to, and
+  slightly above, Sec.18.3's sampled 20.0% estimate (n=75), good corroboration that the
+  earlier sampling was not a fluke, just imprecise.
+
+**This directly falsifies PR-R2.7 Sec.19.1's stated assumption** that short-window
+candidates are a SUPERSET of true-verified nodes (an upper bound for cycle coverage).
+Candidate status and long-window-verified status are computed from DIFFERENT segments of
+the same trajectory (short window's trailing quarter is steps ~2250-3000; long window's
+trailing quarter is steps ~33750-45000) -- there is no logical containment relationship
+between them, and the empirical numbers above show neither direction holds cleanly. Sec.19.1
+has been annotated in place with this correction; its "2 covered cycles" conclusion is
+superseded by Sec.20.3 below, not merely refined.
+
+### 20.3 Cycle coverage on the TRUE verified set -- R8's final determination
+
+Same cycle extraction as Sec.19.1 (`topology.fundamental_cycles`, length>=5, all 300
+configs, 4155 total cycles), now checked against the EXACT verified mask from Sec.20.1
+instead of the flawed candidate proxy:
+
+| | value |
+|---|---|
+| length>=5 cycles fully covered by the TRUE verified set | **178** (vs. 2 from the flawed candidate-based method) |
+| by length | 5: 74, 6: 47, 7: 34, 8: 7, 9: 6, 10: 7, 11: 3 |
+| by topology | random_regular: 65, watts_strogatz: 52, erdos_renyi: 32, barabasi_albert: 29 |
+| unique (seed, topology, strength) runs contributing | 35 (i.e. not one run's overlapping duplicates -- genuinely spread across many independent runs, all 4 topologies, seeds 0-14) |
+
+Material for R8 is **abundant**, not scarce -- the opposite conclusion from Sec.19.1's
+undercount. This alone overturns review's own working hypothesis going into this PR ("被覆
+は2本...R8は現状の材料では成立しません") on the MATERIAL-availability question
+specifically; the material-scarcity framing does not survive contact with the exhaustive
+measurement. Whether R8 is viable on this abundant material is a separate question, answered
+next.
+
+### 20.4 Winding on all 178 covered cycles: 48% show nonzero raw winding, 0% pass the
+smoothness gate
+
+Computed the real instantaneous phase (analytic-signal angle at the midpoint of R7's
+phase-analysis window, same method as Sec.15.2/19.1) for every node touched by the 178
+covered cycles, batched by the 35 unique underlying runs (not 178 separate reruns).
+`winding_precheck.py` (still explicitly NOT R8) applied to each:
+
+| | value |
+|---|---|
+| cycles with nonzero raw winding (`compute_winding() != 0`) | **86 / 178 (48.3%)** |
+| cycles passing the smoothness gate (`winding!=0 AND max_adjacent_step < pi/2`) | **0 / 178 (0.0%)** |
+| raw winding value distribution | 0: 92, -1: 42, +1: 39, -2: 3, +2: 2 |
+
+This is the decisive result. Nonzero winding is NOT rare here -- it occurs on nearly half
+the covered cycles, mostly |winding|=1. But it NEVER survives the smoothness gate: every
+single nonzero-winding cycle has at least one adjacent phase step exceeding pi/2. Per
+Sec.16.2's own null-rate table, the composite (nonzero AND smooth) criterion has a null rate
+below 0.05% for N>=5 under i.i.d. random phases -- so a 0/178 pass rate, on cycles that are
+NOT random (they come from a substrate with real, measured phase structure), is not
+consistent with "we just haven't sampled enough cycles yet." It is consistent with a
+STRUCTURAL fact about this substrate: nodes within a covered cycle cluster in phase (locally
+entrained/synchronized) rather than smoothly rotating around the loop, so the nonzero raw
+winding values that do appear are attributable to one or two outlier nodes' large phase
+jumps (exactly what the smoothness gate is built to catch), not genuine coherent spatial
+phase propagation.
+
+### 20.5 R8's determination, recorded per review's requested framing
+
+Per review's explicit instruction: this is recorded as **"in this substrate, under this
+coupling form (diffusive, Sigma w_ij(x_j - x_i)), on these topologies, no cycle currently
+produces a winding measurement that survives the smoothness gate"** -- NOT as "R8 is
+impossible" and NOT (unlike Sec.19.1's premature framing) as "no measurable material
+exists." Material is abundant (178 cycles, Sec.20.3); nonzero raw winding is common (48.3%,
+Sec.20.4); the block is specifically that raw winding does not co-occur with smooth phase
+transport, at a rate far below what chance alone would produce. This is a materially
+stronger and more specific null result than either Sec.15's "only triangles exist" or
+Sec.19.1's "only 2 cycles, both null" -- it rules out the "not enough data" objection
+explicitly, on real (not synthetic) material, at scale.
+
+### 20.6 Item 2 (coupling-form axis): condition not met, NOT implemented this PR -- but the
+underlying evidence for it just got much stronger
+
+Review's stated trigger for adding a coupling-form axis was explicit: "1の結果が『実質1〜2本
+のまま』だった場合" (if (1)'s result stays at essentially 1-2 cycles). It did not -- 178
+cycles, 35 independent runs, all 4 topologies (Sec.20.3). Per the literal condition, this PR
+does NOT implement a coupling-form axis.
+
+Flagged for review's decision, not acted on unilaterally: Sec.20.4's result (86/178 nonzero
+raw winding, 0/178 smooth) is DIRECT, at-scale evidence consistent with exactly the
+mechanism review's own hypothesis for item 2 proposed -- diffusive/attractive coupling
+(Sigma w_ij(x_j - x_i) pulls neighboring nodes' states together) entraining phases into local
+clusters rather than permitting the slow, coherent spatial phase rotation winding requires.
+This was not the trigger condition review specified (which was about MATERIAL scarcity, now
+resolved as abundant), but it is a different, and arguably stronger, piece of evidence for
+the SAME underlying question review's item 2 was designed to test. Whether to proceed with a
+second coupling-form axis on this basis -- now backed by an exact 0/178 smoothness-gate pass
+rate on real material rather than either a material shortage or a hypothesis alone -- is left
+to review.
+
+### 20.7 9th-audit and 8th-audit re-check on Sec.20's own claims
+
+- **9th audit:** the exhaustive verification and the winding measurement are both computed
+  by the SAME, already-validated instruments used throughout this series
+  (`verify_long_window_all_nodes` is the batched form of the identical criterion as
+  `verify_long_window`, tested equivalent in PR-R2.7; `winding_precheck.py` is unchanged
+  since Sec.16). No gate was loosened or instrument altered to produce either the 178-cycle
+  count or the 0/178 smoothness result. The correction of Sec.19.1's error is stated as a
+  correction, with the exact numbers that falsify it (Sec.20.2), not quietly folded in.
+- **8th audit:** was the decision to compute winding on all 178 cycles (rather than, say, a
+  sample, or none at all) made to produce a particular outcome? No -- it was cheap (35
+  unique reruns, ~100s total, batched) and directly extends the exact same method already
+  used on the 2-cycle sample in Sec.19.1, at no additional design choice; every one of the
+  178 was checked, not a subset chosen after seeing partial results. Was the 0/178 result
+  itself surprising, or did prior sections anticipate it? Sec.16.2's null-rate table
+  predicted <0.05% for the composite criterion under RANDOM phases -- 0/178 on real,
+  non-random material is consistent with that table only if the substrate's real phase
+  structure is EVEN LESS favorable to smooth winding than random chance, which is itself a
+  notable, disclosed finding, not swept past. Item 2's flagged-but-not-implemented status
+  (Sec.20.6) is reported as a live open question for review, not silently decided either
+  way.
