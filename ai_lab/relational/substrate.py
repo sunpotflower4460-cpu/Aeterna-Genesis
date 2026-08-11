@@ -290,6 +290,8 @@ def run(
     damping: float = 0.08,
     asymmetry: bool = DEFAULT_ASYMMETRY,
     asymmetry_strength: float = DEFAULT_ASYMMETRY_STRENGTH,
+    x0_override: Optional[np.ndarray] = None,
+    v0_override: Optional[np.ndarray] = None,
 ) -> SubstrateResult:
     """Run the R-layer substrate. Every ingredient axis defaults to its minimal side.
 
@@ -298,6 +300,15 @@ def run(
                   dx_i/dt = v_i
     where g(x_i) = -saturation_strength * x_i^3 when saturation="cubic" (spec Sec.4.2's
     "a*g(x_i)" term, with a folded into saturation_strength -- see `_saturation`), else 0.
+
+    x0_override/v0_override (PR-R2.1, both None by default): when given, replace the random
+    initial_state() / zero-v(0) construction with the supplied arrays, everything else
+    (W, seed, all other ingredient axes) unchanged. This is a CONTINUATION utility for
+    ai_lab/relational/verify.py's long-window re-verification and damage-recovery checks --
+    like `dt`, it is a numerical/tooling knob, not a disclosed physics ingredient axis (it
+    does not appear in SubstrateResult.to_dict(); the caller is responsible for recording
+    provenance of a continuation run in its own output). Same seed => same W regardless of
+    x0_override, since W's construction does not depend on x0.
 
     asymmetry=True (PR-R1.5, off by default): w_ij != w_ji is allowed (see `_asymmetrize`).
     This does not change which edges exist, only the split of each edge's coupling between
@@ -317,7 +328,7 @@ def run(
     mask = (W0 > 0).astype(float)
     W = _asymmetrize(W0, asymmetry_strength, seed) if asymmetry else W0.copy()
 
-    x0 = initial_state(n, m, epsilon, seed)
+    x0 = np.array(x0_override, dtype=float).copy() if x0_override is not None else initial_state(n, m, epsilon, seed)
     x = x0.copy()
     x_hist = [x0.copy()]
 
@@ -337,7 +348,7 @@ def run(
             x_hist.append(x.copy())
         v_hist_arr = None
     else:
-        v = np.zeros_like(x0)
+        v = np.array(v0_override, dtype=float).copy() if v0_override is not None else np.zeros_like(x0)
         v_hist = [v.copy()]
 
         def deriv2(xx, vv):

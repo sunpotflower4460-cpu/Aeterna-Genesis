@@ -1081,3 +1081,157 @@ than silently substituting a different sweep than the one review asked to focus 
   `random_regular`/`erdos_renyi` runs plus the one exact-zero-growth-rate case (a
   structurally distinguished choice, not a cherry-picked one) -- and the finding (10/11
   diverge, 1/11 decays) was reported as a full count, not a curated example set.
+
+## 13. PR-R2.1: re-sweeping under `saturation="cubic"`, with the definition of `sustained`
+hardened against the failure mode that produced Sec.12.2's retraction
+
+Requested by review, before the re-sweep: (1) separate what Sec.10.2/10.3's proofs still
+establish from what Sec.10.4/11/12 wrongly concluded from them; (2) check
+`saturation_strength` sensitivity before committing to a single value for the re-sweep; (3)
+add an attractor-vs-orbit-family ("damage-recovery") instrument; (4) bake a long-window
+re-check into the definition of `sustained` itself, not as a follow-up. All four addressed
+below, in order, before the re-sweep's own results (Sec.13.5+).
+
+### 13.1 What Sec.12.2 retracted, and what it did NOT retract
+
+Sec.10.2's Gershgorin bound and Sec.10.3's `q^2 > p*gamma^2` threshold are both statements
+about the **linear part** of the `memory=on` dynamics (`dv/dt = -Lx - gamma*v`, before any
+`a*x^3` term is added) -- they are proofs/derivations from the linear operator's eigenvalues
+and are **completely unaffected by whether `saturation` is `"none"` or `"cubic"`**, since
+`saturation` only changes what gets ADDED to that same linear right-hand side. Nothing in
+Sec.12.2 challenges either: Gershgorin's `Re(mu) >= 0` for `L` still holds exactly regardless
+of `a`; the characteristic equation `lambda^2 + gamma*lambda + mu = 0` and its
+`q^2 > p*gamma^2` instability condition are still exactly the LINEARIZATION of the dynamics
+near the origin, valid for however long the trajectory stays close enough to the origin for
+the cubic term to be negligible (empirically confirmed in Sec.12.2's own spot-checks: the
+`saturation="none"` and `saturation="cubic"` trajectories for the SAME config were
+numerically indistinguishable during the initial growth phase, only diverging once amplitude
+grew large enough for the cubic term to matter).
+
+**What Sec.12.2 retracted is a single additional INFERENCE that Sec.10.4/11 made on top of
+those proofs**: "the linear instability, therefore, produces a bounded sustained
+oscillation." That inference is false when `saturation="none"` (there is nothing to cap the
+growth once it leaves the linear regime) and was never actually tested under
+`saturation="cubic"` in Sec.10.3/11's own sweep, despite Sec.10.4 describing the cap as
+"implicit."
+
+**The correct two-stage structure** (a standard Hopf-bifurcation shape -- the linear part
+sets the frequency, the nonlinear part sets the amplitude) is:
+
+```
+Stage 1 (PROVEN, saturation-independent): inertia + asymmetry -> linear instability
+    Gershgorin (Sec.10.2): Re(mu) >= 0 for L, any W built by this construction.
+    Characteristic equation (Sec.10.3): Re(lambda) > 0 iff q^2 > p*gamma^2 for some
+    eigenvalue mu = p + iq of L. This is EXACT and requires nothing about saturation.
+
+Stage 2 (TO BE CONFIRMED per configuration, saturation-DEPENDENT): linear instability +
+    saturation -> bounded limit cycle. Requires saturation="cubic" (a > 0); with
+    saturation="none" this stage cannot occur (Sec.12.2, an exact linear-ODE argument).
+    Confirmed on 2 spot-checks with saturation="cubic" (Sec.12.2); the re-sweep in this
+    section (Sec.13.5+) measures this stage properly, across many configurations, with the
+    long-window definition hardening from Sec.13.4.
+```
+
+Everything downstream of this PR (R7's phase, and any future R8 winding-number work) depends
+on Stage 2, not Stage 1 alone -- a linearly unstable mode without a nonlinear cap is not
+structure to derive a phase from, it is a transient on its way to infinity.
+
+### 13.2 `saturation_strength` sensitivity: is the default (0.1) a special value?
+
+Before committing to a single `saturation_strength` for the re-sweep, checked whether
+`a=0.1` (the codebase's pre-existing default, unrelated to this PR) is a boundary or
+otherwise special value, or whether the capping mechanism is generic across `a`. Two of
+Sec.12.2's spot-checked configs (`random_regular` seed=5 node=22; `erdos_renyi` seed=9),
+each re-run at `a` in `{0.02, 0.1, 0.5, 2.0}` -- a 100x spread -- over a 20x-extended window
+(steps=20000):
+
+| `a` | `random_regular` seed=5 plateau mean\|x\| | `erdos_renyi` seed=9 plateau mean\|x\| |
+|---|---|---|
+| 0.02 | 4.398 | 2.535 |
+| 0.10 | 2.038 | 1.831 |
+| 0.50 | 0.908 | 0.727 |
+| 2.00 | 0.446 | 0.442 |
+
+**Every value produced genuine bounded oscillation** (no divergence at any `a` tried).
+`random_regular` seed=5's plateau amplitude follows the standard Hopf-normal-form scaling
+`amplitude ~ C / sqrt(a)` closely: `amplitude * sqrt(a)` is 0.622, 0.645, 0.642, 0.631
+across the four `a` values -- consistent to within a few percent, which is itself evidence
+this is a genuine (weakly) nonlinear Hopf-type mechanism rather than an artifact of one
+particular `a`. `a=0.1` is an ordinary point on this curve, not a special or tuned one. The
+re-sweep below (Sec.13.5+) uses `a=0.1`, the existing default, on this basis.
+
+### 13.3 Hardening the definition of `sustained`: `verify.verify_long_window`
+
+Two of this PR series's own positive-result retractions now trace to the identical root
+cause -- a window too short to see continued change: PR-R1.5's re-check of PR-R1's memory=on
+sweep (605/1200 "periodic" node-checks -> 0/1200 actually sustained, once the sustained/
+decaying instrument existed) and Sec.12.2 (10/11 damping=0.05 `saturation="none"` flags ->
+shown diverging once the window was extended 20x). Per review's instruction, this is now
+addressed structurally rather than by a third after-the-fact correction:
+`ai_lab/relational/verify.py::verify_long_window` re-runs the identical configuration at
+`extend_factor=15` x the original step count and re-checks the node's classification on
+that longer trajectory. **From PR-R2.1 onward, a node is only reported "sustained" in any
+headline count if `verify_long_window` returns `verified_sustained=True`** -- a
+short-window `sustained_and_settled` flag is a screening CANDIDATE only.
+
+One implementation subtlety, caught while validating `verify_long_window` against a
+config independently confirmed genuine by Sec.13.4's attractor check: the long-window
+re-check uses `settled` (the trailing-quarter-vs-preceding-quarter comparison), NOT the
+whole-window `sustained` classification (first-half-vs-second-half). Reason, found
+empirically: a genuine limit cycle's initial transient (rise from near-zero to plateau
+amplitude) takes a roughly fixed amount of TIME regardless of how long the total recording
+is. At the original (screening) window length, that transient is a small fraction of the
+recording, so the whole-window halves comparison is dominated by the (already-plateaued)
+majority of the window and correctly reads "sustained." At `extend_factor=15`x that same
+window, the SAME fixed-length transient is now a much smaller fraction of a much longer
+recording -- but the first HALF of the extended recording still contains most of it, so the
+first-half average is dragged down relative to the (fully plateaued) second half, and the
+whole-window classification misreads a confirmed limit cycle as "growing"
+(`random_regular` seed=5 node=22 under `saturation="cubic"`, extended to steps=45000:
+`settled=True, settled_ratio~1.00` but `sustained=False, classification="growing",
+ratio=1.59`, despite `check_attractor_recovery` independently confirming this exact
+trajectory returns to its plateau amplitude after a perturbation, Sec.13.4). `settled`'s
+trailing-quarter-only comparison does not have this failure mode -- it is unaffected by
+how large a fraction of the recording the initial transient occupies -- so it is the
+correct, window-length-robust criterion for a check whose entire purpose is to look far
+past any transient. This is documented as a deliberate, disclosed design choice in
+`verify.py`'s own docstring, not silently patched.
+
+### 13.4 The damage-recovery / attractor-vs-orbit-family instrument
+
+Per review's request (point 3): a genuinely sustained oscillation could still be either (a)
+an ATTRACTING limit cycle -- perturb it and it returns to the same amplitude, i.e. it is
+self-sustaining -- or (b) a member of a conservative FAMILY of periodic orbits (as in an
+undamped oscillator, where every initial amplitude persists forever, unperturbed) -- perturb
+it and it simply moves to a different family member, permanently. This is exactly the same
+underlying measurement concept `ai_lab/dream/frontier_expander.py`'s capability roster
+flags as `self_repair` / `damage-recovery` (status `UNMEASURED` there: "壊されたあと自分で
+戻る" / "damage/recovery介入器が必要") for the separate, TDGL-based `dream/` system --
+implemented here independently, for the R-layer's own physics, in
+`ai_lab/relational/verify.py::check_attractor_recovery`. This file does not read or write
+`frontier_expansion.json` or any `ai_lab/dream/` file; `achieved` is this module's own
+explicit flag on the R-layer result it was computed from, not a change to the `dream/`
+capability roster's own (differently-measured, differently-scoped) status.
+
+**Method**: from a long (`extend_factor=15`x), settled trajectory, take a checkpoint at 60%
+through the recording (well past the initial transient). Continue TWO independent runs from
+that exact checkpoint state (same `x`, same `v`, same `W` -- `substrate.run`'s new
+`x0_override`/`v0_override` continuation parameters, PR-R2.1): a CONTROL, unperturbed; and a
+DAMAGED run, with the entire state (`x` and `v`) rescaled by `perturb_factor=0.4` at the
+checkpoint (a deliberately large, disclosed perturbation -- 60% of the amplitude removed at
+once). Both continue for `5x` the original screening window. Compare each run's own
+plateau amplitude (mean `|x|` over its final quarter) for the originally-flagged node.
+`achieved=True` iff the damaged run's plateau amplitude is within `RECOVERY_TOL=20%`
+(relative, fixed and disclosed) of the control's.
+
+**Result on the validated config** (`random_regular` seed=5, node=22,
+`asymmetry_strength=0.3`, `damping=0.05`, `saturation="cubic"`, `a=0.1`): control plateau
+amplitude 1.985, damaged plateau amplitude 2.001 -- a **0.8% relative difference**, far
+inside tolerance. **`achieved=True`: this is a genuine attracting limit cycle.** Removing
+60% of the amplitude at the checkpoint made no lasting difference; the trajectory returned
+to essentially the identical plateau. This is the first direct, interventional (not merely
+correlational) confirmation in this PR series that a measured R-layer oscillation is
+self-sustaining in the specific sense review asked about, and the first R-layer result that
+can be honestly compared to the `dream/` roster's `self_repair` capability concept (though,
+again, as an independent measurement on different physics, not a shared instrument or a
+change to that roster's own tracked status).
