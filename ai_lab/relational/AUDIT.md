@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 AUDIT
 
 ```yaml
 id: relational_r1
@@ -11,7 +11,13 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # fix (verify.py) preventing the SAME window-length mistake
                              # (Sec.9.2, Sec.12.2) from recurring a third time, and (Sec.14)
                              # R7 (phase) built on the corrected N with a fixed, disclosed
-                             # transient-trim rule.
+                             # transient-trim rule. PR-R2.6 (Sec.18, S-015 PENDING) applied
+                             # that SAME window-length fix a fourth time, now to the
+                             # SCREENING step itself (not just verification), and found the
+                             # instrument's own false-negative rate is large enough that the
+                             # reported persistent density is very likely understated by a
+                             # factor of roughly 2.6-7.8x -- not yet confirmed exhaustively,
+                             # but no longer safely assumed to be a minor correction either.
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -52,7 +58,28 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # not yet applied to this population (flagged, not run). Per
                              # review's own conditional, NO coupling-form axis was added
                              # (oscillation death is the empty category, not dominant).
-                             # Density-increasing work remains explicitly NOT pursued.
+                             # PR-R2.6 (Sec.18, S-015 PENDING) ran that flagged fix: applying
+                             # `settled` (not `sustained_and_settled`) to the SCREENING step
+                             # rescues 21/119 (17.6%) of the missed-detection group for free
+                             # (no new simulation), and long-window-verifies 58 of the
+                             # remaining 98 (59.2%) -- 79/119 (66.4%) of that group is
+                             # genuinely persistent. Applied sweep-wide, the same free fix
+                             # nearly triples the raw candidate pool (423 -> 1175 node-checks
+                             # out of 7200). A disclosed, seeded (2026) random sample of the
+                             # two populations this creates (screened_out, n=6025, sampled 75,
+                             # 15 verified = 20.0%; newly_promoted, n=752, sampled 50, 20
+                             # verified = 40.0%) yields a corrected density estimate of 24.0%
+                             # (1729/7200 estimated true positives) versus the previously
+                             # reported 3.1% (223/7200) or 9.3% (223/2400) -- a 7.8x or 2.6x
+                             # correction respectively, rough 95% CI approximately
+                             # 15.0%-33.0%. This is close to, and cannot yet rule out being
+                             # above, the ~30% density Sec.15 estimated as necessary for a
+                             # length-6 cycle to become non-negligibly likely to be fully
+                             # covered -- R8's outlook may change substantially, but this is
+                             # explicitly marked PENDING (a 2-sample estimate, not an
+                             # exhaustive resweep) not settled. Density-increasing
+                             # implementation remains explicitly NOT pursued pending review's
+                             # decision on how to act on this correction.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -223,6 +250,26 @@ open_issues:
      these 172 nodes never had that check applied (they failed short-window screening, so
      were never candidates for it) -- not run this PR (substantial compute cost, review's
      prioritization needed first). Density-increasing work remains explicitly not pursued."
+  - "PR-R2.6 (Sec.18, S-015 PENDING): ran the fix Sec.17 flagged but did not run. The free
+     fix (screening judged by `settled` alone, matching the already-fixed long-window
+     criterion) rescues 21/119 (17.6%) of the missed_detection group with zero new
+     simulation; long-window-verifying the remaining 98 directly (not sampled) confirms 58
+     more (59.2%) -- 79/119 (66.4%) of that group is genuinely persistent, corroborating
+     Sec.17.3's flagged hypothesis. Applied to the FULL original 2400-node-check sweep, the
+     same free fix nearly triples the raw candidate pool (423 -> 1175). A disclosed, seeded
+     (2026) random sample of the two resulting disjoint populations (screened_out, n=6025,
+     sampled 75, 15 verified = 20.0%; newly_promoted, n=752, sampled 50, 20 verified =
+     40.0%) gives a stratified corrected-density estimate of 24.0% (1729/7200 estimated
+     true positives) against the previously reported 3.1% (223/7200) / 9.3% (223/2400) --
+     a 7.8x / 2.6x correction, rough 95% CI ~15.0%-33.0%. This brings the density close to,
+     and does not rule out exceeding, the ~30% Sec.15 estimated as necessary for a length-6
+     cycle's full-coverage probability to become non-negligible -- R8's outlook may change
+     substantially, matching review's own prediction, but this is a 2-sample estimate, not
+     an exhaustive resweep, so it is recorded PENDING, not settled. The 48 frustration cases
+     from Sec.17.2 were preserved (not discarded) in a new d0_registry.json, registered
+     under destination D0 (open-ended exploration, no pre-chosen target shape) per review's
+     explicit instruction. Density-increasing implementation remains explicitly NOT
+     pursued, per review's instruction, pending review's decision on this correction."
 ```
 
 ---
@@ -2194,3 +2241,144 @@ mechanism that either of those two actions would address.
   `(sustained, settled)` combination within `missed_detection`, and the first `frustration`
   entry in iteration order -- a disclosed, mechanical selection rule, not hand-picked for
   visual clarity.
+
+## 18. S-015 (pending): the screening pipeline itself was undercounting -- a free fix
+recovers 66% of "missed detection," and a sampled false-negative rate suggests the true
+persistent density may be 2.6-7.8x the reported figure
+
+Per review's priority ordering: (1) apply the SAME window-length fix already used for
+`verify_long_window` to the SCREENING criterion itself, for free, on already-computed data;
+(2) send only what remains to long-window verification; (3) the main event -- sample the
+DROPPED population at large (not just PR-R2.5's 172) to estimate the screening pipeline's
+general false-negative rate and correct the reported density; (4) register, not discard,
+the 48 frustration cases; (5) continue not pursuing density-increasing implementation. All
+five done, in order, below.
+
+### 18.1 The free fix: screening should use `settled`, not `sustained_and_settled`
+
+Sec.13.3 already established that `sustained`'s whole-window halves comparison is not
+window-length-robust -- it is dragged down by the initial transient once that transient is
+a non-negligible fraction of the window -- and fixed `verify_long_window` to use `settled`
+alone. **The original SCREENING step (the short, 3000-step pass that decides which nodes
+even become long-window-verification CANDIDATES) still used the unfixed
+`sustained_and_settled` criterion.** Applying the same fix there, on data already computed
+(no new simulation for this step):
+
+- Of PR-R2.5's 119 `missed_detection` nodes, **21 (17.6%) are rescued immediately** --
+  they already have `settled=True` in the existing short-window trajectory, and were only
+  excluded because `sustained` (the transient-drag-prone check) said no.
+- **Applied across the ENTIRE 300-config `damping=0.05` sweep** (a full, cheap rerun --
+  short window only, no long-window cost): the original `sustained_and_settled` screening
+  found **423** candidate node-checks. The corrected `settled`-only screening finds
+  **1175** -- **essentially 3x as many candidates**, from the identical trajectories,
+  changing nothing about the physics or the sweep, only the classification rule.
+
+This alone is a substantial, free correction, independent of anything sampled below.
+
+### 18.2 The remaining 98: long-window verified directly (not sampled)
+
+The 98 `missed_detection` nodes NOT rescued by 18.1 (still `settled=False` even under the
+corrected screening rule) were sent to `verify_long_window` directly, per review's
+instruction 2 -- this population is small enough to check exhaustively rather than sample.
+
+**58 of 98 (59.2%) verify at the long window.** Combined with 18.1's 21 free rescues:
+**79 of the original 119 `missed_detection` node-checks (66.4%) are genuinely persistent**
+-- two-thirds of what PR-R2.5 called "missed detection" was exactly that: MISSED, not
+absent.
+
+### 18.3 The main event: a sampled false-negative rate for the whole screening pipeline
+
+Per review's instruction 3, the question is not PR-R2.5's specific 172 -- it is whether the
+corrected screening pipeline (18.1) is STILL missing structure broadly, across the entire
+sweep. Sampled two populations from the full 300-config `damping=0.05` sweep (fixed seed
+2026, disclosed), each `verify_long_window`-verified in full (not itself sampled further):
+
+| population | size | sample | verified in sample | rate | 95% CI (normal approx) |
+|---|---|---|---|---|---|
+| **B: newly promoted by 18.1's fix** (`settled=True`, was NOT `sustained_and_settled`) | 752 | 50 | 20 | **40.0%** | 26.4%-53.6% |
+| **A: still screened out even after 18.1's fix** (`settled=False`) | 6025 | 75 | 15 | **20.0%** | 10.9%-29.1% |
+
+**Both rates are far from zero.** Population A -- nodes the CORRECTED screening still
+rejects -- verifies at long window one time in five. Population B -- nodes the correction
+newly admits as candidates but have not yet been long-window checked -- verifies two times
+in five.
+
+**Corrected density estimate**, combining the known exact count (223 already-verified, from
+the original 423 candidates) with these two sampled rates applied to their full population
+sizes:
+
+```
+corrected_TP  =  223 (known)  +  0.40 x 752 (population B)  +  0.20 x 6025 (population A)
+             =  223 + 301 + 1205
+             =  1729 (of 7200 total damping=0.05 node-checks)
+
+corrected_density  =  1729 / 7200  =  24.0%
+```
+
+**Compared to the previously-reported figures**: 3.1% (223/7200, across the full sweep) --
+a **7.8x** correction; 9.3% (223/2400, within the 100 originally-verified-containing runs)
+-- a **2.6x** correction. The rough combined-CI range (propagating each sampled rate's own
+95% interval independently, not a full joint interval) is approximately **15.0%-33.0%**.
+
+**This changes R8's outlook directly, per review's own prediction.** Sec.15.3(c)/Sec.16.4
+estimated that a length-6 fully-covered cycle needs roughly 30% verified-node density
+(crediting the observed clustering enrichment) to become even 1%-likely per cycle. The
+corrected point estimate (24%) is close to that threshold, and the upper end of the rough
+CI range (33%) EXCEEDS it. **The R8 blocker quantified in Sec.15.3(c) may already be far
+smaller than previously measured, or possibly no longer a blocker at all** -- this is not
+yet confirmed (a point estimate from n=75/n=50 samples, not an exhaustive resweep), but it
+is no longer safely assumed to be a 3x gap either.
+
+**Honesty on the sampling itself**: `verify_long_window`'s own settled-window criterion
+(Sec.13.3) is reused unmodified for this sampling -- no new instrument was built to produce
+this number. The two sample sizes (75, 50) are within review's requested 50-100 range,
+drawn with a disclosed, fixed seed (2026) before either sample was verified (not resampled
+after seeing an inconvenient early result). The corrected-density FORMULA combines a known
+exact count with two independently-sampled rates on disjoint populations (`(known) + rate_B
+* n_B + rate_A * n_A`, over the true total N) -- a standard stratified estimator, not an ad
+hoc combination.
+
+### 18.4 What this does NOT yet establish
+
+This is reported as `S-015 (pending)`, not settled, because: (a) the corrected density is
+an ESTIMATE from two samples, not an exhaustive re-verification of all 6777 non-original-
+candidate node-checks (that would cost far more compute than this PR's budget allowed);
+(b) it has not yet been checked whether the NEWLY-implied true-positive population (an
+estimated ~1500 additional node-checks beyond the known 223) changes Sec.14.3's cycle-
+clustering topology pattern, Sec.16.2's driven-vs-self-sustaining split, or any other
+finding computed against the smaller, known-223 baseline -- all of those would need
+re-deriving against the corrected population before being trusted at the new scale; (c) no
+attempt was made in this PR to determine WHY the original screening criterion missed so
+much (beyond the already-diagnosed transient-drag mechanism, Sec.13.3, which explains only
+the 18.1 portion, not population A/B's sampled rates, which reflect genuinely NEW
+information the short window simply could not see within its own recorded length). These
+are the natural next steps, not resolved here.
+
+### 18.5 Explicitly not pursued this PR
+
+Per review's instruction 5: **no density-increasing implementation work was attempted**,
+even though 18.3's finding makes such work look more promising than it did before this
+section -- the instruction was to correct the MEASUREMENT first, and that correction
+itself is not yet a settled result (18.4). Registering the 48 frustration cases (Sec.17.1)
+as D0 (`ai_lab/relational/d0_registry.json`) was completed per review's instruction 4 (see
+that file's own header for the registry's structure and rationale) -- not analyzed further
+here.
+
+### 18.6 9th-audit and 8th-audit re-check on Sec.18's own claims
+
+- **9th audit:** "the corrected density may be 2.6-7.8x higher" is an achievement-flavored
+  claim built from sampled data, so the 9th audit's core question (could the instrument
+  express this) is satisfied by construction -- `verify_long_window` is the exact same,
+  already-validated instrument used throughout Sec.13-17, applied here to new populations,
+  not a new or loosened check. The claim is explicitly hedged as "S-015 (pending)," not
+  asserted as established, specifically because a 2-sample estimate is a materially weaker
+  claim tier than an exhaustive resweep -- this section says so directly rather than
+  presenting a point estimate as a confirmed correction.
+- **8th audit:** were the sample sizes (75, 50), the random seed (2026), or which two
+  populations (A: still-rejected, B: newly-promoted) to sample chosen to produce a
+  favorable density correction? No: 75 and 50 are within review's own requested 50-100
+  range; the seed was fixed in the sampling script before any verification ran; both
+  populations were reported (not just the more favorable B, 40%, alone) -- population A's
+  lower 20% rate is the one carrying the bulk of the correction's WEIGHT (6025 vs 752 in
+  population size), so if anything the larger, less dramatic-looking rate dominates the
+  final number, not a cherry-picked favorable one.
