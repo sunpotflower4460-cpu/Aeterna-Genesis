@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 AUDIT
 
 ```yaml
 id: relational_r1
@@ -32,9 +32,18 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # count but by cycle SHAPE: all 3 fully-covered cycles are
                              # triangles, and triangles have a high, length-RISING null rate
                              # (0.25 at N=3 to 0.57 at N=10) and cannot distinguish
-                             # |winding|>1. The real blocker is quantified: verified-node
-                             # density (9.3%) would need to roughly triple before a
-                             # length-6 cycle is even 1%-likely to be fully covered.
+                             # |winding|>1 (Sec.15). PR-R2.4 (Sec.16) adds the SMOOTHNESS
+                             # GATE review specified (winding!=0 AND max step < pi/2) --
+                             # structurally requires N>=5 (not just "probably better than
+                             # 3"), and collapses the null rate to <0.05% (5-100x below
+                             # review's own naive (1/2)^N estimate). Priority interventional
+                             # test (cut verified nodes' edges, watch neighbors): 53.3%
+                             # (172/323) of non-verified direct neighbors are
+                             # SELF-SUSTAINING once disconnected, not merely driven -- a
+                             # genuine ~50/50 split (bimodal, not review's predicted
+                             # "mostly driven"), reframing rather than resolving the
+                             # propagation question. Density-increasing work explicitly NOT
+                             # pursued pending this split's resolution (Sec.16.4).
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -167,6 +176,27 @@ open_issues:
      length-6 fully-covered cycle becomes even 1%-per-cycle likely -- a structural gap, not
      a sampling one. winding_precheck.py is a standalone precondition module, explicitly
      NOT R8 and not wired into instruments.py."
+  - "PR-R2.4 (Sec.16, S-013): added the smoothness gate review specified (winding!=0 AND
+     max adjacent step < pi/2) -- structurally requires N>=5 (3*(pi/2) and 4*(pi/2) both
+     fail to exceed 2*pi, so triangles/squares can NEVER pass, for any phase assignment),
+     and collapses the re-measured null rate to <0.05% for N>=5, itself 5-100x below
+     review's own naive (1/2)^N estimate (e.g. N=6: measured 0.0005 vs guessed 0.0156).
+     R8's launch condition is now: multiple fully-covered cycles of length >=5 (not 6),
+     ideally N=5-10. Priority interventional test (verify.py::check_driven_vs_self_sustaining,
+     substrate.py's new W_override): cut every edge between the verified node set and its
+     non-verified direct neighbors at a checkpoint, compare each neighbor's post-cut
+     plateau amplitude to a connected control, across ALL 100 verified damping=0.05 runs
+     (not a sample). Result: 172/323 (53.3%) of non-verified direct neighbors are
+     self-sustaining once disconnected, not merely driven -- a genuine, bimodal ~50/50
+     split (31.6% clearly driven-only at <10% retention, 34.1% clearly self-sustaining at
+     >=80% retention), NOT the 'mostly driven' pattern review's own hypothesis predicted.
+     Self-sustaining fraction is highest in the hub-free topology (random_regular, 73.3%)
+     and lowest in the hub-heavy one (barabasi_albert, 42.3%). This reframes, not resolves,
+     Sec.15's propagation question: roughly half of the amplitude-receiving non-verified
+     neighborhood already has its own capacity to sustain, yet still fails `verified`
+     classification -- narrowing the open question to why self-sustaining-CAPABLE nodes
+     fail R3/R4/settled's specific criteria. Per review's explicit instruction, no
+     density-increasing work was attempted pending this split's resolution."
 ```
 
 ---
@@ -1847,3 +1877,150 @@ degree preference, a mechanism not yet identified.
   suggestions -- phase-coherence is reported as the remaining, NOT-yet-tested hypothesis
   precisely because it could not be checked from data already in hand, not because it was
   avoided.
+
+## 16. S-013: winding needs a smoothness gate, not just a nonzero value; and "driven vs.
+self-sustaining" is a real ~50/50 split, not the near-total drive review's own hypothesis
+predicted
+
+Per review's acceptance of Sec.15's null-rate finding, PR-R2.4 does two things: (1) adds
+the smoothness gate review specified and re-measures the null rate under the corrected
+composite criterion; (2) runs the priority interventional test -- freezing/disconnecting
+the verified node set and watching whether non-verified neighbors' oscillation survives --
+across ALL 100 verified `damping=0.05` runs, not a sample. Per review's explicit
+instruction, no density-increasing work is attempted here regardless of what (2) shows.
+
+### 16.1 The smoothness gate: winding != 0 AND max adjacent step < pi/2
+
+`winding_precheck.py` (PR-R2.3) gained `is_smooth_winding` (AUDIT.md's own module docstring
+now documents this as the composite criterion): a winding counts only if `compute_winding`
+is nonzero AND every wrapped consecutive phase step has magnitude under a fixed threshold
+(`pi/2` by default). **Structural consequence, not probabilistic**: N steps each strictly
+under `pi/2` sum to strictly under `N*pi/2`; representing a full loop (`2*pi`) therefore
+requires `N*pi/2 > 2*pi`, i.e. `N > 4`, i.e. **N >= 5 is a hard necessary condition** --
+confirmed empirically (`MIN_LENGTH_FOR_SMOOTH_WINDING = 5`; 300,000-trial Monte Carlo checks
+at N=3 and N=4 both return exactly 0.0, matching the structural argument exactly, not just
+approximately).
+
+**Re-measured null rate under the composite criterion** (300,000 trials per N):
+
+| N | plain null rate (Sec.15.2) | **smooth null rate** | naive `(1/2)^N` guess |
+|---|---|---|---|
+| 3 | 0.249 | **0.0** (structurally impossible) | 0.125 |
+| 4 | 0.335 | **0.0** (structurally impossible) | 0.0625 |
+| 5 | 0.402 | **0.0003** | 0.0313 |
+| 6 | 0.450 | **0.0005** | 0.0156 |
+| 7 | 0.488 | **0.0005** | 0.0078 |
+| 8 | 0.521 | **0.0004** | 0.0039 |
+| 10 | 0.570 | **0.0002** | 0.0010 |
+| 12 | 0.607 | **0.0001** | 0.0002 |
+
+The smoothness gate essentially eliminates the null-rate problem Sec.15.2 identified (from
+25-60% down to under 0.05% everywhere it can be nonzero at all) -- but the empirical rate is
+**5-100x LOWER than review's own `(1/2)^N` back-of-envelope estimate** (e.g. at N=6:
+measured 0.0005 vs. guessed 0.0156, a 31x gap), because "winding is nonzero" and "every step
+is small" are not independent events -- treating them as an independent product
+overestimates the joint rate substantially. A second non-obvious pattern: the smooth null
+rate is not monotonic in N -- it peaks around N=6-7 and DECREASES again for larger N (0.0005
+at N=7 down to 0.0001 at N=12), because the "every step small" requirement's cost keeps
+compounding multiplicatively with N faster than the added combinatorial routes to a nonzero
+sum can compensate.
+
+**R8's launch condition, restated with the composite criterion**: multiple fully-covered
+cycles of length >= 5 (structurally required), ideally in the N=5-10 range where the
+smooth null rate is well-characterized here and near its (already very low) ceiling. This
+supersedes Sec.15.4's "length >= 6" as the operative minimum (N=5 is now known to be exactly
+sufficient, not merely "probably better than 3").
+
+### 16.2 Driven vs. self-sustaining: an interventional test, run across all 100 verified runs
+
+Per review's priority instruction: Sec.15.3(b)'s finding that non-verified direct neighbors
+retain 72% of a verified node's amplitude does NOT by itself distinguish "the neighbor
+generates its own oscillation" from "the neighbor is merely being shaken by the verified
+node and would stop without it." Answered directly, with the same interventional logic as
+`check_attractor_recovery` (Sec.13.4) but cutting EDGES instead of perturbing amplitude:
+`verify.py::check_driven_vs_self_sustaining` (PR-R2.4) takes a long (`extend_factor=15`x)
+trajectory, and at a checkpoint zeroes every edge between the verified node set and the rest
+of the graph (`substrate.run`'s new `W_override`, PR-R2.4 -- replaces the constructed W
+entirely for a continuation run, same tooling-knob status as `x0_override`/`v0_override`).
+Both a CUT and a CONNECTED-control continuation run from the identical checkpoint; each
+non-verified direct neighbor's plateau amplitude after the cut is compared to its own
+connected-control amplitude. `self_sustaining` = retains >= 50% (fixed, disclosed
+`DEFAULT_SELF_SUSTAINING_TOL`); `driven_only` = below that.
+
+**Run across all 100 `damping=0.05` verified runs (not a sample -- every run with >=1
+checkable non-verified neighbor; 6/100 runs had none)**:
+
+| | count | fraction |
+|---|---|---|
+| non-verified direct-neighbor node-checks tested | 323 | -- |
+| **self-sustaining** (ratio >= 50%) | **172** | **53.3%** |
+| **driven-only** (ratio < 50%) | **151** | **46.7%** |
+
+**This is genuinely close to an even split -- NOT the "mostly driven" pattern review's own
+hypothesis predicted** ("隣はハブに揺すられているだけである可能性が高い"). The distribution
+is bimodal, not concentrated in the middle: 31.6% of neighbors have ratio < 0.1 (collapsed
+almost completely -- unambiguously driven-only) and 34.1% have ratio >= 0.8 (retained almost
+all their amplitude -- unambiguously self-sustaining on their own), with the remainder
+spread between. **There appear to be two genuinely distinct populations of non-verified
+neighbor, not one graded continuum.**
+
+By topology (node-check counts):
+
+| topology | checked | self-sustaining | fraction |
+|---|---|---|---|
+| `random_regular` (no hubs) | 75 | 55 | **73.3%** |
+| `erdos_renyi` | 73 | 42 | 57.5% |
+| `watts_strogatz` | 104 | 45 | 43.3% |
+| `barabasi_albert` (hub-heavy) | 71 | 30 | **42.3%** |
+
+Self-sustaining fraction is HIGHEST in the hub-free topology and LOWEST in the hub-heavy
+one -- consistent with a plausible mechanism: near an actual hub, a neighbor's own dynamics
+are more likely to be dominated by the hub's drive (genuinely "just shaken"), whereas in a
+degree-homogeneous graph, a "neighbor of a verified node" is structurally similar to the
+verified node itself and more likely to have comparable local capacity to sustain
+independently.
+
+### 16.3 What this changes about "why does persistence stay local"
+
+Sec.15.4 framed the open question as propagation failure with phase-coherence as the
+leading (untested) hypothesis. Sec.16.2 does not resolve that hypothesis, but it reframes
+the question review asked to prioritize: **roughly half of the amplitude-receiving,
+non-verified neighborhood is NOT merely driven -- it has its own capacity to sustain
+oscillation once disconnected, yet still fails the `verified` classification.** This means
+the gap between "verified" (9.3% density, Sec.14.2/15.3) and "amplitude reaches" (much
+broader, Sec.15.3(b)) is not simply "drive reaches further than self-maintenance does" --
+a substantial fraction of that broader region can ALREADY self-maintain, and something
+else -- most plausibly still the phase-coherence/entrainment hypothesis, i.e. these nodes
+oscillate on their own but not cleanly enough (or not in the right relationship to their
+neighbors) to pass R3's reversal-count, R4's autocorrelation-peak, or `settled`'s
+plateau-flatness checks -- is what keeps them out of the verified count specifically. This
+narrows, rather than answers, the next question: why do self-sustaining-capable nodes fail
+verification's SPECIFIC criteria. Not investigated further here.
+
+### 16.4 Density target: explicitly not pursued this PR
+
+Per review's explicit instruction, Sec.15.3(c)'s "~30% density needed for a length-6 cycle
+to be 1%-likely" figure is NOT acted on in this PR -- no work increasing verified-node
+density was attempted, since Sec.16.2 shows roughly half of what a density-increase might
+capture is driven-only, not self-sustaining, and inflating density with driven nodes would
+not represent genuine self-maintaining structure expanding. This is left for a future PR
+once Sec.16.3's narrower question (why do self-sustaining-capable nodes fail verification)
+is itself resolved.
+
+### 16.5 9th-audit and 8th-audit re-check on Sec.16's own claims
+
+- **9th audit:** "the smooth null rate is far below the naive `(1/2)^N` guess" and "53% is
+  self-sustaining" are both achievement/measurement claims with a specific numeric
+  comparison, not non-achievement claims -- the discipline applied is that both are full
+  counts from the complete run (323/323 node-checks reported, not a subsample) and the
+  smooth-null-rate table is exact Monte Carlo output at a fixed, pre-declared trial count,
+  not selectively reported favorable N values (all of N=3,4,5,6,7,8,10,12 appear).
+- **8th audit:** was `DEFAULT_SELF_SUSTAINING_TOL=0.5`, the checkpoint fraction, or the
+  choice to run all 100 (rather than a sample) chosen to produce the ~53% figure? No: 0.5
+  is a natural, symmetric "majority retained" threshold fixed in `verify.py` before any
+  driven-vs-self-sustaining call ran; `checkpoint_frac=0.6` and `extend_factor=15` reuse
+  the exact constants already fixed for `check_attractor_recovery` (Sec.13.4), not new
+  values chosen for this measurement; running all 100 (not a sample) was reported as the
+  design from the start of this section, not a post-hoc justification for an inconvenient
+  result -- and the result itself (53/47, bimodal) is reported as genuinely mixed rather
+  than rounded toward either "mostly driven" (review's prior) or "mostly self-sustaining."

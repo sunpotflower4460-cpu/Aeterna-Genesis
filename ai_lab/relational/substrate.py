@@ -292,6 +292,7 @@ def run(
     asymmetry_strength: float = DEFAULT_ASYMMETRY_STRENGTH,
     x0_override: Optional[np.ndarray] = None,
     v0_override: Optional[np.ndarray] = None,
+    W_override: Optional[np.ndarray] = None,
 ) -> SubstrateResult:
     """Run the R-layer substrate. Every ingredient axis defaults to its minimal side.
 
@@ -310,6 +311,16 @@ def run(
     provenance of a continuation run in its own output). Same seed => same W regardless of
     x0_override, since W's construction does not depend on x0.
 
+    W_override (PR-R2.4, None by default): when given, replaces the topology-constructed
+    (and possibly asymmetrized) W entirely -- used by
+    ai_lab/relational/verify.py::check_driven_vs_self_sustaining to continue a trajectory
+    with specific edges cut (e.g. disconnecting a verified/persistent node set from its
+    neighbors) while keeping x0/v0 and every other ingredient axis identical to the
+    unmodified control. Also a tooling knob, not a disclosed physics ingredient axis; NOTE
+    it bypasses the plasticity `mask` (built from the topology-constructed W, not
+    `W_override`), so `W_override` combined with `plasticity=True` is unsupported and not
+    used by any caller in this codebase.
+
     asymmetry=True (PR-R1.5, off by default): w_ij != w_ji is allowed (see `_asymmetrize`).
     This does not change which edges exist, only the split of each edge's coupling between
     its two directions. It matters because the memory=off no-periodicity argument (AUDIT.md
@@ -327,6 +338,8 @@ def run(
     W0 = topo.build_topology(topology, n, seed=seed, **tk)
     mask = (W0 > 0).astype(float)
     W = _asymmetrize(W0, asymmetry_strength, seed) if asymmetry else W0.copy()
+    if W_override is not None:
+        W = np.array(W_override, dtype=float).copy()
 
     x0 = np.array(x0_override, dtype=float).copy() if x0_override is not None else initial_state(n, m, epsilon, seed)
     x = x0.copy()

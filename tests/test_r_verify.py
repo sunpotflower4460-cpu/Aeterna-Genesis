@@ -87,3 +87,50 @@ def test_check_attractor_recovery_false_for_known_damping_zero_orbit_family():
     result = verify.check_attractor_recovery(kw, seed=0, node=1)
     assert result["achieved"] is False
     assert result["relative_difference"] > 0.3
+
+
+# ---------------------------------------------------------------------------
+# PR-R2.4: substrate.run's W_override, and check_driven_vs_self_sustaining
+# ---------------------------------------------------------------------------
+
+def test_substrate_run_w_override_replaces_w_final():
+    short_kw = dict(_KW_SATURATION_CUBIC, steps=5)
+    base = substrate.run(seed=_SEED, **short_kw)
+    W_cut = base.W_final.copy()
+    W_cut[0, :] = 0.0
+    W_cut[:, 0] = 0.0
+    overridden = substrate.run(seed=_SEED, W_override=W_cut, **short_kw)
+    assert np.array_equal(overridden.W_final, W_cut)
+    assert not np.array_equal(overridden.W_final, base.W_final)
+    # W_initial still reflects the topology construction, unaffected by the override
+    assert np.array_equal(overridden.W_initial, base.W_initial)
+
+
+def test_substrate_run_w_override_does_not_affect_w_initial_or_seeded_ic():
+    short_kw = dict(_KW_SATURATION_CUBIC, steps=5)
+    base = substrate.run(seed=_SEED, **short_kw)
+    W_cut = np.zeros_like(base.W_final)
+    overridden = substrate.run(seed=_SEED, W_override=W_cut, **short_kw)
+    assert np.array_equal(overridden.x_traj[0], base.x_traj[0])
+
+
+def test_check_driven_vs_self_sustaining_reports_expected_fields():
+    kw = dict(n=24, steps=3000, dt=0.05, memory="on", damping=0.05, asymmetry=True,
+              asymmetry_strength=0.3, topology="random_regular", saturation="cubic",
+              saturation_strength=0.1)
+    mask = [False] * 24
+    mask[6], mask[7] = True, True  # two arbitrary verified nodes for this structural test
+    result = verify.check_driven_vs_self_sustaining(kw, seed=5, verified_mask=mask)
+    assert "per_neighbor" in result
+    assert result["n_checked"] == result["n_self_sustaining"] + result["n_driven_only"]
+    for entry in result["per_neighbor"]:
+        assert "self_sustaining" in entry and "ratio" in entry
+        assert mask[entry["node"]] is False  # only non-verified nodes are ever checked
+
+
+def test_check_driven_vs_self_sustaining_empty_mask_checks_nothing():
+    kw = dict(n=24, steps=3000, dt=0.05, memory="on", damping=0.05, asymmetry=True,
+              asymmetry_strength=0.3, topology="random_regular", saturation="cubic",
+              saturation_strength=0.1)
+    result = verify.check_driven_vs_self_sustaining(kw, seed=5, verified_mask=[False] * 24)
+    assert result["n_checked"] == 0

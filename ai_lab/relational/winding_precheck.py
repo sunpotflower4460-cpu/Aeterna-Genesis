@@ -1,34 +1,31 @@
 """ai_lab/relational/winding_precheck.py -- R8 PRECONDITION measurement, NOT R8 itself
-(PR-R2.3, AUDIT.md Sec.15).
+(PR-R2.3 + PR-R2.4, AUDIT.md Sec.15-16).
 
 Review's instruction after PR-R2.2's cycle-coverage finding: do not start R8 (winding
 number) yet. The blocker is not sample size (only 3 fully-covered fundamental cycles found
 so far) -- it is that all 3 are TRIANGLES (length 3), and triangles are structurally
-unsuited to a winding-number measurement for two independent reasons:
+unsuited to a bare winding-number measurement (PR-R2.3, Sec.15.2): the plain null rate is
+substantial (0.25 at N=3) and, non-obviously, RISES with cycle length under a fixed
+(graph-determined, not phase-sorted) traversal order (0.57 by N=10) -- a longer cycle is not
+automatically easier to interpret on the null-rate axis.
 
-1. The null rate is too high. For N phases placed independently at random around a circle,
-   connected in a fixed cyclic order (the order fixed by the relation graph's own edges,
-   NOT re-sorted by phase value), the probability the resulting winding number is nonzero
-   is substantial even with no real structure at all -- for N=3 this is exactly 0.25 (the
-   classical "probability N random points do not all lie in a semicircle" result,
-   1 - N/2^(N-1)), so across the 3 found triangles, P(at least one shows nonzero winding
-   with NO real structure) = 1 - 0.75^3 = ~58%. A nonzero winding number on a triangle is
-   the EXPECTED outcome of noise, not evidence of anything.
-2. Resolution is insufficient. A winding number is only meaningful if phase changes
-   gradually as you go around the loop; going around in 3 steps means each step is 1/3 of a
-   full loop, so |winding| > 1 cannot be distinguished from |winding| = 1 (aliasing) -- the
-   instrument would be blind to anything but the coarsest possible structure even if the
-   null-rate problem were solved.
+PR-R2.4 (Sec.16.1) adds the missing piece review identified: a bare nonzero winding number
+is not enough, because noise can produce a large single jump that "wraps around" in one
+step just as easily as genuine smooth phase progression can. A SMOOTHNESS GATE is required:
+winding != 0 AND every adjacent wrapped phase step has |step| < a fixed threshold
+(pi/2 by default). This is not a redundant restatement of the plain null-rate problem --
+it is a SEPARATE necessary condition with its own consequence: N steps each strictly
+under pi/2 sum to strictly under N*pi/2, so representing one full loop (2*pi) requires
+N*pi/2 > 2*pi, i.e. N > 4, i.e. **N >= 5 is a hard necessary condition** for a cycle to
+ever satisfy the smoothness gate at all -- independent of whatever phases actually occur.
+Triangles (N=3) and squares (N=4) cannot pass the smoothness gate under ANY phase
+assignment; this is a structural fact about the gate, not a probabilistic one.
 
-This module measures the null rate (review's point 2, "mandatory work before building R8")
-so that a FUTURE R8, once fed cycles of length >= 6 (review's stated minimum), has a
-pre-established baseline to compare against -- a positive winding-number rate is only
-evidence of structure when it significantly exceeds this null, never on its own.
-
-`compute_winding` is deliberately generic (any phase array, any N) so it can be reused
-by a future R8; nothing here is wired into `instruments.py` or `measure_all()`, and this
-module does not itself claim to measure R-layer winding structure -- it only characterizes
-the measurement's own error floor.
+`compute_winding` and `is_smooth_winding` are deliberately generic (any phase array, any N)
+so they can be reused by a future R8; nothing here is wired into `instruments.py` or
+`measure_all()`, and this module does not itself claim to measure R-layer winding
+structure -- it only characterizes the measurement's own error floor and necessary
+preconditions.
 """
 
 from __future__ import annotations
@@ -97,3 +94,54 @@ def shuffled_null_rate(observed_phases: np.ndarray, trials: int = 200_000,
         if w != 0:
             nonzero += 1
     return nonzero / trials
+
+
+# Fixed, disclosed default -- same threshold for every call, not tuned per cycle.
+DEFAULT_SMOOTHNESS_THRESHOLD = np.pi / 2.0
+
+# N*threshold must exceed 2*pi for a cycle of length N to be able to pass the smoothness
+# gate at all (N steps each strictly < threshold must sum to >= 2*pi in magnitude for a
+# nonzero winding). At the default threshold (pi/2), this requires N > 4, i.e. N >= 5.
+MIN_LENGTH_FOR_SMOOTH_WINDING = int(np.ceil(2.0 * np.pi / DEFAULT_SMOOTHNESS_THRESHOLD)) + 1
+
+
+def max_adjacent_step(phases: np.ndarray) -> float:
+    """Largest |wrapped consecutive phase difference| around the loop (radians) -- the
+    "how big was the biggest single jump" companion to `compute_winding`'s "what did all
+    the jumps sum to."""
+    phases = np.asarray(phases, dtype=float)
+    diffs = np.diff(phases, append=phases[:1])
+    wrapped = (diffs + np.pi) % (2.0 * np.pi) - np.pi
+    return float(np.max(np.abs(wrapped)))
+
+
+def is_smooth_winding(phases: np.ndarray, threshold: float = DEFAULT_SMOOTHNESS_THRESHOLD) -> bool:
+    """AUDIT.md Sec.16.1's composite criterion (review's instruction, PR-R2.4): a winding
+    counts only if BOTH (a) `compute_winding(phases) != 0` AND (b) every adjacent wrapped
+    phase step has |step| < `threshold`. A single large jump can produce a nonzero winding
+    on pure noise just as easily as a genuine gradual phase progression can -- this gate is
+    what tells the two apart. Structural consequence: no cycle shorter than
+    `MIN_LENGTH_FOR_SMOOTH_WINDING` (5, at the default pi/2 threshold) can EVER satisfy this
+    gate, for any phase assignment -- N*threshold must exceed 2*pi.
+    """
+    phases = np.asarray(phases, dtype=float)
+    if len(phases) < MIN_LENGTH_FOR_SMOOTH_WINDING and threshold == DEFAULT_SMOOTHNESS_THRESHOLD:
+        return False  # structurally impossible; short-circuit without computing
+    return compute_winding(phases) != 0 and max_adjacent_step(phases) < threshold
+
+
+def monte_carlo_smooth_null_rate(n: int, threshold: float = DEFAULT_SMOOTHNESS_THRESHOLD,
+                                  trials: int = 200_000, seed: Optional[int] = None) -> float:
+    """Empirical P(is_smooth_winding) for N i.i.d. Uniform(0, 2*pi) phases in a fixed cyclic
+    order -- the composite-criterion null rate review asked to be re-measured, not assumed
+    from the rough (1/2)^N approximation. Vectorized for the same N/trials scale as
+    `monte_carlo_null_rate`.
+    """
+    rng = np.random.default_rng(seed)
+    phases = rng.uniform(0.0, 2.0 * np.pi, size=(trials, n))
+    diffs = np.diff(phases, axis=1, append=phases[:, :1])
+    wrapped = (diffs + np.pi) % (2.0 * np.pi) - np.pi
+    windings = np.round(wrapped.sum(axis=1) / (2.0 * np.pi)).astype(int)
+    max_step = np.max(np.abs(wrapped), axis=1)
+    smooth_nonzero = (windings != 0) & (max_step < threshold)
+    return float(np.mean(smooth_nonzero))

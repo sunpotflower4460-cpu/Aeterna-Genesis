@@ -68,3 +68,54 @@ def test_shuffled_null_rate_nonzero_for_spread_observed_phases():
     observed = np.array([0.0, 2.0, 4.0, 5.5])  # spans most of the circle
     rate = wp.shuffled_null_rate(observed, trials=20_000, seed=1)
     assert rate > 0.0
+
+
+# ---------------------------------------------------------------------------
+# PR-R2.4 (AUDIT.md Sec.16.1): the smoothness gate
+# ---------------------------------------------------------------------------
+
+def test_min_length_for_smooth_winding_is_five_at_default_threshold():
+    """N*threshold must exceed 2*pi; at threshold=pi/2 this requires N > 4, i.e. N >= 5."""
+    assert wp.MIN_LENGTH_FOR_SMOOTH_WINDING == 5
+
+
+def test_triangle_and_square_can_never_pass_the_smoothness_gate():
+    """Structural fact, not probabilistic: no phase assignment on N=3 or N=4 can satisfy
+    the smoothness gate, since 3*(pi/2) and 4*(pi/2) both fail to exceed 2*pi."""
+    rng = np.random.default_rng(0)
+    for n in (3, 4):
+        for _ in range(200):
+            phases = rng.uniform(0, 2 * np.pi, size=n)
+            assert wp.is_smooth_winding(phases) is False
+
+
+def test_smooth_winding_true_for_genuinely_gradual_full_loop():
+    n = 8
+    phases = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    assert wp.compute_winding(phases) == 1
+    assert wp.max_adjacent_step(phases) < wp.DEFAULT_SMOOTHNESS_THRESHOLD
+    assert wp.is_smooth_winding(phases) is True
+
+
+def test_smooth_winding_false_for_one_large_jump_even_if_winding_nonzero():
+    """A single large jump can produce a nonzero winding without any genuine gradual
+    progression -- this is exactly the failure mode the gate exists to catch."""
+    n = 8
+    phases = np.zeros(n)
+    phases[-1] = np.pi + 0.1  # one big jump, rest flat -- winding likely nonzero via wraparound
+    w = wp.compute_winding(phases)
+    if w != 0:
+        assert wp.is_smooth_winding(phases) is False
+
+
+def test_monte_carlo_smooth_null_rate_is_far_below_naive_approximation():
+    """AUDIT.md Sec.16.1: the true composite null rate is much lower than the user's own
+    (1/2)^N back-of-envelope estimate -- re-measured, not assumed."""
+    rate_n6 = wp.monte_carlo_smooth_null_rate(6, trials=100_000, seed=1)
+    naive_approx = 0.5 ** 6  # ~0.0156
+    assert rate_n6 < naive_approx / 5  # measured rate is at least 5x lower than the naive guess
+
+
+def test_monte_carlo_smooth_null_rate_zero_below_min_length():
+    assert wp.monte_carlo_smooth_null_rate(3, trials=50_000, seed=1) == 0.0
+    assert wp.monte_carlo_smooth_null_rate(4, trials=50_000, seed=1) == 0.0

@@ -1,6 +1,6 @@
-"""ai_lab/relational/verify.py -- PR-R2.1 pre-checks (AUDIT.md Sec.13).
+"""ai_lab/relational/verify.py -- PR-R2.1/PR-R2.4 pre-checks (AUDIT.md Sec.13, Sec.16).
 
-Two tools, both requested by review before R7 could proceed on solid ground:
+Three tools:
 
 1. `verify_long_window`: bakes a 10-20x window re-check into the DEFINITION of
    `sustained`, rather than treating it as an optional follow-up. Two prior positive-result
@@ -28,6 +28,18 @@ Two tools, both requested by review before R7 could proceed on solid ground:
    -- implemented here independently for the R-layer's own physics; this module does not
    read or write frontier_expansion.json or any ai_lab/dream/ file. `achieved` is this
    module's own explicit flag, scoped to the R-layer result it was computed from.
+
+3. `check_driven_vs_self_sustaining` (PR-R2.4, AUDIT.md Sec.16.2): review's priority
+   question after PR-R2.3's amplitude-propagation finding (non-verified direct neighbors of
+   a verified node retain 72% of the verified node's amplitude, non-adjacent nodes 61%) --
+   is that retained amplitude evidence the neighbor is ITSELF a self-sustaining oscillator,
+   or is it merely being DRIVEN by the verified node's own oscillation, with nothing left
+   once that drive is removed? Answered by the same interventional logic as
+   `check_attractor_recovery`, but cutting EDGES rather than perturbing amplitude: at a
+   checkpoint, the relation graph is split into the verified node set and everything else
+   (all edges between the two groups zeroed via `substrate.run`'s `W_override`), and each
+   non-verified direct neighbor's plateau amplitude after the cut is compared against an
+   unperturbed (still-connected) control continued from the identical checkpoint.
 """
 
 from __future__ import annotations
@@ -169,4 +181,104 @@ def check_attractor_recovery(
         "checkpoint_idx": checkpoint_idx,
         "long_steps": long_steps,
         "continue_steps": cont_steps,
+    }
+
+
+# Fixed, disclosed default -- a neighbor retaining at least half its connected-control
+# amplitude after the verified set is disconnected counts as self-sustaining; below that,
+# driven-only. Same threshold for every call, not tuned per configuration.
+DEFAULT_SELF_SUSTAINING_TOL = 0.5
+
+
+def check_driven_vs_self_sustaining(
+    run_kwargs: Dict[str, Any],
+    seed: Optional[int],
+    verified_mask: np.ndarray,
+    checkpoint_frac: float = DEFAULT_CHECKPOINT_FRAC,
+    extend_factor: int = LONG_WINDOW_EXTEND_FACTOR,
+    continue_steps: Optional[int] = None,
+    self_sustaining_tol: float = DEFAULT_SELF_SUSTAINING_TOL,
+) -> Dict[str, Any]:
+    """At a checkpoint on a long (`extend_factor`x) trajectory, cut every edge between the
+    `verified_mask` node set and the rest of the graph (`substrate.run`'s `W_override`,
+    PR-R2.4), then continue both a CUT and a CONNECTED-control run from the identical
+    checkpoint state. For every non-verified node that is a DIRECT neighbor (in the
+    original, uncut graph) of at least one verified node, compares its post-cut plateau
+    amplitude against its own connected-control plateau amplitude.
+
+    `self_sustaining` (per neighbor) = ratio >= `self_sustaining_tol` (default 50%): the
+    neighbor kept most of its amplitude even once decoupled from the verified set, i.e. it
+    was NOT merely being driven -- it has its own local capacity to sustain the
+    oscillation. `driven_only` = ratio below tolerance: the neighbor's amplitude collapsed
+    once the drive was removed, i.e. it was riding on the verified node's oscillation, not
+    generating its own.
+
+    Returns a dict with `per_neighbor` (list of per-node results) and `n_self_sustaining` /
+    `n_driven_only` / `n_checked` summary counts for this one run.
+    """
+    kw = dict(run_kwargs)
+    base_steps = kw["steps"]
+    long_steps = base_steps * extend_factor
+    kw["steps"] = long_steps
+    baseline = substrate.run(seed=seed, **kw)
+
+    mask = np.asarray(verified_mask, dtype=bool)
+    n = baseline.W_final.shape[0]
+    W = baseline.W_final.copy()
+    adjacency = W > 0
+    neighbor_of_verified = np.zeros(n, dtype=bool)
+    for i in range(n):
+        if mask[i]:
+            continue
+        if adjacency[i, mask].any():
+            neighbor_of_verified[i] = True
+
+    if not neighbor_of_verified.any():
+        return {"per_neighbor": [], "n_self_sustaining": 0, "n_driven_only": 0, "n_checked": 0}
+
+    W_cut = W.copy()
+    W_cut[np.ix_(mask, ~mask)] = 0.0
+    W_cut[np.ix_(~mask, mask)] = 0.0
+
+    checkpoint_idx = int(long_steps * checkpoint_frac)
+    x_ckpt = baseline.x_traj[checkpoint_idx]
+    v_ckpt = baseline.v_traj[checkpoint_idx] if baseline.v_traj is not None else None
+
+    cont_steps = continue_steps if continue_steps is not None else base_steps * 5
+    cont_kw = dict(kw)
+    cont_kw["steps"] = cont_steps
+
+    control = substrate.run(seed=seed, x0_override=x_ckpt, v0_override=v_ckpt,
+                             W_override=W, **cont_kw)
+    cut = substrate.run(seed=seed, x0_override=x_ckpt, v0_override=v_ckpt,
+                         W_override=W_cut, **cont_kw)
+
+    per_neighbor = []
+    n_self_sustaining = 0
+    n_driven_only = 0
+    for i in range(n):
+        if not neighbor_of_verified[i]:
+            continue
+        a_control = _plateau_amplitude(control.x_traj, i)
+        a_cut = _plateau_amplitude(cut.x_traj, i)
+        ratio = (a_cut / a_control) if a_control > 0 else None
+        self_sustaining = bool(ratio is not None and ratio >= self_sustaining_tol)
+        if self_sustaining:
+            n_self_sustaining += 1
+        else:
+            n_driven_only += 1
+        per_neighbor.append({
+            "node": i, "control_amplitude": a_control, "cut_amplitude": a_cut,
+            "ratio": ratio, "self_sustaining": self_sustaining,
+        })
+
+    return {
+        "per_neighbor": per_neighbor,
+        "n_self_sustaining": n_self_sustaining,
+        "n_driven_only": n_driven_only,
+        "n_checked": len(per_neighbor),
+        "checkpoint_idx": checkpoint_idx,
+        "long_steps": long_steps,
+        "continue_steps": cont_steps,
+        "self_sustaining_tol": self_sustaining_tol,
     }
