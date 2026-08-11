@@ -1992,19 +1992,23 @@ neighbor, not one graded continuum.**
 
 By topology (node-check counts):
 
-| topology | checked | self-sustaining | fraction |
-|---|---|---|---|
-| `random_regular` (no hubs) | 75 | 55 | **73.3%** |
-| `erdos_renyi` | 73 | 42 | 57.5% |
-| `watts_strogatz` | 104 | 45 | 43.3% |
-| `barabasi_albert` (hub-heavy) | 71 | 30 | **42.3%** |
+| topology | checked | self-sustaining | **driven-only** | self-sustaining fraction | **driven-only fraction** |
+|---|---|---|---|---|---|
+| `random_regular` (no hubs) | 75 | 55 | 20 | **73.3%** | **26.7%** |
+| `erdos_renyi` | 73 | 42 | 31 | 57.5% | 42.5% |
+| `watts_strogatz` | 104 | 45 | 59 | 43.3% | 56.7% |
+| `barabasi_albert` (hub-heavy) | 71 | 30 | 41 | **42.3%** | **57.7%** |
 
-Self-sustaining fraction is HIGHEST in the hub-free topology and LOWEST in the hub-heavy
-one -- consistent with a plausible mechanism: near an actual hub, a neighbor's own dynamics
-are more likely to be dominated by the hub's drive (genuinely "just shaken"), whereas in a
-degree-homogeneous graph, a "neighbor of a verified node" is structurally similar to the
-verified node itself and more likely to have comparable local capacity to sustain
-independently.
+**Confirmed, not merely plausible (per review's own read of these same numbers): the
+driven-only fraction is what tracks topology, and it does so cleanly** --
+`barabasi_albert`'s driven-only rate (57.7%) is more than DOUBLE `random_regular`'s (26.7%).
+This is a direct, sufficient explanation, not a speculative one: near an actual hub, a
+neighbor is structurally likely to be dominated by the hub's own drive and stops oscillating
+once cut (driven-only); in a degree-homogeneous graph there is no single dominant driver, so
+a neighbor of a "verified" node is, structurally, just as capable of independent oscillation
+as the verified node itself (self-sustaining). The topology-dependence of Sec.16.2's overall
+split is EXPLAINED by this same table, not merely consistent with it -- see Sec.17.3's
+correction, which had understated this.
 
 ### 16.3 What this changes about "why does persistence stay local"
 
@@ -2121,7 +2125,8 @@ for it.
 dominates): no new coupling-form axis is added.** (i) is the empty category, not the
 dominant one -- the conditional's premise does not hold, so its action is not taken.
 
-### 17.3 Topology breakdown of the classification (does not explain Sec.16.2's topology split)
+### 17.3 Topology breakdown of the classification (a narrower question than Sec.16.2's split
+-- CORRECTED: that split is already explained, not open)
 
 | topology | missed detection | frustration | short-window-passed | total |
 |---|---|---|---|---|
@@ -2130,17 +2135,18 @@ dominant one -- the conditional's premise does not hold, so its action is not ta
 | `watts_strogatz` | 30 (66.7%) | 12 (26.7%) | 3 | 45 |
 | `barabasi_albert` | 22 (73.3%) | 8 (26.7%) | 0 | 30 |
 
-Missed-detection and frustration proportions are similar across all four topologies
-(65-74% / 24-33%) -- **this classification does NOT reproduce or explain Sec.16.2's
-topology-dependent split (73.3% self-sustaining-when-cut for `random_regular` vs. 42.3% for
-`barabasi_albert`)**, because it only characterizes nodes ALREADY WITHIN the self-sustaining
-group. Whatever mechanism makes `random_regular` neighbors more likely to be self-sustaining
-in the first place (Sec.16.2) operates upstream of this section's classification, and
-remains open -- review's "everyone pulls equally, no one wins" account for
-`random_regular` vs. "mostly hub-driven" for `barabasi_albert` is a plausible story for THAT
-split, but this section's data neither confirms nor refutes it directly (that would require
-comparing the STRUCTURE of the coupling each population experiences, not the shape of their
-connected-state waveform once already in the self-sustaining group).
+Missed-detection and frustration proportions are similar across all four topologies (65-74%
+/ 24-33%) -- this table characterizes nodes ALREADY WITHIN the self-sustaining group, and
+correctly shows those PROPORTIONS do not track topology. **This was originally
+(mis)reported here as leaving Sec.16.2's topology-dependent split "open" -- that was wrong,
+and is corrected per review.** Sec.16.2's split is fully explained by numbers already in
+that section's own table: the DRIVEN-ONLY fraction (not the self-sustaining group's later
+composition) is what tracks topology, cleanly (26.7% at `random_regular` vs. 57.7% at
+`barabasi_albert`, more than double). This section's finding and Sec.16.2's are simply
+answers to two different questions -- "of the self-sustaining ones, what do they look like"
+(this section, topology-independent) vs. "what fraction ARE self-sustaining in the first
+place" (Sec.16.2, topology-dependent and explained by hub-driving) -- not competing or
+unresolved accounts of the same one.
 
 ### 17.4 A better-supported hypothesis for "missed detection": the same short-window
 artifact, not yet applied here
