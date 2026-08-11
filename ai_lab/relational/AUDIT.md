@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 AUDIT
 
 ```yaml
 id: relational_r1
@@ -42,8 +42,17 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # SELF-SUSTAINING once disconnected, not merely driven -- a
                              # genuine ~50/50 split (bimodal, not review's predicted
                              # "mostly driven"), reframing rather than resolving the
-                             # propagation question. Density-increasing work explicitly NOT
-                             # pursued pending this split's resolution (Sec.16.4).
+                             # propagation question. PR-R2.5 (Sec.17) classified those 172
+                             # connected-state waveforms: OSCILLATION DEATH IS ZERO (0/172)
+                             # -- review's own hypothesis is NOT supported by this data.
+                             # Dominant category (119/172, 69.2%) is "missed detection":
+                             # genuinely periodic motion that fails sustained_and_settled's
+                             # gates -- most plausibly the SAME short-window artifact
+                             # already fixed twice elsewhere (Sec.9.2, Sec.12.2/13.3),
+                             # not yet applied to this population (flagged, not run). Per
+                             # review's own conditional, NO coupling-form axis was added
+                             # (oscillation death is the empty category, not dominant).
+                             # Density-increasing work remains explicitly NOT pursued.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -197,6 +206,23 @@ open_issues:
      classification -- narrowing the open question to why self-sustaining-CAPABLE nodes
      fail R3/R4/settled's specific criteria. Per review's explicit instruction, no
      density-increasing work was attempted pending this split's resolution."
+  - "PR-R2.5 (Sec.17, S-014): classified all 172 self-sustaining-when-cut node-checks'
+     CONNECTED-state waveforms before theorizing, per review's instruction: (i) oscillation
+     death (settles to a nonzero constant) = 0/172 -- review's own diffusive-coupling
+     hypothesis is NOT supported by this data, so per review's explicit conditional, NO new
+     coupling-form ingredient axis was added. (ii) frustration (aperiodic/irregular) =
+     48/172 (27.9%). (iii) missed detection (genuinely periodic, fails
+     sustained_and_settled's gates) = 119/172 (69.2%, the dominant category) -- a subset
+     (21/119) shows exactly the settled=True/sustained=False transient-drag signature
+     already diagnosed at the long window (Sec.13.3), now appearing at the short
+     (screening) window too. Topology breakdown of this classification is roughly uniform
+     (65-74% missed detection across all 4 topologies) and does NOT explain Sec.16.2's
+     topology-dependent self-sustaining split -- that remains open. Leading, NOT-yet-tested
+     hypothesis flagged for a future PR: 'missed detection' may resolve substantially via
+     the same 15x-window verification already validated elsewhere in this series, since
+     these 172 nodes never had that check applied (they failed short-window screening, so
+     were never candidates for it) -- not run this PR (substantial compute cost, review's
+     prioritization needed first). Density-increasing work remains explicitly not pursued."
 ```
 
 ---
@@ -2024,3 +2050,141 @@ is itself resolved.
   design from the start of this section, not a post-hoc justification for an inconvenient
   result -- and the result itself (53/47, bimodal) is reported as genuinely mixed rather
   than rounded toward either "mostly driven" (review's prior) or "mostly self-sustaining."
+
+## 17. S-014: oscillation death does NOT explain the pattern (0/172) -- the dominant
+finding is an instrument gap, not a physical suppression mechanism
+
+Per review's request: look at the actual waveforms, BEFORE theorizing, for all 172
+node-checks that are self-sustaining once disconnected (Sec.16.2) but fail `verified`
+classification while connected. Classified each into (i) oscillation death (settles to a
+nonzero constant), (ii) frustration (irregular/aperiodic), (iii) missed detection (genuinely
+periodic but fails R3/R4/`settled`'s specific gates) -- using the SAME already-tested
+instrument logic (`reversal`/`period`'s own `reason` and `defined` fields) that classifies
+every other node in this PR series, not a new heuristic invented for this section.
+
+### 17.1 Classification result (all 172, connected-state trajectories, standard screening window)
+
+| category | count | fraction |
+|---|---|---|
+| **(iii) missed detection** (periodic, fails `sustained_and_settled`) | **119** | **69.2%** |
+| (ii) frustration (no autocorrelation peak -- aperiodic) | 48 | 27.9% |
+| **(i) oscillation death** (reversal count < 2 -- settled to ~constant) | **0** | **0.0%** |
+| (short-window screening actually passed; would need its own long-window recheck) | 5 | 2.9% |
+
+**Zero of 172 show oscillation death.** The fifth category (5 cases) is not a bug: these
+nodes DO pass the standard short-window `sustained_and_settled` check when rerun (matching
+this codebase's own deterministic reproducibility), which means they were excluded from
+Sec.16.2's "verified" set only because `verify_long_window`'s stricter 15x-window recheck
+(applied only to nodes that already passed short-window screening in the original sweep,
+Sec.13.3) had not yet been run on them in that role -- an artifact of which nodes were
+screened as CANDIDATES in the first place, not a contradiction.
+
+**Representative numeric examples** (downsampled to ~40 points per series, connected-state,
+standard screening window, `random_regular`, `damping=0.05`, `saturation="cubic"`,
+`asymmetry_strength=0.3`, seed=5 unless noted):
+
+- **missed detection** (node 4, `settled=True, sustained=False` -- the transient-drag
+  pattern already diagnosed in Sec.13.3, now showing up at the SHORT window too): `[0.114,
+  0.011, -0.002, -0.013, -0.101, -0.040, -0.006, 0.038, 0.002, -0.043, -0.084, -0.085,
+  -0.007, 0.012, -0.032, -0.005, -0.023, -0.008, 0.014, -0.006, 0.004, 0.040, 0.067, 0.014,
+  0.002, 0.018, 0.028, 0.048, 0.018, -0.042, -0.021, 0.014, -0.013, -0.063, -0.075, -0.060,
+  -0.031, -0.026, -0.093, -0.104, -0.029]` -- small, bounded, visibly oscillatory around
+  zero, no trend toward a fixed point.
+- **missed detection** (node 6, `settled=False, sustained=False`): `[-0.055, -0.043,
+  -0.062, -0.012, -0.052, -0.028, -0.005, -0.033, -0.036, 0.016, 0.032, 0.019, 0.005,
+  -0.030, -0.018, 0.078, 0.048, -0.014, -0.024, -0.024, 0.000, 0.013, -0.038, -0.079,
+  -0.031, -0.006, -0.070, -0.088, -0.070, -0.031, 0.011, -0.023, -0.086, -0.036, 0.068,
+  0.070, 0.019, 0.012, 0.045, 0.124, 0.137]` -- similarly small and bounded; amplitude
+  drifts modestly across the window (consistent with `settled=False`) but never approaches
+  either zero or unbounded growth.
+- **frustration** (seed=11, node 12, `no autocorrelation peak found`): `[0.068, 0.032,
+  -0.033, 0.369, -0.997, -0.417, 3.682, -6.080, -7.523, 8.069, -11.764, -4.219, -6.894,
+  -4.721, 2.267, 0.972, -2.222, -5.779, 1.560, 8.725, 8.758, -0.322, 3.766, 0.563, 2.192,
+  12.091, -9.646, 15.248, -0.107, 1.322, -5.107, -4.018, -0.412, -0.543, -0.640, -2.596,
+  -11.158, -7.108, 8.079, 3.738, -0.275]` -- large, wildly irregular swings with no visible
+  periodicity, an entirely different character from the two examples above.
+
+### 17.2 Oscillation death: not supported by this data
+
+Review's hypothesis -- that diffusive coupling `Sum_j w_ij(x_j - x_i)` (a textbook
+oscillation/amplitude-death-inducing coupling form, since it pulls each node toward its
+neighbors' values) suppresses standalone-capable oscillators once connected -- predicts a
+substantial oscillation-death count. **The measured count is exactly zero out of 172.**
+Every single node classified is either genuinely oscillating (cleanly, 69.2%, or
+irregularly, 27.9%) in its connected state, not settling toward a shared fixed point. This
+does not rule out oscillation death occurring in some OTHER part of parameter space this PR
+did not sample, but within the specific population review asked about (non-verified direct
+neighbors that are independently confirmed self-sustaining once cut), there is no evidence
+for it.
+
+**Per review's own explicit conditional ("結合形を軸として追加してください" only if (i)
+dominates): no new coupling-form axis is added.** (i) is the empty category, not the
+dominant one -- the conditional's premise does not hold, so its action is not taken.
+
+### 17.3 Topology breakdown of the classification (does not explain Sec.16.2's topology split)
+
+| topology | missed detection | frustration | short-window-passed | total |
+|---|---|---|---|---|
+| `random_regular` | 36 (65.5%) | 18 (32.7%) | 1 | 55 |
+| `erdos_renyi` | 31 (73.8%) | 10 (23.8%) | 1 | 42 |
+| `watts_strogatz` | 30 (66.7%) | 12 (26.7%) | 3 | 45 |
+| `barabasi_albert` | 22 (73.3%) | 8 (26.7%) | 0 | 30 |
+
+Missed-detection and frustration proportions are similar across all four topologies
+(65-74% / 24-33%) -- **this classification does NOT reproduce or explain Sec.16.2's
+topology-dependent split (73.3% self-sustaining-when-cut for `random_regular` vs. 42.3% for
+`barabasi_albert`)**, because it only characterizes nodes ALREADY WITHIN the self-sustaining
+group. Whatever mechanism makes `random_regular` neighbors more likely to be self-sustaining
+in the first place (Sec.16.2) operates upstream of this section's classification, and
+remains open -- review's "everyone pulls equally, no one wins" account for
+`random_regular` vs. "mostly hub-driven" for `barabasi_albert` is a plausible story for THAT
+split, but this section's data neither confirms nor refutes it directly (that would require
+comparing the STRUCTURE of the coupling each population experiences, not the shape of their
+connected-state waveform once already in the self-sustaining group).
+
+### 17.4 A better-supported hypothesis for "missed detection": the same short-window
+artifact, not yet applied here
+
+Not requested this PR, flagged rather than investigated: 69.2% of the population is
+genuinely oscillating (one subgroup, 21/119, showing exactly the `settled=True,
+sustained=False` transient-drag signature Sec.13.3 already diagnosed at the LONG window).
+Every node in the ORIGINAL `damping=0.05` sweep that was called "verified" only became so
+after `verify_long_window`'s 15x-window recheck (Sec.13.3/13.6) -- but that recheck was only
+ever applied to nodes that had ALREADY passed short-window screening as candidates
+(Sec.13.6). The 172 nodes examined here never had that chance, because they failed
+short-window screening to begin with. Given 119/172 show clean periodic motion in their
+connected state, it is a natural, testable, NOT-yet-tested hypothesis that a meaningful
+fraction of "missed detection" would resolve to genuinely `verified` given the same 15x
+window treatment already validated elsewhere in this PR series. This is exactly the kind of
+follow-up review has repeatedly asked to be flagged rather than assumed -- recorded here as
+the leading candidate for a future PR's `pt1`, not run in this one (running
+`verify_long_window` on all 119 would be a substantial compute cost -- 15x the screening
+window per node -- undertaken only if review prioritizes it).
+
+### 17.5 Explicitly not pursued this PR
+
+Per review's instructions 3 and 4: no coupling-form axis was added (Sec.17.2's conditional
+did not trigger); no density-increasing work was attempted (continuing Sec.16.4's holding
+pattern) -- both because this section's central finding (missed detection, not oscillation
+death, dominates) points toward an INSTRUMENT gap as the leading explanation, not a physical
+mechanism that either of those two actions would address.
+
+### 17.6 9th-audit and 8th-audit re-check on Sec.17's own claims
+
+- **9th audit:** "0/172 oscillation death" is a non-achievement claim (rebutting review's
+  own hypothesis), so the 9th audit applies directly: the classification instrument
+  (`reversal`/`period`, unmodified from PR-R1/PR-R1.9) is exactly the same one already
+  validated with synthetic positive/negative controls throughout this PR series -- no new,
+  unvalidated classifier was built for this specific negative result. The category
+  boundaries (`reversal_count < 2`, "no autocorrelation peak", `sustained_and_settled`) are
+  the SAME thresholds already fixed and audited in Sec.3.3/Sec.13.3, reused here rather than
+  redefined to produce a particular count.
+- **8th audit:** was the 3-way classification's boundary conditions chosen to make
+  oscillation death come out at zero? No -- `reversal_count < 2` for oscillation death is
+  the SAME R3 precondition threshold used throughout this codebase since PR-R1 (predates
+  this section by many PRs), not introduced or tuned here; the classification was run on
+  all 172 node-checks and reported as a full count (119/48/0/5), not a filtered or curated
+  subset. The representative examples (17.1) were the FIRST example found for each
+  `(sustained, settled)` combination within `missed_detection`, and the first `frustration`
+  entry in iteration order -- a disclosed, mechanical selection rule, not hand-picked for
+  visual clarity.
