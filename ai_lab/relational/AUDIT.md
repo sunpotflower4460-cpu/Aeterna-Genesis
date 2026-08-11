@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 AUDIT
 
 ```yaml
 id: relational_r1
@@ -7,9 +7,11 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # positive claim (Sec.13: genuine sustained oscillation
                              # requires memory+asymmetry+damping+a nonlinear cap together,
                              # verified at 15x window AND confirmed interventionally via
-                             # damage-recovery, not merely observed), and an explicit,
-                             # structural fix (verify.py) preventing the SAME window-length
-                             # mistake (Sec.9.2, Sec.12.2) from recurring a third time.
+                             # damage-recovery, not merely observed), an explicit, structural
+                             # fix (verify.py) preventing the SAME window-length mistake
+                             # (Sec.9.2, Sec.12.2) from recurring a third time, and (Sec.14)
+                             # R7 (phase) built on the corrected N with a fixed, disclosed
+                             # transient-trim rule.
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -18,15 +20,17 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # pre-blowup transients, not genuine oscillation, for an
                              # exactly-linear ODE with no capping mechanism. memory=on x
                              # asymmetry=on x saturation="cubic", damping=0.05: MEASURED,
-                             # verified, and interventionally confirmed (Sec.13.6/13.7) --
-                             # 240/600 runs (663/1153 node-checks) survive a 15x-window
-                             # re-check, and a disclosed 16-sample attractor-recovery test
-                             # finds 8/8 damping=0.05 cases are genuine self-sustaining
-                             # limit cycles vs only 2/8 at damping=0.0 (which mostly behave
-                             # as a conservative orbit family instead, per Sec.13.7's own
-                             # physical argument) -- this is the R-layer's first claim at
-                             # the "measured, verified, and mechanism-confirmed" tier, not
-                             # just "observed."
+                             # VERIFIED (Sec.13.6: 100/300 runs, 223 node-checks -- the
+                             # damping=0.05-only N, see Sec.14.2), and ACHIEVED
+                             # interventionally (Sec.14.1: damage-recovery/self-sustaining
+                             # limit cycle confirmed, 8/8 sampled cases, D3's content) --
+                             # this is the R-layer's first claim at the "measured, verified,
+                             # AND achieved" tier, not just "observed." Cycle-clustering
+                             # (Sec.14.3): reframed, not retracted -- verified oscillation
+                             # localizes in degree-heterogeneous (hub-like) regions; at
+                             # least one fully-covered cycle exists in damping=0.05 verified
+                             # barabasi_albert/watts_strogatz data, a concrete (if small)
+                             # green light for a future R8.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -124,6 +128,24 @@ open_issues:
      claim is retracted, though Sec.13.8 flags random_regular's sample as underpowered to
      fully rule out a weaker effect. R7 can now proceed against the damping=0.05,
      saturation='cubic', verify_long_window-confirmed subset specifically."
+  - "PR-R2.2 (Sec.14): damage-recovery formally recorded ACHIEVED (Sec.14.1) -- D3's
+     content, satisfied by the R-layer's own independent implementation of the dream/
+     roster's self_repair concept (no dream/ files touched). The damping=0.05-only N
+     (Sec.14.2) is 100 runs / 223 node-checks, not 240/663 -- the correct target for R7.
+     Cycle-clustering (Sec.14.3) reframed, not retracted: verified oscillation localizes in
+     degree-heterogeneous regions; at least one fully-covered cycle exists in
+     damping=0.05-verified barabasi_albert (triangle [7,4,22], seed=0, strength=20.0) and
+     watts_strogatz (2 triangles) -- a concrete, small, disclosed green light for a future
+     R8, not built this PR. R7 (phase, instruments.py::phase()) is built, gated on R4's
+     sustained_and_settled, with a FIXED transient-trim rule (last half of the recording,
+     reusing the same boundary `settled` already validates, plus R3/R4's own edge-trim) --
+     documented at the same location as the R3 moving-average edge-bias fix, per review's
+     explicit instruction. R7's phase-unwrapping rate cross-checks R4's autocorrelation
+     rate to within 3-5% on the validated example. Recorded as open, not resolved: 2/8
+     sampled damping=0.0 cases DID recover (Sec.14.5) -- Sec.13.7's 'no dissipation, no
+     attractor' account is not asserted as a universal law, since asymmetry's own energy
+     redistribution is not ruled out as an alternative dissipation-like channel in some
+     configurations."
 ```
 
 ---
@@ -1432,3 +1454,185 @@ claim or overclaiming the reversed pattern as settled.
   re-tuned per result -- and the split is stark enough (achieved cases cluster under 10%
   relative difference, non-achieved cases cluster over 55%) that no reasonable nearby
   tolerance choice would change the qualitative 8/8-vs-2/8 pattern.
+
+## 14. S-011: damage-recovery ACHIEVED (D3), R7 (phase) built on the corrected `damping=0.05`
+subset, and the cycle-clustering finding reframed as hub-localization
+
+Per review's acceptance of PR-R2.1 and instruction to (1) formally record the damage-
+recovery achievement, (2) report the `damping=0.05`-only breakdown of the 240 verified runs
+and 663 node-checks -- the real N for R7, (3) re-measure fundamental-cycle coverage on the
+`damping=0.05` verified `saturation="cubic"` data specifically, reframing the earlier
+reversal as a discovery (hub-localization) rather than a bare retraction, and check whether
+`barabasi_albert` has any fully-covered cycle (a green light for R8), and (4) build R7
+(phase) restricted to this corrected subset, with the initial transient -- not just the
+Hilbert edge -- trimmed by a fixed rule. All four done, in order, below.
+
+### 14.1 Damage-recovery: ACHIEVED
+
+**Formal record**: `memory=on x asymmetry=on x saturation="cubic" x damping=0.05` produces
+genuine self-sustaining limit cycles, confirmed interventionally (Sec.13.4/13.7): 8/8
+sampled cases return to within a few percent of their pre-perturbation plateau amplitude
+after 60% of that amplitude is removed at a checkpoint. This is the R-layer's own,
+independently-implemented instance of the measurement concept `ai_lab/dream/
+frontier_expander.py`'s capability roster calls `self_repair` / `damage-recovery`
+("壊されたあと自分で戻る" -- "returns by itself after being broken"; "自然にできたまとまりを
+後から部分的に乱したとき、同じ統計的個性へ戻るか" -- "when a naturally-formed structure is
+later partially perturbed, does it return to the same statistical identity"). **Per review:
+this satisfies that requirement's content -- a self-maintaining structure confirmed by
+intervention, not correlation -- and is the concrete substance of destination D3 (a loop
+that continues by running itself).** `achieved=True` is `verify.check_attractor_recovery`'s
+own explicit field on every R-layer result it is computed from (Sec.13.4); this section is
+the formal, human-readable record of that achievement for the R-layer's own tracking. As
+stated in PR-R2.1 (Sec.13.4) and repeated here for clarity: this module does not read or
+write `frontier_expansion.json` or any `ai_lab/dream/` file -- the `dream/` roster's own
+`self_repair` status (tracking the separate, TDGL-based `dream/` system) is unaffected by
+and unrelated to this record; the two are independent measurements of the same underlying
+concept on different physics.
+
+### 14.2 The `damping=0.05` breakdown: the real N for R7
+
+Sec.13.6's "240/600 runs, 663/1153 node-checks verified" is the SUM of both damping values.
+Split (from `verify.verify_long_window`'s own per-run records, `results_pr_r2_1.json`):
+
+| | `damping=0.0` | **`damping=0.05` (R7's actual target)** | total |
+|---|---|---|---|
+| candidate runs (screening) | 195 | 168 | 363 |
+| **verified runs** | 140 | **100** | 240 |
+| candidate node-checks | 730 | 423 | 1153 |
+| **verified node-checks** | 440 | **223** | 663 |
+
+**R7 is built and exercised against the `damping=0.05` verified subset specifically: N=100
+runs, 223 node-checks.** The `damping=0.0` verified count (140 runs, 440 node-checks) is
+NOT R7's target -- per Sec.13.7, most of it is not a self-sustaining structure (only 2/8
+sampled `damping=0.0` cases recover from perturbation) -- but see Sec.14.5 for why "most"
+is not "all," and why that residual is recorded as open rather than closed.
+
+### 14.3 Cycle coverage redone on `damping=0.05` verified data -- a reframing, not a
+retraction, and a concrete green light for R8
+
+Sec.13.8 redid Sec.12.3's cycle-coverage analysis on the pooled (both damping values) 240
+verified runs and found the enrichment REVERSED direction relative to the `saturation="none"`
+data: `random_regular` (no hubs) went from the highest ratio to zero, while
+`barabasi_albert`/`erdos_renyi` (degree-heterogeneous) became the strongest. Per review:
+**this is not merely a retraction of "not a hub artifact" -- it is a positive finding in its
+own right, restated here as such: verified-sustained oscillation in this substrate localizes
+preferentially in degree-heterogeneous regions (hubs or hub-like variance), not uniformly
+across the graph.** Sec.12.3's literal claim ("not a hub artifact") remains retracted (it was
+wrong); the underlying enrichment phenomenon it was trying to explain is not retracted, only
+re-explained.
+
+Redone restricted to `damping=0.05` verified runs specifically (the corrected N from 14.2):
+
+| topology | verified runs (damping=0.05) | node density p | cycles examined | covered | fraction | observed/null ratio |
+|---|---|---|---|---|---|---|
+| `barabasi_albert` | 19 | 9.0% | 418 | **1** | 0.24% | 8.8x |
+| `watts_strogatz` | 30 | 11.1% | 750 | **2** | 0.27% | 6.0x |
+| `erdos_renyi` | 24 | 8.7% | 577 | 0 | 0.00% | -- |
+| `random_regular` | 27 | 8.0% | 675 | 0 | 0.00% | -- |
+| all pooled | 100 | 9.3% | 2420 | 3 | 0.12% | 6.7x |
+
+Smaller N (100 vs 240 runs) than Sec.13.8's pooled figure, so the absolute counts are small,
+but the direction is the same: hub-containing/degree-heterogeneous topologies
+(`barabasi_albert`, `watts_strogatz`) show coverage; the two more-homogeneous topologies
+(`erdos_renyi` at this N, `random_regular`) show none. Given the small counts, this
+`damping=0.05`-only breakdown is read as corroborating, not independently establishing,
+Sec.13.8's pattern -- both were needed because Sec.13.8's pooled data is not yet the correct
+N for R7 (Sec.14.2), while this section's smaller N alone would be underpowered on its own.
+
+**The concrete finding review asked for: does `barabasi_albert` have any fully-covered
+cycle?** **Yes.** One fundamental cycle is fully covered: `barabasi_albert`, seed=0,
+`asymmetry_strength=20.0`, `damping=0.05` -- the triangle (nodes 7, 4, 22), all three
+`verify_long_window`-verified. Two more fully-covered cycles exist in `watts_strogatz`
+(seed=4, strength=20.0, triangle [1,0,23]; seed=11, strength=20.0, triangle [19,23,21]).
+**This is a green light for R8 in the specific, narrow sense review asked about: there now
+exists at least one closed loop, in the corrected `damping=0.05`/`saturation="cubic"`/
+`verify_long_window`-confirmed data, where R8's precondition (phase defined all the way
+around a cycle) could actually be met** -- unlike Sec.11.2's original (`saturation="none"`)
+finding, which review already flagged as too close to zero to be structurally meaningful
+even before Sec.12.2 showed that data was mostly artifactual. All 3 examples found so far
+are triangles (length 3, the shortest possible cycle) at the highest swept asymmetry
+strength (20.0) -- consistent with Sec.13.6's finding that higher strength verifies more
+reliably (more nodes cross into the verified regime, raising the odds that an entire short
+local loop is covered). **R8 itself is NOT built in this PR** -- review's request was to
+report whether the precondition is met, which it now is on a small, disclosed number of
+examples; whether to build R8 against this specific (still small) evidence base is left for
+review's own decision, not assumed here.
+
+### 14.4 R7 (phase): built on the `damping=0.05` subset, with the transient trimmed by a
+fixed rule
+
+Implemented `instruments.py::phase()` -- this codebase's first instrument licensed to
+report 位相/phase (spec Sec.5). Gated on R4's `sustained_and_settled` per node (the
+instrument's own precondition; the caller must separately apply `verify_long_window` /
+`check_attractor_recovery`, Sec.13.3/13.7, to trust a `phase` Reading as describing a
+genuine self-sustaining attractor rather than merely a screening-window-sustained node --
+this instrument alone cannot see that distinction).
+
+**Transient trim, per review's point 3.** Sec.13.3 found that a long recording's whole-
+window `sustained` comparison is dragged down by the initial transient once that transient
+is a small-but-nonzero fraction of a much longer window -- direct evidence the transient
+itself is not negligible in duration. Per review, R7 must discard the transient itself, not
+just the Hilbert-transform edge-padding region R3/R4 already trim. **Fixed rule
+(`instruments.py::_phase_analysis_window`, same location in the pipeline as the R3 moving-
+average edge-bias fix): the phase-analysis window is the LAST HALF of the recording,
+further trimmed at both new boundaries of that half by R3/R4's own edge-trim formula
+(`win = max(5, L//20)`).** "Last half" is not an arbitrarily chosen fraction -- it is
+exactly the region `_envelope_trend`'s `settled` check already restricts itself to (its own
+trailing-quarter-vs-third-quarter comparison operates entirely within this same half), so
+R7 reuses that already-established, already-tested boundary rather than introducing a
+second, independently-tunable one. This is a pure function of the recording length `L`
+alone (`tests/test_r_instruments.py::test_phase_analysis_window_fixed_rule_not_tunable_per_call`
+checks the same `L` always yields the same window) -- not a per-config or per-outcome
+choice.
+
+**Built-in cross-check.** R7 reports `mean_rate_from_phase` (from unwrapping the analytic
+signal's angle -- the first read of that angle anywhere in this codebase; R3/R4 use only
+the Hilbert-transform MAGNITUDE, per their own docstrings) alongside R4's own `rate`
+(1/T from autocorrelation peak-picking). On the validated example (`random_regular`
+seed=5, `damping=0.05`, `strength=0.3`, `saturation="cubic"`), the two independent
+measurements agree to within 3-5% (node 22: R7=0.3126, R4=0.3226; node 23: R7=0.3144,
+R4=0.2985) -- two different derivations of the same quantity from the same trajectory,
+agreeing, is itself evidence the phase extraction is measuring something real.
+
+**Vocabulary discipline.** `tests/test_r_layer_vocabulary.py` was restructured (not just
+patched) into `STILL_FORBIDDEN_WORDS` (渦/vortex, 次元/dimension, 力/force, エネルギー/
+energy, コヒーレンス/coherence, plus 頻度/frequency by the pre-existing convention) and
+`NOW_LICENSED_WORDS` (位相/phase). Both directions are tested: a config known to produce a
+`verify_long_window`-confirmed node yields a `defined` R7 reading that legitimately contains
+"phase" (the license is exercised, not merely permitted); still-forbidden words remain
+absent even in that same phase-bearing output.
+
+### 14.5 Open, not closed: `damping=0.0`'s 2/8 recovering cases
+
+Per review's explicit instruction: the 2/8 `damping=0.0` samples that DID recover
+(Sec.13.7: relative differences 0.012 and 0.059, both comfortably inside tolerance, not
+borderline) are recorded as an unresolved minor finding, not explained away. Sec.13.7's own
+physical argument (no linear dissipation channel, therefore a conservative orbit family) is
+a good account of the MAJORITY (6/8) but is not asserted as a universal law here: asymmetry
+itself moves energy between nodes (it is precisely the injection mechanism, Sec.10.3), so it
+is not ruled out that some specific graph/seed configurations let asymmetry's own
+redistribution act as an effective dissipation-like channel even at `damping=0.0`,
+producing a genuine attractor without linear friction. This is NOT investigated further in
+this PR -- flagged, with both data points on record, as a question for whenever
+`damping=0.0` is revisited, rather than either (a) claimed as a mechanism understood, or (b)
+dismissed as noise within an otherwise-clean 6/8 pattern.
+
+### 14.6 9th-audit and 8th-audit re-check on Sec.14's own claims
+
+- **9th audit:** "barabasi_albert has a fully-covered cycle" and "damping=0.05's verified
+  count is 100/223, not 240/663" are both achievement-flavored or scope-narrowing claims,
+  not non-achievement claims, so the 9th audit's core question does not directly apply --
+  the relevant discipline instead is that both are reported as exact counts from the full,
+  un-truncated `verify_long_window` output, not estimated or sampled. R7's own
+  `expressible_max` (the trimmed window length) is recorded on every Reading per the same
+  convention as R1-R4, so a future non-achievement claim about phase can itself be audited
+  the same way R4's ceiling already is.
+- **8th audit:** does `_phase_analysis_window`'s "last half" choice encode an answer? No --
+  it was derived from an already-existing, already-tested boundary (`settled`'s own
+  region), fixed before any R7 output was inspected, and verified to be a pure function of
+  `L` alone (test above) rather than tunable per result. Does reporting "damping=0.05: 100
+  verified" instead of "240 verified" understate the result to match review's framing? No --
+  both numbers are true and both appear in this document (14.2's table shows the full
+  breakdown); 100/223 is reported as the correct N for R7 specifically because Sec.13.7
+  independently (via intervention, not assumption) showed `damping=0.0`'s count mostly does
+  not represent the same kind of structure.

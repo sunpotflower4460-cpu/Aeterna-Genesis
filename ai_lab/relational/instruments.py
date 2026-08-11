@@ -480,10 +480,117 @@ def period(x_traj: np.ndarray, dt: float, r3: Optional[Reading] = None) -> Readi
     )
 
 
+# ---------------------------------------------------------------------------
+# R7 -- phase: unwrapped Hilbert-transform phase per node (spec Sec.6/Sec.5). PR-R2.2, the
+# first instrument in this codebase licensed to compute/report "phase"/位相 (spec Sec.5's
+# forbidden-vocabulary rule) -- gated on R4's `sustained_and_settled`, so only a node R4
+# already confirmed to be genuinely oscillating and plateaued (not decaying, not still
+# growing) is eligible.
+# ---------------------------------------------------------------------------
+
+def _phase_analysis_window(L: int) -> "tuple[int, int]":
+    """Fixed rule (PR-R2.2, AUDIT.md Sec.14.4), same location as the R3 moving-average
+    edge-bias fix -- NOT a tunable parameter: the phase-analysis window is the LAST HALF of
+    the recording (discarding the entire initial transient, not just the Hilbert-transform
+    edge), further trimmed by R3/R4's own edge-trim formula at both new boundaries of that
+    half (the slice x[L//2:] creates a fresh boundary at L//2 that is not a real edge of the
+    physical trajectory, so it needs the same edge-padding-bias trim R3/R4 apply at the
+    recording's actual ends).
+
+    Rationale for "last half" specifically (not some other fraction): this is exactly the
+    boundary `_envelope_trend`'s `settled` check already treats as "the region worth
+    trusting" -- its own trailing-quarter-vs-third-quarter comparison operates entirely
+    within this same half. Phase needs a genuinely non-transient signal at least as much as
+    `settled`'s coarser flatness check does, so it reuses that already-established boundary
+    rather than introducing a second, independently-tunable one.
+    """
+    half_start = L // 2
+    half_len = L - half_start
+    win = max(5, L // 20)
+    trim = min(win, max(0, half_len // 2 - 1))
+    return half_start + trim, L - trim
+
+
+def phase(x_traj: np.ndarray, dt: float, r4: Optional[Reading] = None) -> Reading:
+    """R7: unwrapped analytic-signal phase per node, restricted to `_phase_analysis_window`.
+
+    Precondition: R4(period).value.per_node[i].sustained_and_settled -- a node R4 found
+    decaying, still-growing, or simply aperiodic has no repeating structure for "phase" to
+    describe. This is this INSTRUMENT's own gate; a caller that wants the stronger,
+    interventionally-confirmed claim (AUDIT.md Sec.13's attractor-vs-orbit-family
+    distinction) must additionally apply `verify.verify_long_window` /
+    `verify.check_attractor_recovery` before trusting a `phase` Reading as describing a
+    genuine self-sustaining structure rather than merely a screening-window-sustained one --
+    this instrument alone cannot see that distinction (AUDIT.md Sec.13.3/13.7).
+
+    `mean_rate_from_phase` (cycles per time unit, i.e. d(unwrapped_phase)/dt / (2*pi)) is
+    reported alongside R4's own `rate` (1/T from the autocorrelation peak) as a built-in
+    cross-check -- two independent measurements of the same underlying quantity, from
+    different math (peak-picking vs. phase unwrapping), on the same trajectory.
+    """
+    if r4 is None:
+        r4 = period(x_traj, dt)
+    precondition = "R4(period).value.per_node[i].sustained_and_settled, for node i"
+    L = x_traj.shape[0]
+    lo, hi = _phase_analysis_window(L)
+    expressible_note = (
+        "phase is computed only on the last-half, edge-trimmed interior (steps %d:%d of "
+        "%d total) -- the discarded first half is presumed transient, not analyzed; a "
+        "period whose transient extends past the halfway point cannot be represented "
+        "faithfully by this instrument." % (lo, hi, L)
+    )
+    if not r4.defined or r4.value is None:
+        return Reading(
+            name="phase", value=None, defined=False, precondition=precondition,
+            expressible_max=hi - lo, expressible_note=expressible_note,
+        )
+    n = x_traj.shape[1]
+    per_node: List[Dict[str, Any]] = []
+    any_defined = False
+    for i in range(n):
+        entry: Dict[str, Any] = {"node": i}
+        r4_entry = r4.value["per_node"][i] if i < len(r4.value["per_node"]) else {}
+        if not r4_entry.get("sustained_and_settled", False):
+            entry.update(defined=False, unwrapped_phase_span=None, mean_rate_from_phase=None,
+                         reason="R4 precondition not met for this node (not sustained_and_settled)")
+            per_node.append(entry)
+            continue
+        series = x_traj[:, i, :].sum(axis=-1)
+        interior = series[lo:hi]
+        if len(interior) < 16 or np.allclose(interior - interior.mean(), 0.0):
+            entry.update(defined=False, unwrapped_phase_span=None, mean_rate_from_phase=None,
+                         reason="analysis window too short or flat after the transient+edge trim")
+            per_node.append(entry)
+            continue
+        y = interior - interior.mean()
+        analytic = hilbert(y)
+        wrapped = np.angle(analytic)      # first read of the analytic-signal angle in this codebase
+        unwrapped = np.unwrap(wrapped)
+        span = float(unwrapped[-1] - unwrapped[0])
+        duration = (len(interior) - 1) * dt
+        mean_rate = span / (2.0 * np.pi * duration) if duration > 0 else None
+        entry.update(defined=True, unwrapped_phase_span=_native(span),
+                     mean_rate_from_phase=_native(mean_rate), reason="ok")
+        any_defined = True
+        per_node.append(entry)
+    value = {
+        "per_node": per_node,
+        "any_defined": any_defined,
+        "analysis_window": [int(lo), int(hi)],
+        "transient_trim_rule": "last_half_of_recording_plus_edge_trim",
+    }
+    return Reading(
+        name="phase", value=_native(value), defined=any_defined,
+        precondition=precondition, expressible_max=hi - lo, expressible_note=expressible_note,
+    )
+
+
 def measure_all(x_traj: np.ndarray, W: np.ndarray, dt: float) -> Dict[str, Reading]:
-    """Run R1..R4 in their dependency order and return all four Readings."""
+    """Run R1..R4 and R7 in their dependency order and return all Readings."""
     r1 = difference(x_traj)
     r2 = direction(x_traj, W, r1=r1)
     r3 = reversal(x_traj, r1=r1)
     r4 = period(x_traj, dt, r3=r3)
-    return {"R1_difference": r1, "R2_direction": r2, "R3_reversal": r3, "R4_period": r4}
+    r7 = phase(x_traj, dt, r4=r4)
+    return {"R1_difference": r1, "R2_direction": r2, "R3_reversal": r3, "R4_period": r4,
+            "R7_phase": r7}

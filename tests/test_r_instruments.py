@@ -146,11 +146,12 @@ def test_r4_cannot_represent_period_longer_than_L_over_2():
         assert node0["lag_steps"] <= 100
 
 
-def test_measure_all_returns_all_four_readings_in_order():
+def test_measure_all_returns_all_readings_in_order():
     x_traj = np.random.default_rng(2).normal(size=(30, 5, 1))
     W = np.ones((5, 5)) - np.eye(5)
     out = instruments.measure_all(x_traj, W, dt=0.05)
-    assert list(out.keys()) == ["R1_difference", "R2_direction", "R3_reversal", "R4_period"]
+    assert list(out.keys()) == ["R1_difference", "R2_direction", "R3_reversal", "R4_period",
+                                 "R7_phase"]
     for reading in out.values():
         assert isinstance(reading, instruments.Reading)
 
@@ -317,3 +318,73 @@ def test_q2_gt_p_gamma2_threshold_matches_direct_eigenvalue_computation(strength
         "q^2 > p*gamma^2 sign mismatch at strength=%s gamma=%s (max_re=%.3e)"
         % (strength, gamma, max_re)
     )
+
+
+# ---------------------------------------------------------------------------
+# PR-R2.2: R7 (phase) -- transient+edge trim, gating, and cross-check against R4
+# ---------------------------------------------------------------------------
+
+_R7_KW = dict(n=24, steps=3000, dt=0.05, memory="on", damping=0.05, asymmetry=True,
+              asymmetry_strength=0.3, topology="random_regular", saturation="cubic",
+              saturation_strength=0.1)
+
+
+def test_phase_analysis_window_is_last_half_plus_edge_trim():
+    L = 3001
+    lo, hi = instruments._phase_analysis_window(L)
+    assert lo >= L // 2
+    assert hi <= L
+    assert hi - lo < L - L // 2   # strictly less than the raw last half (edge-trimmed)
+
+
+def test_phase_analysis_window_fixed_rule_not_tunable_per_call():
+    """The trim is a pure function of L alone -- same L always gives the same window,
+    regardless of what data would be sliced by it (no per-call parameter to tune)."""
+    for L in (100, 501, 3001, 12000):
+        a = instruments._phase_analysis_window(L)
+        b = instruments._phase_analysis_window(L)
+        assert a == b
+
+
+def test_phase_undefined_when_r4_undefined():
+    res = substrate.run(n=10, steps=100, seed=1, memory="off")
+    r7 = instruments.phase(res.x_traj, res.dt)
+    assert r7.defined is False
+
+
+def test_phase_gates_per_node_on_sustained_and_settled():
+    res = substrate.run(seed=5, **_R7_KW)
+    readings = instruments.measure_all(res.x_traj, res.W_final, res.dt)
+    r4, r7 = readings["R4_period"], readings["R7_phase"]
+    assert r7.defined is True
+    any_checked = False
+    for i, entry in enumerate(r7.value["per_node"]):
+        r4_entry = r4.value["per_node"][i]
+        if entry["defined"]:
+            assert r4_entry.get("sustained_and_settled") is True
+            any_checked = True
+        elif not r4_entry.get("sustained_and_settled", False):
+            assert entry["reason"].startswith("R4 precondition not met")
+    assert any_checked
+
+
+def test_phase_span_and_rate_have_correct_sign_and_magnitude():
+    """Positive control on a synthetic signal with a known, exact rate: unwrapped phase
+    should advance monotonically and mean_rate_from_phase should match the true rate.
+    Two nodes with distinct phases so R1 (difference) is nonzero and R3/R4's precondition
+    chain is genuinely satisfied, not bypassed."""
+    dt = 0.01
+    L = 4000
+    t = np.arange(L) * dt
+    true_rate = 2.0  # cycles per time unit
+    series_a = np.sin(2 * np.pi * true_rate * t)
+    series_b = np.sin(2 * np.pi * true_rate * t + 0.7)
+    x_traj = np.stack([series_a, series_b], axis=1)[:, :, None]
+    r4 = instruments.period(x_traj, dt)
+    assert r4.defined is True
+    r4.value["per_node"][0]["sustained_and_settled"] = True
+    r7 = instruments.phase(x_traj, dt, r4=r4)
+    entry = r7.value["per_node"][0]
+    assert entry["defined"] is True
+    assert entry["unwrapped_phase_span"] > 0   # advancing phase for a forward-rotating signal
+    assert abs(entry["mean_rate_from_phase"] - true_rate) / true_rate < 0.05

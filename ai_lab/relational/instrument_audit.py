@@ -18,20 +18,27 @@ Sec.8.1 note (ceiling_ladder.py absorption) -- SKIPPED, with reason
 The spec asks PR-R1 to promote `ai_lab/dream/ceiling_ladder.py`'s `instrument_max_level()`
 into a shared utility that `ceiling_ladder.py` then delegates to (same external behavior).
 
-That integration was NOT done in this PR. Verified before writing any code: `ai_lab/dream/`
-does not exist anywhere in this repository -- not in this worktree, not in the shared
-checkout, and `git log --all --diff-filter=A -- 'ai_lab/dream/*'` returns zero commits on
-any branch. There is no `ceiling_ladder.py`, `human_report.py`, `multiworld.py`, or
-`dry_run.py` to read, delegate to, or avoid breaking. This directly contradicts the task
-briefing's claim that these files were "confirmed present." Per this task's own fallback
-instructions ("if this refactor looks risky or the existing code doesn't cleanly factor
-out, it is fine to skip touching ceiling_ladder.py ... and instead just build the audit
-module standalone with a clear TODO note"), this module is built standalone.
+That integration was NOT done in this PR. Verified before writing any code (at the time,
+PR-R1): `ai_lab/dream/` did not exist anywhere in this repository -- not in this worktree,
+not in the shared checkout, and `git log --all --diff-filter=A -- 'ai_lab/dream/*'` returned
+zero commits on any branch. There was no `ceiling_ladder.py`, `human_report.py`,
+`multiworld.py`, or `dry_run.py` to read, delegate to, or avoid breaking. This directly
+contradicted the task briefing's claim that these files were "confirmed present." Per that
+task's own fallback instructions ("if this refactor looks risky or the existing code
+doesn't cleanly factor out, it is fine to skip touching ceiling_ladder.py ... and instead
+just build the audit module standalone with a clear TODO note"), this module was built
+standalone.
 
-TODO (blocked on ai_lab/dream/ceiling_ladder.py existing): once that module exists, promote
-its `instrument_max_level()` behavior here (or verify it already matches
-`expressible_max_for` below for the R-layer's own instruments) and have it delegate to this
-module, re-running whatever tests then cover it before and after the change.
+UPDATE (PR-R2.2, found while extending this module for R7, not investigated further --
+out of this PR's scope): `ai_lab/dream/` now EXISTS in this checkout, including
+`ceiling_ladder.py` and `dry_run.py` -- most likely introduced by a later merge into this
+branch, not by any R-layer PR (see run.py's module docstring for the same note). The
+TODO below is therefore no longer blocked and should be revisited in a future PR.
+
+TODO (previously blocked on ai_lab/dream/ceiling_ladder.py existing -- no longer blocked,
+see UPDATE above): promote its `instrument_max_level()` behavior here (or verify it already
+matches `expressible_max_for` below for the R-layer's own instruments) and have it delegate
+to this module, re-running whatever tests then cover it before and after the change.
 --------------------------------------------------------------------------------------------
 """
 
@@ -54,6 +61,11 @@ INSTRUMENT_EXPRESSIBLE_MAX_RULES: Dict[str, str] = {
     "R4_period": "ceiling floor(L/2) steps -- a period longer than half the recording "
                   "window cannot be distinguished from a non-repeating drift within that "
                   "window.",
+    "R7_phase": "ceiling = the last-half, edge-trimmed interior length (PR-R2.2, "
+                "instruments.py::_phase_analysis_window) -- phase is computed only past "
+                "the presumed transient, so a period whose transient extends beyond the "
+                "recording's halfway point cannot be represented, regardless of how long "
+                "the full recording is.",
 }
 
 

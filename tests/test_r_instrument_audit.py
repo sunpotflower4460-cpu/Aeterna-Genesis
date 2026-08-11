@@ -80,7 +80,7 @@ def test_r4_undefined_for_memory_off_is_correctly_flagged_instrument_limited():
 
 
 def test_registry_covers_all_pr_r1_instruments():
-    for name in ("R1_difference", "R2_direction", "R3_reversal", "R4_period"):
+    for name in ("R1_difference", "R2_direction", "R3_reversal", "R4_period", "R7_phase"):
         assert name in instrument_audit.INSTRUMENT_EXPRESSIBLE_MAX_RULES
 
 
