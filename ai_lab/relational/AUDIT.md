@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 AUDIT
 
 ```yaml
 id: relational_r1
@@ -27,10 +27,14 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # this is the R-layer's first claim at the "measured, verified,
                              # AND achieved" tier, not just "observed." Cycle-clustering
                              # (Sec.14.3): reframed, not retracted -- verified oscillation
-                             # localizes in degree-heterogeneous (hub-like) regions; at
-                             # least one fully-covered cycle exists in damping=0.05 verified
-                             # barabasi_albert/watts_strogatz data, a concrete (if small)
-                             # green light for a future R8.
+                             # localizes in degree-heterogeneous (hub-like) regions.
+                             # R8 (winding): STILL BLOCKED (Sec.15, S-012) -- not by sample
+                             # count but by cycle SHAPE: all 3 fully-covered cycles are
+                             # triangles, and triangles have a high, length-RISING null rate
+                             # (0.25 at N=3 to 0.57 at N=10) and cannot distinguish
+                             # |winding|>1. The real blocker is quantified: verified-node
+                             # density (9.3%) would need to roughly triple before a
+                             # length-6 cycle is even 1%-likely to be fully covered.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -146,6 +150,23 @@ open_issues:
      attractor' account is not asserted as a universal law, since asymmetry's own energy
      redistribution is not ruled out as an alternative dissipation-like channel in some
      configurations."
+  - "PR-R2.3 (Sec.15, S-012): R8 remains blocked, confirmed NOT a sample-size problem -- all
+     3 fully-covered cycles are triangles (length 3), and length 3 is structurally unsuited
+     to winding: null rate 0.25 at N=3, RISING to 0.57 at N=10 (winding_precheck.py, Monte
+     Carlo, cross-validated against the exact N=3 closed form). The one real triangle's
+     observed winding is 0 (phases cluster within 1.19 rad, below a semicircle) -- not
+     evidence either way. Investigated why persistence stays local, per review's request:
+     coupling strength is RULED OUT structurally (every edge has identical weight by
+     construction); amplitude reaches most of the graph (72%/61% retention at one/two hops)
+     so amplitude-reach is not the primary blocker; the leading untested hypothesis is
+     phase-coherence/entrainment failure. Verified nodes have a modest (+10%) degree bias
+     that cannot alone explain the much larger (7-30x) cycle-level clustering, implying
+     spatial clustering beyond simple degree preference. Quantified the gap: the observed
+     verified-node density (9.3%, 223/2400; or 3.1%, 223/7200, denominator-dependent) would
+     need to roughly TRIPLE (to ~30%, even crediting the full observed enrichment) before a
+     length-6 fully-covered cycle becomes even 1%-per-cycle likely -- a structural gap, not
+     a sampling one. winding_precheck.py is a standalone precondition module, explicitly
+     NOT R8 and not wired into instruments.py."
 ```
 
 ---
@@ -1636,3 +1657,193 @@ dismissed as noise within an otherwise-clean 6/8 pattern.
   breakdown); 100/223 is reported as the correct N for R7 specifically because Sec.13.7
   independently (via intervention, not assumption) showed `damping=0.0`'s count mostly does
   not represent the same kind of structure.
+
+## 15. S-012: R8 stays blocked -- triangles are structurally unsuited to winding, not merely
+few in number; propagation investigation opened as the next PR's theme
+
+Per review's acceptance of PR-R2.1's phase/R4-rate cross-check (agreement to within 3-5%,
+independent evidence the instrument is measuring something real) and instruction NOT to
+start R8: the blocker is not sample size, it is that all 3 fully-covered cycles found so
+far are triangles, and triangles are doubly unsuited to a winding-number measurement (high
+null rate; aliasing at |winding|<=1). Confirmed and quantified below, plus the three
+measurements review requested toward the real blocking question: why does the
+sustained-and-verified regime stay local instead of propagating.
+
+### 15.1 All 3 fully-covered cycles are triangles (length 3) -- confirmed exactly
+
+Re-extracted directly from the same `verify_long_window` output Sec.14.3 used (no new data):
+
+| topology | seed | strength | cycle (node indices) | length |
+|---|---|---|---|---|
+| `barabasi_albert` | 0 | 20.0 | [7, 4, 22] | **3** |
+| `watts_strogatz` | 4 | 20.0 | [1, 0, 23] | **3** |
+| `watts_strogatz` | 11 | 20.0 | [19, 23, 21] | **3** |
+
+No length-6-or-longer fully-covered cycle exists in the current data. This is not a
+sampling gap to be closed by finding a 4th example -- Sec.15.2 shows why length itself, not
+count, is the operative constraint.
+
+### 15.2 Winding-number null rate, measured before any R8 code exists
+(`ai_lab/relational/winding_precheck.py` -- explicitly NOT R8; a standalone precondition
+module, not wired into `instruments.py`/`measure_all()`)
+
+**Method**: `compute_winding` sums wrapped consecutive phase differences around a FIXED
+cyclic order (the order the relation graph's own edges impose -- NOT re-sorted by phase
+value, since a real cycle's node-to-node adjacency is fixed by the graph, independent of
+whatever phase later lands on each node) and divides by `2*pi`. `monte_carlo_null_rate`
+draws N i.i.d. `Uniform(0, 2*pi)` phases in that fixed order and measures how often the
+result is nonzero, for N=3..10 (200,000 trials each):
+
+| N (cycle length) | null rate (Monte Carlo) |
+|---|---|
+| 3 | **0.250** (matches the exact closed form `1 - 3/2^2 = 0.25` to 3 decimal places) |
+| 4 | 0.335 |
+| 5 | 0.402 |
+| 6 | 0.449 |
+| 7 | 0.488 |
+| 8 | 0.521 |
+| 9 | 0.548 |
+| 10 | 0.571 |
+
+N=3's Monte Carlo result (0.2495) matches the analytic "probability 3 random points on a
+circle do not all lie in one semicircle" formula (`1 - N/2^(N-1)`, review's own derivation)
+almost exactly -- cross-validating `compute_winding`'s implementation independently of the
+formula. **Non-obvious finding, worth flagging on its own: the null rate does NOT fall as N
+grows -- it RISES (0.25 at N=3 to 0.57 at N=10).** This is because the graph's fixed
+(not phase-sorted) traversal order means a longer cycle gives a random phase assignment MORE
+opportunities to produce a self-crossing, winding path by pure chance, not fewer. A naive
+expectation that "a longer cycle will be easier to interpret" is therefore wrong on the
+null-rate axis specifically (it is right on the RESOLUTION axis, review's second point) --
+a future R8 needs a real signal strong enough to clear a HIGHER bar at larger N, not a lower
+one.
+
+**Applied to the one real example available**: computed the actual instantaneous phase
+(analytic-signal angle, at the midpoint of R7's analysis window) for `barabasi_albert`
+seed=0's verified triangle [7, 4, 22]: phases 2.166, 1.589, 0.972 radians -- all three
+within a 1.19-radian span (less than pi), so **the observed winding number is 0** by
+construction (three points spanning less than a semicircle can never wind, regardless of
+connection order). The permutation-test null rate computed on these exact 3 phase values
+(`shuffled_null_rate`, review's alternative method) is also 0.0 for the same reason. This is
+consistent with genuine local phase-CLUSTERING among these 3 nodes (an interesting
+observation in its own right -- their phases are close together, suggestive of local
+entrainment) but is not itself a winding measurement result, and is not claimed as one.
+
+**Conclusion for R8**: the null-rate table above is now a standing reference. Per review's
+stated conditions, R8 should not be attempted until (a) multiple fully-covered cycles of
+length >= 6 exist, AND (b) any observed winding rate is compared against this table's
+null, not treated as meaningful on its own merit.
+
+### 15.3 Why does persistence stay local? Three measurements, as requested
+
+**(a) Degree distribution: verified vs. all nodes**, damping=0.05, `saturation="cubic"`,
+`verify_long_window`-verified data (100 runs, 2400 total node-checks):
+
+| | mean degree | median | n |
+|---|---|---|---|
+| all nodes | 3.927 | 4.0 | 2400 |
+| **verified nodes** | **4.318** | 4.0 | 223 |
+| non-verified nodes | 3.887 | 4.0 | 2177 |
+
+Verified nodes have ~10% higher mean degree than the population -- a real bias, consistent
+in direction with Sec.14.3's topology-level clustering finding, but **modest on its own**.
+A 10% single-node degree bias could not, by itself, produce the 7-30x cycle-level
+enrichment Sec.14.3 measured -- multiple ADJACENT nodes all being verified compounds a
+modest per-node bias nonlinearly, so the cycle-level effect is larger than the node-level
+degree bias alone would predict. This suggests spatial CLUSTERING of verified nodes (they
+tend to sit next to each other, not just individually prefer high-degree positions) beyond
+what a per-node degree preference explains on its own -- not resolved further here.
+
+**(b) Why doesn't oscillation propagate to non-verified neighbors?** Checked the two
+candidate mechanisms review named directly:
+
+- **Coupling strength**: every edge in every topology used here has identical weight
+  (`w_vv` mean 1.0000, `w_vn` mean 1.0000, `w_nn` mean 1.0000, n=88/787/3837 edges
+  respectively) -- **RULED OUT structurally, not just empirically**: the topology
+  generators (`topology.py`) always produce a binary 0/1 adjacency before asymmetrization,
+  and asymmetrization (Sec.9.1) preserves each edge's AVERAGE weight exactly -- there is no
+  coupling-strength heterogeneity anywhere in this substrate for "weak coupling" to
+  describe. Non-propagation is not a coupling-strength effect.
+- **Amplitude falloff**: measured each node's own final-quarter mean `|x|` (a full
+  trajectory rerun per config, not derived from the screening summary):
+
+  | | mean amplitude | vs. verified |
+  |---|---|---|
+  | verified nodes | 12.18 | -- |
+  | non-verified, DIRECT neighbor of a verified node | 8.76 | **72%** |
+  | non-verified, no verified neighbor | 7.38 | 61% |
+
+  Amplitude does NOT sharply cut off at the verified/non-verified boundary -- direct
+  neighbors retain 72% of the verified amplitude, and even non-adjacent nodes retain 61%.
+  **Amplitude is reaching most of the graph; classification as "verified" is not.** This
+  points away from "the drive doesn't reach them" and toward a THIRD mechanism review
+  listed but this section did not directly test: PHASE mismatch / lack of coherent
+  entrainment -- neighboring nodes are visibly driven (large amplitude) but apparently do
+  not lock into a clean enough periodic pattern to pass R3's reversal-count precondition,
+  R4's autocorrelation-peak detection, or `settled`'s plateau check. This is reported as
+  the leading HYPOTHESIS from this data, not a conclusion -- confirming it directly (e.g.
+  checking driven-but-unverified neighbors' own R3/R4 diagnostics specifically) is natural
+  next-PR work, not done here.
+
+**(c) Persistent-node density needed for long cycles to be plausible.** Using the
+independence approximation (`p^N`, Sec.11.2/14.3) combined with the observed clustering
+enrichment (~7-30x across topologies, Sec.14.3):
+
+| target P(>=1 fully-covered cycle) | N=3 | N=6 | N=10 |
+|---|---|---|---|
+| 1% (no enrichment) | p=0.215 | p=0.464 | p=0.631 |
+| 1% (15x enrichment) | p=0.087 | p=0.296 | p=0.481 |
+| 10% (15x enrichment) | p=0.188 | p=0.434 | p=0.606 |
+
+**The observed density is p=0.093 (9.3%, Sec.14.2's 223/2400).** Even crediting the full
+observed 15x clustering enrichment, this predicts a probability of order 1e-5 per length-6
+cycle -- consistent with finding zero length-6-or-longer covered cycles across the entire
+sweep. Reaching even a 1%-per-cycle chance at N=6 would require p~0.30, roughly **3x the
+currently observed density**. This is a structural gap, not a sampling one: more seeds at
+the current dynamics would not meaningfully change this, since the required density is far
+outside the range this substrate currently produces.
+
+**(d) Persistent fraction, with denominator, stated plainly**: 223 verified node-checks
+out of **2400** (100 runs x 24 nodes, the runs that have >=1 verified node) = **9.3%**;
+223 out of **7200** (all 300 `damping=0.05` configs x 24 nodes, most of which have ZERO
+verified nodes) = **3.1%**. Both denominators are reported because they answer different
+questions: 9.3% describes density WITHIN a graph that already has some persistent
+structure; 3.1% describes density across the full swept parameter space including
+configs with no persistence at all.
+
+### 15.4 Combined statement and the next PR's theme
+
+Confirms S-012 exactly: R8 is not blocked by example count, it is blocked because (i) the
+one available cycle SHAPE (triangles) has both a high, RISING-with-length null rate and
+poor resolution, and (ii) the dynamics that produce verified nodes do not currently produce
+enough of them, densely enough, adjacent to each other, to cover a longer cycle -- a gap of
+roughly 3x in density even crediting the observed clustering bonus. Per review: **the next
+PR's theme is why persistence stays local** -- this section's three measurements narrow
+that question concretely: not a coupling-strength effect (ruled out structurally); not
+primarily an amplitude-reach effect (72%/61% retention at one and two hops); most likely a
+phase-coherence/entrainment effect (hypothesis, not yet directly tested) combined with a
+modest-but-real degree preference (10%) that does not by itself explain the larger
+cycle-level clustering (7-30x) -- implying verified nodes cluster spatially beyond simple
+degree preference, a mechanism not yet identified.
+
+### 15.5 9th-audit and 8th-audit re-check on Sec.15's own claims
+
+- **9th audit:** the null-rate table's own expressibility is exact by construction (a
+  closed-loop sum of wrapped differences is always an integer multiple of `2*pi` up to
+  floating-point error; `compute_winding` is validated against the N=3 analytic formula, not
+  merely self-consistent). The "amplitude reaches non-verified nodes" finding is an
+  achievement-flavored claim about propagation, not a non-achievement claim about winding,
+  so the 9th audit's core question does not directly bind it -- the relevant discipline is
+  that it was measured from full trajectory reruns (not inferred from the cheaper screening
+  summary) specifically so it would not silently inherit the screening pass's own
+  limitations.
+- **8th audit:** was `winding_precheck.py`'s Monte Carlo trial count (200,000), the
+  `enrichment~15x` figure used in 15.3(c), or the choice to check coupling-strength and
+  amplitude specifically (of review's three suggested mechanisms) chosen to produce a
+  particular narrative? No: 200,000 trials was fixed before any N was run (and N=3's result
+  independently matches the closed-form check, which is the actual validation, not the
+  trial count); 15x is the middle of Sec.14.3's own already-reported 7-30x range, not
+  cherry-picked; coupling-strength and amplitude were checked because they were the two
+  concrete, directly-measurable-from-existing-data mechanisms among review's three
+  suggestions -- phase-coherence is reported as the remaining, NOT-yet-tested hypothesis
+  precisely because it could not be checked from data already in hand, not because it was
+  avoided.
