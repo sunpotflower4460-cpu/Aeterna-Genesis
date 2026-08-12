@@ -120,12 +120,17 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # cell (erdos_renyi, strength=0.3) of a 20-cell grid; a
                              # concentrated re-sweep (300 new configs, 30x window baked in
                              # from the start, not a follow-up) REFUTED both the resulting
-                             # predictions -- lower strength does NOT raise the hit rate
-                             # (non-monotonic, peak at 0.5; the 2 lowest strengths show
-                             # ZERO hits) and erdos_renyi is NOT the highest-rate topology
-                             # (random_regular's pooled rate, 8.0%, exceeds erdos_renyi's
-                             # 2.7%) -- both reported plainly, per review's explicit
-                             # instruction. Unplanned positive finding: clustering +
+                             # predictions -- lower strength does NOT raise the hit rate (the
+                             # 2 lowest strengths, 0.1/0.2, show ZERO hits out of 30 each;
+                             # PR-R6's own "peak at 0.5" reading of 0,0,1,2,1 raw hits was
+                             # ITSELF review's own error repeated -- see CORRECTION note
+                             # below, counts this small cannot establish a peak, only that
+                             # 0.1/0.2 are lower) and erdos_renyi is NOT confirmed as the
+                             # highest-rate topology on this sample (random_regular's pooled
+                             # count, 4/50, is nominally higher than erdos_renyi's 4/150, but
+                             # see the same correction: also too few graphs, per topology, to
+                             # rank confidently) -- both reported plainly, per review's
+                             # explicit instruction. Unplanned positive finding: clustering +
                              # window-robustness together find the TRUE rate is 9/300=3.0%
                              # graphs (up from the earlier 2/300=0.67%), bringing the running
                              # total to 12 known window-robust locations. Denominator
@@ -587,11 +592,13 @@ open_issues:
      locations share exactly ONE cell (erdos_renyi, strength=0.3) of a 4-topology x
      5-strength grid, motivating a concentrated re-sweep (300 new configs, 30x window baked
      in from the start, not applied as a follow-up filter). BOTH resulting predictions were
-     tested and REFUTED, reported plainly per review's explicit instruction: the rate vs.
-     strength is non-monotonic (peak at 0.5, not the lowest strength -- 0.1 and 0.2 show
-     ZERO hits), and erdos_renyi is not the highest-rate topology (random_regular's 8.0%
-     pooled rate exceeds erdos_renyi's 2.7%). The unplanned positive finding: clustering +
-     window-robustness together (Sec.25.1) find the true rate is 9/300=3.0% graphs, far
+     tested and REFUTED at the ONLY resolution the raw counts support: 0.1 and 0.2 (0/30
+     each) show zero hits. Review CORRECTED my own initial over-read of this same data (a
+     third occurrence of the exact small-sample-pattern mistake review is itself flagging,
+     see below): 0,0,1,2,1 raw hits across 5 strength bins does not establish a peak at 0.5,
+     and 4/50 (random_regular) vs 4/150 (erdos_renyi) does not establish a topology ranking
+     either -- both corrected in place (Sec.25.1) to state only what the counts support.
+     The unplanned positive finding: clustering +
      higher than the earlier 2/300=0.67% estimate, bringing the running total to 12 known
      window-robust locations (9 with window-robustness only, not yet the fuller battery).
      Per review's two required corrections: the denominator is now GRAPHS, not covered
@@ -4000,34 +4007,61 @@ of the run (not applied as a follow-up filter the way PR-R5's 15x->30x check was
 - **Control**: seeds 130-139 (10 independent, new), the other 3 topologies, same 5
   strengths -- 150 configs.
 
-**Prediction 1 (lower strength -> higher window-robust rate) -- REFUTED:**
+**Prediction 1 (lower strength -> higher window-robust rate) -- REFUTED, but ONLY to the
+resolution these counts support (see 25.1.1 CORRECTION below):**
 
 | `erdos_renyi` strength | window-robust locations / graphs | rate |
 |---|---|---|
 | 0.1 | 0 / 30 | 0.0% |
 | 0.2 | 0 / 30 | 0.0% |
 | 0.3 | 1 / 30 | 3.3% |
-| **0.5** | **2 / 30** | **6.7% (peak)** |
+| 0.5 | 2 / 30 | 6.7% |
 | 1.0 | 1 / 30 | 3.3% |
 
-The rate is **non-monotonic**, and its peak is at strength=0.5, not the lowest strength
-tested. The two LOWEST strengths (0.1, 0.2) -- the ones the prediction most confidently
-expected to be enriched -- show **zero** hits. This directly refutes the specific,
-falsifiable prediction PR-R5's closing message made.
+What the data actually supports: the two LOWEST strengths (0.1, 0.2) -- the ones the
+prediction most confidently expected to be enriched -- show **zero** hits out of 30 each.
+This alone refutes the specific, falsifiable prediction PR-R5's closing message made. It
+does NOT establish a peak at any particular strength among {0.3, 0.5, 1.0} -- those counts
+(1, 2, 1 out of 30 each) are too close together, and each individual count too small, to
+rank with any confidence; see 25.1.1.
 
-**Prediction 2 (erdos_renyi-exclusivity) -- also REFUTED:**
+**Prediction 2 (erdos_renyi-exclusivity) -- also not confirmed on this sample; also NOT a
+confirmed ranking, per the same correction:**
 
 | topology (pooled across all 5 strengths) | window-robust locations / graphs | rate |
 |---|---|---|
 | `erdos_renyi` | 4 / 150 | 2.7% |
-| **`random_regular`** | **4 / 50** | **8.0% (highest)** |
+| `random_regular` | 4 / 50 | 8.0% |
 | `watts_strogatz` | 0 / 50 | 0.0% |
 | `barabasi_albert` | 1 / 50 | 2.0% |
 
-`random_regular`'s pooled rate (8.0%) exceeds `erdos_renyi`'s (2.7%) -- the topology the
-first 3 locations happened to share is not, on this larger sample, the topology with the
-highest rate. Both refutations are stated plainly, per review's explicit instruction, not
-softened or buried under the positive finding below.
+What the data actually supports: `erdos_renyi` is NOT uniquely enriched relative to every
+other topology -- `random_regular`'s raw count (4) equals `erdos_renyi`'s raw count (4) on
+a THIRD as many graphs, which refutes "erdos_renyi is exclusively enriched." It does NOT
+establish that `random_regular`'s rate is genuinely higher -- 4 vs. 4 is too small a raw
+count, on both topologies, to rank confidently; see 25.1.1. Both refutations (the narrow,
+count-supported form) are stated plainly, per review's explicit instruction, not softened
+or buried under the positive finding below.
+
+#### 25.1.1 CORRECTION: my own initial write-up over-read these same counts -- a third
+occurrence of exactly the pattern review is flagging
+
+The first draft of this section reported "non-monotonic, peak at strength=0.5" and
+"`random_regular`'s pooled rate exceeds `erdos_renyi`'s" as findings, not merely as the raw
+numbers. Review caught this directly: **"0,0,1,2,1 は「0.5にピーク」ではありません。区別できる
+差ではない。"** The raw hit counts behind those percentages are 0, 0, 1, 2, 1 (out of 30 each)
+for the strength axis, and 4 vs. 4 (out of 150 vs. 50) for the topology axis -- none of
+these differences are distinguishable from sampling noise at this sample size. Review's own
+diagnosis of the root cause applies here too, verbatim: this is the SAME error as reading
+"all 3 known locations fall in one cell of a 20-cell grid" as a structural pattern rather
+than an n=3 coincidence (the very premise 25.1's sweep was designed to test) -- a small
+count of hits, sliced into 5 (or 4) bins, will almost always show SOME bin looking like a
+"peak" or "leader" by chance alone, and reporting the largest bin as if it were the finding
+repeats the mistake at one remove. **Corrected scope, going forward**: only claims a
+specific bin count can distinguish from its neighbors (here: "0.1 and 0.2 show zero hits,
+the higher strengths do not") are stated as findings; relative orderings among bins that are
+each in the single digits are reported as raw counts only, with no ranking language
+("peak," "highest," "exceeds") attached to them.
 
 **The unplanned positive finding: the TRUE rate is much higher than any prior estimate.**
 Clustering the raw smooth-winding cycle-checks by shared nodes (same connected-component
