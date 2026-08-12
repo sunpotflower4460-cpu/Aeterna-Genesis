@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 AUDIT
 
 ```yaml
 id: relational_r1
@@ -45,7 +45,27 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # pass the smoothness gate -- R8's determination is recorded as
                              # "this substrate's diffusive coupling does not produce a cycle
                              # on which winding survives the smoothness gate," not "material
-                             # doesn't exist" and not "R8 is impossible."
+                             # doesn't exist" and not "R8 is impossible." PR-R3 (Sec.21,
+                             # S-016) added `coupling_form` as a switchable axis (default
+                             # unchanged, diffusive) -- three new forms tested (bounded_tanh,
+                             # cubic_odd, sinusoidal), full battery (exhaustive verification,
+                             # cycle coverage, winding, damage-recovery) on the same 300-
+                             # config sweep, screening abolished per S-015's exact FNR
+                             # measurement. cubic_odd collapses to near-zero persistence
+                             # (0.04%), exactly matching its predicted degenerate origin
+                             # Jacobian (Sec.21.3) -- diagnosed as decay-or-blowup, not a
+                             # numerical bug. bounded_tanh roughly DOUBLES density (40.9% vs
+                             # diffusive's 27.7%) and cycle coverage (314 vs 178).
+                             # bounded_tanh AND sinusoidal each produce exactly ONE
+                             # smooth-winding cycle -- the SAME underlying graph
+                             # (erdos_renyi seed=9, strength=0.3, 6-cycle) under both forms,
+                             # robust to doubling the verification window -- the first
+                             # nonzero result on this criterion in the entire series.
+                             # Explicitly reported as a CANDIDATE/LEAD, not an achieved
+                             # result: a naive chance-alone estimate puts P(>=1 false
+                             # positive across ~504 trials) at ~22%, so one example cannot
+                             # settle real-vs-chance on its own -- flagged for a future,
+                             # broader sweep, not declared.
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -375,6 +395,33 @@ open_issues:
      at-scale evidence for exactly the mechanism review's own hypothesis for that axis
      proposed, left as an explicit open decision for review rather than acted on
      unilaterally."
+  - "PR-R3 (Sec.21, S-016): review replaced the 'still ~1-2 cycles' trigger with a stronger
+     one -- Sec.20.4's 0/178 smoothness-gate result on abundant material, plus review's own
+     mechanistic account (diffusive coupling entrains phases locally, opposite to what
+     winding requires) -- and asked for `coupling_form` as a switchable axis. Implemented
+     (`substrate.py`, default unchanged): `bounded_tanh`, `cubic_odd`, `sinusoidal`, chosen
+     as the natural next 'odd function of the pairwise difference' family, NOT designed
+     toward winding -- Sec.21.2 discloses the one real tension (awareness of sinusoidal's
+     Kuramoto-literature association) rather than concealing it. Sec.21.3 re-derived the
+     theorem chain: the gradient-flow no-periodicity argument (memory=off, symmetric W) and
+     the energy-decay argument (memory=on, symmetric W, damping>0) generalize to all three
+     new forms (each is a gradient flow of a bounded-below potential); the q^2>p*gamma^2
+     linear-instability argument does NOT generalize uniformly -- bounded_tanh/sinusoidal
+     share diffusive's EXACT origin Jacobian (=-L, confirmed numerically), cubic_odd's
+     origin Jacobian is the ZERO matrix. Full battery (Sec.21.4, screening abolished per
+     S-015's exact 44.3%-precision/26.1%-recall measurement): cubic_odd collapses to 0.04%
+     density (0 covered cycles), diagnosed as a genuine decay-or-blowup split, not a bug --
+     confirming the predicted theorem breakage directly. bounded_tanh roughly DOUBLES
+     density (40.9% vs diffusive's 27.7%) and cycle coverage (314 vs 178). bounded_tanh AND
+     sinusoidal each produce exactly ONE smooth-winding cycle -- the SAME underlying graph
+     (erdos_renyi seed=9, strength=0.3, length-6 cycle) under both forms, robust to doubling
+     the verification window (15x->30x) -- the first nonzero result on this criterion in
+     the entire series. Reported explicitly as a CANDIDATE/LEAD: a naive chance-alone
+     estimate across ~504 total covered-cycle checks puts P(>=1 false positive) at ~22%, so
+     this cannot be called achieved from one example; no new SETTLED.md achievement entry
+     was written, left for review's decision. Screening formally abolished
+     (`verify.py`'s module docstring, a standing note): every sweep from this PR onward uses
+     `verify_long_window_all_nodes` directly, no short-window pre-filter."
 ```
 
 ---
@@ -2990,3 +3037,142 @@ Computed both analytically (phi'(0)) and numerically (finite-difference Jacobian
   silently patched around: **`cubic_odd` coupling is not expected to reproduce sustained
   oscillation via the SAME mechanism the other three forms share**, and Sec.21.4 checks this
   prediction directly against the exhaustive sweep.
+
+### 21.4 Full battery: exhaustive verification, cycle coverage, winding, damage-recovery --
+same 300-config damping=0.05/saturation=cubic sweep space as the diffusive baseline
+(PR-R2.8), no screening (Sec.21.5), for all three new forms
+
+| coupling_form | density (uncond / cond) | length>=5 cycles covered | nonzero winding | **smooth winding** | damage-recovery sample |
+|---|---|---|---|---|---|
+| `diffusive` (baseline, PR-R2.8) | 27.7% / 31.6% | 178 | 86 (48.3%) | **0 (0.0%)** | 8/8 (100%, Sec.13.6/14.1) |
+| `bounded_tanh` | **40.9% / 45.4%** | **314** | 114 (36.3%) | **1 (0.3%)** | 7/8 (87.5%) |
+| `sinusoidal` | 9.4% / 26.9% | 190 | 98 (51.6%) | **1 (0.5%)** | 6/8 (75.0%) |
+| `cubic_odd` | 0.04% / 6.25%* | 0 | 0 | 0 | 0/3 (0.0%) |
+
+*`cubic_odd`'s conditional density is not a meaningful percentage -- only 2/300 runs had
+ANY verified node, so the denominator is 2*24=48, not a comparable population to the other
+rows'.
+
+**`bounded_tanh` roughly doubles persistence density and cycle coverage relative to
+diffusive** -- a substantial, disclosed positive finding about the coupling-form axis on
+its own, independent of the winding question. **`cubic_odd` collapses to near-total
+absence of persistence**, exactly as Sec.21.3 predicted from its vanishing origin
+Jacobian. **`bounded_tanh` and `sinusoidal` each produce exactly ONE smooth-winding
+cycle** -- the first nonzero result on this criterion anywhere in this PR series. All of
+this is examined in detail below, with the same scrutiny applied whether the result looks
+encouraging or not.
+
+#### 21.4.1 `cubic_odd`'s near-total collapse: diagnosed, not a numerical bug
+
+The sweep log shows `RuntimeWarning: overflow` for `cubic_odd` at high
+`asymmetry_strength`. Diagnosed directly (not assumed): at the DEFAULT/low strength
+(0.3, `random_regular`, 5 seeds spot-checked), all trajectories stay FINITE and DECAY (peak
+amplitude ~0.2-0.3 early, ~0.006-0.04 by a 20000-step tail) -- consistent with Sec.21.3's
+prediction that no linear growth mechanism exists near the origin, so the initial small
+epsilon-perturbation simply relaxes away. At HIGH strength (20.0, spot-checked 3 seeds),
+trajectories are confirmed NON-FINITE (`|x|` reaching 1e39-1e85 within the original
+3000-step window) -- the cubic (superlinear) response, once ANY difference exceeds O(1),
+grows as that difference's CUBE, a genuine positive-feedback blowup absent from the other
+three (bounded or exactly-linear) forms. Confirmed `instruments.period()` correctly returns
+`defined=False` for a non-finite trajectory (spot-checked directly), so
+`verify_long_window_all_nodes` correctly reports `verified_sustained=False` for these runs
+-- the near-zero density is NOT an artifact of mishandled overflow, it is the honest,
+correctly-measured consequence of a coupling form with (a) no destabilizing mechanism near
+equilibrium and (b) an unbounded, superlinear response once perturbed away from it: `cubic_odd`
+has essentially no intermediate regime between "decays back to near-zero" and "diverges,"
+exactly the two outcomes Sec.21.3's Jacobian argument would predict for a form with a
+degenerate local linearization and no saturating ceiling of its own on the coupling term
+(the saturation axis's cubic cap acts on x_i alone, not on the coupling response to a
+difference).
+
+#### 21.4.2 The one smooth-winding example: full account, with the scrutiny an unusual
+result requires
+
+Both `bounded_tanh` and `sinusoidal`'s single smooth-winding cycle are THE SAME underlying
+graph: `erdos_renyi`, seed=9, `asymmetry_strength=0.3`, cycle `[4, 14, 9, 0, 12, 21]`
+(length 6). This is NOT two independent events -- it is one real-world graph/topology
+instance, observed to produce genuine smooth winding under two different (but
+linearization-matched, Sec.21.3) coupling functional shapes. It was NOT a covered cycle at
+all under `diffusive` coupling on the same seed/strength (fewer nodes verified there, so
+this specific cycle never had all 6 nodes persist).
+
+| coupling_form | winding | max adjacent step | smoothness gate (< pi/2 = 1.5708) |
+|---|---|---|---|
+| `bounded_tanh` | -1 | 1.4888 | PASS |
+| `sinusoidal` | -1 | 1.4951 | PASS |
+
+**Robustness check** (disclosed, fixed choice -- extend_factor doubled from 15x to 30x, not
+a search over many windows for a favorable one): re-verified on the SAME cycle at a 30x
+window instead of 15x. Result is essentially unchanged for both forms (`bounded_tanh`:
+winding=-1, max_step=1.4882; `sinusoidal`: winding=-1, max_step=1.4944) -- this is not an
+artifact of one particular snapshot moment; it persists under a substantially longer
+observation window.
+
+**Statistical caution, stated plainly.** The margin below the smoothness threshold
+(pi/2=1.5708) is modest -- about 0.08 rad (~5 degrees) for both forms, not a wide margin.
+Treating the two sweeps' 314+190=504 total covered-cycle checks as if they were independent
+draws against Sec.16.2's <0.05% null rate (which assumes i.i.d. RANDOM phases -- not
+strictly applicable here, since these are correlated, real dynamical trajectories, not
+random draws, but useful as an order-of-magnitude sanity bound): the expected count of
+false positives by chance alone is ~504 * 0.0005 ~= 0.25, and P(at least one hit | that
+expected rate, Poisson) ~= 22%. **This means a single hit, on its own, across ~500 trials
+is NOT strong enough evidence to rule out chance.** What raises this above a pure
+coincidence, without settling the question, is the CROSS-FORM replication: the SAME graph,
+under two different coupling shapes that happen to share the same near-origin
+linearization, both produced a smooth-winding result on the SAME cycle -- a coincidence
+occurring independently on the same graph under two different dynamics is less likely than
+a single one-off hit, though this is a qualitative, not a formally quantified, argument (no
+attempt is made here to compute a p-value for the cross-form coincidence specifically --
+that would require a null model for how correlated two different coupling forms' winding
+outcomes are on the same graph, which is not established).
+
+**Explicit conclusion, matching this series' standing discipline against overclaiming: this
+is reported as a CANDIDATE / LEAD, not as an achieved result.** R8 (winding number as an
+instrument) is still NOT built. No new SETTLED.md entry claiming winding is "achieved" is
+written this PR -- that determination is left to review, consistent with every prior PR in
+this series treating a first positive signal as something to flag and scrutinize, not
+something to declare. The concrete, disclosed next step this finding suggests (not run
+this PR): sweep `bounded_tanh`/`sinusoidal` more broadly (more seeds, more topologies) to
+see whether MORE examples of smooth winding turn up elsewhere, which would be the actual
+resolution of the "chance vs. real" question above -- a single example, however robust to
+window length, cannot answer it alone.
+
+### 21.5 Screening abolished (review's explicit instruction)
+
+Per review's instruction, given PR-R2.8's exact measurement of screening's error rate
+(precision 44.3%, recall 26.1% -- i.e. missing 73.9% of true positives, Sec.20.2): no
+short-window pre-filter was used anywhere in this PR's sweeps. `verify_long_window_all_nodes`
+was called directly on the full 7200-node-check candidate space for each of the three new
+coupling forms, exactly as it was for the diffusive re-verification in PR-R2.8. Documented
+in `verify.py`'s module docstring (a standing note, not a one-time remark) so this is not
+silently reintroduced by a future PR reaching for the old, cheaper-looking pattern.
+
+### 21.6 9th-audit and 8th-audit re-check on Sec.21's own claims
+
+- **9th audit:** every measurement in this section uses instruments already validated
+  earlier in this series (`verify_long_window_all_nodes` from PR-R2.7/2.8,
+  `winding_precheck.py` unchanged since Sec.16, `check_attractor_recovery` unchanged since
+  Sec.13) -- no threshold, window rule, or gate was loosened, tightened, or introduced fresh
+  to produce Sec.21.4's results. The smooth-winding finding is reported with an EXPLICIT
+  statistical-caution paragraph (the ~22% chance-alone probability) rather than as a bare
+  positive count -- the discipline this series applies to non-achievement claims (never
+  assert without checking expressibility) is applied here in the mirror-image direction:
+  never assert achievement without checking whether the positive result could plausibly be
+  chance.
+- **8th audit, on the section as a whole:** did discovering ONE smooth-winding example
+  change how anything upstream was measured or reported? No -- the comparison table
+  (Sec.21.4) reports ALL three new forms' full results, including `cubic_odd`'s complete
+  failure and `bounded_tanh`/`sinusoidal`'s density/coverage numbers, not just the winding
+  finding in isolation; the robustness check (extend_factor 15x->30x) and the chance-alone
+  calculation were BOTH performed and BOTH reported, including the calculation that argues
+  AGAINST over-trusting the result, not only checks that would have supported it. Was the
+    smooth-winding example itself found by searching multiple windows/checkpoints for a
+  favorable one? No -- it was found on the FIRST computation, at the SAME fixed midpoint-of-
+  window rule used throughout this series (Sec.14.4/15.2/19.1/20.4); the SECOND (30x)
+  computation was run afterward, specifically as a disclosed robustness check, and its
+  result (not materially different) is reported regardless of whether it had changed the
+  conclusion. Sec.21.2's disclosed tension (choosing `sinusoidal` partly due to awareness of
+  its literature association with phase coupling) is revisited here: that awareness could
+  have created pressure to report this section's result more confidently than the data
+  supports -- the explicit "CANDIDATE / LEAD, not achieved" framing and the chance-alone
+  calculation are the concrete, checkable evidence that this pressure was not acted on.
