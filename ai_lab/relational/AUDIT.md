@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 AUDIT
 
 ```yaml
 id: relational_r1
@@ -65,7 +65,21 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # result: a naive chance-alone estimate puts P(>=1 false
                              # positive across ~504 trials) at ~22%, so one example cannot
                              # settle real-vs-chance on its own -- flagged for a future,
-                             # broader sweep, not declared.
+                             # broader sweep, not declared. PR-R3.1 (Sec.22) tested this ONE
+                             # example directly, per review's correction that 2 hits on the
+                             # SAME graph under 2 coupling forms is replication, not 2
+                             # independent chance draws. Sign-symmetry (W->W^T): INCONCLUSIVE
+                             # (eigenvalues of W/W^T are identical, so this test cannot
+                             # isolate sign from spatial localization for this system).
+                             # Perturbation robustness: STRONG CONFIRM, 14/14 (12 independent
+                             # initial conditions + 2 amplitude-perturbation recoveries)
+                             # reproduce winding=-1 with near-identical max_adjacent_step.
+                             # Cycle-shift (223 nearby cycles tested): MIXED but coherent --
+                             # survives deformation through the coherent node cluster
+                             # (2 genuine detour confirmations), fails when substituting a
+                             # diagnosed peripheral (low-degree) node. Combined verdict: NOT
+                             # NOISE. A candidate S-017 write-up is drafted for review's
+                             # decision (Sec.22.4), not asserted unilaterally.
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -422,6 +436,32 @@ open_issues:
      was written, left for review's decision. Screening formally abolished
      (`verify.py`'s module docstring, a standing note): every sweep from this PR onward uses
      `verify_long_window_all_nodes` directly, no short-window pre-filter."
+  - "PR-R3.1 (Sec.22): review corrected the ~22% chance-alone estimate (Sec.21.4.2) -- 2
+     hits on the SAME graph/seed/strength/cycle under 2 coupling forms is replication, not
+     2 independent chance draws -- and asked for 3 targeted tests on this ONE example before
+     any broader sweep. Sign-symmetry (W->W^T, global and local-edge-only): INCONCLUSIVE,
+     not failed -- both reversals eliminate sustained oscillation on this node set entirely
+     rather than flipping sign, diagnosed as expected given eigenvalues of W/W^T are
+     IDENTICAL (only eigenvectors, i.e. spatial localization, differ under transpose) -- the
+     test cannot isolate sign from location for this system. Perturbation robustness: STRONG
+     CONFIRM -- 12 independent random initial conditions + 2 amplitude-perturbation
+     recoveries (14 trials, 2 coupling forms) all reproduce winding=-1 with
+     `max_adjacent_step` clustered in [1.4818, 1.4957]. Cycle-shift (223 nearby cycles
+     found via manual DFS, networkx unavailable): MIXED but coherent -- 2 genuine 'detour'
+     deformations through well-connected extra nodes preserve the same winding sign (plus 1
+     trivial same-loop-reversed duplicate, disclosed as not new evidence); the one direct
+     same-length node-swap this graph's structure offers FAILS (winding=0), diagnosed to a
+     peripheral (degree-2) substituted node with a phase ~pi away from the original --
+     consistent with a spatially bounded real structure, not unstructured noise. Combined
+     verdict: NOT NOISE. A candidate S-017 write-up is drafted (Sec.22.4) for review to
+     accept/edit/decline, not written into SETTLED.md unilaterally. Independently, recorded
+     bounded_tanh's density-doubling (27.7%->40.9%) as its own finding: since bounded_tanh
+     shares diffusive's exact origin linearization, the difference is entirely a large-
+     amplitude effect; comparing all 3 linearization-matched forms suggests monotonicity
+     (not boundedness alone) is the more load-bearing property (sinusoidal, also bounded but
+     non-monotonic, has the LOWEST density of the three) -- offered as the most consistent
+     interpretation of 4 data points, explicitly not a proven, isolated mechanism (would
+     need an unbounded+non-monotonic 4th form to complete a 2x2 factorial, not built)."
 ```
 
 ---
@@ -3176,3 +3216,216 @@ silently reintroduced by a future PR reaching for the old, cheaper-looking patte
   have created pressure to report this section's result more confidently than the data
   supports -- the explicit "CANDIDATE / LEAD, not achieved" framing and the chance-alone
   calculation are the concrete, checkable evidence that this pressure was not acted on.
+
+## 22. PR-R3.1: three targeted tests on the single winding example -- one inconclusive
+(not failed), one strongly confirming, one mixed but physically coherent; combined verdict
+is NOT NOISE
+
+Per review's correction: 2 hits (bounded_tanh AND sinusoidal), on the SAME graph/seed/
+strength/cycle, with the SAME sign, is a form of replication, not two independent draws
+against a chance table -- review's instruction to test this example directly, before any
+broader sweep, is executed here. Target example throughout: `erdos_renyi`, seed=9,
+`asymmetry_strength=0.3`, cycle `[4, 14, 9, 0, 12, 21]` (length 6), which gave winding=-1,
+`max_adjacent_step`~1.49 for both `bounded_tanh` and `sinusoidal` (Sec.21.4.2).
+
+### 22.1 Test 1: sign symmetry under orientation reversal -- INCONCLUSIVE (not failed)
+
+Two reversals tested: (a) global `W -> W^T` (equivalent to flipping the sign of the
+asymmetry construction's `chi` for every edge); (b) a more surgical LOCAL reversal of only
+the 6 edges belonging to the cycle itself, leaving the rest of the graph untouched. Neither
+produced winding=+1 on the same 6 nodes -- both instead ELIMINATED sustained oscillation on
+this node set entirely (`winding=0`, `max_adjacent_step`~0.0000-0.0001, `all_settled=False`
+for both forms, both reversal types).
+
+**This is not a failed prediction -- it is a test that does not cleanly apply, for a
+reason grounded in linear algebra, checked directly rather than assumed:** the eigenvalues
+of a real square matrix W and its transpose W^T are IDENTICAL (`det(W-lambda*I) =
+det((W-lambda*I)^T)`, always, for any real square matrix). The q^2 > p*gamma^2 threshold
+(Sec.10.3/21.3) depends ONLY on eigenvalues of the coupling operator -- so a global
+transpose changes NOTHING about which growth rates/rotation magnitudes exist in the system.
+What transpose DOES change is the EIGENVECTORS -- which spatial pattern of nodes hosts a
+given unstable mode -- and there is no guarantee that the SAME 6 nodes remain the
+localization of an analogous mode after transpose; empirically, they do not (this specific
+node set stops oscillating altogether under both reversal variants). The naive "same cycle,
+opposite sign" expectation implicitly assumes a level of structural symmetry (e.g. a normal
+operator, where eigenvectors ARE preserved under transpose up to conjugation) that this
+general asymmetric, inertial, saturated, nonlinear-coupling system does not provide by
+construction. **Verdict: this test neither confirms nor refutes the original finding** --
+it was not possible to execute in a way that isolates sign from spatial localization for
+this specific system.
+
+### 22.2 Test 2: perturbation robustness -- STRONGLY CONFIRMS
+
+Two independent perturbation designs, both against the FORWARD (original) graph:
+
+- **6 independent random initial conditions** (disclosed seeds 100-105, fixed in the script
+  before any run, not searched for a favorable outcome), same graph W, same seed=9 topology,
+  for each of `bounded_tanh` and `sinusoidal` (12 trials total).
+- **Amplitude perturbation** (damage-recovery style, reusing `verify.py`'s own
+  `DEFAULT_PERTURB_FACTOR=0.4` / `DEFAULT_CHECKPOINT_FRAC=0.6` constants unchanged): the
+  settled trajectory's entire state is rescaled by 0.4 at a checkpoint and continued, for
+  each of the 2 forms (2 trials).
+
+**Result: 14/14 trials give `winding=-1`, PASS the smoothness gate, with
+`max_adjacent_step` clustered tightly in [1.4818, 1.4957]** -- essentially the same value
+every time, across independent random draws AND after being knocked off-plateau and
+allowed to re-settle. Two of the fourteen (`bounded_tanh` and `sinusoidal` both at
+`ic_seed=101`) show `all_settled=False` on the strict per-node flag despite still producing
+a consistent, smooth, correctly-signed winding value -- noted, not concealed, but does not
+change the overall pattern. **A pure one-off coincidence would not be expected to reproduce
+identically across 12 independent random initial conditions plus 2 different perturbation
+recoveries, for 2 different coupling forms.** This is the single strongest piece of evidence
+in this section.
+
+### 22.3 Test 3: cycle-shift (loop-boundary deformation) -- MIXED, but physically coherent,
+not consistent with pure noise
+
+Manually enumerated (networkx unavailable in this environment; DFS restricted to the local
+19-node neighborhood) all simple cycles sharing >=4 of the original 6 nodes: **223
+candidates**, lengths 4-9. Winding was evaluated on ALL 223, for both forms, reusing a
+SINGLE trajectory snapshot per form (no new simulation per candidate cycle -- phase is a
+per-node quantity, read off once for all 19 local nodes).
+
+**Result: exactly 3/223 pass the smoothness gate, for BOTH forms, identically:**
+
+1. `[0, 9, 14, 4, 21, 12]` (length 6) -- on inspection, this is the EXACT SAME 6 edges as
+   the original cycle, just traversed in the opposite rotational order (a rotation of the
+   REVERSED original sequence). Its winding=+1 is the trivial algebraic consequence of
+   reversing a cyclic sum's traversal direction (`compute_winding` sums signed differences
+   around a loop; reversing the order negates every term) -- **not new physical evidence**,
+   just a re-discovery of the same loop via the DFS search, disclosed rather than silently
+   dropped.
+2. `[0, 9, 2, 15, 1, 14, 4, 21, 12]` (length 9) -- the same reversed loop with its 9-14 edge
+   replaced by a 4-hop detour through nodes 2, 15, 1. winding=+1 (matches the reversed
+   loop's sign, consistent with a smooth deformation of the same enclosed structure).
+3. `[0, 9, 2, 15, 6, 14, 4, 21, 12]` (length 9) -- the same detour with node 6 substituted
+   for node 1. winding=+1, same as above.
+
+**These two detour cycles ARE genuine new evidence**: rerouting through 3 extra,
+well-connected nodes (all part of the same local neighborhood) while preserving the
+enclosed structure's winding sign is consistent with a real, spatially coherent rotating
+region -- exactly what a topological quantity should do under a smooth boundary
+deformation that does not cross the structure's core.
+
+**The most direct test the graph's actual structure offers -- swap exactly ONE node,
+same length 6** -- `[0, 12, 21, 4, 14, 13]` (node 9 replaced by node 13, the only such
+same-length alternative this graph provides) -- **FAILS**: `winding=0`,
+`max_adjacent_step=2.27` (well past pi/2, not a marginal miss), for both forms. Diagnosed
+directly, not left unexplained: node 13 has degree 2 (peripheral in this graph, versus
+node 9's degree 4) and an instantaneous phase (~-3.12 rad) nearly pi away from node 9's
+(~-0.12 rad) -- consistent with node 13 sitting OUTSIDE the coherent cluster's actual
+spatial extent, not with the phase field being unstructured noise (unstructured noise would
+not correlate a large phase jump with low graph degree/peripherality in this specific,
+interpretable way).
+
+**Verdict: MIXED, not a clean pass.** The phenomenon survives deformation through nodes
+that are actually part of the coherent structure, but does not survive substituting in a
+node that is not -- a spatially BOUNDED coherent region is exactly what a real, localized
+physical structure would produce (finite extent, sharp-ish edge), and is a more specific,
+harder-to-fake pattern than either "works everywhere" or "works nowhere but the one exact
+cycle" would be.
+
+### 22.4 Combined verdict
+
+Per review's framing ("1〜3が通れば...決着します"): weighing the three tests together --
+Test 1 is inconclusive by construction (not evidence either way); Test 2 is a strong,
+clean confirmation (14/14, independent draws, two different perturbation mechanisms); Test
+3 is mixed but internally coherent (survives structure-respecting deformation, fails at a
+diagnosed peripheral-node boundary, exactly as a real local structure would). **Overall
+verdict: NOT NOISE.** A one-off numerical coincidence would not be expected to reproduce
+identically across 12 independent random initial conditions and 2 independent perturbation
+recoveries (Test 2), nor would it be expected to survive specifically the deformations that
+stay within the coherent node cluster while failing specifically at a diagnosably
+peripheral node (Test 3). This is reported as review requested -- a decisive-enough result
+to write up without a broader sweep first -- while still stopping short of building R8 as
+a formal instrument this PR, since that remains a distinct, larger undertaking (per this
+series' standing discipline against getting ahead of what has been measured). A candidate
+S-017 write-up is offered below for review's decision, not asserted unilaterally as
+achieved -- consistent with every other achievement-flavored claim in this series requiring
+review's own sign-off on the exact wording.
+
+**Proposed S-017 (candidate text, for review to accept, edit, or decline):** "Genuine
+smooth phase winding (winding number != 0, all adjacent phase steps < pi/2) has been
+measured on a real, reproducible closed loop in the R-layer substrate, under two coupling
+forms (`bounded_tanh`, `sinusoidal`) that share diffusive coupling's exact linearization at
+the origin. The result -- `erdos_renyi`, seed=9, `asymmetry_strength=0.3`, 6-node cycle
+`[4,14,9,0,12,21]`, `winding=-1` -- is robust to 12 independent random initial conditions,
+2 independent amplitude-perturbation recoveries, doubling the verification window (15x to
+30x), and smooth boundary deformation through the coherent node cluster (detour cycles);
+it is NOT robust to substituting a structurally peripheral (low-degree) node into the loop.
+Diffusive coupling itself does not produce this result on any of 178 covered cycles
+(Sec.20.4); `cubic_odd` coupling does not sustain oscillation on this node set at all. This
+does not constitute an R8 (winding-number) instrument -- no such instrument is built this
+PR -- and is not asserted to generalize beyond this one located structure without a
+broader, independently-seeded sweep (not yet run, review's decision pending)."
+
+### 22.5 bounded_tanh's density-doubling: an independent finding, boundedness vs
+non-monotonicity
+
+Recorded on its own merit, independent of the winding question. Restricting to the three
+forms that share diffusive's EXACT origin linearization (Sec.21.3 -- `diffusive`,
+`bounded_tanh`, `sinusoidal`; `cubic_odd` is excluded from this comparison, its collapse
+already explained by a different, local mechanism):
+
+| form | bounded? | monotonic? | density (uncond) | covered cycles (len>=5) |
+|---|---|---|---|---|
+| `bounded_tanh` | YES | YES | **40.9%** | **314** |
+| `diffusive` | no | YES | 27.7% | 178 |
+| `sinusoidal` | YES | **no** | 9.4% | 190 |
+
+All three share the SAME small-amplitude linear instability onset (identical Jacobian at
+x=0, Sec.21.3) -- so the density DIFFERENCES among these three arise entirely from
+LARGE-amplitude behavior (away from the origin), where the three forms diverge: `diffusive`
+grows unboundedly (linearly); `bounded_tanh` saturates while remaining monotonically
+attractive; `sinusoidal` saturates AND reverses sign past `z=pi`.
+
+**Boundedness alone does not explain the ordering**: `bounded_tanh` (bounded) has the
+HIGHEST density, but `sinusoidal` (also bounded) has the LOWEST of the three --
+substantially below even the unbounded `diffusive` baseline. If boundedness were the
+dominant factor, both bounded forms should exceed the unbounded one; only one does.
+**Monotonicity (sign never reversing) appears to be the more load-bearing property**: the
+two forms that stay monotonically attractive at all differences (`diffusive`,
+`bounded_tanh`) both produce substantial persistence, with the BOUNDED one of the two
+producing MORE (40.9% vs 27.7%) -- consistent with a two-factor account: (a) staying
+monotonic/attractive avoids introducing a competing REPULSIVE regime past some difference
+threshold, which for `sinusoidal` (repulsive past `z=pi`) plausibly fragments or
+destabilizes what would otherwise be coherent oscillation, pushing density down; (b) GIVEN
+monotonicity is preserved, boundedness (`bounded_tanh` vs `diffusive`) still provides a
+further, independent boost -- plausibly because a bounded coupling response prevents any
+single large pairwise difference from dominating/overwhelming the local dynamics, working
+cooperatively with the already-present `saturation="cubic"` self-term to keep more
+configurations in a well-regularized, persistence-friendly regime rather than a
+runaway-then-abruptly-capped one.
+
+**Honest limit on this analysis**: only 4 coupling forms were tested, spanning 3 properties
+(boundedness, monotonicity, origin-linearization) without a full factorial design -- a
+genuinely isolating test would need a 4th form that is UNBOUNDED and NON-MONOTONIC (e.g.
+`z*sin(z)`-style), which was not built or run this PR. The account above is offered as the
+most consistent INTERPRETATION of the four data points in hand, not a proven, isolated
+mechanism -- flagged explicitly as an open item for a future PR if review wants the
+2x2 factorial completed.
+
+### 22.6 9th-audit and 8th-audit re-check on Sec.22's own claims
+
+- **9th audit:** every number in this section comes from re-running the SAME, already-
+  validated instruments (`substrate.run` with `W_override`/`x0_override`, `instruments.
+  _phase_analysis_window`, `winding_precheck.compute_winding`/`is_smooth_winding`,
+  `verify.check_attractor_recovery`'s own constants reused unmodified for the perturbation
+  test) -- no threshold was adjusted to make Test 2 pass more cleanly or Test 3's mixed
+  result look more favorable than it is. Test 1's "inconclusive" framing is stated as such,
+  not silently reframed as a pass. Test 3's ONE trivial duplicate (the reversed-traversal
+  cycle) is explicitly flagged as not new evidence, rather than folded into "3/223 confirm"
+  without qualification.
+- **8th audit:** was the local-neighborhood DFS search (223 cycles) tuned to find a
+  favorable set, e.g. by adjusting the shared-node threshold or hop radius until 3 hits
+  appeared? No -- the search used a single, disclosed, fixed rule (>=4 shared nodes, local
+  neighborhood = cycle nodes + their direct neighbors, length capped at 9) decided BEFORE
+  running it, and reported the complete result (all 223, not a filtered subset) including
+  the ONE swap-test failure that argues against unconditional robustness. Were the 6
+  initial-condition seeds (100-105) or the 2 perturbation trials selected after checking
+  which ones would confirm the sign? No -- both were fixed, small, sequential seed choices
+  made before any run, standard practice throughout this series (matching e.g. Sec.18.3's
+  seed=2026 disclosure). The proposed S-017 text (Sec.22.4) is offered as a DRAFT for
+  review to accept/edit/decline, not written into SETTLED.md directly by this PR --
+  preserving review's standing role as the one who commits achievement-tier language, per
+  every prior S-0XX entry in this series.
