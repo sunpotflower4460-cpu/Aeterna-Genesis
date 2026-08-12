@@ -8,6 +8,7 @@ on:
       - 'ai_lab/dream/nothing_genesis.py'
       - 'ai_lab/dream/root_integrity.py'
       - 'ai_lab/dream/frontier_expander.py'
+      - 'ai_lab/dream/research_optimizer.py'
       - 'ai_lab/dream/human_report.py'
       - 'ai_lab/dream/report.py'
       - 'ai_lab/dream/adaptive_v8.py'
@@ -16,10 +17,12 @@ on:
       - 'ai_lab/missions/pure_genesis_r0.json'
       - 'docs/GENESIS_ROOT.md'
       - 'docs/GENESIS_NOTHING.md'
+      - 'docs/ADAPTIVE_RESEARCH_YIELD.md'
       - 'docs/HUMAN_REPORTING.md'
       - 'tests/test_pure_genesis.py'
       - 'tests/test_nothing_genesis.py'
       - 'tests/test_frontier_expander.py'
+      - 'tests/test_research_optimizer.py'
       - 'tests/test_human_report.py'
       - '.github/workflows/pure-genesis-ci.yml'
   workflow_dispatch:
@@ -38,8 +41,8 @@ jobs:
           python-version: '3.11'
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Nothing Genesis, Pure Genesis, frontier expansion, reporting and portfolio tests
-        run: pytest -q tests/test_nothing_genesis.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_human_report.py tests/test_hypothesis_evolution.py
+      - name: Nothing Genesis, Pure Genesis, information-yield routing, reporting and portfolio tests
+        run: pytest -q tests/test_nothing_genesis.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_human_report.py tests/test_hypothesis_evolution.py
       - name: Strict NØ control and tiny R0 law search with integrity audit
         run: |
           python - <<'PY'
