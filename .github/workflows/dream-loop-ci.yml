@@ -18,6 +18,8 @@ on:
       - 'tests/test_pure_genesis.py'
       - 'tests/test_nothing_genesis.py'
       - 'tests/test_frontier_expander.py'
+      - 'tests/test_research_optimizer.py'
+      - 'tests/test_crossworld_replication.py'
       - 'tests/test_hourly_discovery.py'
       - 'tests/test_strict_geometry.py'
       - 'tests/test_vortex_energy_landscape.py'
@@ -49,7 +51,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_nothing_genesis.py tests/test_frontier_expander.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_nothing_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_crossworld_replication.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Unit tests must not touch tracked scientific evidence
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -63,7 +65,7 @@ jobs:
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream v8 dry-run with Pure Genesis R0, NØ, frontier expansion and hypothesis evolution
+      - name: Tiny strict Adaptive Dream v8 dry-run with NØ and information-yield routing
         run: |
           python -m ai_lab.dream.strict_goal_loop \
             --quick --trials 8 --native3d-trials 2 --workers 1 \
@@ -81,6 +83,8 @@ jobs:
             --no-record --no-refresh-app --seed 43
       - name: Multi-World shadow dry-run with cross-world emergence comparison
         run: python -m ai_lab.dream.multiworld --quick --seed 44 --no-record --output ai_lab/reports/multiworld/latest.json
+      - name: Conditionally replicate any current Cross-World lead with fresh seeds
+        run: python -m ai_lab.dream.crossworld_replication --quick --base-seed 45 --replicates 2 --no-record
       - name: A dry run must not touch the working tree
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -89,7 +93,7 @@ jobs:
             exit 1
           fi
           echo "Dry runs left the working tree clean."
-      - name: Easy, NØ, emergence, cross-world, Pure Genesis and Multi-World reports were produced
+      - name: Easy, NØ, optimized frontier, cross-world replication and Multi-World reports were produced
         env:
           DRY: runtime/dry-run/latest
         run: |
@@ -101,6 +105,7 @@ jobs:
           test -f $DRY/ai_lab/reports/multiworld/latest.json
           test -f $DRY/ai_lab/reports/emergence/latest.json
           test -f $DRY/ai_lab/reports/crossworld/latest.json
+          test -f $DRY/ai_lab/reports/crossworld/replication_latest.json
           test -f $DRY/ai_lab/discoveries/promising_leads.json
           test -f $DRY/ai_lab/discoveries/fission_path_leads.json
           test -f $DRY/ai_lab/discoveries/deep_time_fission.json
@@ -121,7 +126,8 @@ jobs:
           grep -q 'root_integrity_audit' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'permutation_quotient_enabled' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'autonomous_frontier_expansion' $DRY/ai_lab/reports/easy/latest.json
-          grep -q 'destination_fixed_methods_adaptive' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'expected_information_yield_routes_budget' $DRY/ai_lab/reports/easy/latest.json
+          grep -q '"F_path_gets_first_refusal": false' $DRY/ai_lab/reports/easy/latest.json
           grep -q '"mode": "strict-nothing-genesis-meta-control"' $DRY/ai_lab/reports/easy/nothing_latest.json
           grep -q '"nonempty_combinations_enumerated": 65535' $DRY/ai_lab/reports/easy/nothing_latest.json
           grep -q '"per_combination_physical_simulation_performed": false' $DRY/ai_lab/reports/easy/nothing_latest.json
@@ -130,6 +136,8 @@ jobs:
           grep -q '"mode": "shadow"' $DRY/ai_lab/reports/multiworld/latest.json
           grep -q '"mode": "cross-world-open-ended-shadow"' $DRY/ai_lab/reports/crossworld/latest.json
           grep -q '"universality_claim": false' $DRY/ai_lab/reports/crossworld/latest.json
+          grep -q '"mode": "cross-world-independent-replication-shadow"' $DRY/ai_lab/reports/crossworld/replication_latest.json
+          grep -q '"updates_cumulative_CWX_ledger": false' $DRY/ai_lab/reports/crossworld/replication_latest.json
 
   observatory:
     runs-on: ubuntu-latest
