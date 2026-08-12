@@ -45,6 +45,8 @@ NØ が `something_observed=true` を返した場合、それを発見として�
 
 を調べ、**hidden assumption または software bug として扱う**。
 
+なお現在の `something_observed=false` は独立した物理測定器が観測した値ではない。**何も生成しない strict null-control の構成値**である。ここを「物理的に無から何も出なかったという測定」と言い換えてはいけない。
+
 ## 「全てが起きうる0」について
 
 「全てが起きうる0」は研究上とても重要な境界仮説として保存する。ただし strict NØ と同一視しない。
@@ -83,20 +85,59 @@ seed を変える、サイズを変える、step数を変える、乱数を変�
 
 統合実行時は、NØは同じburstで実際に生成されたR0レポートのID・監査メタデータだけを比較用に受け取る。R0の状態・seed・法則・clockをNØの物理へ入れない。standalone実行時だけ `easy/latest.json` のburst IDを外部bookkeepingのfallbackとして読む。
 
+standalone `--no-record` では、そのfallback burst IDを **dry-run redirectを有効にする前に** 解決する。古いscratch reportを誤って現在burstとして読むのを防ぐ。
+
 したがって、R0で差・履歴・閉路候補などが出ても、それを「完全な無から出た」とは呼ばない。
+
+## 毎burstの証拠パッケージ
+
+NØもAGENTS.mdの人向け/監査向け分離に従う。
+
+### 技術監査
+
+- `ai_lab/reports/easy/nothing_latest.json`
+- immutable: `ai_lab/reports/easy/nothing/<burst_id>/report.json`
+
+### やさしい説明
+
+- `ai_lab/reports/easy/nothing_latest.md`
+- immutable: `ai_lab/reports/easy/nothing/<burst_id>/human.md`
+
+ここには「今回0からどこまで進んだか」「順番」「次の選択肢」「推奨」を入れる。
+
+### 📸 スクリーンショット
+
+- `ai_lab/reports/easy/nothing_latest.png`
+- immutable: `ai_lab/reports/easy/nothing/<burst_id>/boundary.png`
+
+NØには物理場そのものが存在しないため、物理場の偽画像は作らない。画像は **First-Given Boundary の組合せ数分布を描いたメタ可視化**であり、`separated_from_physics_data=true` / `physical_data_visualized=false` を記録する。PNGは標準ライブラリ `struct + zlib` だけで生成できる。
+
+通常workflowのartifactにも technical / human / PNG / immutable archive を含める。
 
 ## 監査可能性
 
 `nothing_latest.json` には、strict結果だけでなく次も保存する。
 
-- role / claim tier（NØは物理Emergence Eではなく、meta-controlとしてV/F）
+- role / claim tier（NØは物理Emergence Eではなく、meta-controlとして primary F / secondary N）
 - `no_touch`（物理solver・公式Room・閾値・昇格gateを変更していないこと）
-- 第8監査（target encodingや結論同型のgateを置いていないこと）
 - 決定性チェック（strict controlと境界列挙digestを再計算して一致すること）
 - standalone / dry-run の再現コマンド
 - triggering R0の比較用メタデータ（統合実行時）
+- visualization と immutable archive path
 
-`--no-record` でもレポートを捨てず、PR #105で導入したdry-run redirectにより `runtime/dry-run/latest/` 以下へ書く。実リポジトリの証拠は汚さない。
+### 第8監査についての重要な扱い
+
+NØには初期条件・物理方程式・評価ゲート・独立outcome detector自体がない。そのため、第8監査を通常の物理Emergence実験と同じ意味で **`passed` と書かない**。
+
+`something_observed=false` もnull-controlの構成値なので、独立測定結果ではない。
+
+レポートには、
+
+`DECLARATIVE_NULL_CONTROL_NOT_A_PASSED_EIGHTH_AUDIT`
+
+と明記し、物理的な第8監査が適用できないこと、代わりに「physical givensが空」「state/initial state/transition ruleが未定義」「transition未実行」という構造不変条件を記録する。
+
+`--no-record` でも証拠パッケージを捨てず、PR #105で導入したdry-run redirectにより `runtime/dry-run/latest/` 以下へ書く。実リポジトリの証拠は汚さない。
 
 ## NØで現在言えること
 
