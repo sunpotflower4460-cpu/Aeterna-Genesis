@@ -18,6 +18,7 @@ def test_strict_nothing_has_no_physical_givens_or_dynamics():
     assert r["result"]["physical_transition_executed"] is False
     assert r["result"]["something_observed"] is False
     assert r["result"]["nothing_to_something_claim"] is False
+    assert r["result"]["result_is_control_construction_not_independent_measurement"] is True
 
 
 def test_all_things_possible_zero_is_not_smuggled_into_strict_nothing():
@@ -69,17 +70,19 @@ def test_full_nothing_report_keeps_exact_r0_metadata_and_no_metaphysical_claim()
     assert r["claim_limits"]["proves_metaphysical_nothing_can_create_something"] is False
 
 
-def test_technical_audit_contains_repo_required_fields_and_is_deterministic():
+def test_eighth_audit_is_not_falsely_marked_passed():
     r = nothing_genesis.run_nothing_research(
-        burst_id="audit-nothing",
-        persist=False,
-        boundary_names=("a", "b", "c"),
+        burst_id="audit-nothing", persist=False, boundary_names=("a", "b", "c")
     )
     audit = r["technical_audit"]
     assert audit["role"]["primary"] != "E"
     assert "frontier" in audit["claim_tier"]
     assert audit["no_touch"]["physics_dynamics_invoked"] is False
-    assert audit["eighth_audit"]["target_encoded"] is False
+    eighth = audit["eighth_audit"]
+    assert eighth["independent_physical_outcome_detector_exists"] is False
+    assert eighth["constructor_sets_null_result"] is True
+    assert eighth["verdict"] == "DECLARATIVE_NULL_CONTROL_NOT_A_PASSED_EIGHTH_AUDIT"
+    assert eighth["invariant_checks"]["physical_givens_are_empty"] is True
     assert audit["determinism"]["passed"] is True
     assert audit["reproduction"]["standalone_command"]
 
@@ -90,3 +93,29 @@ def test_boundary_enumeration_digest_is_deterministic():
     b = nothing_genesis.enumerate_first_given_boundary(names)
     assert a["canonical_enumeration_sha256"] == b["canonical_enumeration_sha256"]
     assert a["nonempty_combinations_enumerated"] == 31
+
+
+def test_recording_writes_latest_and_immutable_human_screenshot_package(tmp_path, monkeypatch):
+    easy = tmp_path / "easy"
+    monkeypatch.setattr(nothing_genesis, "_REPO", tmp_path)
+    monkeypatch.setattr(nothing_genesis, "_REPORT", easy / "nothing_latest.json")
+    monkeypatch.setattr(nothing_genesis, "_HUMAN", easy / "nothing_latest.md")
+    monkeypatch.setattr(nothing_genesis, "_SCREENSHOT", easy / "nothing_latest.png")
+    monkeypatch.setattr(nothing_genesis, "_ARCHIVE", easy / "nothing")
+
+    r = nothing_genesis.run_nothing_research(
+        burst_id="dream-test-0001", persist=True, boundary_names=("a", "b", "c", "d")
+    )
+    archive = easy / "nothing" / "dream-test-0001"
+    assert (easy / "nothing_latest.json").exists()
+    assert (easy / "nothing_latest.md").exists()
+    assert (easy / "nothing_latest.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert (archive / "report.json").exists()
+    assert (archive / "human.md").exists()
+    assert (archive / "boundary.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert r["visualization"]["separated_from_physics_data"] is True
+    assert r["visualization"]["physical_data_visualized"] is False
+    human = (archive / "human.md").read_text()
+    assert "次にできること" in human
+    assert "推奨" in human
+    assert "物理実験ではなく" in human
