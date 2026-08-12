@@ -1,14 +1,14 @@
 """Independent replication shadow for *current* Cross-World leads.
 
 The ordinary Multi-World comparator uses one seed per world each burst, so interesting matches can
-appear and disappear.  This module spends extra compute only when that primary comparator actually
-finds a lead.  It reruns the matched *other-world* zero condition with fresh seeds and asks whether the
-same g001 X fingerprint matches again.
+appear and disappear. This module spends extra compute only when that primary comparator actually finds
+a lead. It reruns the matched *other-world* zero condition with fresh seeds and asks whether the same
+g001 X fingerprint matches again.
 
-It deliberately does NOT update the cumulative CWX ledger: replication evidence is kept in a separate
-shadow report so three confirmation attempts cannot inflate recurrent-signature counts.  A hit is never
-called universality or identical physics, and the lane cannot change Rooms, official Levels, hypothesis
-confidence or world dynamics.
+It deliberately does NOT update the cumulative CWX ledger: replication evidence is kept as a separate
+shadow report and attached as a reporting-only subfield of ``crossworld/latest.json`` so three
+confirmation attempts cannot inflate recurrent-signature counts. A hit is never called universality or
+identical physics, and the lane cannot change Rooms, official Levels, hypothesis confidence or dynamics.
 """
 from __future__ import annotations
 
@@ -145,9 +145,44 @@ def replicate_current_leads(
     }
 
 
+def _compact_attachment(report: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "version": report.get("version"),
+        "mode": report.get("mode"),
+        "triggered": bool(report.get("triggered")),
+        "replicates_per_target": report.get("replicates_per_target"),
+        "results": [
+            {
+                "g001_pattern_id": x.get("g001_pattern_id"),
+                "original_status": x.get("original_status"),
+                "g001_start_purities": x.get("g001_start_purities") or [],
+                "target_world_zero": x.get("target_world_zero"),
+                "original_projection_coverage": x.get("original_projection_coverage"),
+                "finite_replicates": x.get("finite_replicates"),
+                "repeat_hits": x.get("repeat_hits"),
+                "strict_ZA_repeat_hits": x.get("strict_ZA_repeat_hits"),
+                "repeat_hit_rate": x.get("repeat_hit_rate"),
+            }
+            for x in report.get("results") or []
+        ],
+        "errors": report.get("errors") or [],
+        "integrity": report.get("integrity") or {},
+        "interpretation": report.get("interpretation"),
+        "full_report": "ai_lab/reports/crossworld/replication_latest.json",
+    }
+
+
 def write_report(report: dict[str, Any], output: Path = _OUTPUT) -> str:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, ensure_ascii=False))
+    # Reporting-only enrichment: preserve all primary comparator counts/statuses and attach the
+    # independent check under its own field. This makes the standard latest file sufficient for human
+    # reporting without pretending the extra seeds were ordinary CWX observations.
+    current = _read(_CURRENT, {})
+    if isinstance(current, dict) and current:
+        current["independent_replication_shadow"] = _compact_attachment(report)
+        _CURRENT.parent.mkdir(parents=True, exist_ok=True)
+        _CURRENT.write_text(json.dumps(current, indent=2, ensure_ascii=False))
     return str(output)
 
 
