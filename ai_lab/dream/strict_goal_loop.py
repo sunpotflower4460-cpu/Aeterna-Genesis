@@ -1,8 +1,9 @@
-"""Production-compatible entry point for Adaptive Dream v8 + NØ + evidence-yield planning.
+"""Production-compatible entry point for Adaptive Dream v8 + NØ + progress-ratcheted planning.
 
 Strict geometry and Prefix Identity instrumentation remain identical to the v6/v7 entry point.
-Adaptive Dream still performs the same physical experiments and truth gates; the research optimizer only
-routes the bounded extra frontier budget toward the currently highest-information falsifiable questions.
+Adaptive Dream still performs the same physical experiments and truth gates; the research optimizer and
+progress ratchet only route the bounded extra frontier budget toward falsifiable questions that add new
+controls, independent replications, or an explicit route change when a target saturates.
 NØ remains a separate stricter meta-control with zero physical givens.
 """
 from __future__ import annotations
@@ -14,6 +15,7 @@ from ai_lab.dream import adaptive_v8
 from ai_lab.dream import dry_run
 from ai_lab.dream import nothing_genesis
 from ai_lab.dream import prefix_audit
+from ai_lab.dream import progress_ratchet
 from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
@@ -54,22 +56,30 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
     frontier = r.get("autonomous_frontier_expansion") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
     budget = frontier.get("budget") or {}
+    progress = frontier.get("progress_ratchet") or {}
     print(f"=== Aeterna Adaptive Dream v8: {r['burst_id']} ===")
     print(f"  R0: {why_gate.ROOT_STATEMENT}")
     print(f"  Pure Genesis laws={root.get('law_trials', 0)} top={len(root.get('top_laws') or [])}")
     print(f"  Why Gate accepted={int((root.get('why_gate') or {}).get('accepted', 0))} unexplained physical givens=0")
     print(f"  Root Integrity critic questions={len(critic)} permutation-quotient=True")
     print(f"  frontier mechanism experiments={int(budget.get('executed', 0))} allocation={budget.get('allocated', {})}")
+    if progress:
+        print(
+            f"  frontier progress={progress.get('status')} "
+            f"new_questions={len(progress.get('new_question_keys') or [])} "
+            f"replications={len(progress.get('replicated_question_keys') or [])}"
+        )
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
-    print("  NOTE: frontier compute is routed by expected information yield; F0-F7 has no first refusal and remains one reference path.")
+    print("  NOTE: frontier compute is progress-ratcheted; repeated zero-gain routes cool down, F0-F7 remains one reference path.")
 
 
 def main(argv: list[str] | None = None) -> int:
     _install_strict_geometry()
     _install_strict_followup_geometry()
     prefix_audit.install_geometry_digest_wrapper(base.hourly, strict)
-    # Planning-only patch. Physics, gates and evidence definitions remain in their existing modules.
+    # Planning-only patches. Physics, gates and evidence definitions remain in their existing modules.
     research_optimizer.install()
+    progress_ratchet.install()
 
     result = _run_adaptive_v8_exact(argv)
     _print_adaptive_summary(result)
