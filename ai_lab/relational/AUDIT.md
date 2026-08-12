@@ -3469,7 +3469,11 @@ Review accepted PR-R3.1's tests, corrected Sec.22.4's draft framing from "windin
 from relation" to the narrower, explicitly non-generalized form below, and provided both
 entries' final text directly.
 
-**S-017: 巻きは関係から生じる。ただし結合形に依存し、空間的に局在する**
+**S-017 was WRITTEN with this text, then REVISED by review one PR round later (PR-R5) --
+both versions kept here, in order, as the disclosed record of the correction itself.**
+
+**S-017 (original, PR-R3.1 -- SUPERSEDED, see the revision immediately below):
+巻きは関係から生じる。ただし結合形に依存し、空間的に局在する**
 
 > 確定したこと :
 >   ・拡散結合では 0/178 の閉路しか滑らかさゲートを通らなかったが、
@@ -3496,6 +3500,35 @@ entries' final text directly.
 >   ・ただし「関係から円が生まれる」と一般化してはならない。
 >     現時点で確認されているのは、特定のグラフの特定の一箇所である
 
+**Review's own correction (PR-R5), verbatim**: "私は前者を後者の証拠として扱いました。
+S-017を書けと言ったのは、私の判断ミスです。" -- the 14-trial perturbation-robustness
+result (Sec.22.2) is evidence that the ONE located structure is internally robust, not
+evidence that the phenomenon occurs generally across the substrate; PR-R4's independent-
+seed sweep (Sec.23, 0/284 new hits) is what actually tests generality, and the original
+S-017 was written before that test existed. Superseded by:
+
+**S-017（改訂）巻きの通過例は1箇所のみ。再現していない**
+
+> 確定したこと :
+>   ・拡散結合では 0/178。単調な結合形では通過例が出現した
+>   ・通過箇所は、独立グラフ133個・被覆閉路788件を通じて依然1箇所のみ
+>     （erdos_renyi, seed=9, strength=0.3, 6ノード閉路）
+>   ・その1箇所は内部的には極めて頑健。独立初期条件6通り×2結合形＋摂動回復2件の
+>     計14試行すべてで winding=-1、max_adjacent_step が 1.4818〜1.4957 に集中。
+>     近傍閉路の迂回変形2個も同符号を維持
+>   ・しかし発見時と独立なseed 50〜64 での284件では通過0件
+>   ・構造的な予測因子は見つかっていない。次数は中央付近（44パーセンタイル）、
+>     「グラフ全体が100%持続密度」仮説は同条件の他7run・72閉路で 0/72 となり撤回
+>
+> これでできること:
+>   ・この現象が 1/788 程度であることが分かった。探索設計をこの頻度に合わせられる
+>
+> これで消えたこと:
+>   ・旧S-017の「巻きは関係から生じる」は時期尚早。取り下げる。
+>     同一箇所での14試行は、その箇所の頑健性の証拠であって、
+>     現象が一般に生じることの証拠ではない（これは私の判断ミスだった）
+>   ・現時点で言えるのは「1箇所で観測され、その箇所では頑健である」までである
+
 **S-018: 持続の広がりを決めるのは、線形部ではなく結合の非線形の形**
 
 > 確定したこと :
@@ -3519,11 +3552,12 @@ Both are recorded here as the R-layer's own formal ledger entry (this repository
 contained a separate `SETTLED.md` file, despite the name being used consistently for this
 purpose since S-011 -- the pattern throughout this series has been to incorporate review's
 verbatim confirmed text into AUDIT.md as the durable record, and this entry continues that
-pattern rather than introducing a new file). S-017's scope is explicitly narrow per review's
-correction: ONE located structure (`erdos_renyi` seed=9, `asymmetry_strength=0.3`, the
-6-node cycle `[4,14,9,0,12,21]`), not a general claim that relation-based dynamics produce
-winding. PR-R4 (Sec.23) opens the question S-017 itself identifies as now-confirmed-open:
-why winding, so far, occurs at only this one location.
+pattern rather than introducing a new file). S-017 was itself revised one PR round later
+(PR-R5, Sec.24.5) once PR-R4's independent-seed sweep (Sec.23) tested generality directly
+and found 0/284 new hits -- both the original and the revised text are kept above, in
+order, as the disclosed record of the correction. S-018 is UNCHANGED and, per PR-R4's
+independent replication of the 40.9%->41.7% density figure, reinforced rather than
+revised.
 
 ## 23. PR-R4: a broad, independent-seed sweep finds ZERO new smooth-winding hits --
 S-017's "spatially localized" is now measured to be rarer than known, and no structural
