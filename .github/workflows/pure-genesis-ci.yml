@@ -52,13 +52,16 @@ jobs:
           assert n['strict_nothing']['physical_layer']['physical_givens'] == []
           assert n['strict_nothing']['result']['physical_transition_executed'] is False
           assert n['strict_nothing']['result']['something_observed'] is False
+          assert n['strict_nothing']['result']['result_is_control_construction_not_independent_measurement'] is True
           assert n['all_things_possible_zero']['instantiated_in_strict_arm'] is False
           boundary = n['first_given_boundary']
           assert boundary['nonempty_combinations_enumerated'] == 15
           assert boundary['per_combination_physical_simulation_performed'] is False
           assert boundary['per_combination_outcome_audit_performed'] is False
           assert n['technical_audit']['determinism']['passed'] is True
-          assert n['technical_audit']['eighth_audit']['target_encoded'] is False
+          eighth = n['technical_audit']['eighth_audit']
+          assert eighth['independent_physical_outcome_detector_exists'] is False
+          assert eighth['verdict'] == 'DECLARATIVE_NULL_CONTROL_NOT_A_PASSED_EIGHTH_AUDIT'
           assert n['technical_audit']['role']['primary'] != 'E'
 
           r = pure_genesis.run_root_research(
