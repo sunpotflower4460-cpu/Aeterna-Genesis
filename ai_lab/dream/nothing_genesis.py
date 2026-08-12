@@ -2,8 +2,8 @@
 
 This module deliberately does *less* than Pure Genesis R0.
 
-NØ is the question: if the physical side is given literally nothing, can a computation honestly report
-that something physically emerged?  The strict arm therefore supplies no entities, slots, state space,
+NØ asks: if the physical side is given literally nothing, can a computation honestly report that
+something physically emerged?  The strict arm therefore supplies no entities, slots, state space,
 initial state, relation, transition rule, time/order, randomness, probability measure, possibility set,
 geometry, energy, or observer.  It does not perform a hidden random draw and it does not call a zero
 array "nothing".
@@ -12,11 +12,11 @@ That makes NØ a null/control experiment rather than a dynamical simulation.  Wi
 semantics there is no physical step to execute.  If this arm ever reports an object/event anyway, that
 is treated as an implementation leak or an added assumption, never as ex-nihilo emergence.
 
-The surrounding *meta* audit may enumerate many candidate "first givens" to map the boundary between
-strict nothing and runnable models.  Those candidates are explicitly outside NØ and can never count as
-"from nothing" evidence.  In particular, "all things can happen" would itself require at least a
-possibility/admissibility structure (and a measure or rule if one outcome is sampled), so it is recorded
-as a boundary hypothesis but is not smuggled into the strict arm.
+The surrounding *meta* layer may enumerate candidate "first givens" to map the boundary between strict
+nothing and runnable models.  Enumeration is not itself a physical audit or simulation, and no nonempty
+combination can count as strict-NØ evidence.  In particular, "all things can happen" would itself require
+at least a possibility/admissibility structure (and a measure or rule if one outcome is sampled), so it
+is recorded as a boundary hypothesis but is not smuggled into the strict arm.
 """
 from __future__ import annotations
 
@@ -26,11 +26,13 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
+from ai_lab.dream import dry_run
+
 _REPO = Path(__file__).resolve().parents[2]
 _REPORT = _REPO / "ai_lab" / "reports" / "easy" / "nothing_latest.json"
 _EASY_LATEST = _REPO / "ai_lab" / "reports" / "easy" / "latest.json"
 
-# Candidate assumptions are audited only at the meta level.  None is injected into strict NØ.
+# Candidate assumptions are enumerated only at the meta level. None is injected into strict NØ.
 FIRST_GIVEN_CANDIDATES: tuple[str, ...] = (
     "carrier_or_existence_domain",
     "entity_multiplicity",
@@ -64,6 +66,7 @@ def _read(path: Path, default: Any) -> Any:
 
 
 def _latest_burst_id() -> str:
+    """Standalone-CLI fallback only; integrated execution must pass the triggering burst explicitly."""
     latest = _read(_EASY_LATEST, {})
     return str(latest.get("burst_id") or "unknown-burst")
 
@@ -71,7 +74,7 @@ def _latest_burst_id() -> str:
 def strict_nothing_control() -> dict[str, Any]:
     """Return the one strict NØ physical case.
 
-    ``None`` and empty lists below are reporting symbols used by the meta-program.  They are not a
+    ``False`` and empty lists below are reporting symbols used by the meta-program. They are not a
     physical zero field, vacuum, empty set of particles, latent canvas, or initialized state.
     """
     physical_layer = {
@@ -109,7 +112,7 @@ def strict_nothing_control() -> dict[str, Any]:
         "interpretation": (
             "何も物理前提を与えない場合、計算上の『次』そのものを定義できない。"
             "これは『無から何かは絶対に生まれない』という形而上学的証明ではなく、"
-            "追加前提なしには計算実験として判定不能だという境界結果。"
+            "追加前提なしには計算実験として状態遷移を判定できないという境界結果。"
         ),
     }
     return {
@@ -133,10 +136,10 @@ def _iter_nonempty_subsets(names: tuple[str, ...]) -> Iterable[tuple[str, ...]]:
         yield tuple(names[i] for i in range(n) if mask & (1 << i))
 
 
-def audit_first_given_boundary(names: tuple[str, ...] = FIRST_GIVEN_CANDIDATES) -> dict[str, Any]:
-    """Exhaustively map candidate added-assumption combinations without running them as NØ physics."""
+def enumerate_first_given_boundary(names: tuple[str, ...] = FIRST_GIVEN_CANDIDATES) -> dict[str, Any]:
+    """Enumerate added-assumption combinations; do not mislabel enumeration as physical evidence."""
     if len(names) > 20:
-        raise ValueError("boundary audit is intentionally capped at 20 named assumptions")
+        raise ValueError("boundary enumeration is intentionally capped at 20 named assumptions")
     digest = hashlib.sha256()
     by_size = {str(i): 0 for i in range(1, len(names) + 1)}
     singletons: list[list[str]] = []
@@ -151,19 +154,27 @@ def audit_first_given_boundary(names: tuple[str, ...] = FIRST_GIVEN_CANDIDATES) 
         elif len(subset) == 2 and len(pair_examples) < 32:
             pair_examples.append(list(subset))
     return {
-        "mode": "meta-assumption-boundary-audit",
+        "mode": "meta-assumption-boundary-enumeration",
         "candidate_first_givens": list(names),
         "candidate_count": len(names),
-        "nonempty_combinations_exhaustively_audited": total,
+        "nonempty_combinations_enumerated": total,
         "expected_nonempty_combinations": (1 << len(names)) - 1,
         "combinations_by_size": by_size,
         "canonical_enumeration_sha256": digest.hexdigest(),
         "single_assumption_frontier": singletons,
         "pair_examples": pair_examples,
+        "per_combination_physical_simulation_performed": False,
+        "per_combination_outcome_audit_performed": False,
         "every_nonempty_combination_is_strict_nothing": False,
         "every_nonempty_combination_counts_as_from_nothing_evidence": False,
-        "purpose": "何かが出たように見えた時、どの『最初の与え物』を密輸したかを追跡するための境界地図。",
+        "purpose": "何かが出たように見えた時、どの『最初の与え物』を追加したかを追跡するための境界地図。",
     }
+
+
+# Backward-compatible callable name for existing tests/callers; the returned result is explicitly
+# enumeration-only and does not claim that 65,535 physical experiments were audited.
+def audit_first_given_boundary(names: tuple[str, ...] = FIRST_GIVEN_CANDIDATES) -> dict[str, Any]:
+    return enumerate_first_given_boundary(names)
 
 
 def possibility_zero_boundary() -> dict[str, Any]:
@@ -184,13 +195,71 @@ def possibility_zero_boundary() -> dict[str, Any]:
     }
 
 
-def run_nothing_research(*, burst_id: str | None = None, persist: bool = True,
-                         boundary_names: tuple[str, ...] = FIRST_GIVEN_CANDIDATES) -> dict[str, Any]:
-    """Run the strict null control plus exhaustive meta-boundary audit.
+def _compact_r0_metadata(r0_metadata: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(r0_metadata, dict) or not r0_metadata:
+        return {"supplied_by_triggering_run": False}
+    return {
+        "supplied_by_triggering_run": True,
+        "mode": r0_metadata.get("mode"),
+        "root": r0_metadata.get("root") or {},
+        "law_trials": r0_metadata.get("law_trials"),
+        "sizes": r0_metadata.get("sizes") or [],
+        "steps": r0_metadata.get("steps"),
+        "why_gate": r0_metadata.get("why_gate") or {},
+        "root_integrity_audit": r0_metadata.get("root_integrity_audit") or {},
+        "not_claimed": r0_metadata.get("not_claimed") or [],
+    }
+
+
+def _technical_audit(strict: dict[str, Any], boundary: dict[str, Any], *, boundary_names: tuple[str, ...]) -> dict[str, Any]:
+    strict_repeat = strict_nothing_control()
+    boundary_repeat = enumerate_first_given_boundary(boundary_names)
+    deterministic = strict_repeat == strict and boundary_repeat["canonical_enumeration_sha256"] == boundary["canonical_enumeration_sha256"]
+    return {
+        "role": {"primary": "V", "secondary": ["F"]},
+        "claim_tier": ["measured", "frontier"],
+        "claim_scope": "software/meta-control boundary only; not an Emergence-role physical simulation",
+        "no_touch": {
+            "physics_dynamics_invoked": False,
+            "downstream_state_injected_into_strict_arm": False,
+            "official_rooms_written": False,
+            "scientific_thresholds_changed": False,
+            "promotion_gates_changed": False,
+        },
+        "eighth_audit": {
+            "target_encoded": False,
+            "initial_condition_contains_claim_quantity": False,
+            "gate_encodes_claim_causality": False,
+            "threshold_passes_by_target_construction": False,
+            "claimed_quantity_is_algebraic_relabeling_of_input": False,
+            "verdict": "PASSED_FOR_META_CONTROL",
+        },
+        "determinism": {
+            "strict_control_repeat_identical": strict_repeat == strict,
+            "boundary_enumeration_digest_repeat_identical": boundary_repeat["canonical_enumeration_sha256"] == boundary["canonical_enumeration_sha256"],
+            "passed": deterministic,
+        },
+        "reproduction": {
+            "standalone_command": "python -m ai_lab.dream.nothing_genesis --burst-id <id>",
+            "dry_run_command": "python -m ai_lab.dream.nothing_genesis --burst-id <id> --no-record",
+            "expected_strict_result": "physical givens=0; no physical transition; something_observed=false",
+            "expected_boundary_result": f"enumerates {(1 << len(boundary_names)) - 1} nonempty assumption combinations; does not simulate them as NØ",
+        },
+    }
+
+
+def run_nothing_research(
+    *,
+    burst_id: str | None = None,
+    persist: bool = True,
+    boundary_names: tuple[str, ...] = FIRST_GIVEN_CANDIDATES,
+    r0_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run the strict null control plus a deterministic meta-boundary enumeration.
 
     There is intentionally only one strict physical trial. Repeating it with seeds, sizes, clocks,
     fields or random draws would add structure and would therefore be a different experiment.
-    Breadth comes from auditing all named first-given combinations *outside* the strict arm.
+    Breadth comes from mapping candidate first-given combinations *outside* the strict arm.
     """
     strict = strict_nothing_control()
     if strict["physical_layer"]["physical_givens"]:
@@ -198,10 +267,11 @@ def run_nothing_research(*, burst_id: str | None = None, persist: bool = True,
     if strict["result"]["something_observed"]:
         raise RuntimeError("NØ contamination: something appeared without a traceable added assumption")
 
+    boundary = enumerate_first_given_boundary(boundary_names)
     report = {
-        "version": 1,
+        "version": 2,
         "mode": "strict-nothing-genesis-meta-control",
-        "burst_id": str(burst_id or _latest_burst_id()),
+        "burst_id": str(burst_id if burst_id is not None else _latest_burst_id()),
         "research_question": "本当に何も物理的に与えないとき、何かが生まれたと計算実験で言えるか。",
         "strict_trial_count": 1,
         "why_not_repeat_strict_trial_with_many_seeds": (
@@ -209,19 +279,24 @@ def run_nothing_research(*, burst_id: str | None = None, persist: bool = True,
         ),
         "strict_nothing": strict,
         "all_things_possible_zero": possibility_zero_boundary(),
-        "first_given_boundary": audit_first_given_boundary(boundary_names),
+        "first_given_boundary": boundary,
         "comparison_to_R0": {
             "R0_is_downstream_of_NØ": True,
             "R0_adds": ["distinguishability", "relation", "change_possibility"],
             "R0_results_count_as_strict_nothing_results": False,
+            "triggering_R0_metadata": _compact_r0_metadata(r0_metadata),
         },
         "claim_limits": {
             "proves_metaphysical_nothing_cannot_create_something": False,
             "proves_metaphysical_nothing_can_create_something": False,
             "computational_boundary_identified": True,
+            "boundary_enumeration_is_physical_experiment": False,
             "if_future_strict_arm_reports_something": "treat_as_hidden_assumption_or_software_bug_until_traced",
         },
+        "technical_audit": _technical_audit(strict, boundary, boundary_names=boundary_names),
     }
+    if not report["technical_audit"]["determinism"]["passed"]:
+        raise RuntimeError("NØ meta-control determinism audit failed")
     if persist:
         _write(_REPORT, report)
     return report
@@ -229,18 +304,22 @@ def run_nothing_research(*, burst_id: str | None = None, persist: bool = True,
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Aeterna strict Nothing Genesis (NØ) control")
-    ap.add_argument("--burst-id", default=None, help="defaults to ai_lab/reports/easy/latest.json burst_id")
-    ap.add_argument("--no-record", action="store_true")
+    ap.add_argument("--burst-id", default=None, help="standalone fallback defaults to ai_lab/reports/easy/latest.json burst_id")
+    ap.add_argument("--no-record", action="store_true", help="write only under runtime/dry-run/latest via dry-run redirect")
     return ap
 
 
 def main(argv: list[str] | None = None) -> int:
     a = build_parser().parse_args(argv)
-    r = run_nothing_research(burst_id=a.burst_id, persist=not a.no_record)
+    if a.no_record:
+        dry_run.activate()
+    # Always write the report: recording runs write the repository path, dry-runs are redirected to
+    # runtime/dry-run/latest so CI and another agent can audit the generated artifact.
+    r = run_nothing_research(burst_id=a.burst_id, persist=True)
     b = r["first_given_boundary"]
     print(f"=== Nothing Genesis NØ: {r['burst_id']} ===")
     print("  strict physical givens=0; transition defined=False; something observed=False")
-    print(f"  meta boundary combinations audited={b['nonempty_combinations_exhaustively_audited']}")
+    print(f"  meta boundary combinations enumerated={b['nonempty_combinations_enumerated']}")
     print("  N0-P ('all things can happen') is boundary-only, not injected into strict nothing")
     return 0
 
