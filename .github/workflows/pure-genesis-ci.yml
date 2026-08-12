@@ -53,7 +53,13 @@ jobs:
           assert n['strict_nothing']['result']['physical_transition_executed'] is False
           assert n['strict_nothing']['result']['something_observed'] is False
           assert n['all_things_possible_zero']['instantiated_in_strict_arm'] is False
-          assert n['first_given_boundary']['nonempty_combinations_exhaustively_audited'] == 15
+          boundary = n['first_given_boundary']
+          assert boundary['nonempty_combinations_enumerated'] == 15
+          assert boundary['per_combination_physical_simulation_performed'] is False
+          assert boundary['per_combination_outcome_audit_performed'] is False
+          assert n['technical_audit']['determinism']['passed'] is True
+          assert n['technical_audit']['eighth_audit']['target_encoded'] is False
+          assert n['technical_audit']['role']['primary'] != 'E'
 
           r = pure_genesis.run_root_research(
               burst_id='ci-r0', law_trials=6, sizes=(6, 8), steps=20, seed=11, persist=False,
