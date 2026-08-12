@@ -15,7 +15,8 @@ from ai_lab.relational import instruments, substrate, topology
 def test_all_ingredient_axes_in_result_dict():
     res = substrate.run(n=10, steps=20, seed=1)
     d = res.to_dict(include_trajectory=False)
-    for axis in ("memory", "saturation", "conservation", "plasticity", "topology", "m"):
+    for axis in ("memory", "saturation", "conservation", "plasticity", "topology", "m",
+                 "coupling_form"):
         assert axis in d, "ingredient axis %r missing from result dict" % axis
     assert d["memory"] == substrate.DEFAULT_MEMORY == "off"
     assert d["saturation"] == substrate.DEFAULT_SATURATION == "none"
@@ -317,3 +318,87 @@ def test_memory_on_asymmetry_on_saturation_cubic_stays_bounded_on_the_same_confi
     # both are orders of magnitude below where the saturation='none' twin ends up.
     assert last_quarter_max < 2.0 * second_half_max
     assert last_quarter_max < 50.0
+
+
+# --- PR-R3 (AUDIT.md Sec.21, S-016): coupling_form -- the functional shape of the pairwise
+# relation itself becomes a switchable axis -----------------------------------------------
+
+def test_coupling_form_default_is_diffusive_and_is_a_constructor_kwarg():
+    assert substrate.DEFAULT_COUPLING_FORM == "diffusive"
+    res = substrate.run(n=10, steps=5, seed=1)
+    assert res.coupling_form == "diffusive"
+    assert res.to_dict(include_trajectory=False)["coupling_form"] == "diffusive"
+
+
+def test_coupling_form_is_in_result_dict_and_settable():
+    for form in substrate.COUPLING_FORMS:
+        res = substrate.run(n=10, steps=5, seed=1, coupling_form=form)
+        assert res.to_dict(include_trajectory=False)["coupling_form"] == form
+
+
+def test_unknown_coupling_form_raises():
+    with pytest.raises(ValueError):
+        substrate.run(n=10, steps=5, seed=1, coupling_form="not_a_real_form")
+
+
+def test_diffusive_coupling_form_reproduces_original_linear_formula():
+    """coupling_form='diffusive' must be numerically IDENTICAL to the pre-PR-R3 formula
+    (Sum_j w_ij(x_j-x_i)) -- this axis must not perturb any existing result at its default."""
+    kw = dict(n=16, steps=50, seed=3, memory="on", damping=0.05, asymmetry=True,
+              asymmetry_strength=0.3, topology="random_regular", saturation="cubic",
+              saturation_strength=0.1)
+    explicit = substrate.run(coupling_form="diffusive", **kw)
+    implicit = substrate.run(**kw)  # relies on the default
+    assert np.array_equal(explicit.x_traj, implicit.x_traj)
+
+
+def test_relation_coupling_all_forms_depend_only_on_pairwise_difference():
+    """Hard constraint (spec Sec.4.2): every coupling_form must be a function of (x_j - x_i)
+    and w_ij alone. Verified operationally: shifting EVERY node's state by the same constant
+    vector must leave the coupling term exactly unchanged for every form (a function of an
+    absolute position, or of an aggregate that isn't shift-invariant, would NOT have this
+    property; a pure difference function always does)."""
+    rng = np.random.default_rng(0)
+    n, m = 8, 1
+    W = topology.build_topology("erdos_renyi", n=n, p=0.5, seed=1)
+    x = rng.normal(size=(n, m))
+    shift = rng.normal(size=(1, m)) * 5.0
+    for form in substrate.COUPLING_FORMS:
+        base = substrate._relation_coupling(x, W, form)
+        shifted = substrate._relation_coupling(x + shift, W, form)
+        assert np.allclose(base, shifted, atol=1e-10), "coupling_form=%r is not shift-invariant" % form
+
+
+def test_relation_coupling_forms_agree_to_leading_order_for_small_differences():
+    """bounded_tanh and sinusoidal both satisfy phi(z) ~= z for small z (both have phi'(0)=1)
+    -- so for SMALL state differences, all three of diffusive/bounded_tanh/sinusoidal should
+    give nearly the same coupling value. cubic_odd (phi(z)=z^3) vanishes faster than linear
+    near z=0, so it should NOT agree at the same tolerance -- this is the numerical
+    counterpart of AUDIT.md Sec.21.3's Jacobian argument (cubic_odd's linearization at the
+    origin is the zero operator, unlike the other three)."""
+    n, m = 6, 1
+    W = topology.build_topology("erdos_renyi", n=n, p=0.6, seed=2)
+    x_small = np.full((n, m), 1e-3) * np.linspace(-1, 1, n).reshape(n, 1)
+    diffusive = substrate._relation_coupling(x_small, W, "diffusive")
+    tanh_form = substrate._relation_coupling(x_small, W, "bounded_tanh")
+    sine_form = substrate._relation_coupling(x_small, W, "sinusoidal")
+    cubic_form = substrate._relation_coupling(x_small, W, "cubic_odd")
+    assert np.allclose(diffusive, tanh_form, atol=1e-6)
+    assert np.allclose(diffusive, sine_form, atol=1e-6)
+    # cubic_odd is orders of magnitude smaller than the others at this scale, not comparable
+    # (z^3 vs z at z~1e-3 differ by a factor of z^2~1e-6 -- allow some slack, not exactness)
+    assert np.max(np.abs(cubic_form)) < 1e-5 * max(np.max(np.abs(diffusive)), 1e-12)
+
+
+def test_sinusoidal_coupling_form_is_bounded_and_can_change_sign():
+    """sinusoidal (phi=sin) is the one form whose response is not monotonic in the pairwise
+    difference -- confirmed directly: phi(z) for z well past pi must differ in sign from
+    phi(z) just past 0, while diffusive's phi(z)=z never changes sign for z>0."""
+    W = np.array([[0.0, 1.0], [1.0, 0.0]])
+    x_near = np.array([[0.0], [0.5]])       # small positive difference
+    x_far = np.array([[0.0], [np.pi + 0.5]])  # difference just past pi
+    near = substrate._relation_coupling(x_near, W, "sinusoidal")
+    far = substrate._relation_coupling(x_far, W, "sinusoidal")
+    assert near[0, 0] > 0
+    assert far[0, 0] < 0
+    assert abs(far[0, 0]) <= 1.0 + 1e-9  # sin is bounded in [-1, 1]

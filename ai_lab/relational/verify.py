@@ -1,6 +1,21 @@
 """ai_lab/relational/verify.py -- PR-R2.1/PR-R2.4/PR-R2.7 pre-checks (AUDIT.md Sec.13,
 Sec.16, Sec.19).
 
+SCREENING IS ABOLISHED (PR-R3, AUDIT.md Sec.21.5, review's explicit instruction): earlier
+PRs in this series (through PR-R2.6) used a cheap short-window `sustained_and_settled` (or
+later `settled`-only) pre-filter -- "screening" -- before sending only the surviving
+candidates to expensive long-window verification. PR-R2.8's exhaustive, EXACT
+cross-tabulation (Sec.20.2) found this filter's real precision/recall: only 44.3% of
+candidates it passed were truly verified, and it missed 73.9% of genuinely persistent
+node-checks outright. Once `verify_long_window_all_nodes` made batched-by-run exhaustive
+verification affordable (~48 minutes for the full 7200-node-check sweep, not the ~13-17
+hours a naive per-node loop would cost, Sec.19.3), there is no remaining reason to accept
+that error rate. From PR-R3 onward, every sweep in this series calls
+`verify_long_window_all_nodes` directly on the full candidate space -- no short-window
+pre-filter of any kind. This is a project-methodology decision, not a code deletion (no
+module in this codebase ever implemented "screening" as a named function; it was a pattern
+in this series' own analysis scripts) -- recorded here so it is not silently reintroduced.
+
 Four tools:
 
 1. `verify_long_window`: bakes a 10-20x window re-check into the DEFINITION of

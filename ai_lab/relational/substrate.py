@@ -9,8 +9,12 @@ PUT IN:      node count N (indices only, no coordinates); a relation graph G wit
              w_ij >= 0 from a disclosed generation RULE (topology.py); real state x_i in R^m
              (default m=1); the local update rule (Sec.4.2, difference-only diffusion, plus
              optionally a per-node cubic saturation term, memory/inertia, weight plasticity,
-             a conservation projection); a fixed timestep dt (numerical regulator, not
-             physics); a small random initial inhomogeneity epsilon (no shape/pattern).
+             a conservation projection); the FORM of the relation itself -- `coupling_form`
+             (PR-R3, AUDIT.md Sec.21): the functional shape phi() applied to each pairwise
+             difference before summing, w_ij * phi(x_j - x_i) -- default "diffusive"
+             (phi=identity, i.e. Sum_j w_ij(x_j-x_i), unchanged from PR-R1); a fixed timestep
+             dt (numerical regulator, not physics); a small random initial inhomogeneity
+             epsilon (no shape/pattern).
 EMERGED:     see run.py / AUDIT.md for the measured contrast (memory=off vs memory=on).
 CLAIM TIER:  measured (this module only produces trajectories + the raw ingredient labels;
              claim tier is assigned per-Reading in instruments.py / per-result in run.py).
@@ -25,9 +29,14 @@ HARD CONSTRAINT (spec Sec.4.2, tied to LAW.md's 8th audit): the relational core 
 update rule references ONLY the difference (x_j - x_i) over graph edges -- never absolute
 position (nodes have none), never an absolute target value, and never a global aggregate
 (mean/sum) UNLESS that reference is itself the explicit, disclosed "conservation" ingredient
-axis (default OFF). At the all-minimal defaults (memory=off, saturation=none,
+axis (default OFF). This constraint binds `coupling_form` (PR-R3) exactly as it always bound
+the diffusive term: every coupling_form option is w_ij * phi(x_j - x_i) for some function phi
+of the pairwise difference ALONE -- never x_i or x_j individually, never an aggregate. At the
+all-minimal defaults (coupling_form="diffusive", memory=off, saturation=none,
 conservation=off, plasticity=off), the entire right-hand side of the ODE is exactly
--L @ x where L is the graph Laplacian -- a pure difference operator, nothing else.
+-L @ x where L is the graph Laplacian -- a pure difference operator, nothing else. Selecting
+a different coupling_form does not relax this constraint; it changes phi, not what phi is a
+function of.
 """
 
 from __future__ import annotations
@@ -51,6 +60,9 @@ DEFAULT_TOPOLOGY = topo.DEFAULT_TOPOLOGY  # "random_regular" -- never "grid" by 
 DEFAULT_M = 1                       # real dimension of node state, default minimal
 DEFAULT_ASYMMETRY = False           # off by default -- w_ij == w_ji (PR-R1.5, see _asymmetrize)
 DEFAULT_ASYMMETRY_STRENGTH = 0.5    # only used when asymmetry=True; kept < 1 so weights stay >= 0
+DEFAULT_COUPLING_FORM = "diffusive"  # PR-R3 -- the functional shape of the pairwise response;
+                                      # "diffusive" is the ORIGINAL, unchanged PR-R1 form
+COUPLING_FORMS = ("diffusive", "bounded_tanh", "cubic_odd", "sinusoidal")
 
 def _default_random_regular_degree(n: int) -> int:
     """Pick a degree <= min(4, n-1). Any value here works: if n is even, n*degree is even
@@ -140,6 +152,60 @@ def _laplacian_diffusion(x: np.ndarray, W: np.ndarray) -> np.ndarray:
     """
     deg = W.sum(axis=1)
     return (W @ x) - deg[:, None] * x
+
+
+def _relation_coupling(x: np.ndarray, W: np.ndarray, form: str) -> np.ndarray:
+    """PR-R3 (AUDIT.md Sec.21): Sum_j w_ij * phi(x_j - x_i) for a chosen functional shape
+    phi, generalizing `_laplacian_diffusion` (which is exactly this with phi = identity).
+
+    Motivation, per review's own diagnosis (Sec.20.4-20.6, S-016): diffusive coupling
+    (phi=identity) is a MONOTONIC, unboundedly-attractive response to a pairwise difference
+    -- it always pulls x_i and x_j together, harder the further apart they are. This was
+    the only functional FORM of relation this module ever offered; every other axis
+    (memory, asymmetry, saturation, damping, topology) varied something else while phi
+    itself stayed fixed. `coupling_form` makes phi itself a switchable axis, exactly the
+    same way every other ingredient in this module is switchable -- not because any
+    specific alternative was chosen to make phase "wind" (that would bake the sought
+    conclusion into the substrate, spec's 8th audit -- see AUDIT.md Sec.21.2's explicit
+    self-check on this point), but because a single, never-varied functional form was
+    itself an unexamined, hand-set choice, same as the original diffusive coupling was
+    before this axis existed.
+
+    Three alternatives, chosen as the natural next members of "odd functions of the pairwise
+    difference" (phi(-z) = -phi(z), so the response is always still a symmetric ATTRACTION
+    when W is symmetric -- edge existence/weight is untouched, only phi's shape changes) --
+    NOT chosen because of any known association with phase/rotation phenomena in outside
+    literature (see Sec.21.2 for the explicit disclosure of where that concern does and does
+    not apply):
+
+    - "diffusive" (default, unchanged from PR-R1): phi(z) = z -- linear, unbounded response.
+    - "bounded_tanh": phi(z) = tanh(z) -- monotonic (still always attractive) but BOUNDED;
+      tests whether it is specifically the UNBOUNDED-LINEAR growth of the diffusive response
+      that matters, or just its monotonic-attractive sign.
+    - "cubic_odd": phi(z) = z^3 -- monotonic, unbounded, but SUPERLINEAR (vanishes faster
+      than linear near z=0, grows faster than linear for large z); tests whether the growth
+      RATE (not just boundedness) matters.
+    - "sinusoidal": phi(z) = sin(z) -- BOUNDED and NON-MONOTONIC (reverses sign for
+      |z| > pi); the natural next term after z and z^3 in the odd-function family (sin(z) =
+      z - z^3/6 + ... for small z, so it agrees with "diffusive" to leading order near
+      z=0), and the only one of the four whose sign is not fixed by the sign of z alone.
+
+    All four keep w_ij >= 0 (topology-generated weights are never negative) and depend only
+    on (x_j - x_i) and w_ij -- never x_i, x_j individually, nor any aggregate (the same hard
+    constraint the original diffusive term always satisfied, spec Sec.4.2).
+    """
+    if form == "diffusive":
+        return _laplacian_diffusion(x, W)
+    diff = x[None, :, :] - x[:, None, :]          # diff[i, j] = x_j - x_i, shape (N, N, m)
+    if form == "bounded_tanh":
+        phi = np.tanh(diff)
+    elif form == "cubic_odd":
+        phi = diff ** 3
+    elif form == "sinusoidal":
+        phi = np.sin(diff)
+    else:
+        raise ValueError("unknown coupling_form %r; available: %s" % (form, COUPLING_FORMS))
+    return np.einsum("ij,ijm->im", W, phi)
 
 
 def _saturation(x: np.ndarray, kind: str, strength: float) -> np.ndarray:
@@ -237,6 +303,7 @@ class SubstrateResult:
     asymmetry: bool
     asymmetry_strength: float
     w_is_symmetric: bool
+    coupling_form: str
 
     def to_dict(self, include_trajectory: bool = True) -> Dict[str, Any]:
         d: Dict[str, Any] = {
@@ -259,6 +326,7 @@ class SubstrateResult:
             "geometry_was_given": self.geometry_was_given,
             "asymmetry": self.asymmetry,
             "asymmetry_strength": self.asymmetry_strength,
+            "coupling_form": self.coupling_form,
             # computed diagnostic (not an input): whether the Sec.3.1 Lyapunov/no-period
             # proof's precondition (W symmetric) actually held this run.
             "w_is_symmetric": self.w_is_symmetric,
@@ -290,17 +358,22 @@ def run(
     damping: float = 0.08,
     asymmetry: bool = DEFAULT_ASYMMETRY,
     asymmetry_strength: float = DEFAULT_ASYMMETRY_STRENGTH,
+    coupling_form: str = DEFAULT_COUPLING_FORM,
     x0_override: Optional[np.ndarray] = None,
     v0_override: Optional[np.ndarray] = None,
     W_override: Optional[np.ndarray] = None,
 ) -> SubstrateResult:
     """Run the R-layer substrate. Every ingredient axis defaults to its minimal side.
 
-    memory="off": dx_i/dt = Sum_j w_ij (x_j - x_i) + g(x_i)                  (Sec.4.2, first-order)
-    memory="on":  dv_i/dt = Sum_j w_ij (x_j - x_i) + g(x_i) - damping * v_i   (Sec.4.2, second-order)
+    memory="off": dx_i/dt = Sum_j w_ij * phi(x_j - x_i) + g(x_i)                  (Sec.4.2, first-order)
+    memory="on":  dv_i/dt = Sum_j w_ij * phi(x_j - x_i) + g(x_i) - damping * v_i   (Sec.4.2, second-order)
                   dx_i/dt = v_i
     where g(x_i) = -saturation_strength * x_i^3 when saturation="cubic" (spec Sec.4.2's
-    "a*g(x_i)" term, with a folded into saturation_strength -- see `_saturation`), else 0.
+    "a*g(x_i)" term, with a folded into saturation_strength -- see `_saturation`), else 0,
+    and phi is `coupling_form`'s functional shape (PR-R3, AUDIT.md Sec.21; see
+    `_relation_coupling`'s docstring for the four available forms and why each was chosen).
+    coupling_form="diffusive" (the default) is phi(z)=z, i.e. exactly the original PR-R1
+    formula, unchanged.
 
     x0_override/v0_override (PR-R2.1, both None by default): when given, replace the random
     initial_state() / zero-v(0) construction with the supplied arrays, everything else
@@ -326,11 +399,20 @@ def run(
     its two directions. It matters because the memory=off no-periodicity argument (AUDIT.md
     Sec.3.1) requires W symmetric; with asymmetry on, that argument's precondition no longer
     holds, and memory=off x asymmetry=on becomes a genuinely open question, not a corollary.
+
+    coupling_form (PR-R3, AUDIT.md Sec.21, default "diffusive" -- unchanged from PR-R1): see
+    `_relation_coupling` for the four available forms and the disclosed reasoning for each.
+    AUDIT.md Sec.21.3 re-derives, for each non-default form, whether the Sec.3.1/10.1/10.3
+    theorems (gradient-flow no-periodicity, memory=on energy decay, the q^2 > p*gamma^2
+    linear-instability threshold) still hold -- they do NOT all transfer automatically, and
+    where one breaks, that break is itself a recorded result, not silently absorbed.
     """
     if memory not in ("off", "on"):
         raise ValueError("memory must be 'off' or 'on'")
     if saturation not in ("none", "cubic"):
         raise ValueError("saturation must be 'none' or 'cubic'")
+    if coupling_form not in COUPLING_FORMS:
+        raise ValueError("unknown coupling_form %r; available: %s" % (coupling_form, COUPLING_FORMS))
     if n < 2:
         raise ValueError("need n >= 2 nodes for a relation graph to mean anything")
 
@@ -349,7 +431,7 @@ def run(
         def deriv(xx):
             # _saturation already applies saturation_strength internally (and returns exactly
             # zero when saturation="none") -- do NOT multiply by a coefficient again here.
-            d = _laplacian_diffusion(xx, W) + _saturation(xx, saturation, saturation_strength)
+            d = _relation_coupling(xx, W, coupling_form) + _saturation(xx, saturation, saturation_strength)
             if conservation:
                 d = _project_conserving(d)
             return d
@@ -365,7 +447,7 @@ def run(
         v_hist = [v.copy()]
 
         def deriv2(xx, vv):
-            dv = _laplacian_diffusion(xx, W) + _saturation(xx, saturation, saturation_strength) - damping * vv
+            dv = _relation_coupling(xx, W, coupling_form) + _saturation(xx, saturation, saturation_strength) - damping * vv
             if conservation:
                 dv = _project_conserving(dv)
             dx = vv
@@ -403,4 +485,5 @@ def run(
         asymmetry=asymmetry,
         asymmetry_strength=asymmetry_strength if asymmetry else 0.0,
         w_is_symmetric=is_symmetric(W),   # the coupling actually used for dynamics
+        coupling_form=coupling_form,
     )

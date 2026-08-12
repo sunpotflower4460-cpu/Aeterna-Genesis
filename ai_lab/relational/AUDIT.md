@@ -2868,3 +2868,125 @@ to review.
   notable, disclosed finding, not swept past. Item 2's flagged-but-not-implemented status
   (Sec.20.6) is reported as a live open question for review, not silently decided either
   way.
+
+## 21. PR-R3 (S-016 recorded): coupling_form -- diffusive coupling was the only functional
+shape this substrate ever offered; it becomes a switchable axis
+
+Per review's decision (S-016): Sec.20.4's 0/178 smoothness-gate pass rate, on abundant
+material (178 covered cycles, not a scarcity artifact), is recorded as a real structural
+result, not a sampling gap. Review's own condition for adding a coupling-form axis ("still
+~1-2 cycles") was not met, but review explicitly REPLACED that condition with a stronger
+one: the 0/178 result itself, combined with review's mechanistic account (diffusive
+coupling entrains phases toward local agreement; winding requires them to decorrelate while
+circling a loop -- opposite requirements), is reason enough on its own. This section
+implements that.
+
+### 21.1 What changed and why (S-016's reasoning, recorded verbatim in spirit)
+
+The chain "difference -> direction -> repetition -> period -> phase -> cycle -> winding"
+reached phase and stopped at winding (Sec.20). Diffusive coupling, Sum_j w_ij(x_j - x_i), is
+a MONOTONIC, unboundedly-attractive response to a pairwise difference -- larger differences
+pull harder, always toward agreement. Every other axis in this module (memory, asymmetry,
+saturation, damping, topology) varied something about HOW the system evolves; the
+functional SHAPE of the pairwise response itself, phi(z) in w_ij * phi(x_j - x_i), was never
+varied -- phi(z)=z was implicit and universal since PR-R1. `coupling_form` (new,
+`substrate.py`, default "diffusive", unchanged formula) makes phi itself a switchable
+ingredient axis, the same way every other ingredient here is switchable.
+
+### 21.2 8th audit: was this designed toward making phase wind? (review's explicit
+instruction to self-report)
+
+Three new forms were added: `bounded_tanh` (phi=tanh(z), bounded, still monotonic),
+`cubic_odd` (phi=z^3, unbounded, superlinear, vanishes faster than linear near z=0),
+`sinusoidal` (phi=sin(z), bounded and NON-monotonic -- the only one of the four whose sign
+is not fixed by the sign of z alone). Framing used to choose them: the next natural members
+of "odd functions of the pairwise difference" (phi(-z)=-phi(z), so a symmetric W still gives
+a symmetric attraction) beyond the existing linear case -- NOT a search over forms known to
+produce phase-locking/winding.
+
+Direct, disclosed answer to review's question: **partially, and it is disclosed rather than
+hidden.** `sinusoidal` (phi=sin(z)) is honestly the textbook coupling form associated with
+phase synchronization in the outside literature (the Kuramoto model's coupling term has this
+exact shape) -- awareness of that association was part of why it, rather than some other
+non-monotonic odd function, was the one selected to represent the "bounded and
+non-monotonic" cell of the family. That is a real point of tension with review's
+instruction, named here rather than concealed. What was NOT done, and is the operative
+distinction: no free parameter of `sinusoidal` (amplitude, an added phase offset, a
+per-cycle-length-tuned frequency) was introduced or tuned toward making any particular cycle
+wind; `phi(z)=sin(z)` uses no such parameter at all. Three forms were tested, not one
+cherry-picked form, so a failure of `bounded_tanh` or `cubic_odd` to change anything remains
+informative rather than being quietly dropped. The winding measurement itself
+(`winding_precheck.py`, the smoothness-gate threshold pi/2, the <0.05% null-rate table) is
+completely unchanged from Sec.16 -- fixed BEFORE this PR's coupling-form idea existed, so
+it could not have been tuned toward this section's outcome in either direction. Sec.21.4
+reports whatever the exhaustive measurement finds for ALL THREE forms, including
+`bounded_tanh` and `cubic_odd`'s results, specifically so a possible "sinusoidal alone winds
+because it was chosen to" story is falsifiable by the other two forms' data being visible
+alongside it, not omitted.
+
+### 21.3 Re-deriving the theorem chain (S-002/S-003/S-010-equivalents) for each new form
+
+**S-002-equivalent (memory=off, symmetric W: no sustained periodicity -- originally a
+gradient-flow/Lyapunov argument, Sec.3.1/10.2, Gershgorin-based).** The original argument
+uses that diffusive coupling is the gradient of a potential, V(x) = (1/2) Sum_{i<j}
+w_ij (x_j-x_i)^2, so dx/dt = -grad(V) strictly decreases V except at critical points --
+excluding sustained periodic orbits. This generalizes to any coupling_form phi that is odd
+(phi(-z)=-phi(z)) with an EVEN antiderivative Phi (Phi'=phi, Phi(-z)=Phi(z)): the pairwise
+force w_ij*phi(x_j-x_i) is then the gradient of V(x) = Sum_{i<j} w_ij * Phi(x_j-x_i), and the
+same "V strictly decreases" argument applies regardless of Phi's specific shape, as long as
+it is bounded below. Checked for all three new forms:
+  - `bounded_tanh`: integral of tanh(z) is ln(cosh(z)) -- even, bounded below (>=0) -- valid.
+  - `cubic_odd`: integral of z^3 is z^4/4 -- even, bounded below (>=0) -- valid.
+  - `sinusoidal`: integral of sin(z) is -cos(z) -- even, bounded (in [-1,1]) -- valid.
+
+  All three remain gradient flows of a bounded-below potential, so the SAME no-periodicity
+  conclusion is expected to hold for symmetric W, memory=off, for all three -- not merely by
+  analogy, but by the same structural argument (existence of Phi), independent of the local
+  linear (Gershgorin/eigenvalue) machinery. Empirically spot-checked (n=16,
+  `random_regular`, symmetric W, `saturation="cubic"`, 2000 steps): 0/16 nodes
+  `sustained_and_settled` for memory=off, all four coupling_forms including diffusive --
+  consistent with the argument, not yet an exhaustive sweep.
+
+**S-003-equivalent (memory=on, symmetric W, damping>0: energy decays, no sustained
+oscillation).** The original argument uses total mechanical energy E = (1/2)Sum_i|v_i|^2 +
+V(x); dE/dt = -damping*Sum_i|v_i|^2 <= 0 regardless of V's specific functional form, as long
+as the force is still -grad(V) for SOME V (shown above, for all three new forms) --
+dissipation removes energy monotonically until the system settles at a V-minimum. This
+argument never used the LINEAR/quadratic form of V at all, so it transfers to all three new
+forms with no additional caveat. Empirically spot-checked (same config, memory=on,
+damping=0.1): total |v| (a kinetic-energy proxy) decayed by 96-98% from the first quarter to
+the end of the recording for ALL FOUR forms, including a near-zero-magnitude but still
+clearly decaying `cubic_odd` trajectory (see caveat below) -- consistent with decay, not yet
+an exhaustive sweep.
+
+**S-010-equivalent (memory=on, asymmetric W: q^2 > p*gamma^2 threshold for linear
+instability, hence sustained oscillation once capped by saturation).** This argument is
+SPECIFICALLY a linear (eigenvalue-of-L) argument -- it does not generalize the way the
+gradient-flow argument does, because it depends on the coupling being EXACTLY linear, not
+merely conservative. What DOES generalize: the LOCAL linearization of the full nonlinear
+system at x=0 (the Jacobian of `_relation_coupling(x, W, form)` with respect to x, evaluated
+at x=0), which governs whether a SMALL perturbation from equilibrium grows or decays.
+Computed both analytically (phi'(0)) and numerically (finite-difference Jacobian, n=6,
+`erdos_renyi`, exact to floating-point precision):
+
+  | form | phi'(0) | numerical Jacobian at x=0 |
+  |---|---|---|
+  | `diffusive` | 1 | exactly -L |
+  | `bounded_tanh` | tanh'(0) = 1 | exactly -L (matches diffusive to float precision) |
+  | `sinusoidal` | cos(0) = 1 | exactly -L (matches diffusive to float precision) |
+  | `cubic_odd` | d/dz[z^3] at 0 = 0 | exactly the ZERO matrix |
+
+  **`bounded_tanh` and `sinusoidal` share diffusive's EXACT linearization at the origin** --
+  so the q^2 > p*gamma^2 threshold, which is a statement purely about L's eigenvalues,
+  applies IDENTICALLY to these two forms in the small-amplitude regime near equilibrium: the
+  same inertia + asymmetry + damping combination that destabilizes the origin for diffusive
+  coupling destabilizes it identically for `bounded_tanh`/`sinusoidal`, since the linear
+  operator governing that regime is the SAME matrix, -L, in all three cases. **`cubic_odd`'s
+  linearization at the origin is the ZERO operator** -- there is NO linear growth mechanism
+  near equilibrium at all; the entire "inertia converts a marginal rotational mode into
+  growth" mechanism (Sec.10.3) has nothing to act on locally, since the leading-order
+  response to any small perturbation is cubically, not linearly, weak. This is exactly the
+  kind of theorem-breakage review asked to have recorded as a result in its own right, not
+  silently patched around: **`cubic_odd` coupling is not expected to reproduce sustained
+  oscillation via the SAME mechanism the other three forms share**, and Sec.21.4 checks this
+  prediction directly against the exhaustive sweep.
