@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 AUDIT
 
 ```yaml
 id: relational_r1
@@ -78,8 +78,25 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # survives deformation through the coherent node cluster
                              # (2 genuine detour confirmations), fails when substituting a
                              # diagnosed peripheral (low-degree) node. Combined verdict: NOT
-                             # NOISE. A candidate S-017 write-up is drafted for review's
-                             # decision (Sec.22.4), not asserted unilaterally.
+                             # NOISE. Review accepted, corrected, and formally recorded
+                             # S-017 ("winding arises from relation, but depends on coupling
+                             # form and is spatially localized -- NOT to be generalized")
+                             # and S-018 (persistence density is set by the coupling's
+                             # nonlinear shape, not its linear part) verbatim (Sec.22.7).
+                             # PR-R4 (Sec.23) then swept `bounded_tanh` broadly on 300
+                             # entirely independent seeds (disjoint from the discovery
+                             # sweep): density REPLICATED (41.7% vs 40.9%), but ZERO new
+                             # smoothness-gate hits appeared across 284 new covered cycles.
+                             # Combined total: 1 unique winding location out of 788
+                             # covered-cycle checks across 133 independent graphs -- rarer
+                             # than known when S-017 was written. Two plausible structural
+                             # predictors (node degree, run-level 100% persistence
+                             # saturation) were checked against the broader population and
+                             # NEITHER survived (the density=1.0 hypothesis was explicitly
+                             # retracted after checking 7 other fully-saturated runs: 0/72
+                             # of their covered cycles were smooth). R8 was NOT built
+                             # (review's explicit condition -- multiple independent hits --
+                             # was not met).
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -462,6 +479,22 @@ open_issues:
      non-monotonic, has the LOWEST density of the three) -- offered as the most consistent
      interpretation of 4 data points, explicitly not a proven, isolated mechanism (would
      need an unbounded+non-monotonic 4th form to complete a 2x2 factorial, not built)."
+  - "S-017/S-018 formally recorded (Sec.22.7, review's verbatim accepted text). PR-R4
+     (Sec.23) opened S-017's own identified question ('why only here') with a broad,
+     independent-seed sweep (`bounded_tanh`, 300 configs, seeds 50-64 disjoint from the
+     discovery sweep's 0-14): density REPLICATED (41.7% vs 40.9%, confirming S-018 is not a
+     fluke of the original seeds), but ZERO new smoothness-gate-passing cycles appeared
+     across 284 newly covered cycles (`bounded_tanh` + a `sinusoidal` control sweep).
+     Combined across both PR rounds: 1 unique winding location out of 788 covered-cycle
+     checks spanning 133 independent graphs -- rarer than known when S-017 was written.
+     Compared the hit against the pooled population on node degree (not distinguishing,
+     44th percentile) and run-level persistence density (the hit's run is 100% saturated,
+     but checked against 7 OTHER 100%-saturated runs in the new sweep: 0/72 of their
+     covered cycles were smooth, several with LARGER max_adjacent_step than average --
+     this hypothesis is explicitly RETRACTED, not left unchecked). No structural predictor
+     was found. R8 was NOT built (review's explicit condition -- multiple independent hits
+     -- not met). The 4th coupling form (S-018's factorial) was deferred, explicitly lower
+     priority than this PR's other work, per review's own prioritization."
 ```
 
 ---
@@ -3491,3 +3524,122 @@ correction: ONE located structure (`erdos_renyi` seed=9, `asymmetry_strength=0.3
 6-node cycle `[4,14,9,0,12,21]`), not a general claim that relation-based dynamics produce
 winding. PR-R4 (Sec.23) opens the question S-017 itself identifies as now-confirmed-open:
 why winding, so far, occurs at only this one location.
+
+## 23. PR-R4: a broad, independent-seed sweep finds ZERO new smooth-winding hits --
+S-017's "spatially localized" is now measured to be rarer than known, and no structural
+predictor was found
+
+Per S-017's own identified open question ("なぜ巻きは一箇所にしか生じないのか"): swept
+`bounded_tanh` broadly across entirely NEW, independent seeds and all 4 topologies (review's
+instruction to focus the main sweep on `bounded_tanh` specifically, keeping `sinusoidal` as
+a smaller control given its Kuramoto-literature association, not the main axis), then
+compared the one known hit's local structure against the resulting much larger population.
+
+### 23.1 Broad sweep: density replicates, but ZERO new smooth-winding hits
+
+300 entirely new configs for `bounded_tanh` (seeds 50-64, disjoint from the original
+discovery sweep's seeds 0-14 -- same 4 topologies x 5 `asymmetry_strength` values as the
+original 300-config space, matching sample size for a fair comparison), plus 60 configs for
+a `sinusoidal` control (same 15 new seeds x 4 topologies, `asymmetry_strength=0.3` only).
+Both exhaustively verified (`verify_long_window_all_nodes`, no screening, per S-015/Sec.21.5).
+
+| | `bounded_tanh` (new, independent) | `bounded_tanh` (original discovery, Sec.21.4) |
+|---|---|---|
+| density (unconditional) | **41.7%** | 40.9% |
+| covered length>=5 cycles | 214 | 314 |
+| n unique contributing runs | 59 / 300 | 67 / 300 |
+
+**S-018's density-doubling finding REPLICATES cleanly on independent seeds** (41.7% vs the
+diffusive baseline's 27.7%, essentially identical to the original discovery's 40.9% -- this
+is real, reproducible, structural finding about `bounded_tanh`, not a fluke of the specific
+seeds first tested).
+
+**Winding computed on all 214 + 70 (`sinusoidal` control) = 284 newly covered cycles
+(batched by 59+9=68 unique underlying runs): 141/284 (49.6%) show nonzero raw winding
+(consistent with the ~48-57% rate seen throughout this series) -- but 0/284 pass the
+smoothness gate.** Not one new example, anywhere in 15 new seeds x 4 topologies x 5
+strengths (`bounded_tanh`) or x1 strength (`sinusoidal` control).
+
+**Combined across both PR rounds' investigation of this question**: 788 total covered-cycle
+checks, spanning 133 unique underlying graphs (seed x topology x strength combinations),
+have now been tested for smoothness-gated winding. Exactly **1 unique location** passes --
+the same `erdos_renyi` seed=9 cycle, confirmed under 2 coupling forms (2 of the 788 checks).
+This measures S-017's "spatially localized" characterization to be even more extreme than
+known when it was written: **roughly 1 in 133 graphs, not 1 in a handful.**
+
+### 23.2 Hit-vs-no-hit structural comparison: no predictor found (reported honestly,
+including a hypothesis that did NOT survive a second check)
+
+Pooled all 788 covered-cycle checks (both PR rounds, both forms) and compared the one hit's
+local structure against the 786 non-smooth checks:
+
+| | hit (n=2, same cycle x 2 forms) | non-smooth (n=786) |
+|---|---|---|
+| mean cycle-node degree | 4.5 | 4.803 |
+| min cycle-node degree | 3.0 | 3.431 (44th percentile for the hit -- unremarkable) |
+| cycle length | 6.0 | 5.868 |
+
+**Degree does not distinguish the hit** -- it sits near the middle of the population's
+degree distribution, not at an extreme. This is a real, disclosed non-finding: PR-R3.1's
+swap-test (Sec.22.3) diagnosed the ONE failing alternative cycle to a low-degree (degree=2)
+substituted node, which suggested degree might be a governing factor -- **checked here
+against the full population and it is NOT a general predictor.**
+
+**A second hypothesis, checked and NOT surviving**: the hit run (`erdos_renyi` seed=9,
+strength=0.3) has 100% persistence density -- ALL 24 nodes verified, the maximum possible,
+sitting at the 100th percentile of the 300-run reference population (mean 41.7%). This
+looked promising as an explanation (full graph-wide synchronization enabling coherent
+transport) -- **but checked directly against the 7 OTHER runs in the new sweep that also
+reached 100% density: their 72 covered cycles show 0/72 smooth winding**, several with
+`max_adjacent_step` even LARGER (2.4-3.1 rad) than the population average. Full-graph
+saturation is therefore NOT a sufficient (and, on this small n=7 check, not obviously even a
+favorable) condition -- this specific, plausible-looking hypothesis is retracted here, in
+the same PR that raised it, rather than left unchecked or quietly dropped.
+
+**Also checked**: whether the hit cycle's 6 nodes have extra internal edges (chords) beyond
+the cycle itself -- they do not (exactly 6 edges among the 6 nodes, matching the cycle
+exactly, no denser local clustering).
+
+**Honest conclusion**: no structural predictor -- degree, run-level saturation, or internal
+chord density -- was found to distinguish the one known hit from the broader population.
+The question S-017 opened ("why only here") remains genuinely open after this PR's
+investigation, not resolved. What IS established: the phenomenon is rarer than a single
+example might have suggested (1/133 graphs, not found again in 68 more independent
+attempts), and at least two plausible structural hypotheses have been checked and ruled
+out, narrowing (by elimination) what future investigation should look at next.
+
+### 23.3 R8 instrument: NOT built, per review's explicit condition
+
+Review's condition was explicit: build R8 only once multiple independent graphs show
+passing cycles. That condition is NOT met -- the broad sweep found zero new
+smoothness-gate-passing cycles. R8 (a formal winding-number instrument) remains unbuilt.
+
+### 23.4 Fourth coupling form (S-018's factorial): deferred this PR, explicitly lower priority
+
+Per review's own prioritization ("優先度は1〜2より下"), not run this PR -- Sec.23.1's null
+broad-sweep result and Sec.23.2's structural investigation took this PR's compute and
+reporting budget. Remains available for a future PR if review wants S-018's boundedness-
+vs-monotonicity separation completed with a genuine 2x2 factorial (an unbounded,
+non-monotonic 4th form would be needed, not yet designed or run).
+
+### 23.5 9th-audit and 8th-audit re-check on Sec.23's own claims
+
+- **9th audit:** the null result (0/284 new hits) is reported with the SAME directness and
+  prominence as a positive result would receive -- it is not buried, minimized, or
+  reframed as inconclusive. The retracted density=1.0 hypothesis (Sec.23.2) is reported as
+  a hypothesis that was CHECKED and DID NOT SURVIVE, not omitted from the write-up because
+  it turned out to be wrong -- this series' standing discipline (report null/negative
+  results with the same weight as positive ones) applies to a researcher's own prior
+  hypothesis exactly as it applies to a substrate's own behavior.
+- **8th audit:** was the broad sweep's seed range (50-64) or the choice to check density
+  and degree specifically (rather than some other pair of properties more likely to
+  confirm the hit's specialness) selected after seeing partial results? No -- seeds 50-64
+  and the sweep's full topology/strength grid were fixed in the script before any run
+  (matching the original sweep's exact structure, just with disjoint seeds, for a
+  principled apples-to-apples comparison); degree and run-density were the two properties
+  most directly suggested by PR-R3.1's own swap-test diagnosis (low-degree substituted
+  node) and by the hit's own most visible feature (its run's 100% density), not chosen from
+  a larger menu to find something favorable. The density hypothesis's failure to survive
+  the 7-other-runs check is reported in full, including the specific numbers (0/72, several
+  with LARGER max_adjacent_step than average) that argue against it, not just a one-line
+  "not confirmed."
