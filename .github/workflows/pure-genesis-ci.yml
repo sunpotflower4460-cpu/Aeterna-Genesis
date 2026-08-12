@@ -5,6 +5,7 @@ on:
     paths:
       - 'ai_lab/dream/why_gate.py'
       - 'ai_lab/dream/pure_genesis.py'
+      - 'ai_lab/dream/nothing_genesis.py'
       - 'ai_lab/dream/root_integrity.py'
       - 'ai_lab/dream/frontier_expander.py'
       - 'ai_lab/dream/human_report.py'
@@ -14,8 +15,10 @@ on:
       - 'ai_lab/dream/portfolio_director.py'
       - 'ai_lab/missions/pure_genesis_r0.json'
       - 'docs/GENESIS_ROOT.md'
+      - 'docs/GENESIS_NOTHING.md'
       - 'docs/HUMAN_REPORTING.md'
       - 'tests/test_pure_genesis.py'
+      - 'tests/test_nothing_genesis.py'
       - 'tests/test_frontier_expander.py'
       - 'tests/test_human_report.py'
       - '.github/workflows/pure-genesis-ci.yml'
@@ -35,12 +38,23 @@ jobs:
           python-version: '3.11'
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Pure Genesis, frontier expansion, reporting and portfolio tests
-        run: pytest -q tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_human_report.py tests/test_hypothesis_evolution.py
-      - name: Tiny R0 law search with integrity audit
+      - name: Nothing Genesis, Pure Genesis, frontier expansion, reporting and portfolio tests
+        run: pytest -q tests/test_nothing_genesis.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_human_report.py tests/test_hypothesis_evolution.py
+      - name: Strict NØ control and tiny R0 law search with integrity audit
         run: |
           python - <<'PY'
-          from ai_lab.dream import human_report, pure_genesis, root_integrity
+          from ai_lab.dream import human_report, nothing_genesis, pure_genesis, root_integrity
+
+          n = nothing_genesis.run_nothing_research(
+              burst_id='ci-nothing', persist=False,
+              boundary_names=('existence', 'distinguishability', 'relation', 'change'),
+          )
+          assert n['strict_nothing']['physical_layer']['physical_givens'] == []
+          assert n['strict_nothing']['result']['physical_transition_executed'] is False
+          assert n['strict_nothing']['result']['something_observed'] is False
+          assert n['all_things_possible_zero']['instantiated_in_strict_arm'] is False
+          assert n['first_given_boundary']['nonempty_combinations_exhaustively_audited'] == 15
+
           r = pure_genesis.run_root_research(
               burst_id='ci-r0', law_trials=6, sizes=(6, 8), steps=20, seed=11, persist=False,
           )
@@ -53,5 +67,5 @@ jobs:
           assert r['root_integrity_audit']['raw_label_graph_closure_accepted_as_emergence'] is False
           first_read = human_report.render_markdown(human_report.build_summary({'pure_genesis_r0': r}))
           assert human_report.first_read_violations(first_read) == []
-          print('Pure Genesis R0 CI audited and human-readable')
+          print('Strict NØ + Pure Genesis R0 CI audited and human-readable')
           PY
