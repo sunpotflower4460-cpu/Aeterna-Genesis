@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 AUDIT
 
 ```yaml
 id: relational_r1
@@ -96,7 +96,26 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # retracted after checking 7 other fully-saturated runs: 0/72
                              # of their covered cycles were smooth). R8 was NOT built
                              # (review's explicit condition -- multiple independent hits --
-                             # was not met).
+                             # was not met). PR-R5 (Sec.24): review corrected S-017 itself
+                             # (Sec.22.7, both original and revised text kept, verbatim) --
+                             # the 14-trial perturbation battery was evidence the ONE known
+                             # location is internally robust, not evidence the phenomenon
+                             # occurs generally; that correction is now the standing text.
+                             # Computed search power (need ~2360 covered-cycle checks for
+                             # 95% confidence at the 1/788 point estimate), then found a
+                             # near-free lever -- a broader (non-fundamental) simple-cycle
+                             # basis applied to ALREADY-SWEPT PR-R4 data -- yielding 149x
+                             # more candidates (214 -> 31,869) with no new simulation for
+                             # the coverage check. This surfaced 5 NEW candidate locations;
+                             # a window-doubling check (matching PR-R3.1's precedent) found
+                             # 3/5 do NOT survive (the same short-window artifact this
+                             # series has repeatedly diagnosed elsewhere) and 2/5 DO --
+                             # bringing the total to 3 independent, window-robust winding
+                             # locations (up from 1), though the 2 new ones have not yet
+                             # had the FULL validation battery the original received.
+                             # Directly relevant to PR-R4's own stated R8 condition
+                             # (multiple independent graphs) -- flagged for review's
+                             # decision, not acted on unilaterally.
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -495,6 +514,30 @@ open_issues:
      was found. R8 was NOT built (review's explicit condition -- multiple independent hits
      -- not met). The 4th coupling form (S-018's factorial) was deferred, explicitly lower
      priority than this PR's other work, per review's own prioritization."
+  - "PR-R5 (Sec.24): review identified their own judgment error in S-017 -- the 14-trial
+     perturbation battery (Sec.22.2) showed the ONE known location is internally robust,
+     not that the phenomenon occurs generally; S-017 is REVISED (Sec.22.7, both original
+     and corrected text kept verbatim) to state only what is established: 1 location,
+     internally robust, not yet reproduced elsewhere. Computed search power: ~2360
+     covered-cycle checks needed for 95% confidence at the 1/788 point estimate (Wilson 95%
+     CI [0.0224%, 0.7153%] -- wide, from a single observation). Found the cheapest
+     production lever: a broader (non-fundamental) simple-cycle basis applied to the
+     ALREADY-SWEPT PR-R4 data (300 graphs) -- 149x more candidates (214 -> 31,869 covered
+     cycles) for ~10 minutes of new compute (winding only, no new verification). This
+     surfaced 5 new candidate locations (clustered by shared nodes into 1 per underlying
+     graph); a window-doubling robustness check eliminated 3/5 (the same short-window
+     artifact diagnosed repeatedly elsewhere in this series) and confirmed 2/5 -- bringing
+     the total to 3 independent, window-robust winding locations, though the 2 new ones
+     have NOT yet had the full validation battery (independent initial conditions, damage-
+     recovery) the original received. This is directly relevant to PR-R4's own stated R8
+     condition (multiple independent graphs) -- flagged for review's decision, not acted on
+     unilaterally; R8 was not built this PR either. Directly described (not compared) the
+     original hit: winding is present continuously across ~90% of the analysis window (not
+     a transient), the 6 cycle nodes oscillate at visibly different amplitudes, and direct
+     graph-neighbors outside the cycle are also clearly oscillating. Implemented (but did
+     not sweep) a 4th coupling_form, `cubic_repulsive` (phi(z)=z^3-z, unbounded and non-
+     monotonic, origin derivative -1 -- locally repulsive, unlike every prior form),
+     completing S-018's 2x2 design; the sweep itself is deferred to a future PR."
 ```
 
 ---
@@ -3677,3 +3720,180 @@ non-monotonic 4th form would be needed, not yet designed or run).
   the 7-other-runs check is reported in full, including the specific numbers (0/72, several
   with LARGER max_adjacent_step than average) that argue against it, not just a one-line
   "not confirmed."
+
+## 24. PR-R5: S-017 revised per review's own correction; a broader cycle basis finds 2 MORE
+window-robust independent winding locations, from data already in hand
+
+Per review's own correction to S-017 (Sec.22.7 above, revised text recorded verbatim) and
+review's redirected priority -- not new hypotheses, but building a search at the right
+scale for a ~1/788 phenomenon -- this PR computed the actual power requirement, then found
+a production lever effective enough to largely satisfy it using data ALREADY collected.
+
+### 24.1 Search power: how many covered-cycle checks are needed
+
+At the point estimate p=1/788=0.1269% (Wilson 95% CI: [0.0224%, 0.7153%] -- genuinely wide,
+since this is a single observed event):
+
+| target confidence of >=1 hit | covered-cycle checks needed |
+|---|---|
+| 50% | 546 |
+| 80% | 1268 |
+| **95%** | **2360** |
+| 99% | 3627 |
+
+One 300-config `bounded_tanh` sweep produces ~264 covered cycles on average (314 original,
+214 independent-seed) via the fundamental-cycle basis -- so ~9 such sweeps (~2700 configs,
+~8.8 hours of exhaustive verification) would be needed for 95% confidence, AT the point
+estimate (which itself could easily be off by a large factor given the CI width). Sec.24.2
+found a way to get most of this power without any new sweep at all.
+
+### 24.2 The cheapest lever: a broader cycle basis, applied to data already in hand
+
+`topology.fundamental_cycles` returns a MINIMAL basis (one cycle per chord edge) --
+~20-25 cycles per 24-node graph. Full simple-cycle enumeration (bounded DFS, length 5-10,
+`networkx` unavailable in this environment) finds **339-2515 cycles per graph** for
+0.01-0.07 seconds of pure graph-theory compute, no simulation. Applied to all 300 already-
+swept PR-R4 `bounded_tanh` graphs (verified masks already known, zero new verification
+needed for the coverage check itself):
+
+| | fundamental basis | wide basis (length 5-10) |
+|---|---|---|
+| covered length>=5 cycles | 214 | **31,869 (149x)** |
+
+Computing winding required rerunning only the 138 unique graphs that had >=1 newly-covered
+cycle (~10.4 minutes) -- far cheaper than a fresh sweep.
+
+**Result: 123 smooth-winding cycle-checks, clustering (by shared nodes, connected-
+component analysis -- exactly the discipline PR-R3.1 already established for the reversed-
+duplicate cycle) into 5 DISTINCT locations, one per underlying graph:**
+
+| seed | topology | strength | cycles in cluster |
+|---|---|---|---|
+| 51 | erdos_renyi | 1.0 | 2 |
+| 55 | erdos_renyi | 0.3 | 92 |
+| 62 | random_regular | 0.3 | 2 |
+| 62 | erdos_renyi | 0.3 | 7 |
+| 63 | watts_strogatz | 0.3 | 20 |
+
+Each of the 5 runs contributes exactly ONE connected cluster (all its smooth cycles share
+overlapping nodes) -- consistent with a single coherent region per graph, not one location
+fragmented into many or several unrelated locations merged together.
+
+**Window-robustness check (15x -> 30x extend factor, one representative cycle per
+location, matching PR-R3.1's precedent methodology exactly) -- NOT all 5 survive:**
+
+| seed / topology / strength | 15x | 30x | robust? |
+|---|---|---|---|
+| 51 / erdos_renyi / 1.0 | winding=1, smooth, settled | winding=0, NOT smooth, NOT settled | **NO** |
+| 55 / erdos_renyi / 0.3 | winding=-1, smooth, settled | winding=-1, smooth, settled | **YES** |
+| 62 / random_regular / 0.3 | winding=1, smooth, settled | winding=1, NOT smooth, NOT settled | **NO** |
+| 62 / erdos_renyi / 0.3 | winding=1, smooth, settled | winding=1, smooth, settled | **YES** |
+| 63 / watts_strogatz / 0.3 | winding=-1, smooth, settled | winding=0, NOT smooth, settled | **NO** |
+
+**3 of the 5 new candidates do NOT survive window doubling** -- the same short-window
+artifact this project has repeatedly diagnosed elsewhere (Sec.9.2, 12.2/13.3, 18) shows up
+here too, exactly as expected: a wider, less selective cycle search will catch some
+transient-looking structures along with genuine ones, and the SAME discipline (never trust
+"settled" without extending the window) that this series applies everywhere else applies
+here. This is reported as a real finding, not smoothed over -- a naive "5 new hits!"
+headline would have been wrong.
+
+**2 of the 5 DO survive** (seed=55 `erdos_renyi` strength=0.3; seed=62 `erdos_renyi`
+strength=0.3) -- winding sign, smoothness, and `all_settled` all unchanged at double the
+window. **Combined with the original seed=9 location (already validated through PR-R3.1's
+full battery -- perturbation robustness, cycle-shift, window-doubling), this PR's window-
+robustness check alone brings the total to 3 independent, window-robust winding locations
+-- found from data already collected, no new seeds simulated.**
+
+**This has NOT yet received the FULL validation battery** (independent initial conditions,
+damage-recovery, nearby-cycle-shift checks) that the original seed=9 location received in
+PR-R3.1 -- only the one window-doubling check, disclosed as a first-pass sanity check, not
+a substitute for that fuller battery. Flagged explicitly, not run this PR: whether these 2
+new locations pass the same 14-trial perturbation battery the original did.
+
+**Directly relevant to a standing condition from PR-R4 (Sec.23.3): review's own stated
+condition for building R8 was "multiple independent graphs showing passing cycles."** With
+3 independent, window-robust locations now known (up from 1), that condition's LITERAL
+text may now be satisfiable -- flagged here for review's decision, not acted on
+unilaterally; building R8 was not part of this PR's task list, and the 2 new locations
+have less validation behind them than the original.
+
+**Also not yet done, noted as a natural next step**: this wide-basis rescan was only
+applied to the PR-R4 (new independent-seed) sweep, whose per-run verified masks were
+already saved. The ORIGINAL discovery sweep's (PR-R3) 300 configs were not similarly
+saved at the per-run level, so applying the same free lever there would require re-
+verification first (~48 minutes, matching PR-R2.8's exhaustive cost) -- cheap relative to
+fresh seeds, but not free, and not run this PR.
+
+### 24.3 Direct description of the original hit (not comparison, per review's request)
+
+`erdos_renyi`, seed=9, `asymmetry_strength=0.3`, `bounded_tanh`, cycle
+`[4, 14, 9, 0, 12, 21]`. The raw trajectory (45001 steps, analysis window [24750, 42751])
+shows:
+
+- **Winding is present almost continuously across the analysis window, not a brief
+  transient.** Computed at 20 evenly-spaced points across the window: 18/20 give
+  `winding=-1` and PASS the smoothness gate, with `max_adjacent_step` tightly clustered
+  around 1.49 throughout the MIDDLE of the window (steps ~25700-41800); only the two
+  samples closest to the window's own edges (step 24750, step 42750) fail smoothness
+  (`max_step` 2.29-2.32) -- consistent with the KNOWN Hilbert-transform edge effect this
+  series has trimmed for since R3/R4 (Sec.3.3), not evidence the phenomenon itself is
+  intermittent.
+- **The 6 cycle nodes oscillate at visibly different amplitudes**, not uniformly: raw
+  state sampled every 3000 steps shows node 4 ranging roughly [-0.29, 0.31], node 9
+  roughly [-0.12, 0.13], but nodes 12 and 21 confined to a much smaller [-0.02, 0.02] band
+  -- the winding structure spans nodes with quite different oscillation strength, not a
+  uniform ring.
+- **Direct graph-neighbors of the cycle (outside it) are also clearly oscillating** at
+  comparable amplitude to the cycle's own stronger nodes (e.g. neighbor node 6 ranges
+  roughly [-0.27, 0.28]) and are independently confirmed `settled=True` -- the coherent
+  region is not perfectly bounded by the 6-cycle's edges; it extends into at least some of
+  the immediately surrounding graph, consistent with Sec.15.3(b)'s much earlier finding
+  (amplitude reaches non-verified neighbors at 61-72% retention) now viewed through this
+  specific example.
+- Full numeric series (phase and raw state, all 6 nodes, plus the sampled non-cycle nodes)
+  are in `results_pr_r5.json`, not reproduced in full here.
+
+### 24.4 Fourth coupling form: `cubic_repulsive` implemented, not yet swept
+
+Per review's instruction (explicitly separate purpose from the winding search, explicitly
+lowest priority): added `coupling_form="cubic_repulsive"`, phi(z) = z^3 - z -- the
+derivative of the standard symmetric double-well potential z^4/4 - z^2/2, completing
+S-018's {bounded, unbounded} x {monotonic, non-monotonic} design (`sinusoidal` covers
+bounded+non-monotonic; `cubic_odd` covers unbounded+monotonic; this is the remaining
+unbounded+non-monotonic cell). Its origin derivative is -1 -- locally REPULSIVE, unlike
+every other form tested so far (+1 or 0) -- disclosed directly in the code's own
+docstring, not smoothed over. Still gradient-flow-compatible (the potential is even and
+bounded below), so Sec.21.3's no-periodicity/energy-decay arguments are expected to
+transfer; not yet checked empirically. Tested (shift-invariance is inherited from the
+shared `_relation_coupling` dispatcher; a new test confirms the repulsive-near-origin /
+attractive-at-large-z sign pattern directly). **No sweep was run this PR** -- explicitly
+deferred given this PR's time budget went to Sec.24.1-24.3's higher-priority findings;
+available for a future PR.
+
+### 24.5 S-017 revised (see Sec.22.7 above for the full verbatim text)
+
+Review's own correction is recorded in place at Sec.22.7, alongside the original text, as
+the disclosed record of the correction itself -- not repeated here. S-018 is unchanged and
+further reinforced by this PR's finding that TWO more independent, window-robust
+persistence structures exist beyond the original.
+
+### 24.6 9th-audit and 8th-audit re-check on Sec.24's own claims
+
+- **9th audit:** the wide-basis lever's headline number (149x more candidates) is reported
+  alongside the number that actually matters (5 raw location-candidates, only 2 window-
+  robust) -- the more dramatic, less qualified number is not the one used for the "3 total
+  robust locations" conclusion. The window-robustness check that KILLED 3 of 5 candidates
+  is reported in the same table, same prominence, as the 2 that survived -- this section
+  does not lead with "5 new locations found" and bury the correction in a later paragraph.
+- **8th audit:** was the length-5-10 cutoff, or the choice to spot-check exactly these 5
+  representative cycles (one per cluster) rather than all 123, selected to produce a
+  favorable-looking result? No -- length 5-10 was fixed before running the enumeration
+  (5 is the structural minimum per Sec.16's smoothness-gate derivation; 10 was chosen as
+  "clearly enough to demonstrate the lever" during the feasibility check, before the full
+  scan ran); one representative cycle per cluster (not all 123) was checked specifically
+  because checking every member of a cluster would mostly re-test the SAME underlying
+  nodes' phases, adding cost without adding independent information -- this is disclosed
+  as a first-pass, not a claim that all 123 individually were verified. The fact that the
+  robustness check ELIMINATED 3 of 5 candidates -- most of the raw finding -- is the
+  strongest evidence this was not run to manufacture a favorable count.
