@@ -3429,3 +3429,65 @@ mechanism -- flagged explicitly as an open item for a future PR if review wants 
   review to accept/edit/decline, not written into SETTLED.md directly by this PR --
   preserving review's standing role as the one who commits achievement-tier language, per
   every prior S-0XX entry in this series.
+
+### 22.7 S-017 and S-018, formally recorded (review's own text, verbatim)
+
+Review accepted PR-R3.1's tests, corrected Sec.22.4's draft framing from "winding arises
+from relation" to the narrower, explicitly non-generalized form below, and provided both
+entries' final text directly.
+
+**S-017: 巻きは関係から生じる。ただし結合形に依存し、空間的に局在する**
+
+> 確定したこと :
+>   ・拡散結合では 0/178 の閉路しか滑らかさゲートを通らなかったが、
+>     単調な結合形（bounded_tanh / sinusoidal）では通過例が出現した
+>   ・同一グラフ（erdos_renyi, seed=9, strength=0.3, 6ノード閉路）で、
+>     2つの異なる結合形がともに winding=-1 を示した
+>   ・独立な初期条件6通り×2結合形＋振幅摂動からの回復2件、計14試行すべてで
+>     winding=-1、滑らかさゲート通過、max_adjacent_step が 1.4818〜1.4957 に集中
+>     （符号だけでなく位相の刻み方まで一致しており、ノイズでは説明できない）
+>   ・近傍閉路223個のうち、迂回変形2個が同符号を維持（巻きは面に属する）
+>   ・一方、1ノード入替の代替閉路は不合格。置換ノードは次数2の周辺ノードで
+>     位相がほぼπずれており、構造に空間的境界があることと整合する
+>
+> どう確定したか: 実測＋介入。摂動頑健性と閉路変形の両方を通過。
+>                符号対称性の検定（W→W^T）は、WとW^Tの固有値が厳密に同一で
+>                閾値が変わらないため、この系には原理的に適用できないと判明した
+>
+> これでできること:
+>   ・「差→向き→反復→周期→位相→閉路→巻き」の連鎖が、限定つきで通った
+>   ・次の問いが確定した：なぜ巻きは一箇所にしか生じないのか
+>
+> これで消えたこと:
+>   ・「巻きは関係からは生じない」は誤り。拡散結合という一つの結合形の性質だった
+>   ・ただし「関係から円が生まれる」と一般化してはならない。
+>     現時点で確認されているのは、特定のグラフの特定の一箇所である
+
+**S-018: 持続の広がりを決めるのは、線形部ではなく結合の非線形の形**
+
+> 確定したこと :
+>   ・diffusive / bounded_tanh / sinusoidal は原点で厳密に同じヤコビアン（-L）を持つ。
+>     つまり線形部は同一である
+>   ・それでも持続密度は 27.7% / 40.9% / 9.4% と大きく異なる
+>   ・cubic_odd（無界・超線形）は原点でヤコビアンがゼロ行列となり、
+>     局所的な不安定化機構を持たない。密度0.04%・被覆閉路0本で崩壊した
+>   ・有界性だけでは順序を説明できない（sinusoidal も有界だが最低）。
+>     単調性が支配的で、有界性がその上に上乗せされる、という二段階の説明が
+>     4点のデータと最も整合する（無界・非単調の第4形がないため完全分離は未検証）
+>
+> これでできること:
+>   ・線形安定性解析だけでは、持続がどこまで広がるかを予測できないと確定した
+>   ・結合形が「材料」として実在することが示された
+>
+> これで消えたこと:
+>   ・「線形部が同じなら振る舞いも同じ」は誤り
+
+Both are recorded here as the R-layer's own formal ledger entry (this repository has never
+contained a separate `SETTLED.md` file, despite the name being used consistently for this
+purpose since S-011 -- the pattern throughout this series has been to incorporate review's
+verbatim confirmed text into AUDIT.md as the durable record, and this entry continues that
+pattern rather than introducing a new file). S-017's scope is explicitly narrow per review's
+correction: ONE located structure (`erdos_renyi` seed=9, `asymmetry_strength=0.3`, the
+6-node cycle `[4,14,9,0,12,21]`), not a general claim that relation-based dynamics produce
+winding. PR-R4 (Sec.23) opens the question S-017 itself identifies as now-confirmed-open:
+why winding, so far, occurs at only this one location.
