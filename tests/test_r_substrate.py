@@ -402,3 +402,18 @@ def test_sinusoidal_coupling_form_is_bounded_and_can_change_sign():
     assert near[0, 0] > 0
     assert far[0, 0] < 0
     assert abs(far[0, 0]) <= 1.0 + 1e-9  # sin is bounded in [-1, 1]
+
+
+def test_cubic_repulsive_is_unbounded_and_non_monotonic_with_negative_origin_slope():
+    """cubic_repulsive (phi=z^3-z) completes S-018's 2x2 design (unbounded + non-monotonic,
+    AUDIT.md Sec.22.7/24): near-zero it must be REPULSIVE (opposite sign from diffusive's
+    attraction), unlike every other coupling_form's origin behavior, and unbounded for
+    large z (dominated by the z^3 term, same sign as diffusive/cubic_odd there)."""
+    W = np.array([[0.0, 1.0], [1.0, 0.0]])
+    x_tiny = np.array([[0.0], [0.1]])     # small positive difference: z^3-z ~= -z, repulsive
+    x_large = np.array([[0.0], [5.0]])    # large difference: z^3 dominates, attractive again
+    tiny = substrate._relation_coupling(x_tiny, W, "cubic_repulsive")
+    large = substrate._relation_coupling(x_large, W, "cubic_repulsive")
+    assert tiny[0, 0] < 0   # repulsive near the origin (opposite sign from diffusive)
+    assert large[0, 0] > 0  # attractive again once z^3 dominates -- unbounded, not saturating
+    assert abs(large[0, 0]) > abs(tiny[0, 0]) * 10  # confirms unboundedness (no saturation cap)

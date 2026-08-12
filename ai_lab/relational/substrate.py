@@ -62,7 +62,7 @@ DEFAULT_ASYMMETRY = False           # off by default -- w_ij == w_ji (PR-R1.5, s
 DEFAULT_ASYMMETRY_STRENGTH = 0.5    # only used when asymmetry=True; kept < 1 so weights stay >= 0
 DEFAULT_COUPLING_FORM = "diffusive"  # PR-R3 -- the functional shape of the pairwise response;
                                       # "diffusive" is the ORIGINAL, unchanged PR-R1 form
-COUPLING_FORMS = ("diffusive", "bounded_tanh", "cubic_odd", "sinusoidal")
+COUPLING_FORMS = ("diffusive", "bounded_tanh", "cubic_odd", "sinusoidal", "cubic_repulsive")
 
 def _default_random_regular_degree(n: int) -> int:
     """Pick a degree <= min(4, n-1). Any value here works: if n is even, n*degree is even
@@ -189,6 +189,20 @@ def _relation_coupling(x: np.ndarray, W: np.ndarray, form: str) -> np.ndarray:
       |z| > pi); the natural next term after z and z^3 in the odd-function family (sin(z) =
       z - z^3/6 + ... for small z, so it agrees with "diffusive" to leading order near
       z=0), and the only one of the four whose sign is not fixed by the sign of z alone.
+    - "cubic_repulsive": phi(z) = z^3 - z -- UNBOUNDED and NON-MONOTONIC (the fourth cell of
+      the 2x2 {bounded, unbounded} x {monotonic, non-monotonic} design that S-018,
+      AUDIT.md Sec.22.7, flagged as needed to fully isolate boundedness from monotonicity
+      as separate factors -- `sinusoidal` covers bounded+non-monotonic, `cubic_odd` covers
+      unbounded+monotonic, so this is the one combination not yet tested. Not a made-up
+      function: z^3-z is the derivative of the standard symmetric double-well potential
+      z^4/4 - z^2/2, so it is still a gradient-flow-compatible form (Sec.21.3's no-
+      periodicity/energy-decay arguments still apply, see AUDIT.md Sec.24 for the check).
+      phi'(0) = -1 -- UNLIKE all three other forms (whose origin derivative is +1 or 0),
+      this one is locally REPULSIVE at z=0: an infinitesimal difference is pushed apart,
+      not pulled together, near equality; the quartic potential's confinement only takes
+      over away from the origin. This axis is added for S-018's own purposes (isolating
+      which nonlinear property drives persistence density) and is explicitly NOT part of
+      the winding search -- AUDIT.md Sec.24 keeps its results in a clearly separate section.
 
     All four keep w_ij >= 0 (topology-generated weights are never negative) and depend only
     on (x_j - x_i) and w_ij -- never x_i, x_j individually, nor any aggregate (the same hard
@@ -203,6 +217,8 @@ def _relation_coupling(x: np.ndarray, W: np.ndarray, form: str) -> np.ndarray:
         phi = diff ** 3
     elif form == "sinusoidal":
         phi = np.sin(diff)
+    elif form == "cubic_repulsive":
+        phi = diff ** 3 - diff
     else:
         raise ValueError("unknown coupling_form %r; available: %s" % (form, COUPLING_FORMS))
     return np.einsum("ij,ijm->im", W, phi)
