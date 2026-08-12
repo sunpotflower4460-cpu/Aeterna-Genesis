@@ -89,7 +89,7 @@ jobs:
             exit 1
           fi
           echo "Dry runs left the working tree clean."
-      - name: Easy, NØ, emergence, cross-world, Pure Genesis and Multi-World reports were produced
+      - name: Easy, complete NØ, emergence, cross-world, Pure Genesis and Multi-World reports were produced
         env:
           DRY: runtime/dry-run/latest
         run: |
@@ -98,6 +98,11 @@ jobs:
           test -f $DRY/ai_lab/reports/easy/latest.json
           test -f $DRY/ai_lab/reports/easy/latest.md
           test -f $DRY/ai_lab/reports/easy/nothing_latest.json
+          test -f $DRY/ai_lab/reports/easy/nothing_latest.md
+          test -f $DRY/ai_lab/reports/easy/nothing_latest.png
+          test -f $DRY/ai_lab/reports/easy/nothing/*/report.json
+          test -f $DRY/ai_lab/reports/easy/nothing/*/human.md
+          test -f $DRY/ai_lab/reports/easy/nothing/*/boundary.png
           test -f $DRY/ai_lab/reports/multiworld/latest.json
           test -f $DRY/ai_lab/reports/emergence/latest.json
           test -f $DRY/ai_lab/reports/crossworld/latest.json
@@ -125,7 +130,9 @@ jobs:
           grep -q '"mode": "strict-nothing-genesis-meta-control"' $DRY/ai_lab/reports/easy/nothing_latest.json
           grep -q '"nonempty_combinations_enumerated": 65535' $DRY/ai_lab/reports/easy/nothing_latest.json
           grep -q '"per_combination_physical_simulation_performed": false' $DRY/ai_lab/reports/easy/nothing_latest.json
+          grep -q '"verdict": "DECLARATIVE_NULL_CONTROL_NOT_A_PASSED_EIGHTH_AUDIT"' $DRY/ai_lab/reports/easy/nothing_latest.json
           grep -q '"passed": true' $DRY/ai_lab/reports/easy/nothing_latest.json
+          grep -q '次にできること' $DRY/ai_lab/reports/easy/nothing_latest.md
           grep -q '"known_F_path_is_one_reference_only": true' $DRY/ai_lab/reports/emergence/latest.json
           grep -q '"mode": "shadow"' $DRY/ai_lab/reports/multiworld/latest.json
           grep -q '"mode": "cross-world-open-ended-shadow"' $DRY/ai_lab/reports/crossworld/latest.json
