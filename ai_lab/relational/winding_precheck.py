@@ -26,6 +26,19 @@ so they can be reused by a future R8; nothing here is wired into `instruments.py
 `measure_all()`, and this module does not itself claim to measure R-layer winding
 structure -- it only characterizes the measurement's own error floor and necessary
 preconditions.
+
+STANDING DISCIPLINE (PR-R6, AUDIT.md Sec.25.4, review's explicit instruction): a
+smooth-winding CANDIDATE must not be reported -- not even provisionally -- unless it has
+been checked at `WINDING_CANDIDACY_MIN_EXTEND_FACTOR` (30x the base window) or wider. This
+is baked into the definition of "candidate," not treated as an optional follow-up
+robustness check. Reason, stated plainly because it recurred a fourth time before being
+made structural: this exact short-window failure mode -- something that looks settled/
+smooth at a shorter window and stops being so once the window is extended -- has now
+appeared at 605/1200 (PR-R1.5's memory=on sweep), 116/600 (Sec.11's settled-vs-sustained
+correction), 119 missed-detection node-checks (PR-R2.6's screening false-negative work),
+and 3/5 of PR-R5's wide-basis winding candidates (Sec.24.2, 15x->30x). Every prior
+occurrence was caught by a follow-up check after the fact; this constant exists so the next
+occurrence is caught by construction instead.
 """
 
 from __future__ import annotations
@@ -33,6 +46,8 @@ from __future__ import annotations
 from typing import Optional
 
 import numpy as np
+
+WINDING_CANDIDACY_MIN_EXTEND_FACTOR = 30
 
 
 def compute_winding(phases: np.ndarray) -> int:

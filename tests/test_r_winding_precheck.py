@@ -119,3 +119,9 @@ def test_monte_carlo_smooth_null_rate_is_far_below_naive_approximation():
 def test_monte_carlo_smooth_null_rate_zero_below_min_length():
     assert wp.monte_carlo_smooth_null_rate(3, trials=50_000, seed=1) == 0.0
     assert wp.monte_carlo_smooth_null_rate(4, trials=50_000, seed=1) == 0.0
+
+
+def test_winding_candidacy_min_extend_factor_is_thirty():
+    """PR-R6 (AUDIT.md Sec.25.4): a smooth-winding candidate must not be reported unless
+    checked at this window or wider -- baked into the definition, not a follow-up check."""
+    assert wp.WINDING_CANDIDACY_MIN_EXTEND_FACTOR == 30
