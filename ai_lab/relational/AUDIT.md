@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 + PR-R6 AUDIT
 
 ```yaml
 id: relational_r1
@@ -115,7 +115,40 @@ role: E                     # candidate E throughout: proofs (Sec.3.1, Sec.10.1,
                              # had the FULL validation battery the original received.
                              # Directly relevant to PR-R4's own stated R8 condition
                              # (multiple independent graphs) -- flagged for review's
-                             # decision, not acted on unilaterally.
+                             # decision, not acted on unilaterally. PR-R6 (Sec.25): review's
+                             # own cross-referencing found the 3 known locations share ONE
+                             # cell (erdos_renyi, strength=0.3) of a 20-cell grid; a
+                             # concentrated re-sweep (300 new configs, 30x window baked in
+                             # from the start, not a follow-up) REFUTED both the resulting
+                             # predictions -- lower strength does NOT raise the hit rate
+                             # (non-monotonic, peak at 0.5; the 2 lowest strengths show
+                             # ZERO hits) and erdos_renyi is NOT the highest-rate topology
+                             # (random_regular's pooled rate, 8.0%, exceeds erdos_renyi's
+                             # 2.7%) -- both reported plainly, per review's explicit
+                             # instruction. Unplanned positive finding: clustering +
+                             # window-robustness together find the TRUE rate is 9/300=3.0%
+                             # graphs (up from the earlier 2/300=0.67%), bringing the running
+                             # total to 12 known window-robust locations. Denominator
+                             # corrected from covered cycles to independent graphs
+                             # (Sec.25.2, now the primary metric going forward); multiple-
+                             # comparisons math explicitly documented (Sec.25.3: ~16 of 123
+                             # and ~129 of 174 raw hits could be chance alone at the <0.05%
+                             # null-rate ceiling, neither dispositive alone -- clustering +
+                             # window-robustness together, not either alone, is the actual
+                             # answer). WINDING_CANDIDACY_MIN_EXTEND_FACTOR=30 baked into
+                             # winding_precheck.py's own definition of "candidate" (Sec.25.4)
+                             # -- the 4th recurrence of the same short-window artifact, now
+                             # structural rather than a follow-up check. The 2 PR-R5
+                             # locations (seed=55/62) passed the FULL validation battery at
+                             # seed=9's exact depth (Sec.25.5: 6/6 independent ICs,
+                             # damage-recovery, 58/560 and 7/304 nearby-cycle confirmations)
+                             # -- review's own precondition for building R8. R8
+                             # (instruments.py::winding()) is now IMPLEMENTED (Sec.25.6),
+                             # following R7's exact precedent: gated on R4's
+                             # sustained_and_settled for every node in a caller-supplied
+                             # cycle, discloses the same window-verification-is-the-caller's-
+                             # responsibility caveat R7 discloses, reproduces the manual
+                             # scripts' own numbers exactly on the seed=55 positive control.
 claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + measured zero --
                              # unaffected by saturation throughout (Sec.13.1). memory=on,
                              # symmetric W: proven + measured zero (Sec.10.1/9.2) -- also
@@ -202,6 +235,18 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # candidate proxy Sec.19.1 used, which undercounted by ~89x)
                              # finds 178 covered cycles, not 2 -- see Sec.20 for the final
                              # account, including the winding measurement on all 178.
+                             # PR-R6 (Sec.25): R8 IS NOW BUILT (instruments.py::winding()) --
+                             # the review-stated precondition (matching validation depth
+                             # across the locations used to justify it) was met first
+                             # (Sec.25.5: seed=55/62 both pass the full battery at seed=9's
+                             # depth), not retrofitted. Separately, the underlying phenomenon
+                             # itself is now measured at 12 known window-robust locations
+                             # (up from 3), 9 of which have ONLY the window-robustness check,
+                             # not the fuller battery -- flagged, not yet run. The concentrated
+                             # sweep also refuted both structural predictions review's own
+                             # cross-referencing suggested (lower-strength enrichment,
+                             # erdos_renyi-exclusivity) -- reported as refutations, not
+                             # smoothed into the positive 3.0%-rate headline.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -538,6 +583,38 @@ open_issues:
      not sweep) a 4th coupling_form, `cubic_repulsive` (phi(z)=z^3-z, unbounded and non-
      monotonic, origin derivative -1 -- locally repulsive, unlike every prior form),
      completing S-018's 2x2 design; the sweep itself is deferred to a future PR."
+  - "PR-R6 (Sec.25): review's own cross-referencing found the 3 known window-robust
+     locations share exactly ONE cell (erdos_renyi, strength=0.3) of a 4-topology x
+     5-strength grid, motivating a concentrated re-sweep (300 new configs, 30x window baked
+     in from the start, not applied as a follow-up filter). BOTH resulting predictions were
+     tested and REFUTED, reported plainly per review's explicit instruction: the rate vs.
+     strength is non-monotonic (peak at 0.5, not the lowest strength -- 0.1 and 0.2 show
+     ZERO hits), and erdos_renyi is not the highest-rate topology (random_regular's 8.0%
+     pooled rate exceeds erdos_renyi's 2.7%). The unplanned positive finding: clustering +
+     window-robustness together (Sec.25.1) find the true rate is 9/300=3.0% graphs, far
+     higher than the earlier 2/300=0.67% estimate, bringing the running total to 12 known
+     window-robust locations (9 with window-robustness only, not yet the fuller battery).
+     Per review's two required corrections: the denominator is now GRAPHS, not covered
+     cycles (Sec.25.2, established as the primary going-forward metric), and the multiple-
+     comparisons math is explicitly documented (Sec.25.3: at the <0.05% null-rate ceiling,
+     ~16 of PR-R5's 123 raw hits and ~129 of this PR's 174 could be chance alone -- neither
+     figure is dispositive on its own; clustering + window-robustness TOGETHER, not either
+     alone, is the actual methodological answer, evidenced by the 174->9 and 123->5->2
+     reductions). `WINDING_CANDIDACY_MIN_EXTEND_FACTOR=30` is now baked into
+     `winding_precheck.py`'s own definition of a reportable candidate (Sec.25.4) -- the 4th
+     recurrence of the same short-window artifact (605/1200, 116/600, 119 missed-detection
+     nodes, PR-R5's 3/5), now structural rather than caught after the fact each time. The 2
+     PR-R5 locations (seed=55/62) received the FULL validation battery at seed=9's exact
+     depth (Sec.25.5: 6/6 independent initial conditions, damage-recovery, 58/560 and 7/304
+     nearby-cycle-shift confirmations, both unanimous) -- satisfying review's own stated
+     precondition for building R8. R8 (`instruments.py::winding()`) is now IMPLEMENTED
+     (Sec.25.6), gated on R4's `sustained_and_settled` for every node in a caller-supplied
+     cycle (mirroring R7's exact division of labor -- this instrument does not discover
+     cycles itself), and discloses the same window-verification-is-the-caller's-
+     responsibility caveat R7 already discloses for its own precondition. A positive control
+     run through the actual instrument (seed=55, `erdos_renyi`, strength=0.3, 30x window)
+     reproduces `winding=-1`, smooth, exactly matching Sec.25.5's manually-scripted number on
+     the identical trajectory."
 ```
 
 ---
@@ -3897,3 +3974,302 @@ persistence structures exist beyond the original.
   as a first-pass, not a claim that all 123 individually were verified. The fact that the
   robustness check ELIMINATED 3 of 5 candidates -- most of the raw finding -- is the
   strongest evidence this was not run to manufacture a favorable count.
+
+## 25. PR-R6: the 3 known locations shared one sweep cell -- a concentrated re-test REFUTES
+both the strength and topology predictions it was built to check, but surfaces a true rate
+(3.0%, graphs as the independent unit) far higher than any earlier estimate; the 2 new
+PR-R5 locations pass the full validation battery at seed=9's depth; R8 is built
+
+Review's own cross-referencing of the 3 known window-robust locations' exact coordinates
+(seed=9/55/62, all `erdos_renyi`, all `asymmetry_strength=0.3` -- one cell out of 20 in the
+4-topology x 5-strength grid) motivated a concentrated, properly-disciplined re-sweep of
+that cell and its neighbors, PLUS review's own two required corrections: the independent
+*unit* for frequency reporting (graphs, not cycles) and an explicit multiple-comparisons
+accounting. Both are recorded here as the going-forward standard, not just for this PR.
+
+### 25.1 Concentrated `erdos_renyi` low-strength sweep: BOTH predictions tested and refuted,
+reported exactly as review instructed ("外れたら外れたと報告してください")
+
+300 new configs, `bounded_tanh`, 30x window (`WINDING_CANDIDACY_MIN_EXTEND_FACTOR`) baked
+into BOTH the verified-mask determination and the winding computation from the very start
+of the run (not applied as a follow-up filter the way PR-R5's 15x->30x check was) -- one
+`substrate.run` per config, full wide-basis (length 5-10) cycle coverage:
+
+- **Main axis**: `erdos_renyi`, seeds 100-129 (30 independent, new), strengths
+  {0.1, 0.2, 0.3, 0.5, 1.0} -- 150 configs.
+- **Control**: seeds 130-139 (10 independent, new), the other 3 topologies, same 5
+  strengths -- 150 configs.
+
+**Prediction 1 (lower strength -> higher window-robust rate) -- REFUTED:**
+
+| `erdos_renyi` strength | window-robust locations / graphs | rate |
+|---|---|---|
+| 0.1 | 0 / 30 | 0.0% |
+| 0.2 | 0 / 30 | 0.0% |
+| 0.3 | 1 / 30 | 3.3% |
+| **0.5** | **2 / 30** | **6.7% (peak)** |
+| 1.0 | 1 / 30 | 3.3% |
+
+The rate is **non-monotonic**, and its peak is at strength=0.5, not the lowest strength
+tested. The two LOWEST strengths (0.1, 0.2) -- the ones the prediction most confidently
+expected to be enriched -- show **zero** hits. This directly refutes the specific,
+falsifiable prediction PR-R5's closing message made.
+
+**Prediction 2 (erdos_renyi-exclusivity) -- also REFUTED:**
+
+| topology (pooled across all 5 strengths) | window-robust locations / graphs | rate |
+|---|---|---|
+| `erdos_renyi` | 4 / 150 | 2.7% |
+| **`random_regular`** | **4 / 50** | **8.0% (highest)** |
+| `watts_strogatz` | 0 / 50 | 0.0% |
+| `barabasi_albert` | 1 / 50 | 2.0% |
+
+`random_regular`'s pooled rate (8.0%) exceeds `erdos_renyi`'s (2.7%) -- the topology the
+first 3 locations happened to share is not, on this larger sample, the topology with the
+highest rate. Both refutations are stated plainly, per review's explicit instruction, not
+softened or buried under the positive finding below.
+
+**The unplanned positive finding: the TRUE rate is much higher than any prior estimate.**
+Clustering the raw smooth-winding cycle-checks by shared nodes (same connected-component
+method as PR-R3.1/PR-R5, applied here to an ALREADY-30x-disciplined dataset, so there is no
+separate before/after-window-filter step to report for this sweep) finds:
+
+| | value |
+|---|---|
+| graphs swept (independent unit, see 25.2) | 300 |
+| graphs with >=1 window-robust smooth-winding location | 9 |
+| **rate** | **9 / 300 = 3.0%** |
+| raw smooth-winding cycle-checks (pre-cluster) | 174 |
+| total wide-basis covered cycles checked (all 300 configs) | 258,632 |
+
+Every one of the 9 hit-graphs contributes exactly ONE connected cluster -- the same
+one-location-per-graph pattern observed in every prior round of this series, now confirmed
+at 9/9, not just 3/3 or 5/5:
+
+| seed | topology | strength | cycles in cluster | representative cycle | winding |
+|---|---|---|---|---|---|
+| 117 | erdos_renyi | 0.3 | 26 | [1,3,5,11,19,14,7] | -1 |
+| 117 | erdos_renyi | **0.5** | 32 | [0,13,18,7,15,4,20] | -1 |
+| 129 | erdos_renyi | 0.5 | 2 | [1,8,7,16,12,19] | +1 |
+| 102 | erdos_renyi | 1.0 | 7 | [1,5,7,18,11,23,6] | +1 |
+| 133 | random_regular | 0.2 | 16 | [2,12,20,4,9,19] | -1 |
+| 134 | random_regular | 0.2 | 3 | [0,10,6,13,1,12,14,17,22] | +1 |
+| 134 | random_regular | **0.3** | 21 | [2,7,9,19,4,16,20,21] | +1 |
+| 138 | barabasi_albert | 0.3 | 52 | [1,2,11,7,3,6] | -1 |
+| 137 | random_regular | 1.0 | 15 | [1,2,18,20,5,11] | +1 |
+
+**One nuance on independence, disclosed directly**: `seed=117` (`erdos_renyi`) hits at
+BOTH strength=0.3 and strength=0.5. Topology construction (`topology.build_topology`)
+depends only on `(topology_name, n, seed)`, not on `asymmetry_strength` -- so these two
+"hits" share the identical underlying edge set, differing only in how that fixed edge set
+is asymmetrized. They are not two fully independent draws of a random graph; they are one
+graph tested at two strengths, both landing on (different) winding structures. The 9/300
+headline rate treats them as 2 of the 9 (matching the graph-level counting convention
+established in 25.2, where the independent unit is the (seed, topology, strength) config,
+not the bare seed), but this caveat is recorded here rather than silently absorbed into the
+rate; `seed=134` (`random_regular`) shows the same pattern (strengths 0.2 and 0.3 both hit).
+
+**Combined with the 3 pre-existing window-robust locations (seed=9/55/62, all
+`erdos_renyi` strength=0.3, entirely disjoint seeds from this sweep's 100-139 range), the
+running total of independently-discovered window-robust winding locations in this series
+is now 12** -- though, per 25.5 below, only 3 of the 12 (the original seed=9 plus the 2
+PR-R5 locations checked this PR) have received the full validation battery; the other 9
+have only the window-robustness check.
+
+### 25.2 Denominator correction: GRAPHS, not covered cycles, are the independent unit --
+established as the primary reporting metric going forward
+
+Review's correction, applied retroactively and going forward: `topology.fundamental_cycles`
+and the wide simple-cycle basis both draw MANY overlapping cycles from the same small set
+of graphs -- two cycles sharing 5 of 7 nodes are not 2 independent trials, they are close
+to the SAME trial re-described. Reporting "N covered cycles, K smooth" therefore overstates
+the sample size the K/N fraction implicitly claims.
+
+**Corrected denominators, both retroactive and this PR's own:**
+
+| sweep | old reporting (cycles) | corrected reporting (graphs) |
+|---|---|---|
+| PR-R4 + PR-R5 wide-basis rescan (Sec.24) | "1/788 covered-cycle checks" | **2/300 graphs = 0.67%** |
+| PR-R6 concentrated sweep (25.1) | "174/258,632 raw cycle-checks" | **9/300 graphs = 3.0%** |
+| combined, this series to date | -- | **12 distinct window-robust locations across all sweeps run so far** (exact combined graph denominator not meaningful, since sweeps used different topology/strength coverage and are not one uniform trial space) |
+
+**Going forward, "window-robust independent locations / independent graphs swept" is the
+primary reported metric for this line of investigation.** Raw cycle counts (either
+fundamental-basis or wide-basis) may still be reported as secondary detail (e.g. cluster
+size, as in 25.1's table, is informative about how much of a graph's structure the
+phenomenon spans) but must not be used as the denominator for a rate claim.
+
+### 25.3 Multiple-comparisons: explicitly documented, and shown to be answered by the
+combination already in place (clustering + window-robustness), not by either alone
+
+At the established smoothness-gate null rate (<0.05% for cycle length N>=5 under i.i.d.
+random phases, Sec.16.2/Sec.21.3) and the raw (uncorrected) trial counts:
+
+| sweep | raw covered-cycle trials | expected false positives by chance alone (<0.05% x trials) | raw observed smooth-winding cycle-checks |
+|---|---|---|---|
+| PR-R5 wide-basis rescan (Sec.24.2) | 31,869 | ~16 | 123 |
+| PR-R6 concentrated sweep (25.1) | 258,632 | ~129 | 174 |
+
+**Neither of these comparisons is dispositive on its own.** 123 exceeds ~16, but 16 is not
+negligible relative to 123 (roughly 13% of the raw count could plausibly be chance alone,
+if the true rate were exactly at the null-rate ceiling). 174 vs. ~129 is an even weaker
+raw excess (~35% above the naive chance expectation) -- read in isolation, PR-R6's own raw
+number would be a much LESS convincing headline than PR-R5's.
+
+**This is exactly why raw cycle counts were never the right thing to report, and why
+clustering + window-robustness together -- not either alone -- are the correct answer, not
+a follow-up nicety:**
+
+- Clustering collapses cycles that are really the same underlying location (sharing nodes)
+  into one count. This alone took PR-R5's 123 down to 5 distinct locations, and PR-R6's
+  174 down to 9.
+- Window-robustness (30x) then removes the specific short-window artifact this series has
+  hit four separate times (605/1200, 116/600, 119 missed-detection nodes, PR-R5's 3/5).
+  Applied AFTER clustering in PR-R5 (5 -> 2), it caught exactly the failure mode a raw
+  chance-rate argument cannot distinguish from noise on its own -- a candidate that
+  "looks like" a chance false positive under the null-rate math and one that looks like a
+  genuine but short-window-only artifact are not the same thing, and only the window check
+  tells them apart. In PR-R6, this check was baked into the sweep from the start (25.1),
+  so there was no separate before/after step to report -- the 174 raw cycle-checks are
+  ALREADY 30x-window-disciplined.
+
+The chance-alone math (~16 of 123, ~129 of 174) is recorded here explicitly, per review's
+instruction, as a standing caveat: it is not proof the remaining locations are all real,
+only a bound on how much of the raw count COULD be chance under the (conservative, upper-
+bound) null-rate estimate. The clustering + window-robustness pipeline is the actual
+methodological answer; the chance-rate math is disclosed context for why that pipeline is
+necessary, not a substitute for it.
+
+### 25.4 The 30x window baked into the winding-candidacy DEFINITION, not a follow-up check
+
+This is the 4th recurrence of the exact same short-window false-positive pattern:
+605/1200 (PR-R1.5), 116/600 (Sec.11), 119 missed-detection nodes (PR-R2.6), and 3/5 of
+PR-R5's wide-basis candidates (Sec.24.2). Every prior occurrence was caught by a follow-up
+check after the fact. Per review's explicit instruction, this is now structural:
+`winding_precheck.WINDING_CANDIDACY_MIN_EXTEND_FACTOR = 30` (new constant,
+`ai_lab/relational/winding_precheck.py`), with the module's own docstring stating the
+standing discipline directly: **a smooth-winding candidate must not be reported -- not even
+provisionally -- unless it has been checked at this extend factor or wider.** 25.1's sweep
+is the first in this series built around this constant from the start rather than applying
+it as an afterthought; R8 (25.6) discloses the same discipline as an explicit caller
+responsibility it cannot itself enforce (it only sees whatever trajectory it is given).
+
+### 25.5 Full validation battery on the 2 new PR-R5 locations, matching seed=9's depth
+exactly
+
+Applying PR-R3.1's exact methodology (independent initial conditions, damage-recovery,
+cycle-shift), at the disciplined 30x window throughout, to `seed=55` and `seed=62`
+(both `erdos_renyi`, `strength=0.3`, the 2 locations that survived PR-R5's window-doubling
+check but had not yet received the fuller battery):
+
+**seed=55, cycle=[0,9,16,21,20,10,23]:**
+
+| test | result |
+|---|---|
+| 6 independent initial conditions (fresh seeds 200-205) | 6/6: `winding=-1`, smooth, `all_settled=True` (`max_adjacent_step` range 1.330-1.434) |
+| damage-recovery (amplitude perturbation at 0.6-checkpoint, factor 0.4) | `winding=-1`, smooth, `all_settled=True` |
+| cycle-shift (local DFS, share >=4 nodes with the original) | 560 nearby cycles found, **58/560 smooth** |
+
+**seed=62, cycle=[1,3,18,11,16,23,17]:**
+
+| test | result |
+|---|---|
+| 6 independent initial conditions (fresh seeds 200-205) | 6/6: `winding=+1`, smooth, `all_settled=True` (`max_adjacent_step` range 1.531-1.540) |
+| damage-recovery (amplitude perturbation at 0.6-checkpoint, factor 0.4) | `winding=+1`, smooth, `all_settled=True` |
+| cycle-shift (local DFS, share >=4 nodes with the original) | 304 nearby cycles found, **7/304 smooth** |
+
+**Both locations pass every category, unanimously, at the same validation depth the
+original `seed=9` location received in PR-R3.1** (which had 14/14 across its own
+perturbation battery, plus coherent cycle-shift confirmation). This satisfies review's own
+explicit precondition for proceeding to build R8 ("検証の深さを揃えてから実装してください") --
+all 3 of the pre-PR-R6 locations now share the same validation depth, not just the same
+window-robustness check.
+
+### 25.6 R8 implemented: `instruments.py::winding()`
+
+Following R7 (`phase()`)'s exact precedent and division of labor: `winding()` is gated on
+R4's `sustained_and_settled` for EVERY node in a caller-supplied cycle (not just one node,
+since a cycle's winding needs every node on the loop to be in a settled, genuinely
+oscillating state); accepts `cycles: List[List[int]]` explicitly from the caller (this
+instrument does not import `topology` and does not discover cycles itself -- exactly R7's
+own "operate on what you are given" philosophy); computes the same single-instant,
+window-midpoint Hilbert-transform snapshot phase every manual script in this series has
+used since PR-R2.3, then feeds it to the already-existing `winding_precheck.compute_winding`
+/ `is_smooth_winding` (no new formula -- this instrument reproduces exactly what has already
+been measured by hand, not a new derivation).
+
+The docstring carries the SAME disclosure R7 carries, made explicit rather than assumed:
+**this instrument alone cannot verify that `x_traj` came from a run satisfying
+`WINDING_CANDIDACY_MIN_EXTEND_FACTOR` (30x)** -- it only sees whatever trajectory it is
+given. A caller wanting the disciplined, reportable-as-candidate claim must run
+`substrate.run` at `extend_factor >= 30` (or equivalent) BEFORE calling this instrument,
+exactly as `verify.verify_long_window_all_nodes` is the layer that owns window-extension
+logic for R4. A `defined=True, is_smooth_winding=True` `winding()` Reading is, by itself, a
+raw measurement on the given trajectory -- not a disciplined candidate report on its own.
+
+`expressible_max` is `None` at the Reading level (unlike R1-R4/R7's single scalar
+ceiling) -- R8 operates on multiple, possibly differently-sized cycles in one call, so the
+real ceiling (`|winding| <= N // 2` for a cycle of length N, a structural fact of the
+wrapped-difference-sum formula itself, independent of what phases actually occur) is
+carried per-cycle instead, as `max_possible_abs_winding` on each `per_cycle` entry.
+
+Wired into `measure_all()` as an OPTIONAL final step: `cycles=None` (the default) skips R8
+entirely, rather than silently defaulting to some cycle-basis choice the caller did not ask
+for -- consistent with the fact that this codebase already has two different cycle-basis
+choices in active use (fundamental vs. wide) with a 149x difference in what they surface
+(Sec.24.2), and no single default would be honest here.
+
+**Positive control, exercised through the instrument (not just synthetic data)**: run
+`seed=55`, `erdos_renyi`, `strength=0.3`, `bounded_tanh`, at `extend_factor=30`, and call
+`winding()` on cycle `[0,9,16,21,20,10,23]` -- reproduces `winding=-1`,
+`is_smooth_winding=True`, exactly matching 25.5's manually-scripted result on the same
+trajectory. This confirms the instrument is not a new, independently-derived formula that
+might silently disagree with the manual scripts' own numbers.
+
+**Vocabulary discipline (`tests/test_r_layer_vocabulary.py`)**: R8 does NOT license a new
+forbidden word. Exactly like R4 (which measures 1/T but reports it under `rate`, never
+`frequency`), R8 measures the discrete winding number but reports it under `winding`,
+never `渦`/`vortex` -- the word this codebase has used consistently since `winding_precheck.py`
+(PR-R2.3) predates any licensing question. `渦`/`vortex` therefore remains in
+`STILL_FORBIDDEN_WORDS` even though R8 now exists, with a dedicated test confirming R8's
+own JSON output stays clean while legitimately using `winding`.
+
+### 25.7 9th audit and 8th audit self-check
+
+- **9th audit**: R8's `expressible_max=None` at the Reading level is itself disclosed as a
+  design choice, not an oversight -- the per-cycle `max_possible_abs_winding` field carries
+  the real, derivable ceiling instead, and `instrument_audit.py`'s registry entry for
+  `R8_winding` states this explicitly so a future caller auditing a non-achievement claim
+  is not misled by a bare `None` into thinking no ceiling exists at all.
+- **8th audit**: was `winding()`'s method (single-instant snapshot phase at the window
+  midpoint, rather than e.g. an averaged phase across the whole analysis window) chosen to
+  make a favorable result more likely? No -- this is the exact method every manual script
+  in this series has used since PR-R2.3, chosen originally (and re-used here, not
+  re-derived) because it is the simplest well-defined way to get one phase value per node
+  for a discrete winding-number sum; R8 exists to reproduce that established measurement
+  inside the instrument architecture, not to introduce a new, more favorable one. The
+  positive control in 25.6 checks this directly: the instrument's number must equal the
+  manual script's number on the identical trajectory, and it does. Was 25.1's sweep's
+  strength/topology axis chosen, or its result written up, in a way that could obscure the
+  refutation of PR-R5's own prediction? No -- both refutations (25.1) are reported in the
+  same table format and same prose prominence as the positive 3.0% finding, ahead of it in
+  the section, not after; the section is not titled or led with "3.0%!" while burying "both
+  predictions failed" in a footnote.
+- **Was R8 built before its precondition was actually met?** No -- review's explicit
+  precondition (25.5, matching validation depth across the locations used to justify
+  building it) was checked and confirmed to pass BEFORE any R8 code was written this PR,
+  not retrofitted to justify an instrument already built.
+
+### 25.8 Running account: known window-robust winding locations after PR-R6
+
+| # | seed | topology | strength | coupling_form | validation depth |
+|---|---|---|---|---|---|
+| 1 | 9 | erdos_renyi | 0.3 | bounded_tanh (also sinusoidal) | FULL battery (PR-R3.1) |
+| 2 | 55 | erdos_renyi | 0.3 | bounded_tanh | FULL battery (this PR, 25.5) |
+| 3 | 62 | erdos_renyi | 0.3 | bounded_tanh | FULL battery (this PR, 25.5) |
+| 4-12 | 117(x2), 129, 102, 133, 134(x2), 138, 137 | erdos_renyi/random_regular/barabasi_albert | 0.2-1.0 | bounded_tanh | window-robustness ONLY (25.1) |
+
+9 of the 12 known locations have only the window-robustness check, not the fuller battery
+-- flagged here explicitly as the natural next validation target, not run this PR (this
+PR's battery work was scoped, per review's own instruction, to the 2 locations needed to
+satisfy R8's stated precondition, not to all newly-discovered locations at once).

@@ -26,6 +26,8 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from scipy.signal import hilbert
 
+from ai_lab.relational import winding_precheck
+
 
 @dataclass
 class Reading:
@@ -585,12 +587,153 @@ def phase(x_traj: np.ndarray, dt: float, r4: Optional[Reading] = None) -> Readin
     )
 
 
-def measure_all(x_traj: np.ndarray, W: np.ndarray, dt: float) -> Dict[str, Reading]:
-    """Run R1..R4 and R7 in their dependency order and return all Readings."""
+# ---------------------------------------------------------------------------
+# R8 -- winding: discrete winding number of the snapshot phase around a caller-supplied
+# cycle (PR-R6, AUDIT.md Sec.25.6). Gated on R4's `sustained_and_settled` for every node in
+# the cycle, exactly as R7 is gated for a single node -- a cycle containing even one node R4
+# found decaying, still-growing, or aperiodic has no settled structure for "winding" to
+# describe on that cycle.
+# ---------------------------------------------------------------------------
+
+def winding(x_traj: np.ndarray, dt: float, cycles: List[List[int]],
+            r4: Optional[Reading] = None) -> Reading:
+    """R8: discrete winding number (and smoothness gate) of the single-instant snapshot
+    phase around each caller-supplied cycle.
+
+    `cycles` is a list of node-index lists, each already a closed walk in the relation
+    graph (e.g. `topology.fundamental_cycles(W)`, or a wider simple-cycle enumeration) --
+    this instrument does not itself discover cycles, does not import `topology`, and does
+    not judge whether a given list of node indices is actually a cycle of W. That split
+    mirrors R7's own division of labor: an instrument measures on what it is given, it does
+    not decide what is worth measuring.
+
+    Precondition: R4(period).value.per_node[i].sustained_and_settled must hold for EVERY
+    node i in a cycle before that cycle's winding is computed -- a single unsettled node
+    anywhere on the loop means the "instantaneous phase" sampled at the window midpoint is
+    not describing a plateaued structure for at least one node on the loop, so the whole
+    cycle's reading is `defined=False` for that cycle (not silently dropped from `cycles`;
+    every cycle passed in gets an entry, with a `reason` when undefined).
+
+    Method (identical to every manual analysis script from PR-R2.3 onward, and to
+    `verify`'s own winding-adjacent checks, so this instrument reproduces exactly what has
+    already been measured by hand rather than a new formula): for each node in the cycle,
+    take the analytic-signal (Hilbert transform) phase angle at the MIDPOINT of
+    `_phase_analysis_window(L)` -- a single instantaneous snapshot, not R7's unwrapped span
+    -- then feed the resulting phase array (in the cycle's fixed graph order) to
+    `winding_precheck.compute_winding` / `is_smooth_winding`.
+
+    CRITICAL DISCLOSURE (mirrors R7's own, and is the entire reason this instrument cannot
+    be used alone to report a "winding structure exists" claim): this instrument only sees
+    whatever `x_traj` it is given. It has no way to know whether that trajectory came from a
+    run long enough to satisfy `winding_precheck.WINDING_CANDIDACY_MIN_EXTEND_FACTOR` (30x
+    the base window) -- the STRUCTURAL discipline PR-R6 established after four separate
+    short-window false-positive recurrences (605/1200, 116/600, 119 missed-detection nodes,
+    3/5 of PR-R5's wide-basis candidates; see `winding_precheck`'s module docstring). A
+    caller that wants the disciplined, reportable-as-candidate claim must run `substrate.run`
+    at `extend_factor >= WINDING_CANDIDACY_MIN_EXTEND_FACTOR` (or equivalent) BEFORE calling
+    this instrument, exactly as `verify.verify_long_window_all_nodes` is the layer that owns
+    window-extension/robustness logic for R4 -- this instrument does not, and cannot, verify
+    that on its own. A `defined=True, is_smooth_winding=True` entry from THIS instrument
+    alone is a raw measurement on the given trajectory, nothing more; it is not, by itself,
+    a disciplined candidate report.
+    """
+    if r4 is None:
+        r4 = period(x_traj, dt)
+    precondition = ("R4(period).value.per_node[i].sustained_and_settled, for every node i "
+                     "in the cycle")
+    L = x_traj.shape[0]
+    lo, hi = _phase_analysis_window(L)
+    mid = (lo + hi) // 2
+    expressible_note = (
+        "phase is sampled at a single instant (the midpoint of the last-half, edge-trimmed "
+        "window used by R7, steps %d:%d of %d total, sampled at step %d); per cycle of "
+        "length N, the wrapped-difference sum used by compute_winding cannot exceed N*pi in "
+        "magnitude, so |winding| <= N//2 for that cycle (see each entry's "
+        "max_possible_abs_winding) -- this is a structural ceiling of the discrete winding "
+        "formula itself, independent of what phases actually occur. This instrument also "
+        "cannot verify the WINDING_CANDIDACY_MIN_EXTEND_FACTOR (30x) window-robustness "
+        "discipline on its own; see docstring." % (lo, hi, L, mid)
+    )
+    if not r4.defined or r4.value is None:
+        return Reading(
+            name="winding", value=None, defined=False, precondition=precondition,
+            expressible_max=None, expressible_note=expressible_note,
+        )
+    per_node_r4 = r4.value["per_node"]
+    n_nodes = x_traj.shape[1]
+
+    def _sustained_and_settled(node: int) -> bool:
+        if node < 0 or node >= len(per_node_r4):
+            return False
+        return bool(per_node_r4[node].get("sustained_and_settled", False))
+
+    per_cycle: List[Dict[str, Any]] = []
+    any_defined = False
+    any_smooth = False
+    for cycle in cycles:
+        entry: Dict[str, Any] = {"cycle": list(cycle), "length": len(cycle)}
+        if len(cycle) < 1 or any(node < 0 or node >= n_nodes for node in cycle):
+            entry.update(defined=False, reason="cycle references a node index outside [0, N)",
+                         all_sustained_and_settled=False, winding=None,
+                         max_adjacent_step=None, is_smooth_winding=None,
+                         max_possible_abs_winding=None)
+            per_cycle.append(entry)
+            continue
+        all_ok = all(_sustained_and_settled(node) for node in cycle)
+        entry["all_sustained_and_settled"] = all_ok
+        entry["max_possible_abs_winding"] = len(cycle) // 2
+        if not all_ok:
+            entry.update(defined=False, winding=None, max_adjacent_step=None,
+                         is_smooth_winding=None,
+                         reason="R4 precondition not met for at least one node on this cycle "
+                                "(not sustained_and_settled)")
+            per_cycle.append(entry)
+            continue
+        phases = []
+        for node in cycle:
+            series = x_traj[lo:hi, node, :].sum(axis=-1)
+            analytic = hilbert(series)
+            phases.append(float(np.angle(analytic)[mid - lo]))
+        phi = np.array(phases)
+        w = winding_precheck.compute_winding(phi)
+        max_step = winding_precheck.max_adjacent_step(phi)
+        smooth = winding_precheck.is_smooth_winding(phi)
+        entry.update(defined=True, reason="ok", winding=int(w),
+                     max_adjacent_step=_native(max_step), is_smooth_winding=bool(smooth),
+                     phase_at_midpoint=_native(phi))
+        any_defined = True
+        any_smooth = any_smooth or smooth
+        per_cycle.append(entry)
+
+    value = {
+        "per_cycle": per_cycle,
+        "any_defined": any_defined,
+        "any_smooth_winding": any_smooth,
+        "n_cycles_checked": len(cycles),
+        "n_defined": sum(1 for e in per_cycle if e["defined"]),
+        "n_smooth_winding": sum(1 for e in per_cycle if e.get("is_smooth_winding")),
+        "analysis_window": [int(lo), int(hi)],
+        "phase_sample_index": int(mid),
+    }
+    return Reading(
+        name="winding", value=_native(value), defined=any_defined, precondition=precondition,
+        expressible_max=None, expressible_note=expressible_note,
+    )
+
+
+def measure_all(x_traj: np.ndarray, W: np.ndarray, dt: float,
+                 cycles: Optional[List[List[int]]] = None) -> Dict[str, Reading]:
+    """Run R1..R4, R7, and (if `cycles` is given) R8 in their dependency order and return
+    all Readings. `cycles` is optional and caller-supplied (see `winding`'s docstring for
+    why this instrument does not discover cycles itself) -- when omitted, R8 is not run at
+    all rather than silently defaulting to some cycle basis choice."""
     r1 = difference(x_traj)
     r2 = direction(x_traj, W, r1=r1)
     r3 = reversal(x_traj, r1=r1)
     r4 = period(x_traj, dt, r3=r3)
     r7 = phase(x_traj, dt, r4=r4)
-    return {"R1_difference": r1, "R2_direction": r2, "R3_reversal": r3, "R4_period": r4,
-            "R7_phase": r7}
+    result = {"R1_difference": r1, "R2_direction": r2, "R3_reversal": r3, "R4_period": r4,
+              "R7_phase": r7}
+    if cycles is not None:
+        result["R8_winding"] = winding(x_traj, dt, cycles, r4=r4)
+    return result

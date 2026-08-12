@@ -388,3 +388,137 @@ def test_phase_span_and_rate_have_correct_sign_and_magnitude():
     assert entry["defined"] is True
     assert entry["unwrapped_phase_span"] > 0   # advancing phase for a forward-rotating signal
     assert abs(entry["mean_rate_from_phase"] - true_rate) / true_rate < 0.05
+
+
+# ---------------------------------------------------------------------------
+# PR-R6: R8 (winding) -- gated on R4's sustained_and_settled per cycle, computed on a
+# caller-supplied cycle list, matching the manual-script method used since PR-R2.3.
+# ---------------------------------------------------------------------------
+
+def _synthetic_cycle_traj(n, L, dt, node_phase_offsets, forced_sustained_and_settled=None):
+    """Build an x_traj of n nodes, each a clean sine at a common rate but distinct phase
+    offset, plus an r4 Reading whose per-node sustained_and_settled is forced True for every
+    node (or overridden by `forced_sustained_and_settled`, a dict of node->bool) -- isolates
+    R8's own winding computation from R4's detection logic, which is already covered by R4's
+    own tests."""
+    t = np.arange(L) * dt
+    true_rate = 2.0
+    series = [np.sin(2 * np.pi * true_rate * t + off) for off in node_phase_offsets]
+    x_traj = np.stack(series, axis=1)[:, :, None]
+    r4 = instruments.period(x_traj, dt)
+    assert r4.defined is True
+    for i, entry in enumerate(r4.value["per_node"]):
+        sas = True if forced_sustained_and_settled is None else forced_sustained_and_settled.get(i, True)
+        entry["sustained_and_settled"] = sas
+    return x_traj, r4
+
+
+def test_winding_undefined_when_r4_undefined():
+    res = substrate.run(n=10, steps=100, seed=1, memory="off")
+    r8 = instruments.winding(res.x_traj, res.dt, cycles=[[0, 1, 2, 3, 4]])
+    assert r8.defined is False
+    assert r8.value is None
+
+
+def test_winding_synthetic_positive_control_evenly_spread_phases_wind_once():
+    """8 nodes, phases evenly spread around the full circle in cyclic order -- a genuine,
+    smooth winding=1, exactly winding_precheck's own positive control (test_smooth_winding_
+    true_for_genuinely_gradual_full_loop), reused here through the actual instrument."""
+    n, dt, L = 8, 0.01, 4000
+    offsets = list(np.linspace(0, 2 * np.pi, n, endpoint=False))
+    x_traj, r4 = _synthetic_cycle_traj(n, L, dt, offsets)
+    cycle = list(range(n))
+    r8 = instruments.winding(x_traj, dt, cycles=[cycle], r4=r4)
+    assert r8.defined is True
+    entry = r8.value["per_cycle"][0]
+    assert entry["defined"] is True
+    assert entry["all_sustained_and_settled"] is True
+    assert entry["winding"] == 1
+    assert entry["is_smooth_winding"] is True
+    assert entry["max_possible_abs_winding"] == n // 2
+
+
+def test_winding_triangle_can_never_pass_smoothness_gate_even_if_reported():
+    """A length-3 cycle can be *defined* (all nodes sustained_and_settled, winding computed)
+    but must never be reported smooth -- winding_precheck's own structural fact (N>=5
+    required) must survive being routed through this instrument, not just the bare function."""
+    n, dt, L = 3, 0.01, 4000
+    offsets = [0.0, 2 * np.pi / 3, 4 * np.pi / 3]  # winds once, but N=3
+    x_traj, r4 = _synthetic_cycle_traj(n, L, dt, offsets)
+    r8 = instruments.winding(x_traj, dt, cycles=[[0, 1, 2]], r4=r4)
+    entry = r8.value["per_cycle"][0]
+    assert entry["defined"] is True
+    assert entry["winding"] != 0
+    assert entry["is_smooth_winding"] is False
+
+
+def test_winding_gates_per_cycle_on_every_node_sustained_and_settled():
+    """A cycle with even one node R4 did not find sustained_and_settled must come back
+    undefined for that WHOLE cycle -- not silently computed on the other nodes."""
+    n, dt, L = 8, 0.01, 4000
+    offsets = list(np.linspace(0, 2 * np.pi, n, endpoint=False))
+    x_traj, r4 = _synthetic_cycle_traj(n, L, dt, offsets, forced_sustained_and_settled={3: False})
+    cycle = list(range(n))
+    r8 = instruments.winding(x_traj, dt, cycles=[cycle], r4=r4)
+    entry = r8.value["per_cycle"][0]
+    assert entry["all_sustained_and_settled"] is False
+    assert entry["defined"] is False
+    assert entry["winding"] is None
+    assert "not sustained_and_settled" in entry["reason"] or "not met" in entry["reason"]
+
+
+def test_winding_reports_every_cycle_passed_in_even_when_some_undefined():
+    n, dt, L = 8, 0.01, 4000
+    offsets = list(np.linspace(0, 2 * np.pi, n, endpoint=False))
+    x_traj, r4 = _synthetic_cycle_traj(n, L, dt, offsets, forced_sustained_and_settled={3: False})
+    cycles = [list(range(n)), [0, 1, 2, 4, 5, 6, 7]]  # second cycle avoids the unsettled node
+    r8 = instruments.winding(x_traj, dt, cycles=cycles, r4=r4)
+    assert r8.value["n_cycles_checked"] == 2
+    assert r8.value["per_cycle"][0]["defined"] is False
+    assert r8.value["per_cycle"][1]["defined"] is True
+    assert r8.value["n_defined"] == 1
+
+
+def test_winding_expressible_max_is_per_cycle_not_a_single_reading_ceiling():
+    """Unlike R4's single scalar ceiling, R8's ceiling is cycle-length-dependent (|winding|
+    <= N // 2) -- the Reading-level expressible_max is None, and the real ceiling lives on
+    each per_cycle entry instead."""
+    n, dt, L = 8, 0.01, 4000
+    offsets = list(np.linspace(0, 2 * np.pi, n, endpoint=False))
+    x_traj, r4 = _synthetic_cycle_traj(n, L, dt, offsets)
+    r8 = instruments.winding(x_traj, dt, cycles=[list(range(n)), [0, 1, 2, 3, 4]], r4=r4)
+    assert r8.expressible_max is None
+    assert r8.value["per_cycle"][0]["max_possible_abs_winding"] == 8 // 2
+    assert r8.value["per_cycle"][1]["max_possible_abs_winding"] == 5 // 2
+
+
+def test_measure_all_wires_r8_only_when_cycles_given():
+    x_traj = np.random.default_rng(2).normal(size=(30, 5, 1))
+    W = np.ones((5, 5)) - np.eye(5)
+    without = instruments.measure_all(x_traj, W, dt=0.05)
+    assert "R8_winding" not in without
+    with_cycles = instruments.measure_all(x_traj, W, dt=0.05, cycles=[[0, 1, 2, 3, 4]])
+    assert "R8_winding" in with_cycles
+    assert isinstance(with_cycles["R8_winding"], instruments.Reading)
+
+
+def test_winding_real_verified_location_seed55_erdos_renyi():
+    """Positive control on the actual, fully-validated window-robust location from PR-R5/
+    PR-R6 (seed=55, erdos_renyi, strength=0.3, cycle=[0,9,16,21,20,10,23]) -- confirms this
+    instrument reproduces exactly what the manual analysis scripts already measured by hand,
+    at the disciplined WINDING_CANDIDACY_MIN_EXTEND_FACTOR (30x) window."""
+    from ai_lab.relational import winding_precheck
+    extend = winding_precheck.WINDING_CANDIDACY_MIN_EXTEND_FACTOR
+    res = substrate.run(
+        n=24, steps=3000 * extend, dt=0.05, seed=55, memory="on", damping=0.05,
+        asymmetry=True, asymmetry_strength=0.3, topology="erdos_renyi",
+        saturation="cubic", saturation_strength=0.1, coupling_form="bounded_tanh",
+    )
+    cycle = [0, 9, 16, 21, 20, 10, 23]
+    readings = instruments.measure_all(res.x_traj, res.W_final, res.dt, cycles=[cycle])
+    r8 = readings["R8_winding"]
+    assert r8.defined is True
+    entry = r8.value["per_cycle"][0]
+    assert entry["all_sustained_and_settled"] is True
+    assert entry["winding"] == -1
+    assert entry["is_smooth_winding"] is True

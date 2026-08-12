@@ -13,8 +13,15 @@ mechanical "none of the seven words, anywhere" assertion.
 PR-R2.2 adds R7 (phase, instruments.py::phase()) -- the first instrument in this codebase
 licensed to use "phase"/位相. From here on this test has TWO parts, not one flat ban:
 STILL_FORBIDDEN (渦/vortex, 次元/dimension, 力/force, エネルギー/energy, コヒーレンス/
-coherence -- no instrument for any of these exists yet -- plus 頻度/frequency, which R4
-still avoids purely by convention, unrelated to licensing) must never appear anywhere.
+coherence, plus 頻度/frequency which R4 still avoids purely by convention, unrelated to
+licensing) must never appear anywhere.
+
+PR-R6 adds R8 (winding, instruments.py::winding()) -- the discrete winding-number
+instrument. R8 does NOT license 渦/vortex: exactly like R4/frequency, this codebase avoids
+the literal word by convention, reporting under the key `winding` instead (the vocabulary
+already established throughout winding_precheck.py and AUDIT.md since PR-R2.3, unrelated to
+whether the underlying quantity is licensed). 渦/vortex therefore stays in
+STILL_FORBIDDEN_WORDS even though R8 now exists -- same pattern as frequency/R4.
 NOW_LICENSED (位相/phase) is licensed at the INSTRUMENT level, matching how R4's own
 `name="period"` was always present on its Reading even when `defined=False` (undefined is
 an honest "tried, precondition not met," not a claim of structure) -- R7's Reading always
@@ -196,6 +203,52 @@ def test_r7_gates_on_r4_sustained_and_settled_per_node():
     for i, entry in enumerate(r7.value["per_node"]):
         r4_entry = r4.value["per_node"][i]
         if not r4_entry.get("sustained_and_settled", False):
+            assert entry["defined"] is False
+
+
+# ---------------------------------------------------------------------------
+# PR-R6: R8 (winding). Unlike R7, R8 does NOT license a new word -- exactly like R4/
+# frequency, this codebase avoids 渦/vortex by convention (reporting under "winding"
+# instead), so these tests confirm STILL_FORBIDDEN stays clean even with R8 actively
+# exercised, not that a new word is now permitted.
+# ---------------------------------------------------------------------------
+
+def test_winding_word_present_but_vortex_still_forbidden_when_r8_defined():
+    """Positive exercise of R8 (the real seed=55 window-robust location from PR-R5/PR-R6),
+    confirming 'winding' legitimately appears while 渦/vortex remains absent -- the same
+    avoid-the-forbidden-word-by-convention pattern R4 already established for frequency."""
+    from ai_lab.relational import winding_precheck
+    extend = winding_precheck.WINDING_CANDIDACY_MIN_EXTEND_FACTOR
+    res = substrate.run(
+        n=24, steps=3000 * extend, dt=0.05, seed=55, memory="on", damping=0.05,
+        asymmetry=True, asymmetry_strength=0.3, topology="erdos_renyi",
+        saturation="cubic", saturation_strength=0.1, coupling_form="bounded_tanh",
+    )
+    cycle = [0, 9, 16, 21, 20, 10, 23]
+    readings = instruments.measure_all(res.x_traj, res.W_final, res.dt, cycles=[cycle])
+    r8 = readings["R8_winding"]
+    assert r8.defined is True
+    assert r8.value["any_smooth_winding"] is True
+    text = json.dumps(r8.to_dict(), ensure_ascii=False)
+    assert "winding" in text.lower()
+    hits = _scan(text)
+    assert not hits, "still-forbidden word(s) %r found alongside legitimate winding output" % hits
+
+
+def test_r8_gates_per_cycle_on_all_nodes_sustained_and_settled():
+    res = substrate.run(n=24, steps=3000, dt=0.05, seed=5, memory="on", damping=0.05,
+                         asymmetry=True, asymmetry_strength=0.3, topology="random_regular",
+                         saturation="cubic", saturation_strength=0.1)
+    r4 = instruments.period(res.x_traj, res.dt)
+    cycles = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
+    r8 = instruments.winding(res.x_traj, res.dt, cycles=cycles, r4=r4)
+    for entry in r8.value["per_cycle"]:
+        all_ok = all(
+            r4.value["per_node"][node].get("sustained_and_settled", False)
+            for node in entry["cycle"]
+        )
+        assert entry["all_sustained_and_settled"] == all_ok
+        if not all_ok:
             assert entry["defined"] is False
 
 

@@ -66,6 +66,11 @@ INSTRUMENT_EXPRESSIBLE_MAX_RULES: Dict[str, str] = {
                 "the presumed transient, so a period whose transient extends beyond the "
                 "recording's halfway point cannot be represented, regardless of how long "
                 "the full recording is.",
+    "R8_winding": "no single ceiling -- per cycle of length N, |winding| <= N//2 (the "
+                   "wrapped-difference sum cannot exceed N*pi in magnitude); this "
+                   "instrument also cannot, on its own, verify that x_traj satisfies "
+                   "winding_precheck.WINDING_CANDIDACY_MIN_EXTEND_FACTOR (30x) window-"
+                   "robustness -- that remains the caller's responsibility (PR-R6).",
 }
 
 
