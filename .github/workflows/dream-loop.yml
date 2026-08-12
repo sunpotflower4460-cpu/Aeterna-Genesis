@@ -14,9 +14,7 @@ on:
       - 'genesis/models/q_tensor_nematic.py'
       - 'genesis/diagnostics/**'
   schedule:
-    # Primary evidence burst every hour at :17.
     - cron: '17 * * * *'
-    # Safety-net check at :47. It only runs a burst when the latest completed report is >70 min old.
     - cron: '47 * * * *'
   workflow_dispatch:
 
@@ -30,13 +28,10 @@ concurrency:
 jobs:
   research-burst:
     runs-on: ubuntu-latest
-    # A real research burst must stay bounded and finish before the next one.
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
         with:
-          # Enough history to rebase generated evidence onto a feature commit, without
-          # cloning an ever-growing evidence history every hour.
           fetch-depth: 50
 
       - uses: actions/setup-python@v5
@@ -72,9 +67,6 @@ jobs:
         if: steps.watchdog.outputs.run_burst == 'true'
         uses: actions/cache/restore@v4
         with:
-          # Only untracked runtime artifacts belong in the cache. Tracked ledgers, reports and rooms
-          # arrive with the checkout; restoring an older cached copy over them would silently roll back
-          # committed evidence and then re-commit the rollback.
           path: runtime/dream
           key: dream-state-${{ runner.os }}-${{ github.run_id }}
           restore-keys: |
@@ -82,8 +74,6 @@ jobs:
 
       - name: Run hourly Adaptive Dream with NØ and information-yield frontier routing
         if: steps.watchdog.outputs.run_burst == 'true'
-        # Leave headroom inside the 50-minute job so state save, shadow replication, artifacts and the
-        # evidence commit still run when a burst overruns instead of being killed with it.
         timeout-minutes: 38
         run: |
           python -m ai_lab.dream.strict_goal_loop \
@@ -113,10 +103,6 @@ jobs:
             --native-variants 1 \
             --max-jobs 12
 
-      # Shadow-only: heterogeneous Worlds are observed in a common envelope but cannot change the
-      # g001 search budget, official Levels, promotion gates or hypothesis confidence. The same step
-      # also projects recurrent g001 X-patterns into a common observable vocabulary and compares them
-      # with independently evolved trajectories in the other Worlds.
       - name: Run Multi-World Genesis shadow observer
         if: steps.watchdog.outputs.run_burst == 'true'
         run: |
@@ -125,8 +111,8 @@ jobs:
             --seed "${{ github.run_number }}" \
             --output ai_lab/reports/multiworld/latest.json
 
-      # Spend extra shadow compute only when the primary comparator found a lead. These fresh-seed
-      # attempts do not update the cumulative CWX ledger and therefore cannot inflate recurrence counts.
+      # Fresh-seed replication only when the primary Cross-World comparator found a lead. These
+      # attempts remain a separate shadow and never increment the cumulative CWX ledger.
       - name: Independently replicate current Cross-World leads
         if: steps.watchdog.outputs.run_burst == 'true'
         continue-on-error: true
@@ -142,9 +128,6 @@ jobs:
         if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
         uses: actions/cache/save@v4
         with:
-          # Only untracked runtime artifacts belong in the cache. Tracked ledgers, reports and rooms
-          # arrive with the checkout; restoring an older cached copy over them would silently roll back
-          # committed evidence and then re-commit the rollback.
           path: runtime/dream
           key: dream-state-${{ runner.os }}-${{ github.run_id }}
 
@@ -165,6 +148,9 @@ jobs:
             ai_lab/reports/easy/root_latest.json
             ai_lab/reports/easy/frontier_latest.json
             ai_lab/reports/easy/nothing_latest.json
+            ai_lab/reports/easy/nothing_latest.md
+            ai_lab/reports/easy/nothing_latest.png
+            ai_lab/reports/easy/nothing/**
             ai_lab/reports/easy/*/report.json
             ai_lab/reports/easy/*/report.md
             ai_lab/reports/multiworld/latest.json
@@ -198,8 +184,6 @@ jobs:
             app/generated/catalog.json
             app/public/data/dream
 
-      # Persist compact knowledge plus useful candidate evidence. Mundane failures are represented by
-      # Coverage Atlas, not one file per trial. Easy reports are intentionally kept for human reading.
       - name: Persist generated evidence to repository
         if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' && steps.watchdog.outputs.run_burst == 'true' }}
         shell: bash
@@ -239,8 +223,6 @@ jobs:
             exit 0
           fi
           git commit -m "record hourly Adaptive Dream evidence"
-          # A feature commit can land while a 30-50 minute burst is running. Rebase the generated
-          # evidence on top of it rather than discarding an entire burst to a rejected push.
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
               echo "Dream evidence pushed on attempt $attempt."
