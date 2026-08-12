@@ -80,10 +80,10 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run hourly Adaptive Dream v8 Pure Genesis R0 research
+      - name: Run hourly Adaptive Dream with NØ and information-yield frontier routing
         if: steps.watchdog.outputs.run_burst == 'true'
-        # Leave headroom inside the 50-minute job so state save, artifacts and the evidence commit
-        # still run when a burst overruns, instead of being killed with it.
+        # Leave headroom inside the 50-minute job so state save, shadow replication, artifacts and the
+        # evidence commit still run when a burst overruns instead of being killed with it.
         timeout-minutes: 38
         run: |
           python -m ai_lab.dream.strict_goal_loop \
@@ -125,6 +125,19 @@ jobs:
             --seed "${{ github.run_number }}" \
             --output ai_lab/reports/multiworld/latest.json
 
+      # Spend extra shadow compute only when the primary comparator found a lead. These fresh-seed
+      # attempts do not update the cumulative CWX ledger and therefore cannot inflate recurrence counts.
+      - name: Independently replicate current Cross-World leads
+        if: steps.watchdog.outputs.run_burst == 'true'
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          python -m ai_lab.dream.crossworld_replication \
+            --quick \
+            --base-seed "${{ github.run_number }}" \
+            --replicates 3 \
+            --max-matches 2
+
       - name: Save Dream state
         if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
         uses: actions/cache/save@v4
@@ -157,6 +170,7 @@ jobs:
             ai_lab/reports/multiworld/latest.json
             ai_lab/reports/emergence/latest.json
             ai_lab/reports/crossworld/latest.json
+            ai_lab/reports/crossworld/replication_latest.json
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
