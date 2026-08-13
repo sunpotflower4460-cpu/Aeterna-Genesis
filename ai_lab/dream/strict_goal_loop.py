@@ -59,6 +59,24 @@ def _publish_frontier_alias(report: dict[str, Any]) -> None:
     _FRONTIER_ALIAS.write_text(json.dumps(frontier, indent=2, ensure_ascii=False))
 
 
+def _publish_dry_run_progress_memory(report: dict[str, Any]) -> None:
+    """Keep --no-record auditable by writing durable-question memory only into redirected scratch.
+
+    Adaptive v8 correctly calls the frontier planner with ``persist=False`` during a dry run. The
+    process-wide dry-run redirect nevertheless gives us a safe scratch tree, so we mirror the completed
+    question keys there for CI inspection without mutating tracked scientific evidence.
+    """
+    if not dry_run.is_active():
+        return
+    frontier = report.get("autonomous_frontier_expansion") or {}
+    progress = frontier.get("progress_ratchet") or {}
+    keys = progress.get("question_keys") or []
+    if keys:
+        progress_ratchet._persist_question_memory(
+            keys, burst_id=str(report.get("burst_id") or "unknown-burst")
+        )
+
+
 def _print_adaptive_summary(result: dict[str, Any]) -> None:
     r = result["report"]
     root = r.get("pure_genesis_r0") or {}
@@ -97,6 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     _print_adaptive_summary(result)
     report = result["report"]
     _publish_frontier_alias(report)
+    _publish_dry_run_progress_memory(report)
 
     nothing_genesis.run_nothing_research(
         burst_id=str(report.get("burst_id") or "unknown-burst"),
