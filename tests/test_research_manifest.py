@@ -1,0 +1,86 @@
+import json
+
+import pytest
+
+from ai_lab.dream import research_manifest
+
+
+def _write(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(content, (dict, list)):
+        path.write_text(json.dumps(content))
+    else:
+        path.write_text(str(content))
+
+
+def _install(monkeypatch, tmp_path):
+    monkeypatch.setattr(research_manifest, "_REPO", tmp_path)
+    monkeypatch.setattr(research_manifest, "_EASY", tmp_path / "ai_lab/reports/easy/latest.json")
+    monkeypatch.setattr(research_manifest, "_LATEST", tmp_path / "ai_lab/reports/easy/research_manifest_latest.json")
+    monkeypatch.setattr(research_manifest, "_ARCHIVE_DIR", tmp_path / "ai_lab/reports/easy/manifests")
+    monkeypatch.setenv("GITHUB_SHA", "abc123")
+    monkeypatch.setenv("GITHUB_RUN_ID", "77")
+    monkeypatch.setenv("GITHUB_RUN_NUMBER", "12")
+    _write(research_manifest._EASY, {
+        "burst_id": "dream-test",
+        "generated_at": "2026-08-13T00:00:00+00:00",
+    })
+    _write(tmp_path / "ai_lab/reports/emergence/latest.json", {"episodes": 3})
+    _write(tmp_path / "ai_lab/reports/easy/frontier_latest.json", {"burst_id": "dream-test"})
+    _write(tmp_path / "ai_lab/discoveries/research_memory.json", {"version": 2})
+    _write(tmp_path / "CURRENT_RESEARCH.md", "human view")
+
+
+def test_manifest_separates_evidence_planning_and_views(monkeypatch, tmp_path):
+    _install(monkeypatch, tmp_path)
+    manifest = research_manifest.build_manifest()
+    assert manifest["burst_id"] == "dream-test"
+    assert manifest["source_code"]["git_sha"] == "abc123"
+    scientific = {row["path"] for row in manifest["scientific_evidence"]}
+    planning = {row["path"] for row in manifest["planning_and_integrity_state"]}
+    views = {row["path"] for row in manifest["derived_human_views"]}
+    assert "ai_lab/reports/easy/latest.json" in scientific
+    assert "ai_lab/reports/easy/frontier_latest.json" in planning
+    assert "ai_lab/discoveries/research_memory.json" in planning
+    assert "CURRENT_RESEARCH.md" in views
+    assert manifest["semantics"]["manifest_is_scientific_evidence"] is False
+
+
+def test_manifest_hash_changes_when_evidence_changes(monkeypatch, tmp_path):
+    _install(monkeypatch, tmp_path)
+    before = research_manifest.build_manifest()
+    _write(tmp_path / "ai_lab/reports/emergence/latest.json", {"episodes": 4})
+    after = research_manifest.build_manifest()
+    assert before["manifest_content_sha256"] != after["manifest_content_sha256"]
+    before_emergence = next(
+        row for row in before["scientific_evidence"]
+        if row["path"] == "ai_lab/reports/emergence/latest.json"
+    )
+    after_emergence = next(
+        row for row in after["scientific_evidence"]
+        if row["path"] == "ai_lab/reports/emergence/latest.json"
+    )
+    assert before_emergence["sha256"] != after_emergence["sha256"]
+
+
+def test_same_manifest_is_idempotent_but_same_burst_different_provenance_fails(monkeypatch, tmp_path):
+    _install(monkeypatch, tmp_path)
+    manifest = research_manifest.build_manifest()
+    archive = research_manifest.persist_manifest(manifest)
+    assert archive.exists()
+    assert research_manifest.persist_manifest(manifest) == archive
+
+    _write(tmp_path / "ai_lab/reports/emergence/latest.json", {"episodes": 999})
+    changed = research_manifest.build_manifest()
+    with pytest.raises(RuntimeError, match="immutable manifest collision"):
+        research_manifest.persist_manifest(changed)
+
+
+def test_latest_alias_matches_immutable_archive(monkeypatch, tmp_path):
+    _install(monkeypatch, tmp_path)
+    manifest = research_manifest.run(persist=True)
+    archive = research_manifest._ARCHIVE_DIR / "dream-test.json"
+    assert archive.exists()
+    assert research_manifest._LATEST.exists()
+    assert json.loads(archive.read_text()) == manifest
+    assert json.loads(research_manifest._LATEST.read_text()) == manifest
