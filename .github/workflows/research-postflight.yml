@@ -31,8 +31,6 @@ jobs:
           python-version: '3.11'
           cache: pip
 
-      # Postflight imports the same parser/configuration modules as the research process. Install the
-      # repository contract rather than relying on packages preinstalled in a GitHub runner image.
       - name: Install research audit dependencies
         run: pip install -r requirements.txt
 
@@ -58,8 +56,6 @@ jobs:
         shell: bash
         run: python -m ai_lab.dream.research_contract_audit > ai_lab/reports/easy/research_contract_latest.json
 
-      # Evidence, software environment and parsed CLI protocol must belong to the exact same burst.
-      # A mismatch is provenance failure, never a physical result.
       - name: Enforce same-burst runtime context coherence
         shell: bash
         run: python -m ai_lab.dream.runtime_context_audit > ai_lab/reports/easy/runtime_context_latest.json
@@ -93,7 +89,7 @@ jobs:
             AETERNA_RESEARCH_RUN_NUMBER="$UPSTREAM_RUN_NUMBER" \
             AETERNA_RESEARCH_RUN_ATTEMPT="$UPSTREAM_RUN_ATTEMPT" \
             AETERNA_RESEARCH_REF="$UPSTREAM_HEAD_BRANCH" \
-              python -m ai_lab.dream.research_manifest --require-environment
+              python -m ai_lab.dream.research_manifest --require-environment --require-protocol
             python -m ai_lab.dream.research_manifest --verify-existing
           fi
 
