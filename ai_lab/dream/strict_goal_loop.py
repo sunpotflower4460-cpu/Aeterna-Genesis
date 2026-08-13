@@ -1,33 +1,32 @@
-"""Production-compatible entry point for Adaptive Dream v8 + strict Nothing Genesis.
+"""Production entry point for Adaptive Dream v8 + NØ + information-yield routing.
 
-Strict geometry and Prefix Identity instrumentation remain identical to the v6/v7 entry point.
-The production command name is kept for workflow compatibility. Adaptive Dream v8 still performs the
-R0/downstream research, then the NØ control is executed as a separate, stricter layer with zero physical
-givens. NØ never changes scientific gates, Rooms or official Levels.
+Strict geometry and Prefix Identity instrumentation remain identical to the existing entry point.
+Adaptive Research Yield changes only the bounded *planning* router for frontier experiments. It does not
+change physics, scientific truth gates, Rooms, official Levels, or NØ strictness.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
-from ai_lab.dream import adaptive as adaptive_core
 from ai_lab.dream import adaptive_loop as base
 from ai_lab.dream import adaptive_v8
 from ai_lab.dream import dry_run
 from ai_lab.dream import nothing_genesis
 from ai_lab.dream import prefix_audit
+from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
 from ai_lab.dream.strict_followup_loop import _install_strict_followup_geometry
 from ai_lab.dream.strict_loop import _install_strict_geometry
 
+_REPO = Path(__file__).resolve().parents[2]
+_FRONTIER_ALIAS = _REPO / "ai_lab" / "reports" / "easy" / "frontier_latest.json"
+
 
 def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
-    """Run the v8 CLI path while retaining the exact in-memory report for the NØ comparison.
-
-    Reading ``easy/latest.json`` after the fact is unsafe: another burst could update it, and a dry-run
-    deliberately writes to a redirected scratch tree. This helper mirrors ``adaptive_v8.main`` but
-    returns the actual result object produced by this invocation.
-    """
+    """Run the v8 CLI path while retaining the exact in-memory report for the NØ comparison."""
     a = adaptive_v8.build_parser().parse_args(argv)
     if a.no_record:
         dry_run.activate()
@@ -52,35 +51,52 @@ def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
     )
 
 
+def _publish_frontier_alias(report: dict[str, Any]) -> None:
+    """Expose the exact in-memory planning result as a convenient audit alias.
+
+    In ``--no-record`` mode the dry-run redirect maps this write into scratch, so CI can inspect the
+    planning policy without touching tracked scientific evidence.
+    """
+    frontier = report.get("autonomous_frontier_expansion") or {}
+    if not frontier:
+        return
+    _FRONTIER_ALIAS.parent.mkdir(parents=True, exist_ok=True)
+    _FRONTIER_ALIAS.write_text(json.dumps(frontier, indent=2, ensure_ascii=False))
+
+
 def _print_adaptive_summary(result: dict[str, Any]) -> None:
     r = result["report"]
     root = r.get("pure_genesis_r0") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
     frontier = r.get("autonomous_frontier_expansion") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
+    budget = frontier.get("budget") or {}
     print(f"=== Aeterna Adaptive Dream v8: {r['burst_id']} ===")
     print(f"  R0: {why_gate.ROOT_STATEMENT}")
     print(f"  Pure Genesis laws={root.get('law_trials', 0)} top={len(root.get('top_laws') or [])}")
     print(f"  Why Gate accepted={int((root.get('why_gate') or {}).get('accepted', 0))} unexplained physical givens=0")
     print(f"  Root Integrity critic questions={len(critic)} permutation-quotient=True")
-    print(f"  frontier mechanism experiments={int((frontier.get('budget') or {}).get('executed', 0))}")
+    print(
+        f"  frontier mechanism experiments={int(budget.get('executed', 0))} "
+        f"allocation={budget.get('allocated', {})}"
+    )
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
-    print("  NOTE: destination is fixed, methods are adaptive; target shapes/outcomes are never seeded as Pure Genesis evidence.")
+    print("  NOTE: frontier compute is routed for information yield; F0-F7 remains one human-written reference path.")
 
 
 def main(argv: list[str] | None = None) -> int:
     _install_strict_geometry()
     _install_strict_followup_geometry()
     prefix_audit.install_geometry_digest_wrapper(base.hourly, strict)
+    research_optimizer.install()
 
     result = _run_adaptive_v8_exact(argv)
     _print_adaptive_summary(result)
     report = result["report"]
+    _publish_frontier_alias(report)
 
-    # NØ runs *after* the ordinary/R0 burst and receives only exact bookkeeping/comparison metadata
-    # from that invocation. It never borrows the burst's state, seed, geometry, law or clock as NØ
-    # physics. Persist=True is intentional even for --no-record: dry_run redirects the artifact into
-    # runtime/dry-run/latest, preserving an auditable report without dirtying the repository.
+    # NØ remains a separate stricter meta-control. It receives only bookkeeping/comparison metadata,
+    # never the run's physical state, seed, geometry, law or clock as NØ physics.
     nothing_genesis.run_nothing_research(
         burst_id=str(report.get("burst_id") or "unknown-burst"),
         r0_metadata=report.get("pure_genesis_r0") or {},
