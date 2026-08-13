@@ -19,6 +19,7 @@ on:
       - 'tests/test_nothing_genesis.py'
       - 'tests/test_frontier_expander.py'
       - 'tests/test_research_optimizer.py'
+      - 'tests/test_progress_ratchet.py'
       - 'tests/test_crossworld_replication.py'
       - 'tests/test_research_compass.py'
       - 'tests/test_hourly_discovery.py'
@@ -52,7 +53,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_nothing_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_crossworld_replication.py tests/test_research_compass.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_nothing_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_progress_ratchet.py tests/test_crossworld_replication.py tests/test_research_compass.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Unit tests must not touch tracked scientific evidence
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -68,7 +69,7 @@ jobs:
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream v8 dry-run with NØ and information-yield frontier routing
+      - name: Tiny strict Adaptive Dream dry-run with NØ, Yield and durable Progress Ratchet
         run: |
           python -m ai_lab.dream.strict_goal_loop \
             --quick --trials 8 --native3d-trials 2 --workers 1 \
@@ -98,7 +99,7 @@ jobs:
             exit 1
           fi
           echo "Dry runs left the working tree clean."
-      - name: Easy, NØ, optimized frontier, replication, emergence and Multi-World reports were produced
+      - name: Easy, NØ, ratcheted frontier, replication, emergence and Multi-World reports were produced
         env:
           DRY: runtime/dry-run/latest
         run: |
@@ -106,6 +107,7 @@ jobs:
           find "$DRY" -type f -print | sort
           test -f $DRY/ai_lab/reports/easy/latest.json
           test -f $DRY/ai_lab/reports/easy/latest.md
+          test -f $DRY/ai_lab/reports/easy/frontier_latest.json
           test -f $DRY/ai_lab/reports/easy/nothing_latest.json
           test -f $DRY/ai_lab/reports/easy/nothing_latest.md
           test -f $DRY/ai_lab/reports/easy/nothing_latest.png
@@ -116,6 +118,7 @@ jobs:
           test -f $DRY/ai_lab/reports/emergence/latest.json
           test -f $DRY/ai_lab/reports/crossworld/latest.json
           test -f $DRY/ai_lab/reports/crossworld/replication_latest.json
+          test -f $DRY/ai_lab/discoveries/research_memory.json
           test -f $DRY/ai_lab/discoveries/promising_leads.json
           test -f $DRY/ai_lab/discoveries/fission_path_leads.json
           test -f $DRY/ai_lab/discoveries/deep_time_fission.json
@@ -138,6 +141,10 @@ jobs:
           grep -q 'autonomous_frontier_expansion' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'destination_fixed_methods_adaptive' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'expected_information_yield_routes_budget' $DRY/ai_lab/reports/easy/frontier_latest.json
+          grep -q 'durable_question_history_uses_research_memory' $DRY/ai_lab/reports/easy/frontier_latest.json
+          grep -q 'recorded_next_burst_escape_is_enforced' $DRY/ai_lab/reports/easy/frontier_latest.json
+          grep -q 'progress_ratchet' $DRY/ai_lab/reports/easy/frontier_latest.json
+          grep -q 'progress_question_history_is_durable' $DRY/ai_lab/discoveries/research_memory.json
           grep -q '"mode": "strict-nothing-genesis-meta-control"' $DRY/ai_lab/reports/easy/nothing_latest.json
           grep -q '"nonempty_combinations_enumerated": 65535' $DRY/ai_lab/reports/easy/nothing_latest.json
           grep -q '"per_combination_physical_simulation_performed": false' $DRY/ai_lab/reports/easy/nothing_latest.json
