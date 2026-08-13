@@ -100,13 +100,31 @@ def _entries(paths: tuple[str, ...]) -> list[dict[str, Any]]:
 
 
 def _repo_git_sha() -> str | None:
-    """HEAD at postflight start: normally the bot commit that persisted this burst's evidence."""
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=_REPO, text=True, stderr=subprocess.DEVNULL
         ).strip() or None
     except (OSError, subprocess.CalledProcessError):
         return None
+
+
+def _evidence_git_sha() -> str | None:
+    """Return the commit that last changed the authoritative easy evidence file.
+
+    This is stronger than simply recording postflight's current HEAD: a code/docs commit could land
+    between Dream completion and postflight checkout without changing the burst evidence.  Git path
+    history still points directly to the bot commit that persisted ``easy/latest.json``.
+    """
+    try:
+        value = subprocess.check_output(
+            ["git", "log", "-n", "1", "--format=%H", "--", "ai_lab/reports/easy/latest.json"],
+            cwd=_REPO,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        return value or _repo_git_sha()
+    except (OSError, subprocess.CalledProcessError):
+        return _repo_git_sha()
 
 
 def _research_git_sha() -> str | None:
@@ -146,7 +164,7 @@ def build_manifest() -> dict[str, Any]:
     planning = _entries(_PLANNING_STATE)
     views = _entries(_DERIVED_HUMAN_VIEWS)
     source_sha = _research_git_sha()
-    evidence_sha = _repo_git_sha()
+    evidence_sha = _evidence_git_sha()
     manifest: dict[str, Any] = {
         "version": 3,
         "mode": "immutable-research-provenance-manifest",
