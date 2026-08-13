@@ -32,35 +32,21 @@
 - 証拠の位置づけ: **CANDIDATE**
 - 元データ: `ai_lab/discoveries/unknown_followups.json`
 
-### 4. 別世界でも重なった変化 X-67e9aeb002
+### 4. 広く繰り返す名無し変化 X-b991d59a4d
 
-共通の物差し上で変化方向が重なった候補。 projection coverage=1.00。別世界で似ても、同じ物理や普遍法則とはまだ言いません。
-
-- 証拠の位置づけ: **SIGNATURE_OVERLAP_ONLY**
-- 元データ: `ai_lab/reports/crossworld/latest.json`
-
-### 5. 広く繰り返す名無し変化 X-b991d59a4d
-
-771回、64個の独立seed、64条件で観測。ただし広く出すぎるため、今後は回数を増やすより『何を変えると消えるか』を優先します。
+778回、64個の独立seed、64条件で観測。ただし広く出すぎるため、今後は回数を増やすより『何を変えると消えるか』を優先します。
 
 - 証拠の位置づけ: **ROBUST_RECURRENT_CANDIDATE**
 - 元データ: `ai_lab/reports/emergence/latest.json`
 
-### 6. 2渦・3渦の局所エネルギー地図が蓄積
+### 5. 2渦・3渦の局所エネルギー地図が蓄積
 
-持続2渦 27件（pair-only 26件）、3渦の局所エネルギー 22件。形だけで関係を選んだ後にエネルギーを測っています。
+持続2渦 27件（pair-only 21件）、3渦の局所エネルギー 19件。形だけで関係を選んだ後にエネルギーを測っています。
 
 - 証拠の位置づけ: **MEASURED_SHADOW**
 - 元データ: `ai_lab/reports/easy/latest.json`
 
-### 7. 同じ歴史を保った長時間追跡を確認
-
-最新burstでPrefix Identity=MATCHの長時間追跡があり、raw F-depthは F6。履歴不一致を長時間結果として混ぜていません。
-
-- 証拠の位置づけ: **PREFIX_MATCH**
-- 元データ: `ai_lab/discoveries/deep_time_fission.json`
-
-### 8. 長時間でも残る関係状態
+### 6. 長時間でも残る関係状態
 
 参照F-path上のF4候補が 64τまで残っています。先へ進まないことを失敗とせず、長寿命状態として別に保持します。
 
