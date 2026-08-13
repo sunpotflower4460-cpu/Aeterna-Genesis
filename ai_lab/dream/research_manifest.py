@@ -42,6 +42,7 @@ _PLANNING_STATE = (
     "ai_lab/reports/easy/nothing_latest.json",
     "ai_lab/reports/easy/research_health_latest.json",
     "ai_lab/discoveries/research_memory.json",
+    "ai_lab/discoveries/research_backlog.json",
     "ai_lab/discoveries/frontier_expansion.json",
     "ai_lab/discoveries/hypothesis_graph.json",
     "ai_lab/discoveries/hypothesis_history.json",
@@ -55,6 +56,7 @@ _DERIVED_HUMAN_VIEWS = (
     "ai_lab/reports/easy/research_compass_latest.json",
     "ai_lab/reports/easy/research_compass_latest.md",
     "ai_lab/reports/easy/research_health_latest.md",
+    "ai_lab/reports/easy/research_backlog_latest.md",
     "ai_lab/reports/easy/nothing_latest.md",
     "ai_lab/reports/easy/nothing_latest.png",
 )
