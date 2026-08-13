@@ -1,8 +1,8 @@
-"""Production entry point for Adaptive Dream v8 + NØ + information-yield routing.
+"""Production entry point for Adaptive Dream v8 + NØ + durable epistemic routing.
 
 Strict geometry and Prefix Identity instrumentation remain identical to the existing entry point.
-Adaptive Research Yield changes only the bounded *planning* router for frontier experiments. It does not
-change physics, scientific truth gates, Rooms, official Levels, or NØ strictness.
+Adaptive Research Yield chooses informative frontier lanes; Progress Ratchet adds durable no-repeat and
+route-escape planning from Research Memory. Neither changes physics, truth gates, Rooms or official Levels.
 """
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from ai_lab.dream import adaptive_v8
 from ai_lab.dream import dry_run
 from ai_lab.dream import nothing_genesis
 from ai_lab.dream import prefix_audit
+from ai_lab.dream import progress_ratchet
 from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
@@ -26,7 +27,6 @@ _FRONTIER_ALIAS = _REPO / "ai_lab" / "reports" / "easy" / "frontier_latest.json"
 
 
 def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
-    """Run the v8 CLI path while retaining the exact in-memory report for the NØ comparison."""
     a = adaptive_v8.build_parser().parse_args(argv)
     if a.no_record:
         dry_run.activate()
@@ -52,11 +52,6 @@ def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
 
 
 def _publish_frontier_alias(report: dict[str, Any]) -> None:
-    """Expose the exact in-memory planning result as a convenient audit alias.
-
-    In ``--no-record`` mode the dry-run redirect maps this write into scratch, so CI can inspect the
-    planning policy without touching tracked scientific evidence.
-    """
     frontier = report.get("autonomous_frontier_expansion") or {}
     if not frontier:
         return
@@ -71,6 +66,7 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
     frontier = r.get("autonomous_frontier_expansion") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
     budget = frontier.get("budget") or {}
+    progress = frontier.get("progress_ratchet") or {}
     print(f"=== Aeterna Adaptive Dream v8: {r['burst_id']} ===")
     print(f"  R0: {why_gate.ROOT_STATEMENT}")
     print(f"  Pure Genesis laws={root.get('law_trials', 0)} top={len(root.get('top_laws') or [])}")
@@ -80,8 +76,14 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
         f"  frontier mechanism experiments={int(budget.get('executed', 0))} "
         f"allocation={budget.get('allocated', {})}"
     )
+    if progress:
+        print(
+            f"  progress={progress.get('status')} new_questions={len(progress.get('new_question_keys') or [])} "
+            f"replications={len(progress.get('replicated_question_keys') or [])} "
+            f"escape_next={bool(progress.get('next_burst_escape_required'))}"
+        )
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
-    print("  NOTE: frontier compute is routed for information yield; F0-F7 remains one human-written reference path.")
+    print("  NOTE: Research Memory prevents routine exact-repeat drift; F0-F7 remains one human-written reference path.")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -89,14 +91,13 @@ def main(argv: list[str] | None = None) -> int:
     _install_strict_followup_geometry()
     prefix_audit.install_geometry_digest_wrapper(base.hourly, strict)
     research_optimizer.install()
+    progress_ratchet.install()
 
     result = _run_adaptive_v8_exact(argv)
     _print_adaptive_summary(result)
     report = result["report"]
     _publish_frontier_alias(report)
 
-    # NØ remains a separate stricter meta-control. It receives only bookkeeping/comparison metadata,
-    # never the run's physical state, seed, geometry, law or clock as NØ physics.
     nothing_genesis.run_nothing_research(
         burst_id=str(report.get("burst_id") or "unknown-burst"),
         r0_metadata=report.get("pure_genesis_r0") or {},
