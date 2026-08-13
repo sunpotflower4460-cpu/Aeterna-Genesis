@@ -48,6 +48,12 @@ jobs:
           echo "healthy=$HEALTHY" >> "$GITHUB_OUTPUT"
           echo "Research infrastructure healthy=$HEALTHY"
 
+      # Instrument requests are burst-local in the frontier report. Preserve them before the immutable
+      # manifest so future agents do not forget measurement gaps merely because a later burst stopped
+      # displaying a request. Health WARN/ERROR debt is tracked in the same operations-only ledger.
+      - name: Preserve durable research operations backlog
+        run: python -m ai_lab.dream.research_backlog
+
       # One immutable manifest is created for each burst. If a safety-net run observes the same burst
       # again, verify the archived hashes instead of rebuilding/re-writing provenance. This makes the
       # archive useful as a tamper/drift detector and keeps workflow retries idempotent.
@@ -94,6 +100,8 @@ jobs:
           path: |
             ai_lab/reports/easy/research_health_latest.json
             ai_lab/reports/easy/research_health_latest.md
+            ai_lab/discoveries/research_backlog.json
+            ai_lab/reports/easy/research_backlog_latest.md
             ai_lab/reports/easy/research_manifest_latest.json
             ai_lab/reports/easy/manifests/*.json
 
@@ -106,6 +114,8 @@ jobs:
           git add \
             ai_lab/reports/easy/research_health_latest.json \
             ai_lab/reports/easy/research_health_latest.md \
+            ai_lab/discoveries/research_backlog.json \
+            ai_lab/reports/easy/research_backlog_latest.md \
             ai_lab/reports/easy/research_manifest_latest.json \
             ai_lab/reports/easy/manifests || true
           if git diff --cached --quiet; then
