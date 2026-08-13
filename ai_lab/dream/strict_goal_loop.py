@@ -20,6 +20,7 @@ from ai_lab.dream import nothing_genesis
 from ai_lab.dream import prefix_audit
 from ai_lab.dream import progress_context
 from ai_lab.dream import progress_ratchet
+from ai_lab.dream import protocol_fingerprint
 from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
@@ -64,12 +65,7 @@ def _publish_frontier_alias(report: dict[str, Any]) -> None:
 
 
 def _publish_dry_run_progress_memory(report: dict[str, Any]) -> None:
-    """Keep --no-record auditable by writing durable-question memory only into redirected scratch.
-
-    Adaptive v8 correctly calls the frontier planner with ``persist=False`` during a dry run. The
-    process-wide dry-run redirect nevertheless gives us a safe scratch tree, so we mirror the completed
-    question keys there for CI inspection without mutating tracked scientific evidence.
-    """
+    """Keep --no-record auditable by writing durable-question memory only into redirected scratch."""
     if not dry_run.is_active():
         return
     frontier = report.get("autonomous_frontier_expansion") or {}
@@ -128,7 +124,10 @@ def main(argv: list[str] | None = None) -> int:
         r0_metadata=report.get("pure_genesis_r0") or {},
         persist=True,
     )
-    # Capture the *actual* package/BLAS/interpreter environment in the same research process. In
+    # Persist the exact recognized parser configuration used by this process. If argv is None the
+    # fingerprint parser reads this process' sys.argv, including parser defaults. dry_run redirects it.
+    protocol_fingerprint.run(burst_id=burst_id, argv=argv, persist=True)
+    # Capture the actual package/BLAS/interpreter environment in the same research process. In
     # --no-record mode dry_run redirects this write into scratch, preserving the tracked tree.
     environment_fingerprint.run(burst_id=burst_id, persist=True)
     return 0
