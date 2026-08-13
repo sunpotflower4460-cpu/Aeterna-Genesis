@@ -28,6 +28,8 @@ def _install(monkeypatch, tmp_path):
     _write(tmp_path / "ai_lab/reports/emergence/latest.json", {"episodes": 3})
     _write(tmp_path / "ai_lab/reports/easy/frontier_latest.json", {"burst_id": "dream-test"})
     _write(tmp_path / "ai_lab/discoveries/research_memory.json", {"version": 2})
+    _write(tmp_path / "ai_lab/discoveries/research_backlog.json", {"active_count": 2})
+    _write(tmp_path / "ai_lab/reports/easy/research_backlog_latest.md", "operations only")
     _write(tmp_path / "CURRENT_RESEARCH.md", "human view")
 
 
@@ -42,6 +44,8 @@ def test_manifest_separates_evidence_planning_and_views(monkeypatch, tmp_path):
     assert "ai_lab/reports/easy/latest.json" in scientific
     assert "ai_lab/reports/easy/frontier_latest.json" in planning
     assert "ai_lab/discoveries/research_memory.json" in planning
+    assert "ai_lab/discoveries/research_backlog.json" in planning
+    assert "ai_lab/reports/easy/research_backlog_latest.md" in views
     assert "CURRENT_RESEARCH.md" in views
     assert manifest["semantics"]["manifest_is_scientific_evidence"] is False
 
