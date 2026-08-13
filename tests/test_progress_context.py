@@ -83,13 +83,13 @@ def test_legacy_contextless_question_does_not_suppress_new_context_coverage():
 
 
 def test_legacy_pattern_wide_escape_remains_compatible(monkeypatch):
-    history = [{
+    current_escape_history = [{
         "progress": {
             "next_burst_escape_required": True,
             "next_burst_escape_targets": ["x:X-a"],
         }
     }]
-    monkeypatch.setattr(progress_ratchet, "_full_history", lambda: history)
+    monkeypatch.setattr(progress_ratchet, "_full_history", lambda: current_escape_history)
     monkeypatch.setattr(progress_ratchet, "_memory", lambda: {"entries": []})
     monkeypatch.setattr(
         progress_ratchet,
@@ -101,7 +101,23 @@ def test_legacy_pattern_wide_escape_remains_compatible(monkeypatch):
         "_V10_RANK_X",
         lambda limit, history: [_ranked()],
     )
-    assert progress_context.rank_x_focuses(limit=1, history=history) == []
+    assert progress_context.rank_x_focuses(limit=1, history=current_escape_history) == []
+
+    # Legacy pattern-wide escape is consumed by the next planning generation only. A later explicit
+    # no-escape decision must allow the X to be considered again.
+    later_history = [
+        *current_escape_history,
+        {
+            "progress": {
+                "next_burst_escape_required": False,
+                "next_burst_escape_targets": [],
+            }
+        },
+    ]
+    monkeypatch.setattr(progress_ratchet, "_full_history", lambda: later_history)
+    reopened = progress_context.rank_x_focuses(limit=1, history=later_history)
+    assert len(reopened) == 1
+    assert reopened[0]["pattern_id"] == "X-a"
 
 
 def test_context_escape_blocks_only_same_context(monkeypatch):
