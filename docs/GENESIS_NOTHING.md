@@ -1,0 +1,159 @@
+# GENESIS_NOTHING — NØ（本当に何も与えない対照実験）
+
+## 問い
+
+Aeterna の最上流に、R0 よりさらに手前の対照実験を置く。
+
+> **NØ: 本当に何も物理的に与えないとき、何かが生まれたと計算実験で言えるか。**
+
+ここでいう「何も与えない」は、ゼロ場・真空・空集合の粒子・匿名slot・関係行列を置くことではない。それらはすでに何かを定義している。
+
+NØ の物理側には、次を置かない。
+
+- 存在する物・slot・粒子
+- 個数
+- 同一性
+- 区別
+- 関係
+- 状態空間
+- 初期状態
+- 0という物理状態
+- 真空
+- 変化可能性
+- 更新則・法則
+- 時間・順序・step
+- 乱数・seed
+- 確率測度
+- 可能性集合
+- 空間・次元
+- エネルギー・保存則
+- 物理的観測者・測定則
+
+したがって、NØ は通常の意味での「シミュレーション」ではない。次状態を作る法則も、次という順序もないため、物理的な更新を1回も実行しない **null/control experiment** である。
+
+## 重要な判定
+
+NØ が `something_observed=true` を返した場合、それを発見として扱ってはいけない。
+
+まず、
+
+1. 隠れた初期状態を入れていないか
+2. 乱数を入れていないか
+3. 状態空間や候補集合を入れていないか
+4. 更新則・時間・順序を入れていないか
+5. 計算表現そのものを物理と数えていないか
+
+を調べ、**hidden assumption または software bug として扱う**。
+
+なお現在の `something_observed=false` は独立した物理測定器が観測した値ではない。**何も生成しない strict null-control の構成値**である。ここを「物理的に無から何も出なかったという測定」と言い換えてはいけない。
+
+## 「全てが起きうる0」について
+
+「全てが起きうる0」は研究上とても重要な境界仮説として保存する。ただし strict NØ と同一視しない。
+
+「起きうる」と言うために具体的な候補集合を作れば、それは `possibility_space` という追加前提になる。さらに、その候補から何か一つを実際に選ぶなら、選択則・確率測度・乱数などが必要になる。
+
+そのため Aeterna は、
+
+> **可能性を一切禁止しない、という哲学的読み方は許す。しかし、その可能性を計算対象として定義した瞬間に NØ の外へ出たと記録する。**
+
+という方針を取る。
+
+## なぜ「大量に何度もNØを回す」をしないのか
+
+strict NØ は物理的に1ケースしかない。
+
+seed を変える、サイズを変える、step数を変える、乱数を変える、初期値を変える――これらは全て「何かを与える」操作になる。
+
+よって、NØそのものを1000回ランダム試行したように見せるのは禁止する。それは研究量を水増しするだけで、strict nothing の検証にはならない。
+
+代わりに毎burst、NØの周囲で **First-Given Boundary Enumeration** を行う。
+
+現在は16種類の「最初に入り込みうる物理前提」を列挙し、全非空部分集合 **65,535通り** を決定論的に列挙する。これは物理シミュレーションでも、65,535件の物理監査でもない。何かが出たように見えた場合に「どの前提を追加していたか」を追跡するための**境界地図**である。
+
+各組み合わせについて物理結果を計算したり、汚染predicateを通したわけではないため、レポートも `enumerated` とだけ記録する。将来、各組み合わせに個別の実験・反証条件を定義する場合も、それらはNØの外側の最小前提モデルとして扱う。
+
+この65,535通りのどれかを今後実装して何かが出ても、**from nothing evidence には数えない**。
+
+## R0との関係
+
+既存Pure Genesis R0は捨てない。
+
+- NØ: 物理的に何も与えない。動力学すら定義しない。
+- R0: 「区別可能性・関係・変化可能性」を最小作業仮説として与える。
+- 既存 g001 / Multi-World / Active Vessel: さらに下流の物理を与えた実験。
+
+統合実行時は、NØは同じburstで実際に生成されたR0レポートのID・監査メタデータだけを比較用に受け取る。R0の状態・seed・法則・clockをNØの物理へ入れない。standalone実行時だけ `easy/latest.json` のburst IDを外部bookkeepingのfallbackとして読む。
+
+standalone `--no-record` では、そのfallback burst IDを **dry-run redirectを有効にする前に** 解決する。古いscratch reportを誤って現在burstとして読むのを防ぐ。
+
+したがって、R0で差・履歴・閉路候補などが出ても、それを「完全な無から出た」とは呼ばない。
+
+## 毎burstの証拠パッケージ
+
+NØもAGENTS.mdの人向け/監査向け分離に従う。
+
+### 技術監査
+
+- `ai_lab/reports/easy/nothing_latest.json`
+- immutable: `ai_lab/reports/easy/nothing/<burst_id>/report.json`
+
+### やさしい説明
+
+- `ai_lab/reports/easy/nothing_latest.md`
+- immutable: `ai_lab/reports/easy/nothing/<burst_id>/human.md`
+
+ここには「今回0からどこまで進んだか」「順番」「次の選択肢」「推奨」を入れる。
+
+### 📸 スクリーンショット
+
+- `ai_lab/reports/easy/nothing_latest.png`
+- immutable: `ai_lab/reports/easy/nothing/<burst_id>/boundary.png`
+
+NØには物理場そのものが存在しないため、物理場の偽画像は作らない。画像は **First-Given Boundary の組合せ数分布を描いたメタ可視化**であり、`separated_from_physics_data=true` / `physical_data_visualized=false` を記録する。PNGは標準ライブラリ `struct + zlib` だけで生成できる。
+
+通常workflowのartifactにも technical / human / PNG / immutable archive を含める。
+
+## 監査可能性
+
+`nothing_latest.json` には、strict結果だけでなく次も保存する。
+
+- role / claim tier（NØは物理Emergence Eではなく、meta-controlとして primary F / secondary N）
+- `no_touch`（物理solver・公式Room・閾値・昇格gateを変更していないこと）
+- 決定性チェック（strict controlと境界列挙digestを再計算して一致すること）
+- standalone / dry-run の再現コマンド
+- triggering R0の比較用メタデータ（統合実行時）
+- visualization と immutable archive path
+
+### 第8監査についての重要な扱い
+
+NØには初期条件・物理方程式・評価ゲート・独立outcome detector自体がない。そのため、第8監査を通常の物理Emergence実験と同じ意味で **`passed` と書かない**。
+
+`something_observed=false` もnull-controlの構成値なので、独立測定結果ではない。
+
+レポートには、
+
+`DECLARATIVE_NULL_CONTROL_NOT_A_PASSED_EIGHTH_AUDIT`
+
+と明記し、物理的な第8監査が適用できないこと、代わりに「physical givensが空」「state/initial state/transition ruleが未定義」「transition未実行」という構造不変条件を記録する。
+
+`--no-record` でも証拠パッケージを捨てず、PR #105で導入したdry-run redirectにより `runtime/dry-run/latest/` 以下へ書く。実リポジトリの証拠は汚さない。
+
+## NØで現在言えること
+
+NØは、
+
+- 「無から何かが絶対に生まれない」ことを証明しない。
+- 「無から何かが生まれる」ことも証明しない。
+
+言えるのは、
+
+> **何も前提を与えないままでは、計算実験として『状態』『変化』『次』『確率』『観測』を定義できない。**
+
+という計算上の境界である。
+
+この境界そのものを隠さず、もし将来「NØから何かが出た」と見える方法を思いついた場合には、まずその方法が追加した最初の一物を特定する。
+
+合言葉：
+
+> **何かが出たなら、最初に何を与えた？　本当にゼロなら、それはどこから来た？**
