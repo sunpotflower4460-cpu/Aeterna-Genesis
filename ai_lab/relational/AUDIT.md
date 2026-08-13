@@ -4883,3 +4883,109 @@ graph edges, two different asymmetry realizations, not two fully independent dra
   review's decision, not unilaterally started.
 - R8-based automated search (review's item 5, deferred since PR-R7) remains deferred; this
   PR's result does not change that instruction on its own.
+
+## 29. PR-R9 PRE-REGISTRATION: a confound review identified in PR-R8's comparison --
+diffusive control and bounded_tanh candidates used entirely disjoint seed ranges -- plus
+the correct independent unit (graph, not config)
+
+Review's own review of PR-R8, before any new run: the diffusive negative control (Sec.26)
+reused S-016's 300-config grid (seeds 0-14), while the 9 bounded_tanh candidates (Sec.25.1,
+the population PR-R8 tested) came from PR-R6's concentrated sweep (seeds 100-139) --
+**entirely disjoint seed ranges, verified directly** (`range(0,15)` vs `range(100,140)`,
+no overlap). This means coupling form and graph identity are confounded in PR-R8's
+comparison: a positive result could reflect "bounded_tanh produces winding" OR "these
+particular graphs happen to produce winding regardless of coupling form" OR both, and
+PR-R8 (Sec.28) could not distinguish them. Suggestive evidence the confound may be real:
+`seed=117` was confirmed at BOTH strengths tested (0.3 and 0.5) -- the same underlying
+graph, hit twice -- which is consistent with (though does not prove) something about that
+specific graph's structure, not merely its coupling form.
+
+### 29.1 Unit correction: CONFIGS, not GRAPHS, was the denominator PR-R8 used
+
+`topology.build_topology(name, n, seed=seed, ...)` depends only on `(name, seed)`, not on
+`asymmetry_strength` -- so both grids' "300 configs" figure is 15 seeds x 4 topologies x 5
+strengths (diffusive) or (30 seeds x 1 topology + 10 seeds x 3 topologies) x 5 strengths
+(bounded_tanh concentrated sweep), each collapsing to **60 unique underlying graphs**, each
+tested at 5 strengths. Recomputing PR-R7/PR-R8's key counts at the GRAPH level (a graph
+counts once if ANY of its 5 strengths hits, matching how a graph's identity, not its
+strength, is the thing whose confound is in question):
+
+| | window-robust (>=1 strength) | full-battery CONFIRMED (>=1 strength) |
+|---|---|---|
+| diffusive (60 graphs) | 3 (seed=5, seed=9, seed=11 -- each hit at exactly 1 strength) | **0** |
+| bounded_tanh (60 graphs) | 7 (seed=117, 129, 102, 133, 134, 138, 137) | **3** (seed=117, 134, 138 -- seed=117 confirmed at BOTH its strengths, seed=134 confirmed at only one of its two window-robust strengths) |
+
+**Corrected significance test, graph units**: `fisher_exact([[3,57],[0,60]],
+alternative="greater")` = **p = 0.1218** -- further from significance than PR-R8's own
+config-level p=0.0619, not closer. PR-R8's Sec.28.2 conclusion (not established at the
+frozen threshold) is unchanged in direction, but the config-level analysis OVERSTATED how
+close the result was -- 60 independent trials, not 300, is the honest sample size, and 5
+non-independent "looks" at the same graph (one per strength) should not each count as a
+separate trial when the graph's identity itself is what confound review flagged.
+
+**Silver lining, also worth recording plainly**: the per-graph hit rate is higher than the
+per-config rate suggested -- 3/60 = 5.0% (bounded_tanh confirmed), not 4/300 = 1.3% -- since
+each graph only needed to hit once, not 4 times, to be counted. A future, properly-
+independent-graph sweep needs FEWER new graphs than a naive per-config calculation would
+imply to reach the pre-registered power target (recomputed in 29.3 below).
+
+### 29.2 Pre-registered paired comparison: apply diffusive coupling to the SAME 3 confirmed
+graphs
+
+**The decisive, cheap test review proposed**: run `coupling_form="diffusive"` on the exact
+same 3 graphs that produced PR-R8's 4 confirmed bounded_tanh locations -- `seed=117`
+(`erdos_renyi`), `seed=134` (`random_regular`), `seed=138` (`barabasi_albert`) -- at the
+SAME strengths that were confirmed under bounded_tanh (117: 0.3 and 0.5; 134: 0.2; 138:
+0.3 -- 4 configs total), holding graph identity and asymmetry strength fixed and changing
+ONLY `coupling_form`. This is a matched/paired design, not a fresh independent sample, and
+is expected to be far more informative per run than another 300-config sweep.
+
+**Frozen BEFORE running**:
+- **Screen** (cheap): for each of the 4 configs, run `coupling_form="diffusive"` at the
+  native 30x window, full wide-basis cycle coverage (identical methodology to Sec.26.1) --
+  does ANY cycle in that graph pass the window-robust smoothness gate? (Not necessarily the
+  SAME specific cycle bounded_tanh found -- if graph structure alone drives the effect, a
+  different coupling form could plausibly produce winding on a different cycle of the same
+  graph, so the whole graph's wide-basis coverage is checked, not just the one known
+  cycle.)
+- **If zero hits across all 4 diffusive configs**: interpreted as -- holding graph
+  structure fixed, diffusive coupling does not reproduce the effect -- direct, matched
+  support for a real coupling-form effect, independent of PR-R8's underpowered aggregate
+  test.
+- **If any hit occurs**: that candidate receives the SAME staged battery (independent
+  conditions first, then damage-recovery, per Sec.27.3's efficiency filter) used
+  throughout this project, to determine whether it is itself a confirmed location.
+  **If it is confirmed**: read as evidence that GRAPH STRUCTURE, not coupling form, may be
+  the operative variable for at least that graph -- flagged explicitly for a follow-up
+  investigation into what these specific graphs have in common, not concluded unilaterally
+  from one instance.
+
+### 29.3 Search-power recalculation at the corrected (graph, not config) unit
+
+At the corrected point estimate (3/60 = 5.0% bounded_tanh confirmed-graph rate, vs 0% for
+diffusive), the number of NEW independent graphs needed for the pre-registered comparison
+to reach 95% power (at the same one-sided Fisher exact, alpha=0.05) against a 0% control
+rate is substantially lower than a naive 4/300=1.3%-based estimate would suggest -- to be
+computed and reported alongside 29.2's results, once the paired comparison (which may
+settle the question without any new graphs at all) has been run first, per review's
+explicit ordering (item 5: "追加の大規模検定は、2と3が済んでからにしてください").
+
+### 29.4 Method finding, independent of significance (recorded per review's instruction)
+
+Across every location tested with the standardized 6-independent-IC battery (PR-R6:
+seed=55, seed=62; PR-R7: 3 diffusive candidates -- seed=5, seed=9-diffusive, seed=11;
+PR-R8: 9 bounded_tanh candidates -- seed=117@0.3, seed=117@0.5, seed=129, seed=102,
+seed=133, seed=134@0.2, seed=134@0.3, seed=138, seed=137 -- 14 battery instances total;
+`seed=9`'s original PR-R3.1 battery used a different, extended 12-IC format and is excluded
+from this specific count), the smoothness count has landed at **exactly 6/6 in 6 instances**
+(seed=55, seed=62, seed=117@0.3, seed=117@0.5, seed=134@0.2, seed=138 -- each also passing
+damage-recovery) **or at 0/6 or 1/6 in the remaining 8 instances** (0/6: seed=5, seed=9-
+diffusive, seed=129, seed=102, seed=133, seed=137; 1/6: seed=11, seed=134@0.3) --
+**zero of the 14 instances have landed in the 2/6-5/6 range this project's frozen
+threshold (Sec.27.3) was written to handle.** This is recorded as a standing, purely
+methodological finding, independent of any particular significance result: the 6-IC test
+functions as a clean, apparently binary discriminator on every location tested in this
+project so far, not merely a noisy continuous score that happens to average out favorably.
+Whether this binary pattern would survive a much larger sample (it is a strong but
+small-sample observation, n=14 instances) is an open question, not claimed as a proven
+universal property of the test.
