@@ -15,6 +15,7 @@ from typing import Any
 from ai_lab.dream import adaptive_loop as base
 from ai_lab.dream import adaptive_v8
 from ai_lab.dream import dry_run
+from ai_lab.dream import environment_fingerprint
 from ai_lab.dream import nothing_genesis
 from ai_lab.dream import prefix_audit
 from ai_lab.dream import progress_context
@@ -118,14 +119,18 @@ def main(argv: list[str] | None = None) -> int:
     result = _run_adaptive_v8_exact(argv)
     _print_adaptive_summary(result)
     report = result["report"]
+    burst_id = str(report.get("burst_id") or "unknown-burst")
     _publish_frontier_alias(report)
     _publish_dry_run_progress_memory(report)
 
     nothing_genesis.run_nothing_research(
-        burst_id=str(report.get("burst_id") or "unknown-burst"),
+        burst_id=burst_id,
         r0_metadata=report.get("pure_genesis_r0") or {},
         persist=True,
     )
+    # Capture the *actual* package/BLAS/interpreter environment in the same research process. In
+    # --no-record mode dry_run redirects this write into scratch, preserving the tracked tree.
+    environment_fingerprint.run(burst_id=burst_id, persist=True)
     return 0
 
 
