@@ -68,6 +68,14 @@ def test_scaffolded_lane_must_remain_explicitly_non_proof():
     assert any("lacks explicit non-proof boundary" in error for error in errors)
 
 
+def test_registry_can_forbid_scaffolded_parallel_lane(monkeypatch):
+    row = dict(instrument_registry.INSTRUMENTS["identity-continuity"])
+    row["scaffolded_parallel_lane_allowed"] = False
+    monkeypatch.setitem(instrument_registry.INSTRUMENTS, "identity-continuity", row)
+    errors = instrument_registry.validate_request(_request("identity-continuity"))
+    assert any("registry forbids" in error for error in errors)
+
+
 def test_frontier_duplicate_instrument_ids_fail_contract():
     report = instrument_registry.validate_frontier_requests({
         "instrument_requests": [
