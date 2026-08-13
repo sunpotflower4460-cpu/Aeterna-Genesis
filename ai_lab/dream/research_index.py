@@ -1,11 +1,11 @@
 """Compact durable index over immutable per-burst research manifests.
 
-Git remains the authoritative history and each manifest remains the per-burst provenance record.  This
+Git remains the authoritative history and each manifest remains the per-burst provenance record. This
 index exists so future autonomous agents do not need to scan a large commit/report history merely to answer
 "which burst, manifest and evidence commit should I inspect?".
 
-Entries are keyed by burst id and manifest hash.  A different manifest for an already indexed burst is an
-error, not an update.  The index may include planning/health summaries for navigation, but those fields are
+Entries are keyed by burst id and manifest hash. A different manifest for an already indexed burst is an
+error, not an update. The index may include planning/health summaries for navigation, but those fields are
 not scientific confidence and cannot promote any claim.
 """
 from __future__ import annotations
@@ -14,6 +14,8 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
+
+from ai_lab.dream import research_manifest
 
 _REPO = Path(__file__).resolve().parents[2]
 _MANIFEST = _REPO / "ai_lab" / "reports" / "easy" / "research_manifest_latest.json"
@@ -40,6 +42,13 @@ def _entry_from_current() -> dict[str, Any]:
     manifest_sha = str(manifest.get("manifest_content_sha256") or "")
     if not burst or not manifest_sha:
         raise RuntimeError("manifest must contain burst_id and manifest_content_sha256")
+    recomputed_manifest_sha = research_manifest._content_identity(manifest)
+    if manifest_sha != recomputed_manifest_sha:
+        raise RuntimeError(
+            f"manifest content identity mismatch for {burst}: "
+            f"declared={manifest_sha} recomputed={recomputed_manifest_sha}"
+        )
+
     health = _read(_HEALTH, {})
     backlog = _read(_BACKLOG, {})
     frontier = _read(_FRONTIER, {})
@@ -126,6 +135,7 @@ def build_index(existing: dict[str, Any] | None = None) -> dict[str, Any]:
         "policy": {
             "git_history_remains_authoritative": True,
             "manifest_remains_per_burst_provenance_authority": True,
+            "manifest_self_identity_is_recomputed_before_indexing": True,
             "same_burst_different_manifest_is_error": True,
             "index_changes_scientific_truth": False,
             "index_promotes_rooms_or_levels": False,
