@@ -344,6 +344,12 @@ _GLOBAL_LESSONS = [
 
 
 def _merge_memory(existing: dict[str, Any], incoming: list[dict[str, Any]], *, burst_id: str, now: str) -> dict[str, Any]:
+    """Merge Compass lessons without downgrading metadata written by other research layers.
+
+    Progress Ratchet writes durable ``progress_question`` entries plus schema/policy metadata before
+    Research Compass runs in production. Compass must preserve those fields instead of resetting the
+    memory document to its original v1 view schema.
+    """
     old_by_key = {
         str(row.get("key")): dict(row)
         for row in (existing.get("entries") or [])
@@ -362,26 +368,38 @@ def _merge_memory(existing: dict[str, Any], incoming: list[dict[str, Any]], *, b
         old_by_key[key] = merged
     entries = list(old_by_key.values())
     entries.sort(key=lambda r: (str(r.get("kind")), str(r.get("key"))))
+
+    counts = dict(existing.get("counts") or {})
+    counts.update({
+        "total": len(entries),
+        "avoid_exact_repeat": sum(bool(x.get("avoid_exact_repeat")) for x in entries),
+        "weakened_x": sum(x.get("kind") == "weakened_x" for x in entries),
+        "deep_time_quarantine": sum(x.get("kind") == "deep_time_quarantine" for x in entries),
+        "integrity_rules": sum(x.get("kind") == "integrity_rule" for x in entries),
+        "progress_questions": sum(x.get("kind") == "progress_question" for x in entries),
+    })
+    policy = dict(existing.get("policy") or {})
+    policy.update({
+        "raw_evidence_deleted": False,
+        "failure_details_hidden_from_machine_memory": False,
+        "human_front_page_keeps_failure_details_light": True,
+        "memory_changes_scientific_truth": False,
+        "memory_changes_official_levels": False,
+    })
+    if counts["progress_questions"] > 0:
+        # Keep the ratchet's durable-memory contract explicit even if an older Compass write had
+        # already stripped these metadata fields. The entries themselves are authoritative evidence.
+        policy["progress_ratchet_reads_memory"] = True
+        policy["progress_question_history_is_durable"] = True
+
     return {
-        "version": 1,
-        "purpose": "compact-do-not-repeat-and-interpretation-memory",
+        "version": max(2, int(existing.get("version", 1) or 1)),
+        "purpose": existing.get("purpose") or "compact-do-not-repeat-and-interpretation-memory",
         "last_burst": burst_id,
         "updated_at": now,
         "entries": entries,
-        "counts": {
-            "total": len(entries),
-            "avoid_exact_repeat": sum(bool(x.get("avoid_exact_repeat")) for x in entries),
-            "weakened_x": sum(x.get("kind") == "weakened_x" for x in entries),
-            "deep_time_quarantine": sum(x.get("kind") == "deep_time_quarantine" for x in entries),
-            "integrity_rules": sum(x.get("kind") == "integrity_rule" for x in entries),
-        },
-        "policy": {
-            "raw_evidence_deleted": False,
-            "failure_details_hidden_from_machine_memory": False,
-            "human_front_page_keeps_failure_details_light": True,
-            "memory_changes_scientific_truth": False,
-            "memory_changes_official_levels": False,
-        },
+        "counts": counts,
+        "policy": policy,
     }
 
 
@@ -458,8 +476,12 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
         )
     if int(cross.get("strict_zero_aligned_matches", 0) or 0) > 0:
         next_questions.append("現在のCross-World strict候補をfresh seedで独立追試し、出たり消えたりする成立条件を絞る。")
+    recurrent_x_count = int(emergence.get("recurrent_unlabeled_patterns", 0) or 0)
+    if recurrent_x_count <= 0:
+        recurrent_x_count = len(unknown.get("patterns") or {})
+    x_scope = f"{recurrent_x_count}種類規模の" if recurrent_x_count > 0 else "多数の"
     next_questions.extend([
-        "F-pathだけを追わず、111種類規模の名無し反復から条件特異的なものを優先して壊す。",
+        f"F-pathだけを追わず、{x_scope}名無し反復から条件特異的なものを優先して壊す。",
         "個体性・自己修復・成長・適応・継承は、形を置かずに測れる専用instrumentから整える。",
     ])
 
