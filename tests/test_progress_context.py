@@ -56,11 +56,12 @@ def test_identical_full_start_context_is_canonical_and_order_independent():
 def test_context_identity_contains_start_side_only_not_outcome_fields():
     context = progress_context._canonical_context("white", KNOBS)
     assert set(context) == {"version", "family", "base_knobs"}
-    serialized = repr(context)
-    for forbidden in (
+    forbidden = {
         "same_pattern_seen", "hit", "episode", "morphology", "geometry", "energy", "split"
-    ):
-        assert forbidden not in serialized
+    }
+    # Check schema keys, not arbitrary substrings in legitimate values such as family='white'.
+    assert forbidden.isdisjoint(context)
+    assert forbidden.isdisjoint(context["base_knobs"])
 
 
 def test_legacy_contextless_question_does_not_suppress_new_context_coverage():
