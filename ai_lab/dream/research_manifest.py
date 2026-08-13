@@ -38,10 +38,11 @@ _SCIENTIFIC_EVIDENCE = (
     "ai_lab/discoveries/question_critic.json",
 )
 
+# The environment report is generated inside the research process and already carries hashes of the
+# exact requirements/workflow contracts seen by that run. Hashing postflight's current checkout copies
+# again could accidentally describe a later code commit that landed after the burst completed.
 _EXECUTION_ENVIRONMENT = (
     "ai_lab/reports/easy/environment_latest.json",
-    "requirements.txt",
-    ".github/workflows/dream-loop.yml",
 )
 
 _PLANNING_STATE = (
@@ -112,7 +113,7 @@ def _evidence_git_sha() -> str | None:
     """Return the commit that last changed the authoritative easy evidence file.
 
     This is stronger than simply recording postflight's current HEAD: a code/docs commit could land
-    between Dream completion and postflight checkout without changing the burst evidence.  Git path
+    between Dream completion and postflight checkout without changing the burst evidence. Git path
     history still points directly to the bot commit that persisted ``easy/latest.json``.
     """
     try:
@@ -197,6 +198,7 @@ def build_manifest() -> dict[str, Any]:
             "environment_match_proves_scientific_claim": False,
             "negative_results_are_preserved": True,
             "same_burst_archive_may_be_silently_rewritten": False,
+            "environment_report_contains_research_time_contract_hashes": True,
             "evidence_snapshot_git_sha_is_exact_scientific_evidence_recovery_anchor": bool(evidence_sha),
         },
         "integrity": {
