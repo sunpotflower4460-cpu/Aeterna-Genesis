@@ -17,6 +17,7 @@ on:
       - 'tests/test_hypothesis_evolution.py'
       - 'tests/test_pure_genesis.py'
       - 'tests/test_frontier_expander.py'
+      - 'tests/test_research_compass.py'
       - 'tests/test_hourly_discovery.py'
       - 'tests/test_strict_geometry.py'
       - 'tests/test_vortex_energy_landscape.py'
@@ -48,7 +49,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_research_compass.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Unit tests must not touch tracked scientific evidence
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -56,6 +57,8 @@ jobs:
             echo "::error::Unit tests modified tracked scientific evidence. Tests must persist only in temporary/scratch paths."
             exit 1
           fi
+      - name: Research Compass builds read-only from tracked evidence
+        run: python -m ai_lab.dream.research_compass --no-record
       - name: Tiny legacy Dream dry-run
         run: |
           python -m ai_lab.dream \
