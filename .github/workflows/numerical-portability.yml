@@ -1,0 +1,76 @@
+name: Numerical Portability Characterization
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 3 * * 0'
+  pull_request:
+    paths:
+      - 'genesis/models/**'
+      - 'ai_lab/dream/numerical_repeatability.py'
+      - 'requirements.txt'
+      - '.github/workflows/numerical-portability.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  repeatability:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      # Continue long enough to preserve diagnosis artifacts even when the strict self-check detects a
+      # numerical failure. A final step restores the job failure after environment + digest capture.
+      - name: Run deterministic self-check
+        id: repeatability
+        continue-on-error: true
+        run: python -m ai_lab.dream.numerical_repeatability --self-check --json > numerical-repeatability.json
+
+      - name: Record interpreter and package context
+        if: always()
+        run: |
+          python - <<'PY' > numerical-environment.txt
+          import platform
+          import numpy
+          import scipy
+          print('python=' + platform.python_version())
+          print('numpy=' + numpy.__version__)
+          print('scipy=' + scipy.__version__)
+          print('machine=' + platform.machine())
+          PY
+
+      - name: Upload portability characterization
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: numerical-portability-py${{ matrix.python-version }}-${{ github.run_id }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            numerical-repeatability.json
+            numerical-environment.txt
+
+      - name: Enforce deterministic self-check after preserving diagnostics
+        if: steps.repeatability.outcome != 'success'
+        run: |
+          echo '::error::Same-environment numerical repeatability self-check failed; diagnostic artifact was preserved.'
+          exit 1
+
+  interpretation-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: State scientific boundary
+        run: |
+          echo 'This workflow characterizes software/numerical repeatability only.'
+          echo 'Same digest does not prove the physical model; different digest is not new physics.'
