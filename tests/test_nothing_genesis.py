@@ -1,3 +1,7 @@
+import json
+
+import pytest
+
 from ai_lab.dream import nothing_genesis
 
 
@@ -95,14 +99,18 @@ def test_boundary_enumeration_digest_is_deterministic():
     assert a["nonempty_combinations_enumerated"] == 31
 
 
-def test_recording_writes_latest_and_immutable_human_screenshot_package(tmp_path, monkeypatch):
+def _redirect_paths(tmp_path, monkeypatch):
     easy = tmp_path / "easy"
     monkeypatch.setattr(nothing_genesis, "_REPO", tmp_path)
     monkeypatch.setattr(nothing_genesis, "_REPORT", easy / "nothing_latest.json")
     monkeypatch.setattr(nothing_genesis, "_HUMAN", easy / "nothing_latest.md")
     monkeypatch.setattr(nothing_genesis, "_SCREENSHOT", easy / "nothing_latest.png")
     monkeypatch.setattr(nothing_genesis, "_ARCHIVE", easy / "nothing")
+    return easy
 
+
+def test_recording_uses_actual_boundary_count_and_writes_complete_package(tmp_path, monkeypatch):
+    easy = _redirect_paths(tmp_path, monkeypatch)
     r = nothing_genesis.run_nothing_research(
         burst_id="dream-test-0001", persist=True, boundary_names=("a", "b", "c", "d")
     )
@@ -113,9 +121,47 @@ def test_recording_writes_latest_and_immutable_human_screenshot_package(tmp_path
     assert (archive / "report.json").exists()
     assert (archive / "human.md").exists()
     assert (archive / "boundary.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
-    assert r["visualization"]["separated_from_physics_data"] is True
-    assert r["visualization"]["physical_data_visualized"] is False
+    assert r["visualization"]["candidate_count"] == 4
     human = (archive / "human.md").read_text()
+    assert "4種類" in human
+    assert "16種類" not in human
     assert "次にできること" in human
     assert "推奨" in human
     assert "物理実験ではなく" in human
+
+
+def test_same_burst_identical_rerun_verifies_archive_without_replacing_it(tmp_path, monkeypatch):
+    easy = _redirect_paths(tmp_path, monkeypatch)
+    kwargs = dict(
+        burst_id="dream-test-stable",
+        persist=True,
+        boundary_names=("a", "b", "c"),
+        r0_metadata={"mode": "r0", "root": {"id": "same"}},
+    )
+    nothing_genesis.run_nothing_research(**kwargs)
+    archive = easy / "nothing" / "dream-test-stable" / "report.json"
+    before = archive.read_bytes()
+    nothing_genesis.run_nothing_research(**kwargs)
+    assert archive.read_bytes() == before
+
+
+def test_same_burst_different_metadata_refuses_archive_overwrite(tmp_path, monkeypatch):
+    easy = _redirect_paths(tmp_path, monkeypatch)
+    nothing_genesis.run_nothing_research(
+        burst_id="dream-test-conflict",
+        persist=True,
+        boundary_names=("a", "b"),
+        r0_metadata={"mode": "r0", "root": {"id": "original"}},
+    )
+    archive = easy / "nothing" / "dream-test-conflict" / "report.json"
+    before = json.loads(archive.read_text())
+    with pytest.raises(FileExistsError):
+        nothing_genesis.run_nothing_research(
+            burst_id="dream-test-conflict",
+            persist=True,
+            boundary_names=("a", "b"),
+            r0_metadata={"mode": "r0", "root": {"id": "different"}},
+        )
+    after = json.loads(archive.read_text())
+    assert after == before
+    assert after["comparison_to_R0"]["triggering_R0_metadata"]["root"]["id"] == "original"
