@@ -10,6 +10,7 @@ on:
       - 'ai_lab/dream/frontier_expander.py'
       - 'ai_lab/dream/research_optimizer.py'
       - 'ai_lab/dream/progress_ratchet.py'
+      - 'ai_lab/dream/progress_context.py'
       - 'ai_lab/dream/human_report.py'
       - 'ai_lab/dream/report.py'
       - 'ai_lab/dream/adaptive_v8.py'
@@ -26,6 +27,7 @@ on:
       - 'tests/test_frontier_expander.py'
       - 'tests/test_research_optimizer.py'
       - 'tests/test_progress_ratchet.py'
+      - 'tests/test_progress_context.py'
       - 'tests/test_human_report.py'
       - '.github/workflows/pure-genesis-ci.yml'
   workflow_dispatch:
@@ -44,8 +46,8 @@ jobs:
           python-version: '3.11'
           cache: pip
       - run: pip install -r requirements.txt
-      - name: NØ, Pure Genesis, Yield, Progress Ratchet, reporting and portfolio tests
-        run: pytest -q tests/test_nothing_genesis.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_progress_ratchet.py tests/test_human_report.py tests/test_hypothesis_evolution.py
+      - name: NØ, Pure Genesis, Yield, Progress Ratchet, context identity, reporting and portfolio tests
+        run: pytest -q tests/test_nothing_genesis.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_progress_ratchet.py tests/test_progress_context.py tests/test_human_report.py tests/test_hypothesis_evolution.py
       - name: Strict NØ control and tiny R0 law search with integrity audit
         run: |
           python - <<'PY'
@@ -82,5 +84,5 @@ jobs:
           assert r['root_integrity_audit']['raw_label_graph_closure_accepted_as_emergence'] is False
           first_read = human_report.render_markdown(human_report.build_summary({'pure_genesis_r0': r}))
           assert human_report.first_read_violations(first_read) == []
-          print('Strict NØ + Pure Genesis R0 + Adaptive Yield + durable Progress Ratchet CI audited')
+          print('Strict NØ + Pure Genesis R0 + Adaptive Yield + durable Progress Ratchet + context identity CI audited')
           PY
