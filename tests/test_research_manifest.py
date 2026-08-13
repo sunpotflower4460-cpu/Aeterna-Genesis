@@ -84,3 +84,20 @@ def test_latest_alias_matches_immutable_archive(monkeypatch, tmp_path):
     assert research_manifest._LATEST.exists()
     assert json.loads(archive.read_text()) == manifest
     assert json.loads(research_manifest._LATEST.read_text()) == manifest
+
+
+def test_verify_existing_manifest_detects_hash_drift_without_rewriting(monkeypatch, tmp_path):
+    _install(monkeypatch, tmp_path)
+    manifest = research_manifest.run(persist=True)
+    archive = research_manifest._ARCHIVE_DIR / "dream-test.json"
+    before = archive.read_text()
+    verified = research_manifest.verify_existing_manifest()
+    assert verified["valid"] is True
+    assert verified["checked_files"] > 0
+
+    _write(tmp_path / "ai_lab/reports/emergence/latest.json", {"episodes": 404})
+    drifted = research_manifest.verify_existing_manifest()
+    assert drifted["valid"] is False
+    assert any("hash mismatch: ai_lab/reports/emergence/latest.json" in x for x in drifted["errors"])
+    assert archive.read_text() == before
+    assert json.loads(archive.read_text()) == manifest
