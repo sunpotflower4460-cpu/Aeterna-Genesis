@@ -30,6 +30,10 @@ _REQUEST_TO_CAPABILITY = {
     "lineage-accounting": "division_with_inheritance",
 }
 
+# This warning documents historical keys that are intentionally preserved forever. It is migration
+# context, not an actionable recurring defect once the current router has become context-aware.
+_INFORMATIONAL_HEALTH_IDS = {"research-memory-legacy-x-context-debt"}
+
 
 def _read(path: Path, default: Any) -> Any:
     try:
@@ -125,16 +129,14 @@ def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
         )
         old[key] = row
 
-    current_health_ids: set[str] = set()
     for check in health.get("checks") or []:
         if not isinstance(check, dict) or not check.get("id"):
             continue
         cid = str(check["id"])
-        current_health_ids.add(cid)
         key = f"infra:{cid}"
         prior = old.get(key, {})
         status = str(check.get("status") or "PASS")
-        if status == "PASS":
+        if status == "PASS" or cid in _INFORMATIONAL_HEALTH_IDS:
             if prior:
                 prior["status"] = "RESOLVED"
                 prior["resolved_burst"] = burst
@@ -179,6 +181,7 @@ def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
         "policy": {
             "burst_local_instrument_requests_are_preserved": True,
             "resolved_entries_are_deleted": False,
+            "historical_contextless_x_warning_is_actionable_debt": False,
             "operational_score_routes_physical_compute": False,
             "operational_score_changes_scientific_truth": False,
             "instrument_request_is_evidence_of_phenomenon": False,
