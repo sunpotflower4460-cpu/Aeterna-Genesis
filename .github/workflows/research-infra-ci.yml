@@ -4,15 +4,19 @@ on:
   pull_request:
     paths:
       - 'ai_lab/dream/progress_context.py'
+      - 'ai_lab/dream/environment_fingerprint.py'
       - 'ai_lab/dream/research_health.py'
       - 'ai_lab/dream/research_manifest.py'
       - 'ai_lab/dream/research_backlog.py'
+      - 'ai_lab/dream/research_index.py'
       - 'ai_lab/dream/research_finalize.py'
       - 'ai_lab/dream/strict_goal_loop.py'
       - 'tests/test_progress_context.py'
+      - 'tests/test_environment_fingerprint.py'
       - 'tests/test_research_health.py'
       - 'tests/test_research_manifest.py'
       - 'tests/test_research_backlog.py'
+      - 'tests/test_research_index.py'
       - 'tests/test_research_finalize.py'
       - 'docs/RESEARCH_INFRASTRUCTURE.md'
       - '.github/workflows/research-infra-ci.yml'
@@ -34,13 +38,15 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
 
-      - name: Context identity and infrastructure unit tests
+      - name: Context identity, reproducibility and infrastructure unit tests
         run: |
           pytest -q \
             tests/test_progress_context.py \
+            tests/test_environment_fingerprint.py \
             tests/test_research_health.py \
             tests/test_research_manifest.py \
             tests/test_research_backlog.py \
+            tests/test_research_index.py \
             tests/test_research_finalize.py
 
       - name: Current tracked evidence must pass strict infrastructure health
@@ -48,6 +54,9 @@ jobs:
 
       - name: Operations backlog must build read-only
         run: python -m ai_lab.dream.research_backlog --no-record
+
+      - name: Execution environment fingerprint must build read-only
+        run: python -m ai_lab.dream.environment_fingerprint --no-record
 
       - name: Provenance manifest must build read-only
         run: python -m ai_lab.dream.research_manifest --no-record
