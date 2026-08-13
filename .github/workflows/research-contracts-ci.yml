@@ -7,6 +7,7 @@ on:
       - 'ai_lab/dream/protocol_fingerprint.py'
       - 'ai_lab/dream/production_protocol.py'
       - 'ai_lab/dream/research_contract_audit.py'
+      - 'ai_lab/dream/numerical_repeatability.py'
       - 'ai_lab/dream/frontier_expander.py'
       - 'ai_lab/dream/adaptive_v8.py'
       - 'ai_lab/dream/strict_goal_loop.py'
@@ -16,6 +17,7 @@ on:
       - 'tests/test_production_protocol.py'
       - 'tests/test_research_contract_audit.py'
       - '.github/workflows/dream-loop.yml'
+      - '.github/workflows/research-postflight.yml'
       - '.github/workflows/research-contracts-ci.yml'
       - 'docs/INSTRUMENT_CONTRACTS.md'
   workflow_dispatch:
@@ -42,6 +44,9 @@ jobs:
             tests/test_protocol_fingerprint.py \
             tests/test_production_protocol.py \
             tests/test_research_contract_audit.py
+
+      - name: Same-environment numerical kernel must repeat deterministically
+        run: python -m ai_lab.dream.numerical_repeatability --self-check
 
       - name: Production protocol must keep intended research lanes enabled
         run: python -m ai_lab.dream.production_protocol
