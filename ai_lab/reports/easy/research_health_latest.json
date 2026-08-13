@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "mode": "research-infrastructure-health",
+  "burst_id": "dream-20260813-0156",
+  "healthy": true,
+  "strict_failure_count": 0,
+  "warning_count": 1,
+  "checks": [
+    {
+      "id": "easy-current-burst-present",
+      "status": "PASS",
+      "message": "easy/latest.json must identify the current completed burst",
+      "observed": "dream-20260813-0156"
+    },
+    {
+      "id": "frontier-alias-current-burst",
+      "status": "PASS",
+      "message": "frontier_latest must belong to the same burst as easy/latest",
+      "observed": {
+        "easy": "dream-20260813-0156",
+        "frontier": "dream-20260813-0156"
+      }
+    },
+    {
+      "id": "frontier-budget-nonnegative",
+      "status": "PASS",
+      "message": "frontier budget fields must be non-negative",
+      "observed": {
+        "requested": 24,
+        "allocated": {
+          "f": 11,
+          "x": 11,
+          "root": 2
+        },
+        "executed": 24
+      }
+    },
+    {
+      "id": "frontier-allocation-within-request",
+      "status": "PASS",
+      "message": "allocated frontier compute must not exceed the requested bounded budget",
+      "observed": {
+        "requested": 24,
+        "allocated_total": 24
+      }
+    },
+    {
+      "id": "frontier-execution-within-allocation",
+      "status": "PASS",
+      "message": "executed frontier experiments must not exceed allocated compute",
+      "observed": {
+        "allocated_total": 24,
+        "executed": 24
+      }
+    },
+    {
+      "id": "frontier-unallocated-accounting",
+      "status": "PASS",
+      "message": "unallocated_due_to_capacity must close the requested-vs-allocated accounting identity",
+      "observed": {
+        "recorded": 0,
+        "expected": 0
+      }
+    },
+    {
+      "id": "frontier-execution-gap-accounting",
+      "status": "PASS",
+      "message": "allocated_but_not_executed must close the allocation-vs-execution identity",
+      "observed": {
+        "recorded": 0,
+        "expected": 0
+      }
+    },
+    {
+      "id": "frontier-current-question-keys-unique",
+      "status": "PASS",
+      "message": "a current burst must not count the same progress question twice",
+      "observed": {
+        "count": 18,
+        "unique": 18
+      }
+    },
+    {
+      "id": "frontier-x-context-identity-migration",
+      "status": "PASS",
+      "message": "current X progress keys should carry start-context identity; legacy keys remain valid history but are not safe as cross-context coverage",
+      "observed": {
+        "legacy_current_keys": 0
+      }
+    },
+    {
+      "id": "research-memory-keys-unique",
+      "status": "PASS",
+      "message": "Research Memory entry keys must be unique",
+      "observed": {
+        "count": 95,
+        "unique": 95
+      }
+    },
+    {
+      "id": "research-memory-schema-durable",
+      "status": "PASS",
+      "message": "progress_question entries require durable Research Memory schema version >=2",
+      "observed": 2
+    },
+    {
+      "id": "research-memory-progress-count",
+      "status": "PASS",
+      "message": "counts.progress_questions must equal the actual durable progress_question entries",
+      "observed": {
+        "recorded": 68,
+        "actual": 68
+      }
+    },
+    {
+      "id": "research-memory-ratchet-policy",
+      "status": "PASS",
+      "message": "durable progress memory contract must survive later reporting layers",
+      "observed": {
+        "progress_ratchet_reads_memory": true,
+        "progress_question_history_is_durable": true
+      }
+    },
+    {
+      "id": "research-memory-total-count",
+      "status": "PASS",
+      "message": "counts.total must match the number of Research Memory entries",
+      "observed": {
+        "recorded": 95,
+        "actual": 95
+      }
+    },
+    {
+      "id": "research-memory-legacy-x-context-debt",
+      "status": "WARN",
+      "message": "legacy contextless X progress entries are migration debt only; they must remain preserved but must not suppress a new context-aware question",
+      "observed": {
+        "legacy_entries": 45
+      }
+    },
+    {
+      "id": "crossworld-shadow-current-burst",
+      "status": "PASS",
+      "message": "embedded Cross-World replication shadow must belong to the current easy-report burst",
+      "observed": {
+        "easy": "dream-20260813-0156",
+        "shadow": "dream-20260813-0156"
+      }
+    },
+    {
+      "id": "crossworld-replication-current-burst",
+      "status": "PASS",
+      "message": "replication_latest must never silently point at a previous burst",
+      "observed": {
+        "easy": "dream-20260813-0156",
+        "replication": "dream-20260813-0156"
+      }
+    },
+    {
+      "id": "crossworld-replication-completion-labelled",
+      "status": "PASS",
+      "message": "an incomplete Cross-World replication is allowed only when explicitly labelled incomplete/skipped",
+      "observed": {
+        "completed": true,
+        "completion_status": "COMPLETED"
+      }
+    },
+    {
+      "id": "crossworld-shadow-cannot-promote-science",
+      "status": "PASS",
+      "message": "Cross-World shadow must not promote Rooms/Levels/confidence or equate matching fingerprints with physics",
+      "observed": {
+        "universality_claim": false,
+        "official_level_effect": false,
+        "promotion_effect": false,
+        "hypothesis_confidence_effect": false,
+        "changes_world_dynamics": false,
+        "same_fingerprint_means_same_physics": false
+      }
+    },
+    {
+      "id": "crossworld-replication-cannot-promote-science",
+      "status": "PASS",
+      "message": "independent replication is a shadow and must not mutate scientific promotion/confidence state",
+      "observed": {
+        "updates_cumulative_CWX_ledger": false,
+        "changes_world_dynamics": false,
+        "changes_hypothesis_confidence": false,
+        "changes_official_level": false,
+        "promotes_rooms": false,
+        "same_fingerprint_means_same_physics": false,
+        "universality_claim": false,
+        "target_outcome_seeded": false
+      }
+    },
+    {
+      "id": "strict-nothing-current-burst",
+      "status": "PASS",
+      "message": "NØ control report must belong to the current easy-report burst",
+      "observed": {
+        "easy": "dream-20260813-0156",
+        "nothing": "dream-20260813-0156"
+      }
+    },
+    {
+      "id": "strict-nothing-remains-null-control",
+      "status": "PASS",
+      "message": "NØ must remain a single declarative null-control, not a seeded dynamical or emergence success arm",
+      "observed": {
+        "mode": "strict-nothing-genesis-meta-control",
+        "strict_trial_count": 1,
+        "physical_transition_executed": false,
+        "something_observed": false,
+        "nothing_to_something_claim": false
+      }
+    }
+  ],
+  "semantics": {
+    "negative_scientific_result_is_failure": false,
+    "low_gain_scientific_result_is_failure": false,
+    "non_replication_is_failure": false,
+    "infrastructure_or_integrity_contract_break_is_failure": true,
+    "warnings_change_scientific_truth": false
+  },
+  "integrity": {
+    "changes_physics": false,
+    "changes_initial_conditions": false,
+    "changes_scientific_truth_gate": false,
+    "promotes_rooms": false,
+    "changes_official_levels": false,
+    "health_score_is_physical_observable": false
+  }
+}
