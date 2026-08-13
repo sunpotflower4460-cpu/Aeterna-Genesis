@@ -156,6 +156,50 @@ def test_memory_is_append_preserving_and_does_not_forget_old_lessons(monkeypatch
     assert old[0]["times_seen"] == 7
 
 
+def test_memory_preserves_progress_ratchet_schema_counts_and_policy(monkeypatch, tmp_path):
+    paths = _install_paths(monkeypatch, tmp_path)
+    _fixtures(paths)
+    _write(paths["_MEMORY"], {
+        "version": 2,
+        "purpose": "compact-do-not-repeat-and-interpretation-memory",
+        "entries": [{
+            "key": "progress-question:x|X-specific|drive_strength|2",
+            "kind": "progress_question",
+            "question_key": "x|X-specific|drive_strength|2",
+            "times_seen": 3,
+            "first_seen_burst": "dream-old",
+            "scientific_test_completed": True,
+        }],
+        "counts": {"progress_questions": 1, "custom_counter": 9},
+        "policy": {
+            "progress_ratchet_reads_memory": True,
+            "progress_question_history_is_durable": True,
+            "custom_policy": "keep-me",
+        },
+    })
+    _, memory = research_compass.build_compass(now="2026-08-13T00:00:00+00:00")
+    assert memory["version"] >= 2
+    assert memory["counts"]["progress_questions"] == 1
+    assert memory["counts"]["custom_counter"] == 9
+    assert memory["policy"]["progress_ratchet_reads_memory"] is True
+    assert memory["policy"]["progress_question_history_is_durable"] is True
+    assert memory["policy"]["custom_policy"] == "keep-me"
+    progress = [x for x in memory["entries"] if x.get("kind") == "progress_question"]
+    assert len(progress) == 1
+    assert progress[0]["times_seen"] == 3
+
+
+def test_next_question_uses_live_recurrent_x_count(monkeypatch, tmp_path):
+    paths = _install_paths(monkeypatch, tmp_path)
+    _fixtures(paths)
+    emergence = json.loads(paths["_EMERGENCE"].read_text())
+    emergence["recurrent_unlabeled_patterns"] = 137
+    _write(paths["_EMERGENCE"], emergence)
+    compass, _ = research_compass.build_compass(now="2026-08-13T00:00:00+00:00")
+    assert any("137種類規模" in x for x in compass["highest_value_next_questions"])
+    assert not any("111種類規模" in x for x in compass["highest_value_next_questions"])
+
+
 def test_local_energy_card_keeps_causal_limit(monkeypatch, tmp_path):
     paths = _install_paths(monkeypatch, tmp_path)
     _fixtures(paths)
