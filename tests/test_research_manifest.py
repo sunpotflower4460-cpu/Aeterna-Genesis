@@ -28,8 +28,15 @@ def _install(monkeypatch, tmp_path):
     })
     _write(tmp_path / "ai_lab/reports/emergence/latest.json", {"episodes": 3})
     _write(tmp_path / "ai_lab/reports/easy/environment_latest.json", {
-        "burst_id": "dream-test", "core_versions": {"numpy": "2.1.0"}
+        "burst_id": "dream-test",
+        "core_versions": {"numpy": "2.1.0"},
+        "contracts": {
+            "requirements_txt_sha256": "req-one",
+            "dream_loop_workflow_sha256": "workflow-one",
+        },
     })
+    # These checkout files are intentionally NOT manifest entries. The research-time environment report
+    # already records the exact hashes that the burst actually saw, avoiding postflight race/misattribution.
     _write(tmp_path / "requirements.txt", "numpy>=1.24\n")
     _write(tmp_path / ".github/workflows/dream-loop.yml", "name: Genesis Dream Loop\n")
     _write(tmp_path / "ai_lab/reports/easy/frontier_latest.json", {"burst_id": "dream-test"})
@@ -42,6 +49,7 @@ def _install(monkeypatch, tmp_path):
 def test_manifest_separates_evidence_environment_planning_and_views(monkeypatch, tmp_path):
     _install(monkeypatch, tmp_path)
     manifest = research_manifest.build_manifest()
+    assert manifest["version"] == 3
     assert manifest["burst_id"] == "dream-test"
     assert manifest["source_code"]["git_sha"] == "source-sha"
     assert manifest["source_code"]["research_source_git_sha"] == "source-sha"
@@ -51,9 +59,9 @@ def test_manifest_separates_evidence_environment_planning_and_views(monkeypatch,
     planning = {row["path"] for row in manifest["planning_and_integrity_state"]}
     views = {row["path"] for row in manifest["derived_human_views"]}
     assert "ai_lab/reports/easy/latest.json" in scientific
-    assert "ai_lab/reports/easy/environment_latest.json" in environment
-    assert "requirements.txt" in environment
-    assert ".github/workflows/dream-loop.yml" in environment
+    assert environment == {"ai_lab/reports/easy/environment_latest.json"}
+    assert "requirements.txt" not in environment
+    assert ".github/workflows/dream-loop.yml" not in environment
     assert "ai_lab/reports/easy/frontier_latest.json" in planning
     assert "ai_lab/discoveries/research_memory.json" in planning
     assert "ai_lab/discoveries/research_backlog.json" in planning
@@ -61,6 +69,7 @@ def test_manifest_separates_evidence_environment_planning_and_views(monkeypatch,
     assert "CURRENT_RESEARCH.md" in views
     assert manifest["semantics"]["manifest_is_scientific_evidence"] is False
     assert manifest["semantics"]["environment_match_proves_scientific_claim"] is False
+    assert manifest["semantics"]["environment_report_contains_research_time_contract_hashes"] is True
     assert manifest["semantics"]["evidence_snapshot_git_sha_is_exact_scientific_evidence_recovery_anchor"] is True
 
 
@@ -81,12 +90,24 @@ def test_manifest_hash_changes_when_evidence_changes(monkeypatch, tmp_path):
     assert before_emergence["sha256"] != after_emergence["sha256"]
 
 
-def test_manifest_hash_changes_when_environment_contract_changes(monkeypatch, tmp_path):
+def test_manifest_hash_changes_when_research_time_environment_contract_changes(monkeypatch, tmp_path):
     _install(monkeypatch, tmp_path)
     before = research_manifest.build_manifest()
-    _write(tmp_path / "requirements.txt", "numpy>=2.0\n")
+    environment_path = tmp_path / "ai_lab/reports/easy/environment_latest.json"
+    environment = json.loads(environment_path.read_text())
+    environment["contracts"]["requirements_txt_sha256"] = "req-two"
+    _write(environment_path, environment)
     after = research_manifest.build_manifest()
     assert before["manifest_content_sha256"] != after["manifest_content_sha256"]
+
+
+def test_postflight_checkout_contract_change_alone_does_not_relabel_old_burst(monkeypatch, tmp_path):
+    _install(monkeypatch, tmp_path)
+    before = research_manifest.build_manifest()
+    _write(tmp_path / "requirements.txt", "numpy>=99\n")
+    _write(tmp_path / ".github/workflows/dream-loop.yml", "name: unrelated-later-checkout\n")
+    after = research_manifest.build_manifest()
+    assert before["manifest_content_sha256"] == after["manifest_content_sha256"]
 
 
 def test_same_manifest_is_idempotent_but_same_burst_different_provenance_fails(monkeypatch, tmp_path):
