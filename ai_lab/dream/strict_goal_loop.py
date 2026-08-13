@@ -2,7 +2,9 @@
 
 Strict geometry and Prefix Identity instrumentation remain identical to the existing entry point.
 Adaptive Research Yield chooses informative frontier lanes; Progress Ratchet adds durable no-repeat and
-route-escape planning from Research Memory. Neither changes physics, truth gates, Rooms or official Levels.
+route-escape planning from Research Memory. Context-aware X identity prevents a changed start-side search
+focus from being mistaken for an already-tested question. None changes physics, truth gates, Rooms or
+official Levels.
 """
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ from ai_lab.dream import adaptive_v8
 from ai_lab.dream import dry_run
 from ai_lab.dream import nothing_genesis
 from ai_lab.dream import prefix_audit
+from ai_lab.dream import progress_context
 from ai_lab.dream import progress_ratchet
 from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
@@ -110,6 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     prefix_audit.install_geometry_digest_wrapper(base.hourly, strict)
     research_optimizer.install()
     progress_ratchet.install()
+    progress_context.install()
 
     result = _run_adaptive_v8_exact(argv)
     _print_adaptive_summary(result)
