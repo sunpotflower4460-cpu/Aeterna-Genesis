@@ -90,6 +90,11 @@ jobs:
             python -m ai_lab.dream.research_manifest --verify-existing
           fi
 
+      # The compact index is a navigation acceleration layer over immutable manifests. It lets future
+      # agents locate the exact evidence commit without scanning a large Git/report history.
+      - name: Update manifest-backed research burst index
+        run: python -m ai_lab.dream.research_index
+
       - name: Upload postflight diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,6 +109,8 @@ jobs:
             ai_lab/reports/easy/research_backlog_latest.md
             ai_lab/reports/easy/research_manifest_latest.json
             ai_lab/reports/easy/manifests/*.json
+            ai_lab/discoveries/research_index.json
+            ai_lab/reports/easy/research_history_latest.md
 
       - name: Persist healthy postflight records
         if: steps.health.outputs.healthy == 'true'
@@ -117,7 +124,9 @@ jobs:
             ai_lab/discoveries/research_backlog.json \
             ai_lab/reports/easy/research_backlog_latest.md \
             ai_lab/reports/easy/research_manifest_latest.json \
-            ai_lab/reports/easy/manifests || true
+            ai_lab/reports/easy/manifests \
+            ai_lab/discoveries/research_index.json \
+            ai_lab/reports/easy/research_history_latest.md || true
           if git diff --cached --quiet; then
             echo "Postflight records already current."
             exit 0
