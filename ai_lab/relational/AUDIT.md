@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 + PR-R6 + PR-R7 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 + PR-R6 + PR-R7 + PR-R8 AUDIT
 
 ```yaml
 id: relational_r1
@@ -283,7 +283,28 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # predicted before it was measured (diffusive's locally-
                              # clustered phases only get MORE jagged when shuffled) --
                              # decision weight was placed on the full battery, not the
-                             # shuffle, per review's explicit instruction.
+                             # shuffle, per review's explicit instruction. PR-R8 (Sec.27-28):
+                             # per review's instruction, froze the significance criterion
+                             # (one-sided Fisher exact, X of 9 confirmed vs diffusive's
+                             # 0/300, X>=5 significant at p<0.05) and the efficiency filter
+                             # (independent ICs first, cheapest and cleanest discriminator)
+                             # BEFORE running -- committed to git as its own commit (2f41412)
+                             # prior to any battery execution. Result: X=4/9 confirmed
+                             # (seed=117 x2 strengths, seed=134, seed=138, each unanimous
+                             # 6/6 on independent conditions and passing damage-recovery).
+                             # p=0.0619 -- does NOT clear the pre-registered X>=5 bar.
+                             # Reported exactly as measured, not rounded up or softened:
+                             # coupling form's effect on winding is NOT established as
+                             # statistically significant at this comparison's frozen level,
+                             # even though 4 is more than diffusive's 0. Separately (NOT a
+                             # substitute for the formal test), the running total of
+                             # confirmed locations across the whole project is now 7
+                             # bounded_tanh vs 0 diffusive (out of 3 tested). Also recorded
+                             # (Sec.27.4) as a standing methodological principle, its 3rd
+                             # occurrence in this project: checking the same realization
+                             # longer (window extension) and checking a different
+                             # realization (independent initial conditions) are not
+                             # substitutes for each other.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -682,6 +703,25 @@ open_issues:
      instead of one long unattended background job. Next PR's natural priority: apply the
      full battery to the 9 now-suspect bounded_tanh locations before citing any of them as
      confirmed, before any R8-based automated search."
+  - "PR-R8 (Sec.27-28): per review's explicit instruction, froze the significance criterion
+     and validation procedure BEFORE running the battery on PR-R6's 9 candidates -- one-
+     sided Fisher exact test (X of 9 confirmed vs. diffusive's 0/300, pre-registered
+     threshold X>=5 significant at p<0.05), plus an efficiency filter (independent
+     conditions first -- the cheapest sub-test and the one PR-R7 showed separates cleanly;
+     only >=5/6 passers proceed to damage-recovery). Committed to git (2f41412) before any
+     candidate was tested. Result: X=4/9 confirmed (seed=117 at strengths 0.3 and 0.5,
+     seed=134, seed=138 -- each unanimous 6/6 on independent conditions and passing
+     damage-recovery; the other 5 hit 0/6 or 1/6, matching PR-R7's false-positive pattern
+     exactly). p=0.0619 -- does NOT clear the frozen X>=5 bar. Reported exactly as measured:
+     the effect of coupling form on confirmed winding is NOT established as statistically
+     significant at this comparison's pre-registered level, even though 4 exceeds
+     diffusive's 0. Descriptively (explicitly not a substitute for the formal test), the
+     project-wide running total is now 7 confirmed bounded_tanh locations vs. 0 confirmed
+     diffusive (of 3 tested). Also formally registered (Sec.27.4) as a standing
+     methodological principle, its 3rd occurrence in this project (after F7 and S-017's
+     14-same-location trials): checking the same realization for longer and checking a
+     different realization answer different questions and are not substitutes for each
+     other."
 ```
 
 ---
@@ -4722,3 +4762,124 @@ validation battery (independent initial conditions, damage-recovery, cycle-shift
 a weaker search; it has now survived a substantially harder one. This is recorded as an
 addendum, not a silent strengthening of the original text, so the record shows exactly what
 was re-tested and how.
+
+## 28. PR-R8: staged battery on the 9 candidates -- X=4/9 confirmed, which does NOT clear
+the pre-registered significance bar (X>=5 required); reported exactly as measured, not
+rounded up
+
+Per Sec.27's frozen criterion, run BEFORE this section was written: Stage 1 (6 independent
+initial conditions) on all 9 window-robust-only candidates from PR-R6 (Sec.25.1), Stage 2
+(damage-recovery) only for Stage-1 survivors (>=5/6 smooth), CONFIRMED status only for
+candidates passing both stages.
+
+### 28.1 Results, per candidate
+
+| location | Stage 1 (X/6 smooth) | Stage 1 verdict | Stage 2 (damage-recovery) | CONFIRMED |
+|---|---|---|---|---|
+| seed=117, erdos_renyi, 0.3 | 6/6 | PASS | smooth=True | **YES** |
+| seed=117, erdos_renyi, 0.5 | 6/6 | PASS | smooth=True | **YES** |
+| seed=129, erdos_renyi, 0.5 | 0/6 | FAIL | (not run, per frozen efficiency filter) | no |
+| seed=102, erdos_renyi, 1.0 | 0/6 | FAIL | (not run) | no |
+| seed=133, random_regular, 0.2 | 0/6 | FAIL | (not run) | no |
+| seed=134, random_regular, 0.2 | 6/6 | PASS | smooth=True | **YES** |
+| seed=134, random_regular, 0.3 | 1/6 | FAIL | (not run) | no |
+| seed=138, barabasi_albert, 0.3 | 6/6 | PASS | smooth=True | **YES** |
+| seed=137, random_regular, 1.0 | 0/6 | FAIL | (not run) | no |
+
+**X = 4 of 9 confirmed.** Every confirmed candidate hit EXACTLY 6/6 on Stage 1 (matching
+the pattern established by seed=9/55/62); every rejected candidate hit 0/6 or 1/6 -- no
+candidate landed in the 2/6-5/6 range this PR needed to guess a threshold for, so the
+frozen `>=5/6` cutoff (Sec.27.3) was never actually tested against an ambiguous case. This
+mirrors PR-R7's own finding exactly: the independent-IC test separates cleanly, with no
+observed intermediate cases in this project so far.
+
+Cycle-shift (descriptive, run only for the 4 confirmed candidates, not gating per Sec.27.3):
+
+| location | nearby cycles found | nearby smooth |
+|---|---|---|
+| seed=117, erdos_renyi, 0.3 | 3,806 | 14 (0.37%) |
+| seed=117, erdos_renyi, 0.5 | 553 | 4 (0.72%) |
+| seed=134, random_regular, 0.2 | 183 | 2 (1.09%) |
+| seed=138, barabasi_albert, 0.3 | 307 | 44 (14.3%) |
+
+### 28.2 The frozen significance test, applied exactly as pre-registered
+
+`fisher_exact([[4, 296], [0, 300]], alternative="greater")` = **p = 0.0619**.
+
+**This does NOT clear the pre-registered threshold (X>=5, p<0.05, Sec.27.2).** Per the
+frozen criterion, this result must be reported as: **the effect of coupling form on
+confirmed winding is NOT established as statistically significant at this comparison's
+pre-registered level.** X=4 is close to the bar (p=0.062 vs the 0.05 cutoff) but the frozen
+criterion governs, not proximity to it -- Sec.27.2 explicitly anticipated and forbade
+exactly this temptation ("X<=4 ... must NOT be reported as evidence for a coupling-form
+effect, even if X=3 or X=4 'feels' like more than diffusive's 0").
+
+### 28.3 What this does and does not mean
+
+**Does NOT mean**: that the 4 newly confirmed locations are false positives -- they passed
+the identical full battery (unanimous 6/6 independent conditions, damage-recovery) that
+seed=9/55/62 passed, and that criterion has now been directly shown (Sec.26.2) to
+discriminate cleanly. These 4 are validated locations by this project's own standing
+definition (Sec.26.5), independent of whether the AGGREGATE rate clears a formal
+significance bar against diffusive's 0/300.
+
+**Does mean**: the specific, pre-registered claim this PR was designed to test --
+"bounded_tanh's window-robust-candidate-to-confirmed conversion rate, on this exact 300-
+graph grid, is significantly higher than diffusive's" -- is not established at the frozen
+threshold from this one comparison alone. The raw asymmetry (4/9 candidates confirmed vs.
+0/3 diffusive candidates confirmed; or equivalently 4/300 vs 0/300 graphs) is suggestive
+but under-powered at this sample size to reach the pre-registered bar.
+
+### 28.4 Running account, distinguished from the formal significance claim
+
+Total confirmed (full-battery-passed) window-robust winding locations across this entire
+project, as of this PR (not a single matched-grid comparison, so NOT substituted for
+28.2's formal test):
+
+| # | seed | topology | strength | coupling_form | source |
+|---|---|---|---|---|---|
+| 1 | 9 | erdos_renyi | 0.3 | bounded_tanh (+sinusoidal) | PR-R3.1 |
+| 2 | 55 | erdos_renyi | 0.3 | bounded_tanh | PR-R6 |
+| 3 | 62 | erdos_renyi | 0.3 | bounded_tanh | PR-R6 |
+| 4 | 117 | erdos_renyi | 0.3 | bounded_tanh | PR-R8 |
+| 5 | 117 | erdos_renyi | 0.5 | bounded_tanh | PR-R8 |
+| 6 | 134 | random_regular | 0.2 | bounded_tanh | PR-R8 |
+| 7 | 138 | barabasi_albert | 0.3 | bounded_tanh | PR-R8 |
+
+**7 confirmed bounded_tanh locations, 0 confirmed diffusive locations (out of 3 tested,
+Sec.26.2), across the whole project to date.** This 7-vs-0 comparison is offered as
+descriptive context, explicitly NOT as a substitute for 28.2's formal, pre-registered test
+-- it aggregates non-matched sweeps (different grids, different seed ranges, different
+sample sizes) and was not itself pre-registered. The disciplined answer to "is coupling
+form's effect on winding statistically established" remains 28.2's: not yet, at the frozen
+threshold, from this specific comparison.
+
+**Note also**: `seed=117` appears twice (strengths 0.3 and 0.5) -- the same independence
+caveat Sec.25.1 already disclosed for this exact seed applies here too (same underlying
+graph edges, two different asymmetry realizations, not two fully independent draws).
+
+### 28.5 9th audit and 8th audit self-check
+
+- **9th audit**: the p=0.0619 result is reported as "does not clear the bar," in those
+  words, immediately adjacent to the number -- not left for a reader to compute themselves
+  from a bare p-value, and not described with softening language ("nearly significant,"
+  "trending toward significance") that Sec.27.2 already anticipated and ruled out.
+- **8th audit**: was Stage 1's `>=5/6` threshold, or the decision to run cycle-shift only
+  for confirmed candidates, adjusted after seeing that X=4 landed just under X=5? No -- both
+  were frozen and committed to git (commit `2f41412`) before Stage 1 was run on a single
+  candidate; the battery script and its thresholds were not touched again until after all 9
+  candidates' results were in. Was the 7-vs-0 aggregate count (28.4) introduced to soften
+  28.2's non-significant formal result? It is presented explicitly as NOT a substitute for
+  28.2, in the same subsection that introduces it, immediately after 28.2's negative result
+  is stated in full -- not before it, and not replacing it.
+
+### 28.6 Standing status and next steps, not run this PR
+
+- The pre-registered comparison did not reach significance; per review's own framing, this
+  is one of the two possible decisive outcomes ("どちらでも決着します"), and it is reported as
+  such. Whether a LARGER, still-pre-registered follow-up sweep (e.g. testing bounded_tanh's
+  window-robust rate on a fresh 300-graph grid using the SAME 30x-native pipeline, to get a
+  second, independent X for a combined or replicated test) is worth running is left for
+  review's decision, not unilaterally started.
+- R8-based automated search (review's item 5, deferred since PR-R7) remains deferred; this
+  PR's result does not change that instruction on its own.
