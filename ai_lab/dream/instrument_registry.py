@@ -111,7 +111,7 @@ def get(instrument_id: str) -> dict[str, Any] | None:
 
 
 def validate_request(request: dict[str, Any]) -> list[str]:
-    """Return infrastructure contract violations for one frontier instrument request."""
+    """Return infrastructure contract violations for one frontier/backlog instrument request."""
     errors: list[str] = []
     rid = str(request.get("id") or "")
     registered = get(rid)
@@ -125,9 +125,10 @@ def validate_request(request: dict[str, Any]) -> list[str]:
         errors.append(f"{rid}: instrument request declares a new physical axiom")
     if request.get("target_morphology_seeded") is True:
         errors.append(f"{rid}: instrument request seeds target morphology")
-    if request.get("may_use_scaffolded_analogy_lane") is True and request.get(
-        "scaffolded_lane_cannot_count_as_pure_genesis_proof"
-    ) is not True:
+    scaffolded = request.get("may_use_scaffolded_analogy_lane") is True
+    if scaffolded and registered.get("scaffolded_parallel_lane_allowed") is not True:
+        errors.append(f"{rid}: registry forbids a scaffolded parallel lane")
+    if scaffolded and request.get("scaffolded_lane_cannot_count_as_pure_genesis_proof") is not True:
         errors.append(f"{rid}: scaffolded analogy lane lacks explicit non-proof boundary")
     return errors
 
