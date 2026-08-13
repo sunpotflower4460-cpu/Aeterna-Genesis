@@ -105,6 +105,26 @@ def test_health_warning_is_preserved_then_resolved(monkeypatch, tmp_path):
     assert resolved["resolved_burst"] == "b2"
 
 
+def test_historical_contextless_x_warning_is_not_permanent_active_debt(monkeypatch, tmp_path):
+    paths = _paths(monkeypatch, tmp_path)
+    _write(paths["_FRONTIER"], _frontier("b1", requests=[]))
+    _write(paths["_HEALTH"], {
+        "burst_id": "b1",
+        "checks": [{
+            "id": "research-memory-legacy-x-context-debt",
+            "status": "WARN",
+            "message": "legacy entries are intentionally preserved",
+        }],
+    })
+    backlog = research_backlog.build_backlog(existing={"entries": []})
+    assert not any(
+        row.get("key") == "infra:research-memory-legacy-x-context-debt"
+        for row in backlog["entries"]
+    )
+    assert backlog["active_count"] == 0
+    assert backlog["policy"]["historical_contextless_x_warning_is_actionable_debt"] is False
+
+
 def test_scaffolded_request_stays_explicitly_non_proof(monkeypatch, tmp_path):
     paths = _paths(monkeypatch, tmp_path)
     request = {
