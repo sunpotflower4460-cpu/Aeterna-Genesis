@@ -52,6 +52,8 @@ _PLANNING_STATE = (
     "ai_lab/reports/easy/frontier_latest.json",
     "ai_lab/reports/easy/nothing_latest.json",
     "ai_lab/reports/easy/research_health_latest.json",
+    "ai_lab/reports/easy/research_contract_latest.json",
+    "ai_lab/reports/easy/runtime_context_latest.json",
     "ai_lab/discoveries/research_memory.json",
     "ai_lab/discoveries/research_backlog.json",
     "ai_lab/discoveries/frontier_expansion.json",
@@ -155,23 +157,17 @@ def _same_burst_report(path: Path, burst: str, *, label: str, required: bool) ->
 
 
 def _environment_for_burst(burst: str, *, required: bool) -> dict[str, Any]:
-    return _same_burst_report(
-        _ENVIRONMENT, burst, label="environment fingerprint", required=required
-    )
+    return _same_burst_report(_ENVIRONMENT, burst, label="environment fingerprint", required=required)
 
 
 def _protocol_for_burst(burst: str, *, required: bool) -> dict[str, Any]:
-    protocol = _same_burst_report(
-        _PROTOCOL, burst, label="protocol fingerprint", required=required
-    )
+    protocol = _same_burst_report(_PROTOCOL, burst, label="protocol fingerprint", required=required)
     if protocol and not str(protocol.get("protocol_sha256") or ""):
         raise RuntimeError(f"protocol fingerprint for {burst} has no protocol_sha256")
     return protocol
 
 
-def build_manifest(
-    *, require_environment: bool = False, require_protocol: bool = False,
-) -> dict[str, Any]:
+def build_manifest(*, require_environment: bool = False, require_protocol: bool = False) -> dict[str, Any]:
     easy = _read(_EASY, {})
     burst = str(easy.get("burst_id") or "")
     if not burst:
@@ -224,6 +220,7 @@ def build_manifest(
             "environment_report_contains_research_time_contract_hashes": True,
             "environment_report_required_for_production_v4_archive": True,
             "protocol_report_required_for_production_v4_archive": True,
+            "postflight_integrity_records_are_manifest_hashed": True,
             "evidence_snapshot_git_sha_is_exact_scientific_evidence_recovery_anchor": bool(evidence_sha),
         },
         "integrity": {
@@ -297,10 +294,7 @@ def verify_existing_manifest() -> dict[str, Any]:
             errors.append(str(exc))
 
     checked = 0
-    groups = [
-        "scientific_evidence", "execution_environment",
-        "planning_and_integrity_state", "derived_human_views",
-    ]
+    groups = ["scientific_evidence", "execution_environment", "planning_and_integrity_state", "derived_human_views"]
     if int(archived.get("version", 0) or 0) >= 4:
         groups.insert(2, "execution_protocol")
     for group in groups:
@@ -330,12 +324,8 @@ def verify_existing_manifest() -> dict[str, Any]:
     }
 
 
-def run(
-    *, persist: bool = True, require_environment: bool = False, require_protocol: bool = False,
-) -> dict[str, Any]:
-    manifest = build_manifest(
-        require_environment=require_environment, require_protocol=require_protocol
-    )
+def run(*, persist: bool = True, require_environment: bool = False, require_protocol: bool = False) -> dict[str, Any]:
+    manifest = build_manifest(require_environment=require_environment, require_protocol=require_protocol)
     if persist:
         persist_manifest(manifest)
     return manifest
