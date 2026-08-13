@@ -125,6 +125,13 @@ jobs:
             --seed "${{ github.run_number }}" \
             --output ai_lab/reports/multiworld/latest.json
 
+      # Human-first orientation is generated only after the scientific/shadow evidence for this burst
+      # exists. It never changes gates or deletes failures; research_memory.json keeps compact lessons
+      # so weak/saturated questions do not disappear merely because the front page is intentionally light.
+      - name: Build Research Compass and no-repeat memory
+        if: steps.watchdog.outputs.run_burst == 'true'
+        run: python -m ai_lab.dream.research_compass
+
       - name: Save Dream state
         if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
         uses: actions/cache/save@v4
@@ -143,12 +150,15 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           path: |
+            CURRENT_RESEARCH.md
             ai_lab/reports/nightly/latest.json
             ai_lab/reports/nightly/*/report.md
             ai_lab/reports/nightly/*/summary.json
             ai_lab/reports/nightly/*/events.json
             ai_lab/reports/easy/latest.json
             ai_lab/reports/easy/latest.md
+            ai_lab/reports/easy/research_compass_latest.json
+            ai_lab/reports/easy/research_compass_latest.md
             ai_lab/reports/easy/root_latest.json
             ai_lab/reports/easy/frontier_latest.json
             ai_lab/reports/easy/*/report.json
@@ -156,6 +166,7 @@ jobs:
             ai_lab/reports/multiworld/latest.json
             ai_lab/reports/emergence/latest.json
             ai_lab/reports/crossworld/latest.json
+            ai_lab/discoveries/research_memory.json
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
             ai_lab/discoveries/view_presets.json
@@ -184,7 +195,8 @@ jobs:
             app/public/data/dream
 
       # Persist compact knowledge plus useful candidate evidence. Mundane failures are represented by
-      # Coverage Atlas, not one file per trial. Easy reports are intentionally kept for human reading.
+      # Coverage Atlas / research_memory, not one human-facing file per failed trial. Raw source ledgers
+      # remain complete. Easy reports are intentionally kept for human reading.
       - name: Persist generated evidence to repository
         if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' && steps.watchdog.outputs.run_burst == 'true' }}
         shell: bash
@@ -192,7 +204,9 @@ jobs:
           git config user.name "aeterna-dream-bot"
           git config user.email "aeterna-dream-bot@users.noreply.github.com"
           git add \
+            CURRENT_RESEARCH.md \
             ai_lab/discoveries/dream_state.json \
+            ai_lab/discoveries/research_memory.json \
             ai_lab/discoveries/ledger.json \
             ai_lab/discoveries/event_ledger.json \
             ai_lab/discoveries/view_presets.json \
