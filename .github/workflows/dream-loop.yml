@@ -125,9 +125,33 @@ jobs:
             --seed "${{ github.run_number }}" \
             --output ai_lab/reports/multiworld/latest.json
 
-      # Human-first orientation is generated only after the scientific/shadow evidence for this burst
-      # exists. It never changes gates or deletes failures; research_memory.json keeps compact lessons
-      # so weak/saturated questions do not disappear merely because the front page is intentionally light.
+      # Replace any old alias *before* expensive independent replication starts. If the next step is
+      # killed by timeout/startup failure, the current-burst NOT_COMPLETED marker remains rather than
+      # publishing a previous burst's replication report as fresh evidence.
+      - name: Prime current Cross-World replication evidence
+        if: steps.watchdog.outputs.run_burst == 'true'
+        run: |
+          python -m ai_lab.dream.crossworld_replication \
+            --base-seed "${{ github.run_number }}" \
+            --prime-only
+
+      # Fresh-seed replication runs only when the primary comparator found a current lead. It is a
+      # separate shadow and never increments the cumulative CWX ledger. Per-attempt compute errors are
+      # reported but do not become physical misses; continue-on-error keeps the main research burst alive.
+      - name: Independently replicate current Cross-World leads
+        if: steps.watchdog.outputs.run_burst == 'true'
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          python -m ai_lab.dream.crossworld_replication \
+            --quick \
+            --base-seed "${{ github.run_number }}" \
+            --replicates 3 \
+            --max-matches 2
+
+      # Human-first orientation is generated only after scientific/shadow evidence, including the
+      # current-burst replication status, exists. It never changes gates or deletes failures;
+      # research_memory.json keeps compact lessons so weak/saturated questions are not forgotten.
       - name: Build Research Compass and no-repeat memory
         if: steps.watchdog.outputs.run_burst == 'true'
         run: python -m ai_lab.dream.research_compass
@@ -170,6 +194,7 @@ jobs:
             ai_lab/reports/multiworld/latest.json
             ai_lab/reports/emergence/latest.json
             ai_lab/reports/crossworld/latest.json
+            ai_lab/reports/crossworld/replication_latest.json
             ai_lab/discoveries/research_memory.json
             ai_lab/discoveries/ledger.json
             ai_lab/discoveries/event_ledger.json
