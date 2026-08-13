@@ -99,7 +99,7 @@ jobs:
             exit 1
           fi
           echo "Dry runs left the working tree clean."
-      - name: Easy, NØ, ratcheted frontier, replication, emergence and Multi-World reports were produced
+      - name: Easy, NØ, environment, ratcheted frontier, replication, emergence and Multi-World reports were produced
         env:
           DRY: runtime/dry-run/latest
         run: |
@@ -107,6 +107,7 @@ jobs:
           find "$DRY" -type f -print | sort
           test -f $DRY/ai_lab/reports/easy/latest.json
           test -f $DRY/ai_lab/reports/easy/latest.md
+          test -f $DRY/ai_lab/reports/easy/environment_latest.json
           test -f $DRY/ai_lab/reports/easy/frontier_latest.json
           test -f $DRY/ai_lab/reports/easy/nothing_latest.json
           test -f $DRY/ai_lab/reports/easy/nothing_latest.md
@@ -140,6 +141,10 @@ jobs:
           grep -q 'permutation_quotient_enabled' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'autonomous_frontier_expansion' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'destination_fixed_methods_adaptive' $DRY/ai_lab/reports/easy/latest.json
+          grep -q '"mode": "research-execution-environment-fingerprint"' $DRY/ai_lab/reports/easy/environment_latest.json
+          grep -q '"captures_secrets": false' $DRY/ai_lab/reports/easy/environment_latest.json
+          grep -q '"requirements_txt_sha256"' $DRY/ai_lab/reports/easy/environment_latest.json
+          grep -q '"dream_loop_workflow_sha256"' $DRY/ai_lab/reports/easy/environment_latest.json
           grep -q 'expected_information_yield_routes_budget' $DRY/ai_lab/reports/easy/frontier_latest.json
           grep -q 'durable_question_history_uses_research_memory' $DRY/ai_lab/reports/easy/frontier_latest.json
           grep -q 'recorded_next_burst_escape_is_enforced' $DRY/ai_lab/reports/easy/frontier_latest.json
@@ -156,6 +161,14 @@ jobs:
           grep -q '"universality_claim": false' $DRY/ai_lab/reports/crossworld/latest.json
           grep -q '"mode": "cross-world-independent-replication-shadow"' $DRY/ai_lab/reports/crossworld/replication_latest.json
           grep -q '"burst_id"' $DRY/ai_lab/reports/crossworld/replication_latest.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('runtime/dry-run/latest/ai_lab/reports/easy')
+          easy = json.loads((root / 'latest.json').read_text())
+          environment = json.loads((root / 'environment_latest.json').read_text())
+          assert environment['burst_id'] == easy['burst_id']
+          PY
 
   observatory:
     runs-on: ubuntu-latest
