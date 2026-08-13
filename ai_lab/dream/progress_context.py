@@ -25,8 +25,10 @@ from ai_lab.dream import research_optimizer
 
 _CONTEXT_VERSION = 1
 
-# Stable references captured before install() mutates module globals.
-_V10_RANK_X = progress_ratchet.rank_x_focuses
+# Start from the review-fixed v9 scientific/navigation ranker, then re-apply the v10 durable-memory
+# policies below with context-aware coverage. Calling v10's old rank_x_focuses here would let its
+# contextless coverage suppress a genuinely new mutable search focus before this layer can inspect it.
+_V10_RANK_X = progress_ratchet._V9_RANK_X
 _V10_ORDERED_SPECS = progress_ratchet._ordered_specs
 
 
@@ -135,7 +137,7 @@ def rank_x_focuses(
     *, limit: int = research_optimizer._MAX_X_FOCUSES,
     history: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Apply v10 ranking while making coverage and escape decisions context-aware."""
+    """Apply v10 ranking policy while making coverage and escape decisions context-aware."""
     full = progress_ratchet._full_history()
     recent = full[-progress_ratchet._RECENT_WINDOW:] if history is None else list(history)[-progress_ratchet._RECENT_WINDOW:]
     memory = progress_ratchet._memory()
