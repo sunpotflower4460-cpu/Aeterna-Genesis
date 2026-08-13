@@ -1,0 +1,138 @@
+name: Research Postflight Integrity
+
+on:
+  workflow_run:
+    workflows: ["Genesis Dream Loop"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aeterna-research-postflight
+  cancel-in-progress: false
+
+jobs:
+  postflight:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 30
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # This audit grades infrastructure consistency only. A null/negative/low-gain scientific result
+      # is allowed. The report is persisted in the workspace even if strict integrity later fails so
+      # the uploaded artifact explains why the postflight refused to commit.
+      - name: Audit final research infrastructure state
+        id: health
+        shell: bash
+        run: |
+          python -m ai_lab.dream.research_health
+          HEALTHY="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('ai_lab/reports/easy/research_health_latest.json').read_text())
+          print('true' if report.get('healthy') else 'false')
+          PY
+          )"
+          echo "healthy=$HEALTHY" >> "$GITHUB_OUTPUT"
+          echo "Research infrastructure healthy=$HEALTHY"
+
+      # One immutable manifest is created for each burst. If a safety-net run observes the same burst
+      # again, verify the archived hashes instead of rebuilding/re-writing provenance. This makes the
+      # archive useful as a tamper/drift detector and keeps workflow retries idempotent.
+      - name: Create or verify immutable burst manifest
+        shell: bash
+        env:
+          UPSTREAM_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id }}
+          UPSTREAM_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+          UPSTREAM_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          UPSTREAM_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          BURST="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path('ai_lab/reports/easy/latest.json').read_text())['burst_id'])
+          PY
+          )"
+          ARCHIVE="ai_lab/reports/easy/manifests/${BURST}.json"
+          if [[ -f "$ARCHIVE" ]]; then
+            echo "Existing manifest for $BURST; verifying file hashes."
+            python -m ai_lab.dream.research_manifest --verify-existing
+            cp "$ARCHIVE" ai_lab/reports/easy/research_manifest_latest.json
+          else
+            if [[ -z "$UPSTREAM_HEAD_SHA" ]]; then
+              UPSTREAM_HEAD_SHA="$(git rev-parse HEAD)"
+            fi
+            AETERNA_RESEARCH_HEAD_SHA="$UPSTREAM_HEAD_SHA" \
+            AETERNA_RESEARCH_RUN_ID="$UPSTREAM_RUN_ID" \
+            AETERNA_RESEARCH_RUN_NUMBER="$UPSTREAM_RUN_NUMBER" \
+            AETERNA_RESEARCH_RUN_ATTEMPT="$UPSTREAM_RUN_ATTEMPT" \
+            AETERNA_RESEARCH_REF="$UPSTREAM_HEAD_BRANCH" \
+              python -m ai_lab.dream.research_manifest
+            python -m ai_lab.dream.research_manifest --verify-existing
+          fi
+
+      - name: Upload postflight diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-postflight-${{ github.run_id }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            ai_lab/reports/easy/research_health_latest.json
+            ai_lab/reports/easy/research_health_latest.md
+            ai_lab/reports/easy/research_manifest_latest.json
+            ai_lab/reports/easy/manifests/*.json
+
+      - name: Persist healthy postflight records
+        if: steps.health.outputs.healthy == 'true'
+        shell: bash
+        run: |
+          git config user.name "aeterna-research-integrity-bot"
+          git config user.email "aeterna-research-integrity-bot@users.noreply.github.com"
+          git add \
+            ai_lab/reports/easy/research_health_latest.json \
+            ai_lab/reports/easy/research_health_latest.md \
+            ai_lab/reports/easy/research_manifest_latest.json \
+            ai_lab/reports/easy/manifests || true
+          if git diff --cached --quiet; then
+            echo "Postflight records already current."
+            exit 0
+          fi
+          git commit -m "record research postflight integrity"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Postflight records pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); rebasing onto origin/main."
+            git fetch --depth=30 origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Postflight integrity record conflicts with a newer main commit; not overwriting it."
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "::error::Could not push postflight records after 3 attempts."
+          exit 1
+
+      - name: Fail closed on infrastructure integrity errors
+        if: steps.health.outputs.healthy != 'true'
+        run: |
+          echo "::error::Research infrastructure health audit found strict integrity errors."
+          cat ai_lab/reports/easy/research_health_latest.md || true
+          exit 1
