@@ -2,13 +2,13 @@
 
 The manifest hashes the evidence/planning/view files that exist at the end of a burst and records both the
 research source identity and the exact Git commit that contained the persisted scientific evidence before
-postflight adds operational records.  It is provenance infrastructure, not a scientific result and not a
+postflight adds operational records. It is provenance infrastructure, not a scientific result and not a
 confidence score.
 
 A per-burst archive is write-once in meaning: re-running the manifest builder with identical content is
 allowed; producing different content for the same burst raises an error instead of silently rewriting
-history.  ``latest.json`` remains a convenience alias.  Existing archives can also be verified against
-the current files without rewriting them.
+history. ``latest.json`` remains a convenience alias. Existing archives can also be verified against the
+current files without rewriting them.
 """
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from typing import Any
 
 _REPO = Path(__file__).resolve().parents[2]
 _EASY = _REPO / "ai_lab" / "reports" / "easy" / "latest.json"
+_ENVIRONMENT = _REPO / "ai_lab" / "reports" / "easy" / "environment_latest.json"
 _LATEST = _REPO / "ai_lab" / "reports" / "easy" / "research_manifest_latest.json"
 _ARCHIVE_DIR = _REPO / "ai_lab" / "reports" / "easy" / "manifests"
 
@@ -153,15 +154,37 @@ def _content_identity(manifest: dict[str, Any]) -> str:
     return hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
 
 
-def build_manifest() -> dict[str, Any]:
+def _environment_for_burst(burst: str, *, required: bool) -> dict[str, Any]:
+    """Return only an execution-environment report that actually belongs to ``burst``.
+
+    Missing environment data is tolerated by read-only migration tooling so old v1/v2 evidence can still
+    be inspected on a branch that contains the new code. Production postflight passes ``required=True``
+    before creating a v3 immutable archive, so a new burst can never silently inherit a previous burst's
+    environment fingerprint.
+    """
+    environment = _read(_ENVIRONMENT, {})
+    if not environment:
+        if required:
+            raise RuntimeError(f"manifest v3 burst {burst} requires a current execution environment fingerprint")
+        return {}
+    environment_burst = str(environment.get("burst_id") or "")
+    if environment_burst != burst:
+        raise RuntimeError(
+            f"environment fingerprint burst mismatch: easy={burst} environment={environment_burst or None}"
+        )
+    return environment
+
+
+def build_manifest(*, require_environment: bool = False) -> dict[str, Any]:
     easy = _read(_EASY, {})
     burst = str(easy.get("burst_id") or "")
     if not burst:
         raise RuntimeError("cannot build research manifest without easy/latest burst_id")
     generated_at = easy.get("generated_at")
+    environment_report = _environment_for_burst(burst, required=require_environment)
 
     scientific = _entries(_SCIENTIFIC_EVIDENCE)
-    environment = _entries(_EXECUTION_ENVIRONMENT)
+    environment = _entries(_EXECUTION_ENVIRONMENT) if environment_report else []
     planning = _entries(_PLANNING_STATE)
     views = _entries(_DERIVED_HUMAN_VIEWS)
     source_sha = _research_git_sha()
@@ -199,6 +222,7 @@ def build_manifest() -> dict[str, Any]:
             "negative_results_are_preserved": True,
             "same_burst_archive_may_be_silently_rewritten": False,
             "environment_report_contains_research_time_contract_hashes": True,
+            "environment_report_required_for_production_v3_archive": True,
             "evidence_snapshot_git_sha_is_exact_scientific_evidence_recovery_anchor": bool(evidence_sha),
         },
         "integrity": {
@@ -221,9 +245,18 @@ def persist_manifest(manifest: dict[str, Any]) -> Path:
     burst = str(manifest["burst_id"])
     archive = _ARCHIVE_DIR / f"{burst}.json"
     payload = _archive_payload(manifest)
+    declared = str(manifest.get("manifest_content_sha256") or "")
+    recomputed = _content_identity(manifest)
+    if not declared or declared != recomputed:
+        raise RuntimeError(f"manifest content identity mismatch for {burst}")
     if archive.exists():
         existing = _read(archive, {})
-        if not existing or existing.get("manifest_content_sha256") != manifest.get("manifest_content_sha256"):
+        existing_declared = str(existing.get("manifest_content_sha256") or "")
+        if (
+            not existing
+            or existing_declared != _content_identity(existing)
+            or existing_declared != declared
+        ):
             raise RuntimeError(
                 f"immutable manifest collision for {burst}: existing provenance differs from current burst state"
             )
@@ -236,7 +269,7 @@ def persist_manifest(manifest: dict[str, Any]) -> Path:
 
 
 def verify_existing_manifest() -> dict[str, Any]:
-    """Verify archived file hashes for the current burst without changing any file."""
+    """Verify manifest self-identity and archived file hashes without changing any file."""
     easy = _read(_EASY, {})
     burst = str(easy.get("burst_id") or "")
     archive_path = _ARCHIVE_DIR / f"{burst}.json"
@@ -251,6 +284,17 @@ def verify_existing_manifest() -> dict[str, Any]:
         }
 
     errors: list[str] = []
+    declared_identity = str(archived.get("manifest_content_sha256") or "")
+    recomputed_identity = _content_identity(archived)
+    if not declared_identity or declared_identity != recomputed_identity:
+        errors.append("manifest content identity mismatch")
+
+    if int(archived.get("version", 0) or 0) >= 3:
+        try:
+            _environment_for_burst(burst, required=True)
+        except RuntimeError as exc:
+            errors.append(str(exc))
+
     checked = 0
     for group in (
         "scientific_evidence", "execution_environment",
@@ -275,13 +319,15 @@ def verify_existing_manifest() -> dict[str, Any]:
         "valid": not errors,
         "errors": errors,
         "checked_files": checked,
+        "declared_manifest_content_sha256": declared_identity or None,
+        "recomputed_manifest_content_sha256": recomputed_identity,
         "evidence_snapshot_git_sha": (archived.get("source_code") or {}).get("evidence_snapshot_git_sha"),
         "verification_is_scientific_truth_gate": False,
     }
 
 
-def run(*, persist: bool = True) -> dict[str, Any]:
-    manifest = build_manifest()
+def run(*, persist: bool = True, require_environment: bool = False) -> dict[str, Any]:
+    manifest = build_manifest(require_environment=require_environment)
     if persist:
         persist_manifest(manifest)
     return manifest
@@ -291,6 +337,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Build or verify an immutable per-burst provenance manifest")
     p.add_argument("--no-record", action="store_true", help="build only; do not write latest/archive files")
     p.add_argument("--verify-existing", action="store_true", help="verify current files against the archived current-burst manifest")
+    p.add_argument(
+        "--require-environment", action="store_true",
+        help="fail if a current-burst execution environment fingerprint is missing; use for production v3 archives",
+    )
     return p
 
 
@@ -303,7 +353,10 @@ def main(argv: list[str] | None = None) -> int:
             f"checked={result.get('checked_files')} errors={len(result.get('errors') or [])}"
         )
         return 0 if result.get("valid") else 3
-    manifest = run(persist=not args.no_record)
+    manifest = run(
+        persist=not args.no_record,
+        require_environment=bool(args.require_environment),
+    )
     print(
         f"Research Manifest: burst={manifest.get('burst_id')} "
         f"sha256={manifest.get('manifest_content_sha256')} "
