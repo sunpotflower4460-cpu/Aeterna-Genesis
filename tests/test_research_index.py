@@ -23,6 +23,7 @@ def _install(monkeypatch, tmp_path):
     for name, path in paths.items():
         monkeypatch.setattr(research_index, name, path)
     _write(paths["_MANIFEST"], {
+        "version": 3,
         "burst_id": "dream-b1",
         "burst_generated_at": "2026-08-13T00:00:00+00:00",
         "manifest_content_sha256": "manifest-one",
@@ -60,8 +61,36 @@ def test_index_points_to_manifest_and_exact_evidence_commit(monkeypatch, tmp_pat
     assert row["burst_id"] == "dream-b1"
     assert row["manifest_content_sha256"] == "manifest-one"
     assert row["evidence_snapshot_git_sha"] == "evidence-sha"
+    assert row["environment_anchor"]["burst_id"] == "dream-b1"
     assert row["planning_progress"]["new_question_count"] == 2
     assert row["semantics"]["navigation_summary_is_scientific_evidence"] is False
+
+
+def test_manifest_v3_requires_current_environment_fingerprint(monkeypatch, tmp_path):
+    paths = _install(monkeypatch, tmp_path)
+    paths["_ENVIRONMENT"].unlink()
+    with pytest.raises(RuntimeError, match="has no execution environment fingerprint"):
+        research_index.build_index(existing={"entries": []})
+
+
+def test_manifest_v3_rejects_stale_environment_burst(monkeypatch, tmp_path):
+    paths = _install(monkeypatch, tmp_path)
+    environment = json.loads(paths["_ENVIRONMENT"].read_text())
+    environment["burst_id"] = "dream-old"
+    _write(paths["_ENVIRONMENT"], environment)
+    with pytest.raises(RuntimeError, match="environment fingerprint burst mismatch"):
+        research_index.build_index(existing={"entries": []})
+
+
+def test_legacy_manifest_remains_readable_without_environment(monkeypatch, tmp_path):
+    paths = _install(monkeypatch, tmp_path)
+    manifest = json.loads(paths["_MANIFEST"].read_text())
+    manifest["version"] = 2
+    _write(paths["_MANIFEST"], manifest)
+    paths["_ENVIRONMENT"].unlink()
+    index = research_index.build_index(existing={"entries": []})
+    assert index["count"] == 1
+    assert index["entries"][0]["environment_anchor"]["burst_id"] is None
 
 
 def test_same_burst_same_manifest_is_idempotent(monkeypatch, tmp_path):
