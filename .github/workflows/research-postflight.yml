@@ -58,7 +58,14 @@ jobs:
 
       - name: Enforce same-burst runtime context coherence
         shell: bash
-        run: python -m ai_lab.dream.runtime_context_audit > ai_lab/reports/easy/runtime_context_latest.json
+        env:
+          EXPECTED_RUN_ID: ${{ github.event.workflow_run.id }}
+          EXPECTED_SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python -m ai_lab.dream.runtime_context_audit \
+            --expected-run-id "$EXPECTED_RUN_ID" \
+            --expected-source-sha "$EXPECTED_SOURCE_SHA" \
+            > ai_lab/reports/easy/runtime_context_latest.json
 
       - name: Create or verify immutable burst manifest
         shell: bash
