@@ -4581,3 +4581,144 @@ why it matters.
   operative one, and the natural next step is applying the full battery to those 9 before
   any of them are cited as confirmed, and before any R8-based automated search (review's
   item 5) is run against them.
+
+## 27. PR-R8 PRE-REGISTRATION (frozen BEFORE running the battery on the 9 bounded_tanh
+candidates) -- significance threshold, validation criterion, and structural lesson
+
+Review's explicit instruction: freeze the judging criterion before running, precisely so it
+cannot be tuned after seeing the result. This section is written and committed BEFORE any
+of Sec.28's battery work begins -- the git history itself is the evidence this was not
+adjusted after the fact.
+
+### 27.1 The now-possible calibrated comparison
+
+PR-R7 (Sec.26) gives, for the first time in this series, a same-grid, same-pipeline,
+same-battery NEGATIVE reference point:
+
+| coupling_form | graphs swept | window-robust (30x-native) | full-battery CONFIRMED |
+|---|---|---|---|
+| diffusive | 300 | 3 | **0** (Sec.26.2 -- all 3 failed) |
+| bounded_tanh | 300 | 9 (PR-R6 Sec.25.1) | **X -- to be measured this PR** |
+
+Both used the identical 300-config grid shape, identical wide-basis+clustering+native-30x
+pipeline, identical full-battery methodology. This is the calibration review's own message
+identifies: whatever X turns out to be, it is now interpretable against a measured (not
+assumed) false-positive rate for this exact pipeline, not a bare guess.
+
+### 27.2 Pre-registered significance test
+
+**One-sided Fisher exact test**, comparing the two 300-graph populations' full-battery-
+CONFIRMED counts (X bounded_tanh vs 0 diffusive), alternative hypothesis: bounded_tanh's
+confirmed rate is GREATER than diffusive's (directional, matching S-016/S-017's own claim
+that coupling form has a real, positive effect on winding). Table format:
+`[[X, 300-X], [0, 300]]`, `scipy.stats.fisher_exact(..., alternative="greater")`.
+
+**Exact p-value for every possible outcome, computed and frozen now, before X is known:**
+
+| X (of 9 candidates confirmed) | one-sided p | significant at p<0.05? |
+|---|---|---|
+| 0 | 1.0000 | no |
+| 1 | 0.5000 | no |
+| 2 | 0.2496 | no |
+| 3 | 0.1244 | no |
+| 4 | 0.0619 | no |
+| **5** | **0.0307** | **YES** |
+| 6 | 0.0152 | yes |
+| 7 | 0.0075 | yes |
+| 8 | 0.0037 | yes |
+| 9 | 0.0018 | yes |
+
+**Pre-registered threshold: X >= 5 is the frozen significance criterion (p<0.05, one-
+sided).** X<=4 is not distinguishable from diffusive's demonstrated 0/300 false-positive
+rate at this sample size and must NOT be reported as evidence for a coupling-form effect,
+even if X=3 or X=4 "feels" like more than diffusive's 0 -- the pre-registered test, not
+intuition, governs the interpretation. (Two-sided p-values are also tabulated above for
+transparency; the one-sided test is used because the hypothesis under test is directional,
+not merely "different," matching how S-016/S-017 have always framed the claim.)
+
+### 27.3 Pre-registered efficiency filter and validation criterion
+
+Per review's own observation that independent initial conditions are BOTH the cheapest
+sub-test AND the one that perfectly separated confirmed (6/6, 6/6, 6/6) from false-positive
+(0/6, 0/6, 1/6) in Sec.26.2 -- itself now the calibration data for this threshold:
+
+1. **Stage 1 (run on all 9 candidates first)**: 6 independent initial conditions (fresh
+   seeds 200-205, matching every prior battery in this series). A candidate proceeds to
+   Stage 2 only if **>= 5/6** ICs pass `is_smooth_winding` -- chosen as a defensible middle
+   point between the observed confirmed rate (6/6 exactly, 3/3 locations) and the observed
+   false-positive rate (0/6, 0/6, 1/6, 3/3 candidates) with a small margin below strict
+   unanimity, since even a genuine structure could plausibly miss one trial to natural
+   variability. No candidate has yet been observed at 2/6-5/6, so this specific cutoff is a
+   genuine ex-ante judgment call, which is exactly why it is being frozen here rather than
+   picked after seeing where the 9 candidates land.
+2. **Stage 2 (run only on Stage-1 survivors)**: damage-recovery, exactly as in every prior
+   battery. A candidate is **CONFIRMED** (counts toward X) if and only if it passed Stage 1
+   (>=5/6) AND damage-recovery also passes (`is_smooth_winding=True`).
+3. **Cycle-shift is run and reported for every CONFIRMED candidate** (for the same
+   descriptive/corroborating purpose it has always served -- e.g. the nearby-cycle smooth
+   fraction), but is NOT a gating criterion: Sec.26.2 already shows this number is not a
+   clean discriminator on its own (the failed `seed=9` diffusive candidate's 3.0% nearby-
+   smooth fraction exceeded confirmed `seed=62`'s 2.3%), so using it as a hard gate would
+   contradict this PR's own data.
+4. Candidates failing Stage 1 (<5/6) are recorded as NOT CONFIRMED without running Stage 2
+   or cycle-shift -- the efficiency gain review requested, justified by Sec.26.2's own
+   demonstration that Stage 1 alone already achieved perfect separation.
+
+### 27.4 Structural lesson, registered as a standing methodological principle (3rd
+occurrence)
+
+**"Checking the same realization for longer" and "checking a different realization" answer
+different questions, and passing one is not evidence about the other.** Window extension
+(Sec.25.4/Sec.26) re-examines the SAME trajectory over a longer time horizon -- temporal
+robustness. Independent initial conditions re-run the SAME graph/parameters from a
+DIFFERENT random starting point -- realization robustness. A structure that arose by chance
+in one particular run can persist indefinitely once it exists (nothing forces it to decay
+within a longer window of the SAME run), while remaining a one-off accident of that
+particular initial condition -- which is exactly the pattern Sec.26.2 measured directly:
+window-robust (native 30x) but 0/6 or 1/6 across independent conditions.
+
+This is the THIRD time this exact confusion has appeared in this project, at three
+different scales, and is registered here as a standing discipline rather than left as three
+separate, unconnected corrections:
+
+1. **F7** (pre-dates this PR series): a ~4%-frequency phenomenon was tested across 8 trials
+   of the SAME condition, found absent, and prematurely called a fluke -- it was real, and
+   reached 5.9% under different conditions (a different realization axis: parameter choice,
+   not initial condition, but the same underlying error -- exhausting one axis of
+   repetition was mistaken for exhausting the question).
+2. **S-017 / PR-R3.1 -> PR-R4** (Sec.22-23): 14 trials at the SAME location (12 independent
+   initial conditions + 2 damage-recovery recoveries) were read as grounds the phenomenon
+   is established, when they had only demonstrated that ONE location's own internal
+   robustness -- not that the phenomenon occurs elsewhere. 284 covered cycles on genuinely
+   independent NEW graphs (PR-R4) found zero.
+3. **PR-R6 -> PR-R7 (this correction)**: window-robustness on the SAME run, checked longer,
+   was reported as "12 known locations" without the orthogonal realization-robustness check
+   (independent initial conditions) -- Sec.26.2 shows the two checks can disagree
+   completely (window-robust yet 0/6 or 1/6 on independent conditions) for the same
+   candidate.
+
+**Standing rule, to be applied to every future robustness claim in this project**:
+"survives repeated examination of the same instance" is never, by itself, evidence that a
+phenomenon is reproducible -- reproducibility claims require checking a genuinely different
+instance (different seed, different initial condition, different graph), and a design that
+only re-examines the same instance more thoroughly (longer window, more careful
+measurement, more trials of the identical setup) cannot substitute for that, no matter how
+many times or how carefully the same instance is re-checked.
+
+### 27.5 S-016 wording update (addendum, original text preserved per this project's
+standing correction-in-place convention -- see Sec.22.7 for the precedent)
+
+Original S-016-adjacent claim (Sec.20, PR-R2.8): "in this substrate, under diffusive
+coupling, no cycle currently produces winding that survives the smoothness gate" -- based
+on 0/178 covered cycles (fundamental-cycle basis, 15x window).
+
+**Addendum (PR-R7, this section)**: this claim has since been re-tested under conditions
+designed specifically to give it the best chance of being wrong -- a 149x larger candidate
+pool (wide simple-cycle basis, not just fundamental cycles) and a native 30x window (not
+15x) -- and still holds, in a stronger form than the original: 3/300 graphs DID pass the
+window-robustness screen this time (not 0), but all 3 were tested against the full
+validation battery (independent initial conditions, damage-recovery, cycle-shift) and ALL
+3 failed to reproduce (Sec.26.2). The original 0/178 finding was not merely unchallenged by
+a weaker search; it has now survived a substantially harder one. This is recorded as an
+addendum, not a silent strengthening of the original text, so the record shows exactly what
+was re-tested and how.
