@@ -2,6 +2,7 @@
 
 Manifest-backed navigation view. This is not a scientific confidence ranking.
 
+- `dream-20260813-0168` — health=True progress=ADVANCED newQ=16 numpy=2.4.6 scipy=1.17.1 evidence=`39d28e66a623c2698b476b3329990505e3c95007`
 - `dream-20260813-0167` — health=True progress=ADVANCED newQ=16 numpy=2.4.6 scipy=1.17.1 evidence=`e1fe215903cc5ffefb6df919a05cc44bce94731a`
 - `dream-20260813-0166` — health=True progress=ADVANCED newQ=16 numpy=2.4.6 scipy=1.17.1 evidence=`55c187837a62272c1ecb7eaa51557009507398b6`
 - `dream-20260813-0165` — health=True progress=ADVANCED newQ=18 numpy=2.4.6 scipy=1.17.1 evidence=`b5af0c11e65a2dd52536f0e5327eef2bb434b323`
