@@ -1,0 +1,61 @@
+name: Research Infrastructure CI
+
+on:
+  pull_request:
+    paths:
+      - 'ai_lab/dream/progress_context.py'
+      - 'ai_lab/dream/research_health.py'
+      - 'ai_lab/dream/research_manifest.py'
+      - 'ai_lab/dream/research_backlog.py'
+      - 'ai_lab/dream/research_finalize.py'
+      - 'ai_lab/dream/strict_goal_loop.py'
+      - 'tests/test_progress_context.py'
+      - 'tests/test_research_health.py'
+      - 'tests/test_research_manifest.py'
+      - 'tests/test_research_backlog.py'
+      - 'tests/test_research_finalize.py'
+      - 'docs/RESEARCH_INFRASTRUCTURE.md'
+      - '.github/workflows/research-infra-ci.yml'
+      - '.github/workflows/research-postflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  research-infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Context identity and infrastructure unit tests
+        run: |
+          pytest -q \
+            tests/test_progress_context.py \
+            tests/test_research_health.py \
+            tests/test_research_manifest.py \
+            tests/test_research_backlog.py \
+            tests/test_research_finalize.py
+
+      - name: Current tracked evidence must pass strict infrastructure health
+        run: python -m ai_lab.dream.research_health --strict --no-record
+
+      - name: Operations backlog must build read-only
+        run: python -m ai_lab.dream.research_backlog --no-record
+
+      - name: Provenance manifest must build read-only
+        run: python -m ai_lab.dream.research_manifest --no-record
+
+      - name: Infrastructure checks must not mutate tracked evidence
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::Research infrastructure CI mutated the working tree."
+            exit 1
+          fi
