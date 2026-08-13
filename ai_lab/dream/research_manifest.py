@@ -1,8 +1,9 @@
 """Immutable provenance manifest for each autonomous Aeterna research burst.
 
-The manifest hashes the evidence/planning/view files that exist at the end of a burst and records the
-research-workflow identity that produced them.  It is provenance infrastructure, not a scientific result
-and not a confidence score.
+The manifest hashes the evidence/planning/view files that exist at the end of a burst and records both the
+research source identity and the exact Git commit that contained the persisted scientific evidence before
+postflight adds operational records.  It is provenance infrastructure, not a scientific result and not a
+confidence score.
 
 A per-burst archive is write-once in meaning: re-running the manifest builder with identical content is
 allowed; producing different content for the same burst raises an error instead of silently rewriting
@@ -35,6 +36,12 @@ _SCIENTIFIC_EVIDENCE = (
     "ai_lab/discoveries/deep_time_fission.json",
     "ai_lab/discoveries/cross_world_emergence.json",
     "ai_lab/discoveries/question_critic.json",
+)
+
+_EXECUTION_ENVIRONMENT = (
+    "ai_lab/reports/easy/environment_latest.json",
+    "requirements.txt",
+    ".github/workflows/dream-loop.yml",
 )
 
 _PLANNING_STATE = (
@@ -93,6 +100,7 @@ def _entries(paths: tuple[str, ...]) -> list[dict[str, Any]]:
 
 
 def _repo_git_sha() -> str | None:
+    """HEAD at postflight start: normally the bot commit that persisted this burst's evidence."""
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=_REPO, text=True, stderr=subprocess.DEVNULL
@@ -102,6 +110,7 @@ def _repo_git_sha() -> str | None:
 
 
 def _research_git_sha() -> str | None:
+    """Code/workflow source SHA under which the research workflow started."""
     for name in ("AETERNA_RESEARCH_HEAD_SHA", "GITHUB_SHA"):
         value = str(os.environ.get(name) or "").strip()
         if value:
@@ -133,25 +142,33 @@ def build_manifest() -> dict[str, Any]:
     generated_at = easy.get("generated_at")
 
     scientific = _entries(_SCIENTIFIC_EVIDENCE)
+    environment = _entries(_EXECUTION_ENVIRONMENT)
     planning = _entries(_PLANNING_STATE)
     views = _entries(_DERIVED_HUMAN_VIEWS)
+    source_sha = _research_git_sha()
+    evidence_sha = _repo_git_sha()
     manifest: dict[str, Any] = {
-        "version": 2,
+        "version": 3,
         "mode": "immutable-research-provenance-manifest",
         "burst_id": burst,
         "burst_generated_at": generated_at,
         "source_code": {
-            "git_sha": _research_git_sha(),
+            # Backward-compatible alias retained for existing readers.
+            "git_sha": source_sha,
+            "research_source_git_sha": source_sha,
+            "evidence_snapshot_git_sha": evidence_sha,
             "research_workflow_run_id": _research_env("AETERNA_RESEARCH_RUN_ID", "GITHUB_RUN_ID"),
             "research_workflow_run_number": _research_env("AETERNA_RESEARCH_RUN_NUMBER", "GITHUB_RUN_NUMBER"),
             "research_workflow_run_attempt": _research_env("AETERNA_RESEARCH_RUN_ATTEMPT", "GITHUB_RUN_ATTEMPT"),
             "research_ref": _research_env("AETERNA_RESEARCH_REF", "GITHUB_REF"),
         },
         "scientific_evidence": scientific,
+        "execution_environment": environment,
         "planning_and_integrity_state": planning,
         "derived_human_views": views,
         "counts": {
             "scientific_evidence_files": len(scientific),
+            "execution_environment_files": len(environment),
             "planning_state_files": len(planning),
             "derived_view_files": len(views),
         },
@@ -159,8 +176,10 @@ def build_manifest() -> dict[str, Any]:
             "file_hash_means_scientific_validity": False,
             "manifest_is_scientific_evidence": False,
             "derived_views_are_authoritative_over_raw_evidence": False,
+            "environment_match_proves_scientific_claim": False,
             "negative_results_are_preserved": True,
             "same_burst_archive_may_be_silently_rewritten": False,
+            "evidence_snapshot_git_sha_is_exact_scientific_evidence_recovery_anchor": bool(evidence_sha),
         },
         "integrity": {
             "changes_physics": False,
@@ -213,7 +232,10 @@ def verify_existing_manifest() -> dict[str, Any]:
 
     errors: list[str] = []
     checked = 0
-    for group in ("scientific_evidence", "planning_and_integrity_state", "derived_human_views"):
+    for group in (
+        "scientific_evidence", "execution_environment",
+        "planning_and_integrity_state", "derived_human_views",
+    ):
         for row in archived.get(group) or []:
             relative = str(row.get("path") or "")
             if not relative:
@@ -233,6 +255,7 @@ def verify_existing_manifest() -> dict[str, Any]:
         "valid": not errors,
         "errors": errors,
         "checked_files": checked,
+        "evidence_snapshot_git_sha": (archived.get("source_code") or {}).get("evidence_snapshot_git_sha"),
         "verification_is_scientific_truth_gate": False,
     }
 
@@ -263,7 +286,8 @@ def main(argv: list[str] | None = None) -> int:
     manifest = run(persist=not args.no_record)
     print(
         f"Research Manifest: burst={manifest.get('burst_id')} "
-        f"sha256={manifest.get('manifest_content_sha256')}"
+        f"sha256={manifest.get('manifest_content_sha256')} "
+        f"evidence_git={manifest.get('source_code', {}).get('evidence_snapshot_git_sha')}"
     )
     return 0
 
