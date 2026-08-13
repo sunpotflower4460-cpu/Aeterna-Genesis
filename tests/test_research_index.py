@@ -10,6 +10,22 @@ def _write(path, value):
     path.write_text(json.dumps(value))
 
 
+def _valid_manifest(*, version=3, source_sha="source-sha"):
+    manifest = {
+        "version": version,
+        "burst_id": "dream-b1",
+        "burst_generated_at": "2026-08-13T00:00:00+00:00",
+        "source_code": {
+            "research_source_git_sha": source_sha,
+            "evidence_snapshot_git_sha": "evidence-sha",
+            "research_workflow_run_id": "77",
+            "research_workflow_run_number": "12",
+        },
+    }
+    manifest["manifest_content_sha256"] = research_index.research_manifest._content_identity(manifest)
+    return manifest
+
+
 def _install(monkeypatch, tmp_path):
     paths = {
         "_MANIFEST": tmp_path / "manifest.json",
@@ -22,18 +38,7 @@ def _install(monkeypatch, tmp_path):
     }
     for name, path in paths.items():
         monkeypatch.setattr(research_index, name, path)
-    _write(paths["_MANIFEST"], {
-        "version": 3,
-        "burst_id": "dream-b1",
-        "burst_generated_at": "2026-08-13T00:00:00+00:00",
-        "manifest_content_sha256": "manifest-one",
-        "source_code": {
-            "research_source_git_sha": "source-sha",
-            "evidence_snapshot_git_sha": "evidence-sha",
-            "research_workflow_run_id": "77",
-            "research_workflow_run_number": "12",
-        },
-    })
+    _write(paths["_MANIFEST"], _valid_manifest())
     _write(paths["_HEALTH"], {"healthy": True, "strict_failure_count": 0, "warning_count": 1})
     _write(paths["_BACKLOG"], {"active_count": 3, "recommended_next": "instrument:identity-continuity"})
     _write(paths["_FRONTIER"], {
@@ -54,16 +59,18 @@ def _install(monkeypatch, tmp_path):
 
 
 def test_index_points_to_manifest_and_exact_evidence_commit(monkeypatch, tmp_path):
-    _install(monkeypatch, tmp_path)
+    paths = _install(monkeypatch, tmp_path)
+    expected_hash = json.loads(paths["_MANIFEST"].read_text())["manifest_content_sha256"]
     index = research_index.build_index(existing={"entries": []})
     assert index["count"] == 1
     row = index["entries"][0]
     assert row["burst_id"] == "dream-b1"
-    assert row["manifest_content_sha256"] == "manifest-one"
+    assert row["manifest_content_sha256"] == expected_hash
     assert row["evidence_snapshot_git_sha"] == "evidence-sha"
     assert row["environment_anchor"]["burst_id"] == "dream-b1"
     assert row["planning_progress"]["new_question_count"] == 2
     assert row["semantics"]["navigation_summary_is_scientific_evidence"] is False
+    assert index["policy"]["manifest_self_identity_is_recomputed_before_indexing"] is True
 
 
 def test_manifest_v3_requires_current_environment_fingerprint(monkeypatch, tmp_path):
@@ -82,11 +89,19 @@ def test_manifest_v3_rejects_stale_environment_burst(monkeypatch, tmp_path):
         research_index.build_index(existing={"entries": []})
 
 
-def test_legacy_manifest_remains_readable_without_environment(monkeypatch, tmp_path):
+def test_manifest_metadata_tampering_is_rejected_before_indexing(monkeypatch, tmp_path):
     paths = _install(monkeypatch, tmp_path)
     manifest = json.loads(paths["_MANIFEST"].read_text())
-    manifest["version"] = 2
+    manifest["source_code"]["research_source_git_sha"] = "tampered"
+    # Keep the old declared manifest_content_sha256 on purpose.
     _write(paths["_MANIFEST"], manifest)
+    with pytest.raises(RuntimeError, match="manifest content identity mismatch"):
+        research_index.build_index(existing={"entries": []})
+
+
+def test_legacy_manifest_remains_readable_without_environment(monkeypatch, tmp_path):
+    paths = _install(monkeypatch, tmp_path)
+    _write(paths["_MANIFEST"], _valid_manifest(version=2))
     paths["_ENVIRONMENT"].unlink()
     index = research_index.build_index(existing={"entries": []})
     assert index["count"] == 1
@@ -94,19 +109,18 @@ def test_legacy_manifest_remains_readable_without_environment(monkeypatch, tmp_p
 
 
 def test_same_burst_same_manifest_is_idempotent(monkeypatch, tmp_path):
-    _install(monkeypatch, tmp_path)
+    paths = _install(monkeypatch, tmp_path)
+    expected_hash = json.loads(paths["_MANIFEST"].read_text())["manifest_content_sha256"]
     first = research_index.build_index(existing={"entries": []})
     second = research_index.build_index(existing=first)
     assert second["count"] == 1
-    assert second["entries"][0]["manifest_content_sha256"] == "manifest-one"
+    assert second["entries"][0]["manifest_content_sha256"] == expected_hash
 
 
-def test_same_burst_different_manifest_fails_closed(monkeypatch, tmp_path):
+def test_same_burst_different_valid_manifest_fails_closed(monkeypatch, tmp_path):
     paths = _install(monkeypatch, tmp_path)
     first = research_index.build_index(existing={"entries": []})
-    manifest = json.loads(paths["_MANIFEST"].read_text())
-    manifest["manifest_content_sha256"] = "changed-manifest"
-    _write(paths["_MANIFEST"], manifest)
+    _write(paths["_MANIFEST"], _valid_manifest(source_sha="different-valid-source"))
     with pytest.raises(RuntimeError, match="research index collision"):
         research_index.build_index(existing=first)
 
