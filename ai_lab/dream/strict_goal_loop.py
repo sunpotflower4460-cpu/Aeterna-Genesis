@@ -6,6 +6,8 @@ change physics, scientific truth gates, Rooms, official Levels, or NØ strictnes
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from ai_lab.dream import adaptive_loop as base
@@ -18,6 +20,9 @@ from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
 from ai_lab.dream.strict_followup_loop import _install_strict_followup_geometry
 from ai_lab.dream.strict_loop import _install_strict_geometry
+
+_REPO = Path(__file__).resolve().parents[2]
+_FRONTIER_ALIAS = _REPO / "ai_lab" / "reports" / "easy" / "frontier_latest.json"
 
 
 def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
@@ -44,6 +49,19 @@ def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
         root_law_trials=max(0, a.root_law_trials), root_sizes=adaptive_v8._parse_sizes(a.root_sizes),
         root_steps=max(8, a.root_steps), frontier_experiments=max(0, a.frontier_experiments),
     )
+
+
+def _publish_frontier_alias(report: dict[str, Any]) -> None:
+    """Expose the exact in-memory planning result as a convenient audit alias.
+
+    In ``--no-record`` mode the dry-run redirect maps this write into scratch, so CI can inspect the
+    planning policy without touching tracked scientific evidence.
+    """
+    frontier = report.get("autonomous_frontier_expansion") or {}
+    if not frontier:
+        return
+    _FRONTIER_ALIAS.parent.mkdir(parents=True, exist_ok=True)
+    _FRONTIER_ALIAS.write_text(json.dumps(frontier, indent=2, ensure_ascii=False))
 
 
 def _print_adaptive_summary(result: dict[str, Any]) -> None:
@@ -75,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     result = _run_adaptive_v8_exact(argv)
     _print_adaptive_summary(result)
     report = result["report"]
+    _publish_frontier_alias(report)
 
     # NØ remains a separate stricter meta-control. It receives only bookkeeping/comparison metadata,
     # never the run's physical state, seed, geometry, law or clock as NØ physics.
