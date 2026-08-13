@@ -1,8 +1,8 @@
 """Parse and audit the production ``strict_goal_loop`` command from workflow YAML.
 
-This is configuration-drift infrastructure.  It ensures a workflow edit cannot silently disable broad,
-open-ended, Root, Deep-Time or frontier research simply because a CLI flag disappeared or stopped parsing.
-The audit says nothing about whether a scientific result is interesting or correct.
+This is configuration-drift infrastructure. It ensures a workflow edit cannot silently disable broad,
+open-ended, Root, Deep-Time or frontier research simply because a CLI flag/cap disappeared or stopped
+parsing. The audit says nothing about whether a scientific result is interesting or correct.
 """
 from __future__ import annotations
 
@@ -60,16 +60,25 @@ def _logical_shell_lines(script: str) -> list[str]:
 
 
 def production_argv(path: Path | None = None) -> list[str]:
+    """Return args only from the direct production entrypoint command.
+
+    A token subsequence inside ``echo ...``, a shell condition, or another wrapper is deliberately rejected:
+    this contract protects execution presence, not merely text presence.
+    """
     path = path or _WORKFLOW
     workflow = yaml.safe_load(path.read_text())
     script = _step_script(workflow)
+    needle = ["python", "-m", _ENTRYPOINT]
+    matches: list[list[str]] = []
     for logical in _logical_shell_lines(script):
         tokens = shlex.split(logical)
-        needle = ["python", "-m", _ENTRYPOINT]
-        for i in range(0, max(0, len(tokens) - len(needle) + 1)):
-            if tokens[i:i + len(needle)] == needle:
-                return tokens[i + len(needle):]
-    raise RuntimeError(f"could not locate `python -m {_ENTRYPOINT}` in production workflow step")
+        if tokens[:3] == needle:
+            matches.append(tokens[3:])
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"expected exactly one directly executed `python -m {_ENTRYPOINT}` command; found {len(matches)}"
+        )
+    return matches[0]
 
 
 def build_contract(path: Path | None = None) -> dict[str, Any]:
@@ -77,13 +86,18 @@ def build_contract(path: Path | None = None) -> dict[str, Any]:
     argv = production_argv(path)
     parsed = protocol_fingerprint.parse_protocol(argv)
     config = parsed["parsed_config"]
+    # Include both trial budgets and independent execution caps. A positive trial budget with max_leads=0
+    # is still a disabled lane and must fail this configuration contract.
     required_nonzero = {
         "trials": "broad 2D search",
         "native3d_trials": "native 3D anti-bias search",
-        "followup_trials_2d": "promising-lead followup",
-        "fission_path_trials_2d": "F reference-route control",
+        "followup_trials_2d": "promising-lead followup budget",
+        "followup_max_leads": "promising-lead followup execution cap",
+        "fission_path_trials_2d": "F reference-route control budget",
+        "fission_path_max_leads": "F reference-route execution cap",
         "deep_time_max_leads": "Deep-Time extension",
-        "open_ended_probes": "open-ended emergence discovery",
+        "open_ended_probes": "open-ended emergence discovery budget",
+        "open_ended_max_episodes": "open-ended emergence episode cap",
         "unknown_followup_max_patterns": "recurrent X verification",
         "root_law_trials": "Pure Genesis R0 candidate-law search",
         "frontier_experiments": "information-yield frontier experiments",
@@ -95,21 +109,21 @@ def build_contract(path: Path | None = None) -> dict[str, Any]:
     ]
     errors: list[str] = []
     if disabled:
-        errors.append("one or more production research lanes are accidentally disabled")
+        errors.append("one or more production research lanes or execution caps are accidentally disabled")
     if config.get("no_record") is True:
         errors.append("production protocol unexpectedly enables --no-record")
     if config.get("no_refresh_app") is True:
-        # Not a scientific failure, but the production workflow currently promises generated human views.
         errors.append("production protocol unexpectedly disables app/report refresh")
     return {
-        "version": 1,
+        "version": 2,
         "mode": "production-research-protocol-contract",
         "workflow_path": str(path.relative_to(_REPO)) if path.is_relative_to(_REPO) else str(path),
         "workflow_sha256": _sha256(path),
         "entrypoint": _ENTRYPOINT,
         "argv": argv,
         **parsed,
-        "required_nonzero_lanes": required_nonzero,
+        "required_nonzero_lanes_and_caps": required_nonzero,
+        "required_nonzero_lanes": required_nonzero,  # backward-compatible alias
         "disabled_required_lanes": disabled,
         "errors": errors,
         "valid": not errors,
@@ -118,6 +132,7 @@ def build_contract(path: Path | None = None) -> dict[str, Any]:
             "protocol_contract_changes_scientific_truth": False,
             "protocol_hash_is_physical_observable": False,
             "workflow_arguments_are_target_outcomes": False,
+            "direct_command_match_means_shell_path_is_formally_proven": False,
         },
     }
 
