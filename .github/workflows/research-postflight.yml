@@ -29,6 +29,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
+
+      # Postflight imports the same parser/configuration modules as the research process. Install the
+      # repository contract rather than relying on packages preinstalled in a GitHub runner image.
+      - name: Install research audit dependencies
+        run: pip install -r requirements.txt
 
       - name: Audit final research infrastructure state
         id: health
