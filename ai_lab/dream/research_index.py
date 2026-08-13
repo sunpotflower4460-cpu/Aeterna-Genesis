@@ -44,6 +44,15 @@ def _entry_from_current() -> dict[str, Any]:
     backlog = _read(_BACKLOG, {})
     frontier = _read(_FRONTIER, {})
     environment = _read(_ENVIRONMENT, {})
+    # v3 manifests promise an execution-environment anchor. Do not silently index a stale/missing
+    # environment file as though it described this burst. Older v1/v2 manifests remain readable.
+    if int(manifest.get("version", 0) or 0) >= 3:
+        if not environment:
+            raise RuntimeError(f"manifest v3 burst {burst} has no execution environment fingerprint")
+        if str(environment.get("burst_id") or "") != burst:
+            raise RuntimeError(
+                f"environment fingerprint burst mismatch: manifest={burst} environment={environment.get('burst_id')}"
+            )
     progress = frontier.get("progress_ratchet") or {}
     source = manifest.get("source_code") or {}
     core = environment.get("core_versions") or {}
@@ -98,7 +107,7 @@ def build_index(existing: dict[str, Any] | None = None) -> dict[str, Any]:
             raise RuntimeError(
                 f"research index collision for {current['burst_id']}: manifest identity changed"
             )
-        # Idempotent refresh is allowed only when the immutable identity matches.  Replace navigation
+        # Idempotent refresh is allowed only when the immutable identity matches. Replace navigation
         # fields so an interrupted first write can be repaired without changing the burst's provenance.
         by_burst[current["burst_id"]] = current
     else:
