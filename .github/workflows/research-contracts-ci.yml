@@ -1,0 +1,63 @@
+name: Research Expansion Contracts CI
+
+on:
+  pull_request:
+    paths:
+      - 'ai_lab/dream/instrument_registry.py'
+      - 'ai_lab/dream/protocol_fingerprint.py'
+      - 'ai_lab/dream/production_protocol.py'
+      - 'ai_lab/dream/research_contract_audit.py'
+      - 'ai_lab/dream/numerical_repeatability.py'
+      - 'ai_lab/dream/frontier_expander.py'
+      - 'ai_lab/dream/adaptive_v8.py'
+      - 'ai_lab/dream/strict_goal_loop.py'
+      - 'ai_lab/discoveries/research_backlog.json'
+      - 'tests/test_instrument_registry.py'
+      - 'tests/test_protocol_fingerprint.py'
+      - 'tests/test_production_protocol.py'
+      - 'tests/test_research_contract_audit.py'
+      - '.github/workflows/dream-loop.yml'
+      - '.github/workflows/research-postflight.yml'
+      - '.github/workflows/research-contracts-ci.yml'
+      - 'docs/INSTRUMENT_CONTRACTS.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  expansion-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Claim-safe instrument and protocol unit tests
+        run: |
+          pytest -q \
+            tests/test_instrument_registry.py \
+            tests/test_protocol_fingerprint.py \
+            tests/test_production_protocol.py \
+            tests/test_research_contract_audit.py
+
+      - name: Same-environment numerical kernel must repeat deterministically
+        run: python -m ai_lab.dream.numerical_repeatability --self-check
+
+      - name: Production protocol must keep intended research lanes enabled
+        run: python -m ai_lab.dream.production_protocol
+
+      - name: Current frontier/backlog instrument requests must be registered and claim-safe
+        run: python -m ai_lab.dream.research_contract_audit
+
+      - name: Contract audits must be read-only
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::Research expansion contract audit mutated the working tree."
+            exit 1
+          fi
