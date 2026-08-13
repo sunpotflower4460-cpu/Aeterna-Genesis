@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 + PR-R6 + PR-R7 + PR-R8 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 + PR-R6 + PR-R7 + PR-R8 + PR-R9 AUDIT
 
 ```yaml
 id: relational_r1
@@ -304,7 +304,26 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # occurrence in this project: checking the same realization
                              # longer (window extension) and checking a different
                              # realization (independent initial conditions) are not
-                             # substitutes for each other.
+                             # substitutes for each other. PR-R9 (Sec.29-30): review caught
+                             # a confound in PR-R8's comparison BEFORE any new run --
+                             # diffusive control (S-016's seeds 0-14) and bounded_tanh
+                             # candidates (PR-R6's seeds 100-139) used entirely disjoint
+                             # seed ranges, so coupling form and graph identity were
+                             # confounded. Also corrected the independent unit from config
+                             # to graph (60 unique graphs, not 300, in both grids) --
+                             # recomputed p=0.1218 at the graph level (further from
+                             # significance, not closer). Froze and ran a matched/paired
+                             # test: diffusive coupling on the EXACT 3 graphs (seed=117,
+                             # 134, 138) that produced all 4 PR-R8-confirmed locations, at
+                             # their confirmed strengths. Result: 0/4 hits -- these graphs
+                             # barely sustain any settled oscillation at all under
+                             # diffusive (0-3 of 24 nodes verified), versus confirmed,
+                             # reproducible winding under bounded_tanh on the identical
+                             # graphs. This is the strongest evidence yet for a genuine
+                             # coupling-form effect (graph identity held fixed), though
+                             # disclosed honestly: a sign test on n=4 matched pairs
+                             # (4-0) gives one-sided p=0.0625, still short of formal
+                             # significance -- a perfect sweep at n=4 cannot reach p<0.05.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -4883,6 +4902,25 @@ graph edges, two different asymmetry realizations, not two fully independent dra
   review's decision, not unilaterally started.
 - R8-based automated search (review's item 5, deferred since PR-R7) remains deferred; this
   PR's result does not change that instruction on its own.
+  - "PR-R9 (Sec.29-30): review identified, before any new run, that PR-R8's comparison
+     confounded coupling form with graph identity -- the diffusive control reused S-016's
+     seeds 0-14 while the 9 bounded_tanh candidates came from PR-R6's seeds 100-139,
+     entirely disjoint. Also corrected the independent unit from config to graph (60
+     unique graphs in each 300-config grid, not 300 -- topology.build_topology depends on
+     (name, seed), not strength); recomputed p=0.1218 at the graph level (3/60 vs 0/60,
+     FURTHER from significance than PR-R8's own p=0.0619, not closer -- the config-level
+     figure overstated how close the result was). Froze (committed before running) a
+     matched/paired design: apply diffusive coupling to the EXACT 3 graphs (seed=117,
+     134, 138) that produced all 4 of PR-R8's confirmed locations, at their confirmed
+     strengths (4 configs). Result: 0/4 hits -- these graphs sustain almost no settled
+     structure at all under diffusive (0-3 of 24 nodes verified, 0 wide-basis covered
+     cycles in every config), versus confirmed, 6/6-reproducible winding under
+     bounded_tanh on the identical graphs. The strongest evidence yet for a genuine
+     coupling-form effect, graph identity held fixed -- but disclosed honestly: a sign
+     test on n=4 matched pairs (4-0, all favoring bounded_tanh) gives one-sided p=0.0625,
+     still short of the conventional 0.05 bar, since a perfect sweep at n=4 cannot reach
+     it. Both facts (strong qualitative signal; not formally significant) are reported
+     together, neither hidden behind the other."
 
 ## 29. PR-R9 PRE-REGISTRATION: a confound review identified in PR-R8's comparison --
 diffusive control and bounded_tanh candidates used entirely disjoint seed ranges -- plus
@@ -4989,3 +5027,93 @@ project so far, not merely a noisy continuous score that happens to average out 
 Whether this binary pattern would survive a much larger sample (it is a strong but
 small-sample observation, n=14 instances) is an open question, not claimed as a proven
 universal property of the test.
+
+## 30. PR-R9: the matched paired comparison -- 0/4, ZERO diffusive hits on the exact 3
+graphs that produced all 4 PR-R8-confirmed bounded_tanh locations
+
+Per Sec.29.2's frozen design, run exactly as specified: `coupling_form="diffusive"` on
+`seed=117` (`erdos_renyi`, strengths 0.3 AND 0.5), `seed=134` (`random_regular`, strength
+0.2), `seed=138` (`barabasi_albert`, strength 0.3) -- the identical graphs, identical
+strengths, that gave every one of PR-R8's 4 confirmed bounded_tanh locations. Only
+`coupling_form` changed. Whole-graph wide-basis coverage screened (not just the one cycle
+bounded_tanh found), native 30x window, identical methodology to Sec.26.1.
+
+### 30.1 Result
+
+| config | n_verified (of 24 nodes) | wide-basis covered cycles | smooth-winding cycles |
+|---|---|---|---|
+| seed=117, erdos_renyi, 0.3 | 0 | 0 | 0 |
+| seed=117, erdos_renyi, 0.5 | 3 | 0 | 0 |
+| seed=134, random_regular, 0.2 | 1 | 0 | 0 |
+| seed=138, barabasi_albert, 0.3 | 3 | 0 | 0 |
+
+**ZERO hits across all 4 matched configs.** Not merely "no smooth winding" -- under
+diffusive coupling, these graphs barely sustain ANY settled oscillation at all (0-3 of 24
+nodes verified, versus enough persistent structure under bounded_tanh on the exact same
+graphs to produce confirmed, 6/6-reproducible winding). Nothing here even reaches the wide-
+basis coverage stage (0 covered cycles in every one of the 4 configs), so the smoothness
+gate was never even in play -- the effect of switching coupling form on these specific
+graphs is not subtle.
+
+### 30.2 Interpretation, per the frozen branching in Sec.29.2
+
+**"Zero hits across all 4 diffusive configs" was the branch pre-registered as: holding
+graph structure fixed, diffusive coupling does not reproduce the effect -- direct, matched
+support for a real coupling-form effect, independent of PR-R8's underpowered aggregate
+test.** That is exactly what was observed. This is qualitatively the strongest evidence
+this project has produced for S-016/S-017's coupling-form claim: the SAME 3 graphs, at the
+SAME strengths, produce confirmed, reproducible winding under `bounded_tanh` and produce
+essentially no persistent structure at all under `diffusive` -- graph identity is held
+fixed, so it cannot be the explanation for the difference.
+
+**Formal statistic, reported with its actual limitation disclosed, not oversold**: treating
+this as 4 matched pairs (bounded_tanh confirmed vs. diffusive not), all 4 pairs are
+discordant in the same direction (4-0). A sign test on n=4 matched pairs: one-sided
+p=0.0625, two-sided p=0.125 -- **still does not cross the conventional 0.05 threshold**,
+because a perfect sweep at n=4 is mathematically the best possible result this design could
+produce and is still one pair short of formal significance (n=5, 5-0, would give one-sided
+p=0.03125). This is disclosed plainly: the qualitative strength of "0/4, matched, graph-
+identity-controlled" is real and more informative per-run than PR-R8's unmatched 300-config
+sweep, but it is not, by itself, a formally significant result at conventional thresholds
+either -- both facts are true simultaneously and both are reported.
+
+### 30.3 What this resolves and what it does not
+
+**Resolves**: the specific confound review identified (PR-R8's comparison used disjoint
+seed ranges, so a positive PR-R8 result could not have distinguished "coupling form" from
+"these particular graphs"). This paired design directly controls for graph identity, and
+the result (0/4) is consistent with coupling form being the operative variable for these 3
+graphs specifically, not graph structure alone.
+
+**Does not resolve**: PR-R8's own aggregate significance question (Sec.28.2's frozen
+X-of-9 test, p=0.0619 at the config level / Sec.29.1's p=0.1218 at the graph level) --
+those numbers are unchanged by this PR. Nor does it establish that NO graph structure ever
+matters (e.g. `seed=129`, `seed=102`, `seed=133`, `seed=137` were window-robust CANDIDATES
+under bounded_tanh but did not survive PR-R8's own battery -- whether diffusive coupling
+on THOSE specific graphs would also show zero is a natural follow-up not run this PR, since
+review's own priority ordering (item 5) placed this paired test and the unit correction
+ahead of any further sweep expansion).
+
+### 30.4 9th audit and 8th audit self-check
+
+- **9th audit**: the sign test's inability to reach p<0.05 at n=4 is stated explicitly and
+  is not hidden behind the more favorable-sounding "0/4, matched" framing -- both numbers
+  are given in the same subsection, in that order.
+- **8th audit**: was the decision to run exactly these 4 configs (rather than, say, adding
+  a few more strengths per graph to push toward n=5 and formal significance) made to game
+  the result? No -- the 4 configs were frozen in Sec.29.2 as the exact set that produced
+  PR-R8's 4 confirmed locations, before this script ran; expanding beyond that set now,
+  after seeing 0/4, would itself be the kind of post-hoc threshold-chasing this whole
+  series of PRs has been built to avoid.
+
+### 30.5 Next steps, not run this PR
+
+- Whether to run the same paired-diffusive check on the 4 window-robust-but-NOT-confirmed
+  bounded_tanh candidate graphs (`seed=129, 102, 133, 137`) -- to see whether diffusive
+  ALSO produces nothing there, which would be consistent with those graphs simply lacking
+  whatever structural property matters, independent of the confirmed/unconfirmed
+  distinction -- is a natural follow-up, not run this PR per review's stated ordering.
+- A properly-independent, pre-registered follow-up sweep (new seeds, both coupling forms,
+  matched grid, sized using Sec.29.3's corrected per-graph power estimate) remains
+  available as a next step if review wants a formally significant aggregate result rather
+  than this PR's strong-but-formally-short-of-0.05 matched evidence.
