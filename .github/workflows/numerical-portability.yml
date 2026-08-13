@@ -30,12 +30,15 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
 
-      # Same-environment repeatability is a strict infrastructure check. Cross-version digest equality is
-      # deliberately NOT required: a changed digest is numerical portability information, not new physics.
+      # Continue long enough to preserve diagnosis artifacts even when the strict self-check detects a
+      # numerical failure. A final step restores the job failure after environment + digest capture.
       - name: Run deterministic self-check
+        id: repeatability
+        continue-on-error: true
         run: python -m ai_lab.dream.numerical_repeatability --self-check --json > numerical-repeatability.json
 
       - name: Record interpreter and package context
+        if: always()
         run: |
           python - <<'PY' > numerical-environment.txt
           import platform
@@ -48,13 +51,21 @@ jobs:
           PY
 
       - name: Upload portability characterization
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: numerical-portability-py${{ matrix.python-version }}-${{ github.run_id }}
           retention-days: 30
+          if-no-files-found: warn
           path: |
             numerical-repeatability.json
             numerical-environment.txt
+
+      - name: Enforce deterministic self-check after preserving diagnostics
+        if: steps.repeatability.outcome != 'success'
+        run: |
+          echo '::error::Same-environment numerical repeatability self-check failed; diagnostic artifact was preserved.'
+          exit 1
 
   interpretation-boundary:
     runs-on: ubuntu-latest
