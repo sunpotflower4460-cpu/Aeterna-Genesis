@@ -16,6 +16,7 @@ on:
       - 'tests/test_adaptive_dream.py'
       - 'tests/test_hypothesis_evolution.py'
       - 'tests/test_pure_genesis.py'
+      - 'tests/test_nothing_genesis.py'
       - 'tests/test_frontier_expander.py'
       - 'tests/test_research_compass.py'
       - 'tests/test_hourly_discovery.py'
@@ -49,7 +50,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_research_compass.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_nothing_genesis.py tests/test_frontier_expander.py tests/test_research_compass.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Unit tests must not touch tracked scientific evidence
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -65,7 +66,7 @@ jobs:
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream v8 dry-run with Pure Genesis R0, frontier expansion and hypothesis evolution
+      - name: Tiny strict Adaptive Dream v8 dry-run with Pure Genesis R0, NØ, frontier expansion and hypothesis evolution
         run: |
           python -m ai_lab.dream.strict_goal_loop \
             --quick --trials 8 --native3d-trials 2 --workers 1 \
@@ -91,7 +92,7 @@ jobs:
             exit 1
           fi
           echo "Dry runs left the working tree clean."
-      - name: Easy, emergence, cross-world, Pure Genesis and Multi-World reports were produced
+      - name: Easy, complete NØ, emergence, cross-world, Pure Genesis and Multi-World reports were produced
         env:
           DRY: runtime/dry-run/latest
         run: |
@@ -99,6 +100,12 @@ jobs:
           find "$DRY" -type f -print | sort
           test -f $DRY/ai_lab/reports/easy/latest.json
           test -f $DRY/ai_lab/reports/easy/latest.md
+          test -f $DRY/ai_lab/reports/easy/nothing_latest.json
+          test -f $DRY/ai_lab/reports/easy/nothing_latest.md
+          test -f $DRY/ai_lab/reports/easy/nothing_latest.png
+          test -f $DRY/ai_lab/reports/easy/nothing/*/report.json
+          test -f $DRY/ai_lab/reports/easy/nothing/*/human.md
+          test -f $DRY/ai_lab/reports/easy/nothing/*/boundary.png
           test -f $DRY/ai_lab/reports/multiworld/latest.json
           test -f $DRY/ai_lab/reports/emergence/latest.json
           test -f $DRY/ai_lab/reports/crossworld/latest.json
@@ -123,6 +130,12 @@ jobs:
           grep -q 'permutation_quotient_enabled' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'autonomous_frontier_expansion' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'destination_fixed_methods_adaptive' $DRY/ai_lab/reports/easy/latest.json
+          grep -q '"mode": "strict-nothing-genesis-meta-control"' $DRY/ai_lab/reports/easy/nothing_latest.json
+          grep -q '"nonempty_combinations_enumerated": 65535' $DRY/ai_lab/reports/easy/nothing_latest.json
+          grep -q '"per_combination_physical_simulation_performed": false' $DRY/ai_lab/reports/easy/nothing_latest.json
+          grep -q '"verdict": "DECLARATIVE_NULL_CONTROL_NOT_A_PASSED_EIGHTH_AUDIT"' $DRY/ai_lab/reports/easy/nothing_latest.json
+          grep -q '"passed": true' $DRY/ai_lab/reports/easy/nothing_latest.json
+          grep -q '次にできること' $DRY/ai_lab/reports/easy/nothing_latest.md
           grep -q '"known_F_path_is_one_reference_only": true' $DRY/ai_lab/reports/emergence/latest.json
           grep -q '"mode": "shadow"' $DRY/ai_lab/reports/multiworld/latest.json
           grep -q '"mode": "cross-world-open-ended-shadow"' $DRY/ai_lab/reports/crossworld/latest.json
