@@ -1,12 +1,13 @@
 """Immutable provenance manifest for each autonomous Aeterna research burst.
 
 The manifest hashes the evidence/planning/view files that exist at the end of a burst and records the
-source-code/workflow identity that produced them.  It is provenance infrastructure, not a scientific
-result and not a confidence score.
+research-workflow identity that produced them.  It is provenance infrastructure, not a scientific result
+and not a confidence score.
 
 A per-burst archive is write-once in meaning: re-running the manifest builder with identical content is
 allowed; producing different content for the same burst raises an error instead of silently rewriting
-history.  ``latest.json`` remains a convenience alias.
+history.  ``latest.json`` remains a convenience alias.  Existing archives can also be verified against
+the current files without rewriting them.
 """
 from __future__ import annotations
 
@@ -89,10 +90,7 @@ def _entries(paths: tuple[str, ...]) -> list[dict[str, Any]]:
     return [row for rel in paths if (row := _entry(rel)) is not None]
 
 
-def _git_sha() -> str | None:
-    env_sha = str(os.environ.get("GITHUB_SHA") or "").strip()
-    if env_sha:
-        return env_sha
+def _repo_git_sha() -> str | None:
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=_REPO, text=True, stderr=subprocess.DEVNULL
@@ -101,12 +99,25 @@ def _git_sha() -> str | None:
         return None
 
 
+def _research_git_sha() -> str | None:
+    for name in ("AETERNA_RESEARCH_HEAD_SHA", "GITHUB_SHA"):
+        value = str(os.environ.get(name) or "").strip()
+        if value:
+            return value
+    return _repo_git_sha()
+
+
+def _research_env(primary: str, fallback: str) -> str | None:
+    value = str(os.environ.get(primary) or os.environ.get(fallback) or "").strip()
+    return value or None
+
+
 def _canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
 def _content_identity(manifest: dict[str, Any]) -> str:
-    """Hash provenance content while excluding the alias/archive bookkeeping itself."""
+    """Hash the complete provenance record except for its own hash field."""
     payload = dict(manifest)
     payload.pop("manifest_content_sha256", None)
     return hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
@@ -123,17 +134,16 @@ def build_manifest() -> dict[str, Any]:
     planning = _entries(_PLANNING_STATE)
     views = _entries(_DERIVED_HUMAN_VIEWS)
     manifest: dict[str, Any] = {
-        "version": 1,
+        "version": 2,
         "mode": "immutable-research-provenance-manifest",
         "burst_id": burst,
         "burst_generated_at": generated_at,
         "source_code": {
-            "git_sha": _git_sha(),
-            "github_ref": os.environ.get("GITHUB_REF"),
-            "github_event_name": os.environ.get("GITHUB_EVENT_NAME"),
-            "github_run_id": os.environ.get("GITHUB_RUN_ID"),
-            "github_run_number": os.environ.get("GITHUB_RUN_NUMBER"),
-            "github_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+            "git_sha": _research_git_sha(),
+            "research_workflow_run_id": _research_env("AETERNA_RESEARCH_RUN_ID", "GITHUB_RUN_ID"),
+            "research_workflow_run_number": _research_env("AETERNA_RESEARCH_RUN_NUMBER", "GITHUB_RUN_NUMBER"),
+            "research_workflow_run_attempt": _research_env("AETERNA_RESEARCH_RUN_ATTEMPT", "GITHUB_RUN_ATTEMPT"),
+            "research_ref": _research_env("AETERNA_RESEARCH_REF", "GITHUB_REF"),
         },
         "scientific_evidence": scientific,
         "planning_and_integrity_state": planning,
@@ -184,6 +194,47 @@ def persist_manifest(manifest: dict[str, Any]) -> Path:
     return archive
 
 
+def verify_existing_manifest() -> dict[str, Any]:
+    """Verify archived file hashes for the current burst without changing any file."""
+    easy = _read(_EASY, {})
+    burst = str(easy.get("burst_id") or "")
+    archive_path = _ARCHIVE_DIR / f"{burst}.json"
+    archived = _read(archive_path, {})
+    if not burst or not archived:
+        return {
+            "burst_id": burst or None,
+            "archive": str(archive_path.relative_to(_REPO)) if burst else None,
+            "valid": False,
+            "errors": ["manifest archive is missing or unreadable for current burst"],
+            "checked_files": 0,
+        }
+
+    errors: list[str] = []
+    checked = 0
+    for group in ("scientific_evidence", "planning_and_integrity_state", "derived_human_views"):
+        for row in archived.get(group) or []:
+            relative = str(row.get("path") or "")
+            if not relative:
+                errors.append(f"{group}: archived row has no path")
+                continue
+            path = _REPO / relative
+            checked += 1
+            if not path.exists() or not path.is_file():
+                errors.append(f"missing: {relative}")
+                continue
+            actual = _sha256(path)
+            if actual != str(row.get("sha256") or ""):
+                errors.append(f"hash mismatch: {relative}")
+    return {
+        "burst_id": burst,
+        "archive": str(archive_path.relative_to(_REPO)),
+        "valid": not errors,
+        "errors": errors,
+        "checked_files": checked,
+        "verification_is_scientific_truth_gate": False,
+    }
+
+
 def run(*, persist: bool = True) -> dict[str, Any]:
     manifest = build_manifest()
     if persist:
@@ -192,13 +243,21 @@ def run(*, persist: bool = True) -> dict[str, Any]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Build an immutable per-burst provenance manifest")
+    p = argparse.ArgumentParser(description="Build or verify an immutable per-burst provenance manifest")
     p.add_argument("--no-record", action="store_true", help="build only; do not write latest/archive files")
+    p.add_argument("--verify-existing", action="store_true", help="verify current files against the archived current-burst manifest")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.verify_existing:
+        result = verify_existing_manifest()
+        print(
+            f"Research Manifest Verify: burst={result.get('burst_id')} valid={result.get('valid')} "
+            f"checked={result.get('checked_files')} errors={len(result.get('errors') or [])}"
+        )
+        return 0 if result.get("valid") else 3
     manifest = run(persist=not args.no_record)
     print(
         f"Research Manifest: burst={manifest.get('burst_id')} "
