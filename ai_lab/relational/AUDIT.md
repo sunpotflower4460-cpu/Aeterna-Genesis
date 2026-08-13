@@ -1,4 +1,4 @@
-# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 + PR-R6 AUDIT
+# ai_lab/relational (R-layer) -- PR-R1 + PR-R1.5 + PR-R1.75 + PR-R1.9 + PR-R2.1 + PR-R2.2 + PR-R2.3 + PR-R2.4 + PR-R2.5 + PR-R2.6 + PR-R2.7 + PR-R2.8 + PR-R3 + PR-R3.1 + PR-R4 + PR-R5 + PR-R6 + PR-R7 AUDIT
 
 ```yaml
 id: relational_r1
@@ -251,7 +251,39 @@ claim_tier: mixed           # memory=off (symmetric or asymmetric): proven + mea
                              # sweep also refuted both structural predictions review's own
                              # cross-referencing suggested (lower-strength enrichment,
                              # erdos_renyi-exclusivity) -- reported as refutations, not
-                             # smoothed into the positive 3.0%-rate headline.
+                             # smoothed into the positive 3.0%-rate headline. CORRECTED by
+                             # review immediately after: PR-R6's own write-up over-read
+                             # those same small counts (0,0,1,2,1; 4 vs 4) as a "peak" and a
+                             # topology ranking -- neither distinguishable from noise at this
+                             # sample size, a third occurrence of the exact small-sample
+                             # mistake this series keeps flagging. Corrected in place
+                             # (Sec.25.1.1), scope narrowed to only what the counts support.
+                             # PR-R7 (Sec.26): applied the full new pipeline (wide basis +
+                             # clustering + native 30x window) to `diffusive` coupling --
+                             # the one dataset with an independent theoretical prior of zero
+                             # (S-016's gradient-flow argument) -- as a negative control.
+                             # Result: NOT zero -- 3/300 graphs (1.0%) passed the same
+                             # window-robustness check PR-R6's 9 unconfirmed locations
+                             # passed. Per review's explicit instruction, none were
+                             # auto-labeled a false positive; all 3 received the SAME full
+                             # battery seed=9/55/62 passed. ALL 3 FAILED (0/6, 0/6, 1/6
+                             # independent initial conditions reproduced smoothness, vs.
+                             # 6/6 for every confirmed bounded_tanh location) -- a decisive,
+                             # unambiguous false-positive result (review's branch (a), not
+                             # (b)): S-016/S-017 are NOT overturned, but the window-
+                             # robustness-alone check is now directly shown, on this
+                             # project's own data, to admit false positives. Consequence:
+                             # the "12 known locations" claim (Sec.25.8) is corrected to 3
+                             # CONFIRMED (full battery passed) + 9 CANDIDATE (window-
+                             # robustness only, now actively suspect, not yet battery-
+                             # tested) -- Sec.25.8 annotated in place. New standing rule
+                             # (Sec.26.5): "validated location" requires the full battery,
+                             # not window-robustness alone. The phase-shuffle null rate
+                             # (0.028%) was confirmed near-uninformative exactly as review
+                             # predicted before it was measured (diffusive's locally-
+                             # clustered phases only get MORE jagged when shuffled) --
+                             # decision weight was placed on the full battery, not the
+                             # shuffle, per review's explicit instruction.
 target_encoded: false
 known_match: "N/A -- first measurement. The symmetric-W memory=off/on no-period results are
   qualitatively consistent with the textbook facts that gradient flows admit no limit cycles
@@ -598,7 +630,8 @@ open_issues:
      see below): 0,0,1,2,1 raw hits across 5 strength bins does not establish a peak at 0.5,
      and 4/50 (random_regular) vs 4/150 (erdos_renyi) does not establish a topology ranking
      either -- both corrected in place (Sec.25.1) to state only what the counts support.
-     The unplanned positive finding: clustering +
+     The unplanned positive finding: clustering + window-robustness together (Sec.25.1)
+     find the true rate is 9/300=3.0% graphs, far
      higher than the earlier 2/300=0.67% estimate, bringing the running total to 12 known
      window-robust locations (9 with window-robustness only, not yet the fuller battery).
      Per review's two required corrections: the denominator is now GRAPHS, not covered
@@ -622,6 +655,33 @@ open_issues:
      run through the actual instrument (seed=55, `erdos_renyi`, strength=0.3, 30x window)
      reproduces `winding=-1`, smooth, exactly matching Sec.25.5's manually-scripted number on
      the identical trajectory."
+  - "Immediately after PR-R6: review caught a third occurrence of the exact small-sample
+     over-read mistake this series keeps flagging -- PR-R6's own write-up called strength
+     0.5 a 'peak' and random_regular the 'highest-rate topology' from raw counts of 0,0,1,2,1
+     and 4 vs. 4, neither distinguishable from noise. Corrected in place (Sec.25.1.1);
+     scope narrowed to only 'strengths 0.1/0.2 show zero hits,' the one claim the counts
+     support."
+  - "PR-R7 (Sec.26): applied the full new pipeline (wide basis + clustering + native 30x
+     window) to `diffusive` coupling, S-016's independent theoretical negative control, per
+     review's explicit instruction and pre-briefed interpretive frame (a diffusive hit must
+     not be auto-labeled a false positive; the phase-shuffle null was predicted to be
+     near-uninformative). Result: 3/300 graphs (1.0%) passed the window-robustness check --
+     NOT zero. All 3 received the SAME full battery seed=9/55/62 passed (independent
+     initial conditions, damage-recovery, cycle-shift) and ALL 3 FAILED (0/6, 0/6, 1/6
+     independent conditions reproduced smoothness, vs. 6/6 for every confirmed location) --
+     a decisive false-positive result, review's branch (a). S-016/S-017 stand, now tested
+     far more severely than before and still holding. Consequence: the '12 known locations'
+     claim (Sec.25.8) is corrected to 3 CONFIRMED + 9 CANDIDATE-NOW-SUSPECT (window-
+     robustness only, not yet battery-tested) -- the SAME check that produced the 9 is now
+     directly shown, on this project's own data, to admit false positives. New standing
+     rule (Sec.26.5): 'validated location' requires the full battery, not window-robustness
+     alone. Phase-shuffle null rate (0.028%) confirmed near-uninformative exactly as
+     predicted -- decision weight was placed on the full battery per review's instruction.
+     Operational note: this sweep was silently killed by container restarts twice before
+     completing; fixed by per-config checkpointing and small foreground-driven batches
+     instead of one long unattended background job. Next PR's natural priority: apply the
+     full battery to the 9 now-suspect bounded_tanh locations before citing any of them as
+     confirmed, before any R8-based automated search."
 ```
 
 ---
@@ -4307,3 +4367,217 @@ own JSON output stays clean while legitimately using `winding`.
 -- flagged here explicitly as the natural next validation target, not run this PR (this
 PR's battery work was scoped, per review's own instruction, to the 2 locations needed to
 satisfy R8's stated precondition, not to all newly-discovered locations at once).
+
+**CORRECTED by PR-R7 (Sec.26.2): the "9 locations, window-robustness ONLY" rows above must
+NOT be read as 9 additional validated locations pending confirmation.** PR-R7 ran the exact
+same single-trajectory window-robustness check (30x-native, smooth-winding on the wide
+basis) against `diffusive` coupling as a negative control and got 3/300 graph hits -- then
+ran the SAME full battery rows 1-3 above received on all 3, and ALL 3 FAILED (0/6, 0/6, and
+1/6 independent initial conditions reproduced smoothness; 2/3 failed damage-recovery; nearby
+-cycle-shift smooth fractions of 1.6%/3.0%/0.56%, far below rows 1-3's 10.4%/2.3%). This
+directly demonstrates -- not merely raises the possibility -- that the window-robustness
+check ALONE (without the full battery) passes false positives. Rows 4-12 above therefore
+have NOT been shown to be real locations; they have been shown to have passed a check that
+is now demonstrated, on this project's own data, to admit false positives at a rate
+comparable to their own hit rate. See Sec.26 for the full account and the corrected
+definition of "validated location" going forward.
+
+## 26. PR-R7: the diffusive negative control finds hits, not zero -- but ALL FAIL the full
+battery, decisively confirming the window-robustness-alone check admits false positives;
+the "12 locations" claim is corrected to 3
+
+Review's own pre-brief, given BEFORE the sweep returned a result, set the interpretive
+frame this section follows exactly: a diffusive hit must not be auto-labeled a false
+positive (it could instead mean genuine-but-rare winding S-016 was simply too insensitive
+to catch), and the phase-shuffle null rate was predicted to be near-uninformative (diffusive
+locally clusters phases, so shuffling should make jumps WORSE, not better, driving the
+shuffle-null rate toward zero regardless of whether the real signal is genuine or noise).
+Both predictions are addressed directly below, and both were confirmed correct.
+
+### 26.1 The sweep itself: 3/300 graphs (1.0%), not the 0/300 a naive reading of S-016 might
+have expected
+
+Same 300-config grid S-016/PR-R2.8 used (seeds 0-14 x 4 topologies x 5 strengths
+[0.3,1.0,3.0,8.0,20.0]), `coupling_form="diffusive"`, the new pipeline (wide simple-cycle
+basis, 30x window NATIVE from the start, exactly like PR-R6's own methodology) applied in
+full. As disclosed before running: this required genuine new simulation (the original
+S-016 data was captured at 15x, not the 30x now required, and only summary statistics were
+saved) -- the experimental design (configs) was unchanged, the compute was not free.
+
+**Operational note, disclosed for the record**: this sweep was killed by silent container
+restarts twice before completing (once within ~2 minutes of the first launch, once again
+partway through a resumed run) -- both went undetected until the user asked directly
+whether it was still running. The script was rewritten to checkpoint after every single
+config (not just at the end) and driven in small foreground batches (capped via a
+`PR_R7_MAX_NEW` env var) rather than left as an unattended multi-hour background job, so
+that any future restart loses at most one config's (~20-30s) worth of compute. This is
+recorded as an operational lesson, not a footnote to bury: relying on a single long-running
+background process without active, frequent polling failed twice in this PR alone.
+
+| | value |
+|---|---|
+| graphs swept | 300 |
+| graphs with >=1 window-robust (30x-native) smooth-winding cycle | **3** |
+| **rate** | **3/300 = 1.0%** |
+| total wide-basis covered cycles checked | 127,468 |
+| total raw smooth-winding cycle-checks (pre-cluster) | 199 |
+
+Clustering (same connected-component method used throughout this series) finds exactly 3
+distinct locations, one per hit-graph (the same one-location-per-graph pattern holds here
+too):
+
+| seed | topology | strength | cycles in cluster | representative cycle | winding |
+|---|---|---|---|---|---|
+| 5 | random_regular | 0.3 | 1 | [1,17,2,20,14,19] | +1 |
+| 9 | erdos_renyi | 0.3 | 17 | [1,14,4,21,12,17] | +1 |
+| 11 | erdos_renyi | 0.3 | **181** | [0,5,10,2,11,15] | +1 |
+
+**Notable coincidence, disclosed directly**: `seed=9, erdos_renyi, strength=0.3` is the
+EXACT same (seed, topology, strength) triple as the original bounded_tanh/sinusoidal
+discovery location (Sec.21.4.2/22). Under `diffusive` coupling, the identical graph
+produces a DIFFERENT candidate cycle -- consistent with S-016/S-017's claim that the
+phenomenon depends on coupling form, not graph identity alone, but this is a candidate
+observation, not yet a confirmed one (see 26.2). `seed=11`'s 181-cycle cluster is the
+largest raw cluster size found anywhere in this project to date.
+
+**This is NOT the "stays at zero" outcome a casual reading of S-016 might predict, and it
+is reported exactly as found, per review's explicit instruction not to auto-label it either
+way before running the discriminating test.**
+
+### 26.2 The discriminating test: full battery on all 3 diffusive hits -- ALL 3 FAIL
+
+Applied the exact same battery `seed=9` (bounded_tanh, PR-R3.1) and `seed=55`/`seed=62`
+(bounded_tanh, PR-R6 Sec.25.5) received: 6 independent initial conditions, damage-recovery,
+cycle-shift -- at the same 30x window, same methodology, same code path
+(`pr_r7_full_battery_generic.py`, generalizing `pr_r6_full_battery_2locations.py`).
+
+| location | independent ICs smooth | damage-recovery smooth | nearby cycles smooth |
+|---|---|---|---|
+| seed=5, random_regular, 0.3 | **0/6** | No (winding=1, not smooth) | 1/62 (1.6%) |
+| seed=9, erdos_renyi, 0.3 (diffusive) | **0/6** | winding=1, smooth=True, but `all_settled=False` | 7/231 (3.0%) |
+| seed=11, erdos_renyi, 0.3 | **1/6** | No (winding=1, not smooth) | 110/19,745 (0.56%) |
+
+For comparison, the 3 CONFIRMED bounded_tanh locations, at the identical battery:
+
+| location | independent ICs smooth | damage-recovery smooth | nearby cycles smooth |
+|---|---|---|---|
+| seed=9, erdos_renyi, 0.3 (bounded_tanh, PR-R3.1) | 12/12 (extended battery) | smooth, confirmed | 2 genuine detour confirmations (of 223 checked) |
+| seed=55, erdos_renyi, 0.3 (bounded_tanh, PR-R6) | **6/6** | Yes, smooth | 58/560 (10.4%) |
+| seed=62, erdos_renyi, 0.3 (bounded_tanh, PR-R6) | **6/6** | Yes, smooth | 7/304 (2.3%) |
+
+The contrast is stark and unambiguous: every confirmed location passed independent initial
+conditions UNANIMOUSLY (6/6 or the PR-R3.1 equivalent); every diffusive candidate FAILED
+the large majority of its independent conditions (0/6, 0/6, 1/6). `seed=9` (diffusive)'s one
+damage-recovery "smooth" result is not corroborated by anything else in its own row --
+`all_settled=False` on that same trial, and 0/6 on independent conditions -- and is read as
+a single favorable roll, not a confirmation, consistent with how this series has always
+treated an isolated positive result (Sec.22.3's Test-1 precedent: one favorable number
+alongside a majority of unfavorable ones is not evidence, it is noise the majority already
+explains).
+
+**Verdict: all 3 diffusive candidates are FALSE POSITIVES of the wide-basis (149x) +
+single-trajectory-smoothness pipeline -- review's branch (a), not branch (b).** S-016's
+original claim (diffusive coupling does not produce winding that survives independent
+scrutiny) is NOT overturned; if anything it is now tested far more severely (149x more
+candidate cycles, a native 30x window, three separate hit-graphs put through the SAME full
+battery genuine locations pass) and still holds. S-017 is not revised by this finding.
+
+### 26.3 Phase-shuffle null rate: confirmed near-uninformative, exactly as review predicted
+
+| | value |
+|---|---|
+| total shuffle trials (100 permutations x 199 covered smooth-adjacent cycles, cumulative across the sweep) | 12,746,800 |
+| shuffle-smooth hits | 3,583 |
+| **empirical null rate** | **0.028%** |
+
+Review's own diagnosis, stated BEFORE this number was known, is confirmed by it: diffusive
+coupling clusters phases locally, so a real cycle's phase array typically looks like "two
+tight clusters plus one large jump" -- permuting those values among cycle positions
+essentially always increases the number and size of large jumps rather than decreasing
+them, so the shuffled arrangement fails the smoothness gate almost every time. The
+resulting null rate (0.028%) is far below the observed graph-level rate (1.0%), but this
+comparison is NOT informative the way it would be for i.i.d.-uniform phases -- it mainly
+confirms "1.0% is greater than a rate that is itself close to zero by construction of the
+coupling form," which review had already anticipated would be the case. Weight for the
+real/false-positive determination was placed on 26.2's full battery, per review's explicit
+instruction, and 26.2 already gives a decisive, unambiguous answer -- the bounded_tanh-side
+shuffle-null and the cross-graph phase-substitution null review also proposed are NOT run
+this PR; given 26.2's battery already resolved the question this PR needed to answer, they
+are deferred rather than run as now-lower-value confirmatory work (flagged for review's
+decision on whether they are still wanted).
+
+### 26.4 Consequence: the "12 known window-robust locations" claim (Sec.25.8) is corrected
+to 3 confirmed, 9 unconfirmed-and-now-actively-suspect
+
+Sec.25.8's table has been annotated in place (not deleted) with a correction pointing here.
+The load-bearing fact this PR establishes is not merely "diffusive produced false
+positives" -- it is that **the SAME check** (single-trajectory, native-30x-window,
+wide-basis smoothness gate) **that produced PR-R6's 9 unconfirmed bounded_tanh locations
+also produced 3/3 demonstrated false positives when pointed at a coupling form with strong
+independent theoretical grounds (the gradient-flow argument, Sec.21.3) to expect zero.**
+This does not prove the 9 bounded_tanh locations are false -- bounded_tanh has no such
+theoretical prior against winding, and 3 OTHER bounded_tanh locations (seed=9/55/62) have
+already independently passed the exact discriminating test that just rejected all 3
+diffusive candidates. But it does mean the 9 cannot be reported, cited, or built upon as
+confirmed locations on the strength of the window-robustness check alone -- that check is
+now directly shown, on this project's own data, to pass structure that does not survive
+independent scrutiny.
+
+**Revised standing count**: 3 confirmed window-robust winding locations (seed=9 bounded_tanh
+[+sinusoidal], seed=55 bounded_tanh, seed=62 bounded_tanh), all having passed the full
+battery. 9 candidate locations (PR-R6 Sec.25.1, all bounded_tanh) remain in
+window-robustness-only status and must not be described as "known locations" without that
+qualifier until they receive the same battery.
+
+### 26.5 Standing discipline, going forward: "validated location" requires the full battery,
+not window-robustness alone
+
+Mirroring `WINDING_CANDIDACY_MIN_EXTEND_FACTOR`'s own origin (PR-R6, after the SAME short-
+window artifact recurred a fourth time): this is the first DIRECT, WITHIN-PROJECT
+demonstration that the 30x-window+smoothness-gate check, even applied natively (not as a
+retrofit), is not sufficient on its own -- it is a candidacy filter, not a validation
+criterion. Going forward, in this project's own vocabulary:
+- a **candidate** is a cycle passing the window-robust (30x-native) smoothness gate on ONE
+  trajectory -- exactly what Sec.25's sweeps produce;
+- a **validated location** additionally requires the full battery (independent initial
+  conditions, damage-recovery, cycle-shift) to pass at the same unanimous or
+  near-unanimous standard seed=9/55/62 met (6/6 or equivalent, not 0/6 or 1/6).
+Only validated locations should be counted toward a headline rate or cited as evidence for
+S-017-type claims. This distinction was implicit in how seed=9/55/62 were always treated,
+but was not yet stated as an explicit, general rule until this PR's direct demonstration of
+why it matters.
+
+### 26.6 9th audit and 8th audit self-check
+
+- **9th audit**: the 3 diffusive candidates' battery results are reported in full (0/6,
+  0/6, 1/6, all three damage-recovery/nearby-cycle numbers), not summarized as a single
+  pass/fail bit -- a reader can verify the "all 3 fail" verdict against the same table
+  Sec.26.2 gives for the 3 confirmed locations, side by side.
+- **8th audit**: was the decision to run the full battery on the diffusive hits (rather
+  than, say, declaring them false positives by assumption, which would have been much
+  cheaper) made to manufacture a particular outcome? No -- review explicitly required this
+  test BEFORE the sweep even returned a result, precisely to prevent exactly that kind of
+  unearned conclusion; the battery's result was not known until after it was run, and the
+  same battery has previously CONFIRMED 3 bounded_tanh locations (not always producing a
+  "fail" outcome by construction). Was the "12 locations -> 3 locations" correction
+  softened or delayed? No -- Sec.25.8's original table is annotated in place with the
+  correction at the top of this same PR round, not left standing until a later round asked
+  about it.
+- **Was the near-zero shuffle-null rate misused as if it were informative?** No -- 26.3
+  states plainly that this number is close to uninformative for the reason review gave
+  before it was measured, and explicitly assigns decision weight to 26.2's battery instead.
+
+### 26.7 Open items, explicitly not run this PR
+
+- The bounded_tanh-side phase-shuffle null and the cross-graph phase-substitution null
+  review proposed (apply a graph B's real phase field to graph A's cycle structure, same
+  coupling form/parameters, breaking only the structure-phase correspondence) are not run --
+  26.2's full battery already gave a decisive answer to the question this PR needed to
+  answer, so these are deferred as lower-priority confirmatory work pending review's
+  decision on whether they are still wanted.
+- The 9 unconfirmed bounded_tanh locations from PR-R6 have NOT yet received the full
+  battery -- per review's own item 4 ("1 で偽陽性が示された場合、検証すべき対象そのものが変わり
+  ます"), this branch (false positive demonstrated in the negative control) is now the
+  operative one, and the natural next step is applying the full battery to those 9 before
+  any of them are cited as confirmed, and before any R8-based automated search (review's
+  item 5) is run against them.
