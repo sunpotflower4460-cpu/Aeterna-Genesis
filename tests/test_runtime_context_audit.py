@@ -1,5 +1,6 @@
 import json
 
+from ai_lab.dream import protocol_fingerprint
 from ai_lab.dream import runtime_context_audit
 
 
@@ -16,24 +17,18 @@ def _fixtures(tmp_path):
     _write(environment, {
         "burst_id": "dream-test",
         "contracts": {"requirements_txt_sha256": "r", "dream_loop_workflow_sha256": "w"},
+        "github_execution": {"run_id": "77", "sha": "source-sha"},
         "semantics": {"captures_secrets": False},
     })
-    _write(protocol, {
-        "burst_id": "dream-test",
-        "protocol_sha256": "p",
-        "capture_policy": {
-            "recognized_parser_options_only": True,
-            "raw_shell_argv_recorded": False,
-            "arbitrary_environment_recorded": False,
-        },
-    })
+    _write(protocol, protocol_fingerprint.build_protocol(burst_id="dream-test", argv=[]))
     return easy, environment, protocol
 
 
 def test_matching_runtime_context_is_valid(tmp_path):
     easy, environment, protocol = _fixtures(tmp_path)
     report = runtime_context_audit.build_audit(
-        easy_path=easy, environment_path=environment, protocol_path=protocol
+        easy_path=easy, environment_path=environment, protocol_path=protocol,
+        expected_run_id="77", expected_source_sha="source-sha",
     )
     assert report["valid"] is True
     assert report["errors"] == []
@@ -54,6 +49,17 @@ def test_stale_environment_or_protocol_is_rejected(tmp_path):
     assert report["valid"] is False
     assert any("environment burst mismatch" in x for x in report["errors"])
     assert any("protocol burst mismatch" in x for x in report["errors"])
+
+
+def test_triggering_workflow_identity_is_required_when_supplied(tmp_path):
+    easy, environment, protocol = _fixtures(tmp_path)
+    report = runtime_context_audit.build_audit(
+        easy_path=easy, environment_path=environment, protocol_path=protocol,
+        expected_run_id="88", expected_source_sha="different-sha",
+    )
+    assert report["valid"] is False
+    assert any("workflow run mismatch" in x for x in report["errors"])
+    assert any("source SHA mismatch" in x for x in report["errors"])
 
 
 def test_missing_or_malformed_context_fails_closed(tmp_path):
@@ -80,3 +86,29 @@ def test_protocol_capture_boundary_fails_closed(tmp_path):
     assert report["valid"] is False
     assert any("recognized parser options only" in x for x in report["errors"])
     assert any("must not persist raw shell argv" in x for x in report["errors"])
+
+
+def test_forbidden_payload_fields_are_rejected_even_if_policy_claims_safe(tmp_path):
+    easy, environment, protocol = _fixtures(tmp_path)
+    pro = json.loads(protocol.read_text())
+    pro["raw_shell_argv"] = ["--token", "should-never-be-here"]
+    pro["parsed_config"]["totally_unknown_secret_field"] = "should-never-be-here"
+    _write(protocol, pro)
+    report = runtime_context_audit.build_audit(
+        easy_path=easy, environment_path=environment, protocol_path=protocol
+    )
+    assert report["valid"] is False
+    assert any("unknown top-level fields" in x for x in report["errors"])
+    assert any("unrecognized options" in x for x in report["errors"])
+
+
+def test_protocol_hash_is_recomputed_from_actual_payload(tmp_path):
+    easy, environment, protocol = _fixtures(tmp_path)
+    pro = json.loads(protocol.read_text())
+    pro["parsed_config"]["trials"] = int(pro["parsed_config"]["trials"]) + 1
+    _write(protocol, pro)
+    report = runtime_context_audit.build_audit(
+        easy_path=easy, environment_path=environment, protocol_path=protocol
+    )
+    assert report["valid"] is False
+    assert any("protocol_sha256 does not match" in x for x in report["errors"])
