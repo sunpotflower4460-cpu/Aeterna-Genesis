@@ -21,39 +21,91 @@ _FRONTIER = _REPO / "ai_lab" / "reports" / "easy" / "frontier_latest.json"
 _BACKLOG = _REPO / "ai_lab" / "discoveries" / "research_backlog.json"
 
 
-def _read(path: Path, default: Any) -> Any:
+def _read_required(path: Path, *, label: str) -> dict[str, Any]:
+    """Read a tracked contract input fail-closed; absence/corruption is itself an audit error."""
+    if not path.exists():
+        raise RuntimeError(f"required {label} is missing: {path}")
     try:
-        return json.loads(path.read_text()) if path.exists() else default
-    except (OSError, json.JSONDecodeError):
-        return default
+        value = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"required {label} is unreadable or malformed: {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise RuntimeError(f"required {label} must be a JSON object: {path}")
+    return value
 
 
-def build_audit() -> dict[str, Any]:
-    frontier = _read(_FRONTIER, {})
-    backlog = _read(_BACKLOG, {})
-    registry = instrument_registry.validate_frontier_requests(frontier)
-    protocol = production_protocol.build_contract()
-
-    backlog_instrument_ids = {
-        str(row.get("request_id") or "")
-        for row in (backlog.get("entries") or [])
-        if isinstance(row, dict) and row.get("kind") == "instrument_request" and row.get("request_id")
+def _backlog_request(row: dict[str, Any]) -> dict[str, Any]:
+    """Normalize durable backlog schema into the same safety contract used by frontier requests."""
+    scaffolded = bool(row.get("scaffolded_only", row.get("may_use_scaffolded_analogy_lane", False)))
+    return {
+        "id": row.get("request_id") or row.get("id"),
+        "new_physical_axiom": row.get("new_physical_axiom"),
+        "target_morphology_seeded": row.get("target_morphology_seeded"),
+        "may_use_scaffolded_analogy_lane": scaffolded,
+        "scaffolded_lane_cannot_count_as_pure_genesis_proof": row.get(
+            "scaffolded_lane_cannot_count_as_pure_genesis_proof"
+        ),
     }
+
+
+def build_audit(
+    *, frontier_path: Path | None = None, backlog_path: Path | None = None,
+) -> dict[str, Any]:
+    errors: list[str] = []
+    frontier: dict[str, Any] = {}
+    backlog: dict[str, Any] = {}
+    try:
+        frontier = _read_required(frontier_path or _FRONTIER, label="frontier report")
+    except RuntimeError as exc:
+        errors.append(str(exc))
+    try:
+        backlog = _read_required(backlog_path or _BACKLOG, label="research backlog")
+    except RuntimeError as exc:
+        errors.append(str(exc))
+
+    registry = instrument_registry.validate_frontier_requests(frontier) if frontier else {
+        "registry_version": instrument_registry.REGISTRY_VERSION,
+        "request_count": 0,
+        "registered_request_count": 0,
+        "errors": ["frontier request registry audit unavailable because frontier input is invalid"],
+        "valid": False,
+        "request_is_evidence_of_phenomenon": False,
+        "registry_changes_scientific_truth": False,
+    }
+    errors.extend(str(x) for x in registry.get("errors") or [])
+
+    backlog_rows = [
+        row for row in (backlog.get("entries") or [])
+        if isinstance(row, dict) and row.get("kind") == "instrument_request"
+    ] if backlog else []
+    backlog_instrument_ids = {
+        str(row.get("request_id") or row.get("id") or "") for row in backlog_rows
+        if row.get("request_id") or row.get("id")
+    }
+    backlog_request_errors: list[str] = []
+    for row in backlog_rows:
+        backlog_request_errors.extend(instrument_registry.validate_request(_backlog_request(row)))
+    errors.extend(f"durable backlog: {err}" for err in backlog_request_errors)
     unregistered_backlog = sorted(
         rid for rid in backlog_instrument_ids if instrument_registry.get(rid) is None
     )
-    errors = [*registry.get("errors", [])]
-    errors.extend(f"durable backlog contains unregistered instrument id: {rid}" for rid in unregistered_backlog)
-    errors.extend(str(x) for x in protocol.get("errors") or [])
+
+    try:
+        protocol = production_protocol.build_contract()
+        errors.extend(str(x) for x in protocol.get("errors") or [])
+    except Exception as exc:  # fail closed: malformed/missing workflow is a contract failure
+        protocol = {"valid": False, "errors": [str(exc)]}
+        errors.append(f"production protocol audit failed: {exc}")
 
     return {
-        "version": 1,
+        "version": 2,
         "mode": "autonomous-research-expansion-contract-audit",
         "burst_id": frontier.get("burst_id"),
         "valid": not errors,
         "errors": errors,
         "instrument_registry": registry,
         "backlog_instrument_ids": sorted(backlog_instrument_ids),
+        "backlog_request_errors": backlog_request_errors,
         "unregistered_backlog_instrument_ids": unregistered_backlog,
         "production_protocol": {
             "valid": protocol.get("valid"),
@@ -71,6 +123,8 @@ def build_audit() -> dict[str, Any]:
             "audit_changes_official_levels": False,
             "instrument_request_is_evidence_of_phenomenon": False,
             "protocol_lane_presence_is_scientific_success": False,
+            "missing_contract_inputs_fail_closed": True,
+            "durable_backlog_preserves_claim_safety_fields": True,
         },
     }
 
