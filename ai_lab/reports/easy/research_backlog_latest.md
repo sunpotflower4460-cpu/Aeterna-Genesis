@@ -1,14 +1,14 @@
 # Research Operations Backlog
 
-burst `dream-20260814-0177` — active operational items: 6
+burst `dream-20260814-0178` — active operational items: 6
 
 これは測定器・研究インフラの作業待ちリストです。物理的な発見の順位ではありません。
 
-- **OPEN** `instrument:metric-from-relations` (ops score 71.0) — 座標なしの関係だけから、再現性のある距離・近傍・次元候補を後付けで定義できるか？
-- **OPEN** `instrument:lineage-accounting` (ops score 71.0) — 持続する一個体が二つへ分かれた場合に、量の収支と特徴の継承を追えるか？
-- **OPEN** `instrument:identity-continuity` (ops score 71.0) — 構成要素が動いても同じまとまりと言える量を、結果形状を使わず定義できるか？
-- **OPEN** `instrument:damage-recovery` (ops score 71.0) — 自然にできたまとまりを後から部分的に乱したとき、同じ統計的個性へ戻るか？
-- **OPEN** `instrument:predictive-holdout` (ops score 66.0) — 繰り返し環境と未経験環境を分け、過去依存が単なる残響ではなく将来の応答改善に使われるか？
-- **OPEN** `instrument:growth-accounting` (ops score 66.0) — 外部から一様な供給だけを与えた補助実験で、形を指定せず成長・分化・収支が同時に起きるか？
+- **OPEN** `instrument:metric-from-relations` (ops score 72.0) — 座標なしの関係だけから、再現性のある距離・近傍・次元候補を後付けで定義できるか？
+- **OPEN** `instrument:lineage-accounting` (ops score 72.0) — 持続する一個体が二つへ分かれた場合に、量の収支と特徴の継承を追えるか？
+- **OPEN** `instrument:identity-continuity` (ops score 72.0) — 構成要素が動いても同じまとまりと言える量を、結果形状を使わず定義できるか？
+- **OPEN** `instrument:damage-recovery` (ops score 72.0) — 自然にできたまとまりを後から部分的に乱したとき、同じ統計的個性へ戻るか？
+- **OPEN** `instrument:predictive-holdout` (ops score 67.0) — 繰り返し環境と未経験環境を分け、過去依存が単なる残響ではなく将来の応答改善に使われるか？
+- **OPEN** `instrument:growth-accounting` (ops score 67.0) — 外部から一様な供給だけを与えた補助実験で、形を指定せず成長・分化・収支が同時に起きるか？
 
 Instrument request は『その現象が存在する証拠』ではありません。scaffolded-only lane は Pure Genesis の証明に使いません。
