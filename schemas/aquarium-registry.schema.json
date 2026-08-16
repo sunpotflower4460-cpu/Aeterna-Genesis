@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna.local/schemas/aquarium-registry.schema.json",
+  "title": "Aeterna Universe Aquarium Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "mode", "aquaria", "policy"],
+  "properties": {
+    "version": {"type": "integer", "minimum": 1},
+    "mode": {"const": "universe-aquarium-registry"},
+    "aquaria": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/aquarium"}
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent_is_scientific_evidence",
+        "planning_may_read_intent",
+        "physics_may_read_intent_text",
+        "goal_directed_equals_target_encoded",
+        "seeded_is_lower_value",
+        "negative_results_are_preserved"
+      ],
+      "properties": {
+        "intent_is_scientific_evidence": {"const": false},
+        "planning_may_read_intent": {"const": true},
+        "physics_may_read_intent_text": {"const": false},
+        "goal_directed_equals_target_encoded": {"const": false},
+        "seeded_is_lower_value": {"const": false},
+        "negative_results_are_preserved": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "aquarium": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "aquarium_id", "title", "origin", "status", "intent", "classes",
+        "recipe_space", "observation_focus", "integrity", "evidence_refs"
+      ],
+      "properties": {
+        "aquarium_id": {"type": "string", "pattern": "^AQ-[A-Z0-9-]+$"},
+        "title": {"type": "string", "minLength": 1},
+        "summary": {"type": "string"},
+        "origin": {"enum": ["human", "ai", "joint"]},
+        "status": {"enum": ["idea", "planned", "active", "paused", "archived"]},
+        "intent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "goal", "planning_may_read_goal", "physics_may_read_goal"],
+          "properties": {
+            "mode": {"enum": ["open_ended", "goal_directed"]},
+            "goal": {"type": "string"},
+            "planning_may_read_goal": {"const": true},
+            "physics_may_read_goal": {"const": false}
+          }
+        },
+        "classes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["minimal_start", "seeded", "scaffolded", "driven", "autonomous", "open_ended", "goal_directed"]}
+        },
+        "recipe_space": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Planning/search-space description. It is not itself evidence and must not encode a target outcome."
+        },
+        "observation_focus": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "related_aquaria": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^AQ-[A-Z0-9-]+$"}
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "run_refs": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "integrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target_outcome_seeded",
+            "target_morphology_seeded",
+            "outcome_location_seeded",
+            "outcome_time_seeded",
+            "planning_metadata_changes_physics",
+            "scientific_promotion_effect"
+          ],
+          "properties": {
+            "target_outcome_seeded": {"type": "boolean"},
+            "target_morphology_seeded": {"type": "boolean"},
+            "outcome_location_seeded": {"type": "boolean"},
+            "outcome_time_seeded": {"type": "boolean"},
+            "planning_metadata_changes_physics": {"const": false},
+            "scientific_promotion_effect": {"const": false}
+          }
+        }
+      }
+    }
+  }
+}
