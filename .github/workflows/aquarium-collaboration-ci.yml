@@ -11,6 +11,7 @@ on:
       - 'app/public/data/aquaria/**'
       - 'app/package.json'
       - 'app/package-lock.json'
+      - 'tools/build_catalog.py'
       - 'tools/collect_app_data.py'
       - 'docs/UNIVERSE_AQUARIUM.md'
       - 'docs/AI_EXPERIMENT_POLICY.md'
@@ -43,6 +44,9 @@ jobs:
 
       - name: Validate Aquarium registry, notebook and planning-only Compass
         run: pytest -q tests/test_aquarium_registry.py tests/test_aquarium_compass.py
+
+      - name: Build Observatory catalog from tracked Room data
+        run: python tools/build_catalog.py
 
       - name: Verify Observatory data assembly contains Aquarium collaboration data
         run: |
