@@ -1,6 +1,6 @@
 # Research Operations Backlog
 
-burst `dream-20260817-0253` — active operational items: 6
+burst `dream-20260817-0254` — active operational items: 6
 
 これは測定器・研究インフラの作業待ちリストです。物理的な発見の順位ではありません。
 
