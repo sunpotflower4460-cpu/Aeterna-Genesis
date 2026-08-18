@@ -27,24 +27,26 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import yaml
 from scipy import ndimage
 
 from genesis.models import gray_scott as gs
 
 _REPO = Path(__file__).resolve().parents[2]
 _REPORT = _REPO / "ai_lab" / "reports" / "easy" / "emergent_field_latest.json"
-
-# Model-specific frontier bounds.  These are intentionally broad but numerically conservative for
-# the existing explicit Gray-Scott step.  They are mirrored in genesis/registry/param_ranges.yaml.
-SPACE = {
-    "Du": (0.08, 0.24),
-    "Dv": (0.03, 0.12),
-    "F": (0.006, 0.085),
-    "k": (0.030, 0.080),
-    "v_background": (0.0, 0.12),
-    "noise_amplitude": (1.0e-4, 5.0e-2),
-}
+_REGISTRY = _REPO / "genesis" / "registry" / "param_ranges.yaml"
 _PRIMES = (2, 3, 5, 7, 11, 13)
+
+
+def _load_space() -> dict[str, tuple[float, float]]:
+    """Registry is the single source of truth for every automatically varied physical/start parameter."""
+    raw = yaml.safe_load(_REGISTRY.read_text())
+    spec = raw["search_space"]["model_specific"]["gray_scott_uniform_noise"]
+    keys = ("Du", "Dv", "F", "k", "v_background", "noise_amplitude")
+    return {key: (float(spec[key]["min"]), float(spec[key]["max"])) for key in keys}
+
+
+SPACE = _load_space()
 
 
 def _write(path: Path, value: Any) -> None:
@@ -95,44 +97,81 @@ def make_uniform_noise_initial(
     v0 = float(min(0.20, max(0.0, v_background)))
     amp = float(max(0.0, noise_amplitude))
     noise = rng.standard_normal(shape)
-    # Zero-mean noise avoids quietly painting a preferred location.  Concentrations are clipped only to
-    # their physical lower bound, not toward any target morphology.
+    # The pre-clipping perturbation is zero-mean and translation-unbiased.  Clipping only enforces
+    # concentration bounds; it never steers a location toward a target morphology.
     V = np.clip(v0 + amp * noise, 0.0, 1.0)
     U = np.clip(1.0 - v0 - amp * noise, 0.0, 1.0)
     return U.astype(float), V.astype(float)
 
 
 def _component_sizes(mask: np.ndarray) -> tuple[np.ndarray, dict[int, int]]:
+    """4-neighbour connected components with periodic wrap, matching the physical boundary."""
     labels, n = ndimage.label(mask)
     if n == 0:
         return labels, {}
-    ids, counts = np.unique(labels[labels > 0], return_counts=True)
-    return labels, {int(i): int(c) for i, c in zip(ids, counts)}
+
+    parent = list(range(n + 1))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: int, b: int) -> None:
+        if not a or not b:
+            return
+        ra, rb = find(int(a)), find(int(b))
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    for i in range(mask.shape[0]):
+        union(int(labels[i, 0]), int(labels[i, -1]))
+    for j in range(mask.shape[1]):
+        union(int(labels[0, j]), int(labels[-1, j]))
+
+    roots = np.zeros_like(labels)
+    sizes: dict[int, int] = {}
+    for lab in range(1, n + 1):
+        root = find(lab)
+        pixels = labels == lab
+        roots[pixels] = root
+        sizes[root] = sizes.get(root, 0) + int(np.count_nonzero(pixels))
+    return roots, sizes
 
 
 def observe_morphology(initial_v: np.ndarray, final_v: np.ndarray, previous_v: np.ndarray | None = None) -> dict[str, Any]:
     """Outcome-agnostic morphology observer, completely separated from the dynamics.
 
     Thresholds are fixed relative to the INITIAL fluctuation scale, so every final field is not forced to
-    contain a percentile-defined 'feature'.  A lower active threshold measures differentiated regions; a
-    stricter core threshold measures strongly amplified regions.  A corridor candidate is merely an
-    active connected component containing >=2 separate strict cores.  It is NOT called an edge/network.
+    contain a percentile-defined feature.  We threshold absolute departure from the homogeneous initial
+    mean so both positive and negative differentiation are visible.  A corridor candidate is merely an
+    active periodic component containing >=2 separate strict cores.  It is NOT called an edge/network.
     """
     init = np.asarray(initial_v, dtype=float)
     final = np.asarray(final_v, dtype=float)
     base_mean = float(np.mean(init))
     sigma0 = max(float(np.std(init)), 1.0e-12)
-    active_threshold = base_mean + 4.0 * sigma0
-    core_threshold = base_mean + 8.0 * sigma0
-    active = final > active_threshold
-    cores = final > core_threshold
-    active_labels, active_sizes = _component_sizes(active)
-    core_labels, core_sizes = _component_sizes(cores)
+    active_threshold = 4.0 * sigma0
+    core_threshold = 8.0 * sigma0
+    departure = np.abs(final - base_mean)
+    active = departure > active_threshold
+    cores = departure > core_threshold
+    active_labels, active_sizes_all = _component_sizes(active)
+    core_labels, core_sizes_all = _component_sizes(cores)
+
+    # A near-global phase/background shift is not a localized object.  Keep it in active_fraction but do
+    # not count a component occupying most of the domain as a localized region/core.
+    domain_area = int(final.size)
+    max_local_area = max(1, int(0.50 * domain_area))
+    active_sizes = {k: v for k, v in active_sizes_all.items() if v <= max_local_area}
+    core_sizes = {k: v for k, v in core_sizes_all.items() if v <= max_local_area}
 
     corridor_candidates = 0
+    valid_core_ids = set(core_sizes)
     for aid in active_sizes:
-        core_ids = np.unique(core_labels[active_labels == aid])
-        if int(np.count_nonzero(core_ids > 0)) >= 2:
+        core_ids = {int(x) for x in np.unique(core_labels[active_labels == aid]) if int(x) > 0}
+        if len(core_ids & valid_core_ids) >= 2:
             corridor_candidates += 1
 
     boundary = np.logical_xor(active, np.roll(active, 1, 0)) | np.logical_xor(active, np.roll(active, 1, 1))
@@ -144,7 +183,8 @@ def observe_morphology(initial_v: np.ndarray, final_v: np.ndarray, previous_v: n
     if previous_v is not None:
         a = np.asarray(previous_v, dtype=float).ravel()
         b = final.ravel()
-        a = a - a.mean(); b = b - b.mean()
+        a = a - a.mean()
+        b = b - b.mean()
         denom = float(np.linalg.norm(a) * np.linalg.norm(b))
         persistence = float(np.dot(a, b) / denom) if denom > 1.0e-15 else 0.0
 
@@ -154,8 +194,8 @@ def observe_morphology(initial_v: np.ndarray, final_v: np.ndarray, previous_v: n
         "final_mean_v": float(np.mean(final)),
         "final_sigma_v": float(np.std(final)),
         "fluctuation_gain": float(np.std(final) / sigma0),
-        "active_threshold": active_threshold,
-        "core_threshold": core_threshold,
+        "active_departure_threshold": active_threshold,
+        "core_departure_threshold": core_threshold,
         "active_fraction": float(np.mean(active)),
         "localized_region_count": len(active_sizes),
         "strong_core_count": len(core_sizes),
@@ -163,9 +203,11 @@ def observe_morphology(initial_v: np.ndarray, final_v: np.ndarray, previous_v: n
         "corridor_candidate_count": int(corridor_candidates),
         "filamentarity_proxy": filamentarity_proxy,
         "late_field_persistence": persistence,
+        "periodic_component_merging": True,
+        "global_components_excluded_from_localized_count": True,
         "observer_semantics": {
-            "localized_region": "connected region above a fixed initial-noise-relative threshold",
-            "corridor_candidate": "one active region containing two or more separate stricter cores",
+            "localized_region": "periodic connected region whose absolute departure exceeds a fixed initial-noise-relative threshold and covers <=50% of the domain",
+            "corridor_candidate": "one localized active region containing two or more separate stricter localized cores",
             "network_claim": False,
             "node_claim": False,
             "edge_claim": False,
@@ -193,12 +235,13 @@ def run_trial(index: int, *, master_seed: int, shape: tuple[int, int] = (64, 64)
     p = {"Du": params["Du"], "Dv": params["Dv"], "F": params["F"], "k": params["k"], "dt": 1.0}
     previous_v = None
     finite = True
-    for t in range(max(1, int(steps))):
+    total_steps = max(1, int(steps))
+    for t in range(total_steps):
         U, V = gs.step(U, V, p)
         if not np.all(np.isfinite(U)) or not np.all(np.isfinite(V)):
             finite = False
             break
-        if t == max(1, int(steps)) - 9:
+        if t == total_steps - 9:
             previous_v = V.copy()
     if not finite:
         return {
@@ -242,17 +285,18 @@ def run_emergent_field_research(
         "steps": steps,
         "search_policy": {
             "parameter_selection": "deterministic_halton_before_outcomes",
+            "parameter_bounds_source": "genesis/registry/param_ranges.yaml::search_space.model_specific.gray_scott_uniform_noise",
             "feedback_from_morphology_to_dynamics": False,
             "target_image_or_graph_objective": False,
             "official_level_gate_changed": False,
             "room_promotion_changed": False,
         },
         "initial_condition": {
-            "spatial_pattern": "uniform_background_plus_iid_zero_mean_noise",
+            "spatial_pattern": "uniform_background_plus_unstructured_gaussian_perturbation",
             "founder_spots": 0,
-            "nodes": 0,
-            "edges": 0,
-            "branches": 0,
+            "seeded_nodes": 0,
+            "seeded_edges": 0,
+            "seeded_branches": 0,
             "target_morphology_seeded": False,
         },
         "law": {
@@ -278,6 +322,7 @@ def run_emergent_field_research(
             "negative_results_are_retained": True,
             "this_is_pure_genesis_R0_proof": False,
             "existing_spatial_law_contains_geometry_as_a_given": True,
+            "periodic_physics_uses_periodic_component_observer": True,
             "next_step_local_plasticity_requires_separate_law_variant_audit": True,
         },
     }
