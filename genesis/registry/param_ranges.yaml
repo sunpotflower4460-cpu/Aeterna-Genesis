@@ -12,6 +12,19 @@ search_space:
     drive_strength: {min: 0.0, max: 5.0, scale: linear}
   boundary_conditions:
     allowed: [periodic, no_flux, physical_wall]
+  # Existing-law frontier: Gray-Scott is already in genesis/models.  This section authorizes a
+  # shape-free homogeneous-background + noise search without founder spots.  It does NOT authorize
+  # adding plasticity, graph, Hebbian, neuron, node or edge rules; those require law_variant audit.
+  model_specific:
+    gray_scott_uniform_noise:
+      Du: {min: 0.08, max: 0.24, scale: linear}
+      Dv: {min: 0.03, max: 0.12, scale: linear}
+      F: {min: 0.006, max: 0.085, scale: linear}
+      k: {min: 0.030, max: 0.080, scale: linear}
+      v_background: {min: 0.0, max: 0.12, scale: linear}
+      noise_amplitude: {min: 1.0e-4, max: 5.0e-2, scale: log}
+      initial_pattern: uniform_background_plus_unstructured_noise
+      founder_spots: 0
 mutation_types:
   - initial_state_change
   - parameter_change
