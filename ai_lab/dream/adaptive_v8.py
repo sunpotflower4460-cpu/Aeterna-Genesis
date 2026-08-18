@@ -6,6 +6,11 @@ The root layer cannot seed space, geometry, dimension, frequency, phase, vortex,
 It also annotates the shared hypothesis graph with R0 relevance so the *next* v7 portfolio favors
 observation-first questions without weakening unexplored/breaker/random floors.
 
+A separate emergent-field frontier lane reuses the existing Gray-Scott local law from a spatially
+uniform background plus unstructured noise. It never seeds founder spots/nodes/edges and its morphology
+observer runs only after the physics. This is a downstream spatial reference lane, not Pure Genesis R0
+proof, and its observation ranking cannot change scientific truth gates or Room promotion.
+
 The autonomous frontier expander sits above those layers.  It treats the destination as fixed while
 allowing methods and hypotheses to change: recurrent unknown transitions trigger mechanism tests,
 deep F-reference candidates trigger start-side intervention studies, root laws trigger ablations, and
@@ -24,6 +29,7 @@ from ai_lab.dream import adaptive
 from ai_lab.dream import adaptive_loop as v3
 from ai_lab.dream import adaptive_v7 as v7
 from ai_lab.dream import dry_run
+from ai_lab.dream import emergent_field
 from ai_lab.dream import frontier_expander
 from ai_lab.dream import human_report
 from ai_lab.dream import hypothesis_evolution
@@ -101,8 +107,43 @@ def _root_summary(root: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _emergent_field_summary(field: dict[str, Any]) -> dict[str, Any]:
+    top = []
+    for row in (field.get("top_observations") or [])[:3]:
+        obs = row.get("observations") or {}
+        top.append({
+            "trial_index": row.get("trial_index"),
+            "seed": row.get("seed"),
+            "parameters": row.get("parameters") or {},
+            "observation_priority": row.get("observation_priority"),
+            "fluctuation_gain": obs.get("fluctuation_gain"),
+            "localized_region_count": obs.get("localized_region_count"),
+            "strong_core_count": obs.get("strong_core_count"),
+            "corridor_candidate_count": obs.get("corridor_candidate_count"),
+            "late_field_persistence": obs.get("late_field_persistence"),
+            "checksum": row.get("checksum"),
+        })
+    return {
+        "version": field.get("version"),
+        "mode": field.get("mode"),
+        "research_question": field.get("research_question"),
+        "trials": field.get("trials"),
+        "shape": field.get("shape") or [],
+        "steps": field.get("steps"),
+        "counts": field.get("counts") or {},
+        "initial_condition": field.get("initial_condition") or {},
+        "law": field.get("law") or {},
+        "search_policy": field.get("search_policy") or {},
+        "top_observations": top,
+        "not_claimed": field.get("not_claimed") or [],
+        "honesty": field.get("honesty") or {},
+        "full_report": "ai_lab/reports/easy/emergent_field_latest.json",
+    }
+
+
 def _enrich_easy(
     paths: dict[str, str], *, root_summary: dict[str, Any], frontier_summary: dict[str, Any],
+    emergent_field_summary: dict[str, Any],
 ) -> None:
     latest = Path(paths.get("latest") or "")
     if not latest.exists():
@@ -112,6 +153,7 @@ def _enrich_easy(
     except (OSError, json.JSONDecodeError):
         return
     easy["pure_genesis_r0"] = root_summary
+    easy["emergent_field_frontier"] = emergent_field_summary
     easy["autonomous_frontier_expansion"] = frontier_summary
     easy["research_north_star"] = {
         "root_id": why_gate.ROOT_ID,
@@ -137,7 +179,8 @@ def _enrich_easy(
 
 def run_adaptive_v8(
     *, root_law_trials: int = 24, root_sizes: tuple[int, ...] = (8, 12, 16),
-    root_steps: int = 48, frontier_experiments: int = 24, **kwargs: Any,
+    root_steps: int = 48, frontier_experiments: int = 24, emergent_field_trials: int = 12,
+    **kwargs: Any,
 ) -> dict[str, Any]:
     base = v7.run_adaptive_v7(**kwargs)
     report = base["report"]
@@ -157,6 +200,17 @@ def run_adaptive_v8(
     # global-sign aliases and step-period overinterpretation before research priority is persisted.
     root = root_integrity.audit_report(root, persist=persist)
     root_summary = _root_summary(root)
+
+    # Independent spatial reference lane: existing local chemistry only, homogeneous start + noise.
+    # Its observer never feeds back into the dynamics and cannot change scientific gates.
+    field = emergent_field.run_emergent_field_research(
+        burst_id=burst_id,
+        trials=max(0, int(emergent_field_trials)),
+        seed=seed ^ 0x45F1E1D,
+        quick=bool(kwargs.get("quick", False)),
+        persist=persist,
+    )
+    field_summary = _emergent_field_summary(field)
 
     # The frontier expander reacts to the evidence that actually exists in this burst.  It is not an
     # F6->F7 script: absent F evidence simply donates budget to recurrent-X or root mechanism questions.
@@ -182,6 +236,7 @@ def run_adaptive_v8(
         _write(_PORTFOLIO, {**portfolio, "last_burst": burst_id})
 
     report["pure_genesis_r0"] = root_summary
+    report["emergent_field_frontier"] = field_summary
     report["autonomous_frontier_expansion"] = frontier
     report["research_north_star"] = {
         "root_id": why_gate.ROOT_ID,
@@ -212,6 +267,9 @@ def run_adaptive_v8(
     report["honesty"]["frontier_expansion_changes_truth_gate"] = False
     report["honesty"]["frontier_expansion_seeds_target_outcome"] = False
     report["honesty"]["scaffolded_analogy_counts_as_pure_genesis_proof"] = False
+    report["honesty"]["emergent_field_frontier_is_pure_genesis_proof"] = False
+    report["honesty"]["emergent_field_observer_changes_dynamics"] = False
+    report["honesty"]["emergent_field_network_claim"] = False
 
     # Reader-facing prose is generated only after all scientific/root/frontier audits. It never
     # replaces technical JSON; it adds an orientation layer on top of the same evidence.
@@ -220,7 +278,10 @@ def run_adaptive_v8(
     generated = datetime.fromisoformat(str(report["generated_at"]).replace("Z", "+00:00"))
     stamp = generated.strftime("%Y-%m-%dT%H-%M-%SZ")
     base["paths"] = write_report(str(v3._REPO), report, stamp=stamp)
-    _enrich_easy(base["easy_paths"], root_summary=root_summary, frontier_summary=frontier)
+    _enrich_easy(
+        base["easy_paths"], root_summary=root_summary, frontier_summary=frontier,
+        emergent_field_summary=field_summary,
+    )
 
     # v7/lower layers may have refreshed app/public/data before the v8-only fields above existed.
     # Re-copy only after the final human report is on disk so the Observatory and Markdown agree.
@@ -242,10 +303,12 @@ def _parse_sizes(raw: str) -> tuple[int, ...]:
 
 def build_parser():
     ap = v7.build_parser()
-    ap.description = "Aeterna Adaptive Dream v8 — Pure Genesis R0 + autonomous frontier expansion"
+    ap.description = "Aeterna Adaptive Dream v8 — Pure Genesis R0 + emergent field + autonomous frontier expansion"
     ap.add_argument("--root-law-trials", type=int, default=24)
     ap.add_argument("--root-sizes", default="8,12,16", help="comma-separated finite-size regulators")
     ap.add_argument("--root-steps", type=int, default=48)
+    ap.add_argument("--emergent-field-trials", type=int, default=12,
+                    help="existing Gray-Scott law from uniform background + unstructured noise; observation-only frontier")
     ap.add_argument("--frontier-experiments", type=int, default=24,
                     help="bounded extra mechanism/intervention budget chosen adaptively from current evidence")
     return ap
@@ -273,9 +336,11 @@ def main(argv: list[str] | None = None) -> int:
         max_synthesized_hypotheses=max(0, a.max_synthesized_hypotheses),
         root_law_trials=max(0, a.root_law_trials), root_sizes=_parse_sizes(a.root_sizes),
         root_steps=max(8, a.root_steps), frontier_experiments=max(0, a.frontier_experiments),
+        emergent_field_trials=max(0, a.emergent_field_trials),
     )
     r = result["report"]
     root = r.get("pure_genesis_r0") or {}
+    field = r.get("emergent_field_frontier") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
     frontier = r.get("autonomous_frontier_expansion") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
@@ -284,8 +349,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  Pure Genesis laws={root.get('law_trials', 0)} top={len(root.get('top_laws') or [])}")
     print(f"  Why Gate accepted={int((root.get('why_gate') or {}).get('accepted', 0))} unexplained physical givens=0")
     print(f"  Root Integrity critic questions={len(critic)} permutation-quotient=True")
+    print(f"  emergent-field trials={int(field.get('trials') or 0)} stable={int((field.get('counts') or {}).get('stable') or 0)}")
     print(f"  frontier mechanism experiments={int((frontier.get('budget') or {}).get('executed', 0))}")
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
+    print("  NOTE: emergent-field morphology is observation-only; node/edge/network are not claimed or seeded.")
     print("  NOTE: destination is fixed, methods are adaptive; target shapes/outcomes are never seeded as Pure Genesis evidence.")
     return 0
 

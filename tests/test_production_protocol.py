@@ -33,6 +33,7 @@ def _full_command(**overrides):
         "open_ended_max_episodes": 2,
         "unknown_followup_max_patterns": 1,
         "root_law_trials": 6,
+        "emergent_field_trials": 5,
         "frontier_experiments": 6,
     }
     values.update(overrides)
@@ -49,6 +50,7 @@ def _full_command(**overrides):
 --open-ended-max-episodes {values['open_ended_max_episodes']} \\
 --unknown-followup-max-patterns {values['unknown_followup_max_patterns']} \\
 --root-law-trials {values['root_law_trials']} \\
+--emergent-field-trials {values['emergent_field_trials']} \\
 --frontier-experiments {values['frontier_experiments']}"""
 
 
@@ -59,6 +61,7 @@ def test_production_protocol_extracts_and_parses_multiline_command(tmp_path, mon
     assert report["valid"] is True
     assert report["parsed_config"]["trials"] == 8
     assert report["parsed_config"]["open_ended_probes"] == 4
+    assert report["parsed_config"]["emergent_field_trials"] == 5
     assert report["disabled_required_lanes"] == []
     assert report["semantics"]["required_lane_means_scientific_success_required"] is False
 
@@ -69,6 +72,14 @@ def test_zeroed_required_lane_fails_configuration_contract(tmp_path, monkeypatch
     report = production_protocol.build_contract(path)
     assert report["valid"] is False
     assert any(row["option"] == "open_ended_probes" for row in report["disabled_required_lanes"])
+
+
+def test_zeroed_emergent_field_lane_fails_configuration_contract(tmp_path, monkeypatch):
+    path = _workflow(tmp_path, _full_command(emergent_field_trials=0))
+    monkeypatch.setattr(production_protocol, "_REPO", tmp_path)
+    report = production_protocol.build_contract(path)
+    assert report["valid"] is False
+    assert any(row["option"] == "emergent_field_trials" for row in report["disabled_required_lanes"])
 
 
 def test_zeroed_execution_cap_fails_even_when_budget_is_positive(tmp_path, monkeypatch):
