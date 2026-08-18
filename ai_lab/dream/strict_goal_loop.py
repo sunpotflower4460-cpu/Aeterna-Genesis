@@ -53,6 +53,7 @@ def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
         max_synthesized_hypotheses=max(0, a.max_synthesized_hypotheses),
         root_law_trials=max(0, a.root_law_trials), root_sizes=adaptive_v8._parse_sizes(a.root_sizes),
         root_steps=max(8, a.root_steps), frontier_experiments=max(0, a.frontier_experiments),
+        emergent_field_trials=max(0, a.emergent_field_trials),
     )
 
 
@@ -80,6 +81,7 @@ def _publish_dry_run_progress_memory(report: dict[str, Any]) -> None:
 def _print_adaptive_summary(result: dict[str, Any]) -> None:
     r = result["report"]
     root = r.get("pure_genesis_r0") or {}
+    field = r.get("emergent_field_frontier") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
     frontier = r.get("autonomous_frontier_expansion") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
@@ -91,6 +93,10 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
     print(f"  Why Gate accepted={int((root.get('why_gate') or {}).get('accepted', 0))} unexplained physical givens=0")
     print(f"  Root Integrity critic questions={len(critic)} permutation-quotient=True")
     print(
+        f"  emergent-field trials={int(field.get('trials') or 0)} "
+        f"stable={int((field.get('counts') or {}).get('stable') or 0)}"
+    )
+    print(
         f"  frontier mechanism experiments={int(budget.get('executed', 0))} "
         f"allocation={budget.get('allocated', {})}"
     )
@@ -101,6 +107,7 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
             f"escape_next={bool(progress.get('next_burst_escape_required'))}"
         )
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
+    print("  NOTE: uniform-field morphology is observation-only; no node/edge/network is seeded or claimed.")
     print("  NOTE: Research Memory prevents routine exact-repeat drift; F0-F7 remains one human-written reference path.")
 
 
