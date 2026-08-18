@@ -1,8 +1,9 @@
 """Parse and audit the production ``strict_goal_loop`` command from workflow YAML.
 
 This is configuration-drift infrastructure. It ensures a workflow edit cannot silently disable broad,
-open-ended, Root, Deep-Time or frontier research simply because a CLI flag/cap disappeared or stopped
-parsing. The audit says nothing about whether a scientific result is interesting or correct.
+open-ended, Root, homogeneous-field, Deep-Time or frontier research simply because a CLI flag/cap
+disappeared or stopped parsing. The audit says nothing about whether a scientific result is interesting
+or correct.
 """
 from __future__ import annotations
 
@@ -100,6 +101,7 @@ def build_contract(path: Path | None = None) -> dict[str, Any]:
         "open_ended_max_episodes": "open-ended emergence episode cap",
         "unknown_followup_max_patterns": "recurrent X verification",
         "root_law_trials": "Pure Genesis R0 candidate-law search",
+        "emergent_field_trials": "homogeneous-field plus noise morphology frontier",
         "frontier_experiments": "information-yield frontier experiments",
     }
     disabled = [
