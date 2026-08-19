@@ -3,7 +3,9 @@
 Strict geometry and Prefix Identity instrumentation remain identical to the existing entry point.
 Adaptive Research Yield chooses informative frontier lanes; Progress Ratchet adds durable no-repeat and
 route-escape planning from Research Memory. Context-aware X identity prevents a changed start-side search
-focus from being mistaken for an already-tested question. None changes physics, truth gates, Rooms or
+focus from being mistaken for an already-tested question. Mature recurrent X-patterns also receive a
+persistent mechanism-dissection lane: after recurrence is established, the loop asks why the detector
+fires instead of merely increasing the observation count. None changes physics, truth gates, Rooms or
 official Levels.
 """
 from __future__ import annotations
@@ -24,11 +26,13 @@ from ai_lab.dream import protocol_fingerprint
 from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
+from ai_lab.dream import x_mechanism_discovery
 from ai_lab.dream.strict_followup_loop import _install_strict_followup_geometry
 from ai_lab.dream.strict_loop import _install_strict_geometry
 
 _REPO = Path(__file__).resolve().parents[2]
 _FRONTIER_ALIAS = _REPO / "ai_lab" / "reports" / "easy" / "frontier_latest.json"
+_X_MECHANISM_BUDGET = 8
 
 
 def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
@@ -55,6 +59,62 @@ def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
         root_steps=max(8, a.root_steps), frontier_experiments=max(0, a.frontier_experiments),
         emergent_field_trials=max(0, a.emergent_field_trials),
     )
+
+
+def _write_json_if_present(path_value: Any, payload: dict[str, Any]) -> None:
+    if not path_value:
+        return
+    path = Path(str(path_value))
+    if not path.exists():
+        return
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def _attach_x_mechanism(result: dict[str, Any]) -> dict[str, Any]:
+    """Run the persistent why-lane and attach it to the just-finished production evidence.
+
+    Adaptive v8 writes its reports before returning, so this production wrapper rewrites only the JSON
+    report copies with the additive mechanism evidence.  Historical X fingerprints and all scientific
+    gates remain untouched.  In ``--no-record`` mode the existing dry-run path redirect sends every
+    write below to scratch automatically.
+    """
+    report = result["report"]
+    burst_id = str(report.get("burst_id") or "unknown-burst")
+    mechanism = x_mechanism_discovery.run_mechanism_discovery(
+        burst_id=burst_id,
+        budget=_X_MECHANISM_BUDGET,
+        persist=True,
+    )
+    report["x_mechanism_discovery"] = mechanism
+    frontier = report.setdefault("autonomous_frontier_expansion", {})
+    if isinstance(frontier, dict):
+        frontier["x_identity_mechanism"] = mechanism
+
+    paths = result.get("paths") or {}
+    _write_json_if_present(paths.get("latest"), report)
+    _write_json_if_present(paths.get("json"), report)
+
+    easy_paths = result.get("easy_paths") or {}
+    latest_easy = Path(str(easy_paths.get("latest") or ""))
+    easy: dict[str, Any] | None = None
+    if latest_easy.exists():
+        try:
+            easy = json.loads(latest_easy.read_text())
+        except (OSError, json.JSONDecodeError):
+            easy = None
+    if isinstance(easy, dict):
+        easy["x_mechanism_discovery"] = {
+            "pattern_id": mechanism.get("pattern_id"),
+            "observations_seen": mechanism.get("observations_seen"),
+            "status": mechanism.get("status"),
+            "leading_explanation": mechanism.get("leading_explanation"),
+            "leading_driver_candidate": mechanism.get("leading_driver_candidate"),
+            "next_question": mechanism.get("next_question"),
+            "policy": mechanism.get("policy") or {},
+        }
+        latest_easy.write_text(json.dumps(easy, indent=2, ensure_ascii=False))
+        _write_json_if_present(easy_paths.get("json"), easy)
+    return mechanism
 
 
 def _publish_frontier_alias(report: dict[str, Any]) -> None:
@@ -84,6 +144,7 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
     field = r.get("emergent_field_frontier") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
     frontier = r.get("autonomous_frontier_expansion") or {}
+    mechanism = r.get("x_mechanism_discovery") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
     budget = frontier.get("budget") or {}
     progress = frontier.get("progress_ratchet") or {}
@@ -100,6 +161,13 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
         f"  frontier mechanism experiments={int(budget.get('executed', 0))} "
         f"allocation={budget.get('allocated', {})}"
     )
+    if mechanism.get("ran"):
+        print(
+            f"  X why-lane pattern={mechanism.get('pattern_id')} "
+            f"experiments={mechanism.get('experiments', 0)} status={mechanism.get('status')}"
+        )
+        if mechanism.get("leading_driver_candidate"):
+            print(f"  X leading driver candidate={mechanism.get('leading_driver_candidate')}")
     if progress:
         print(
             f"  progress={progress.get('status')} new_questions={len(progress.get('new_question_keys') or [])} "
@@ -107,6 +175,7 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
             f"escape_next={bool(progress.get('next_burst_escape_required'))}"
         )
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
+    print("  NOTE: mature X counts are not a target; the why-lane keeps testing scale-normalized explanations and interventions.")
     print("  NOTE: uniform-field morphology is observation-only; no node/edge/network is seeded or claimed.")
     print("  NOTE: Research Memory prevents routine exact-repeat drift; F0-F7 remains one human-written reference path.")
 
@@ -120,6 +189,7 @@ def main(argv: list[str] | None = None) -> int:
     progress_context.install()
 
     result = _run_adaptive_v8_exact(argv)
+    _attach_x_mechanism(result)
     _print_adaptive_summary(result)
     report = result["report"]
     burst_id = str(report.get("burst_id") or "unknown-burst")
