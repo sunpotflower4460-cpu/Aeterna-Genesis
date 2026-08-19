@@ -32,6 +32,7 @@ from ai_lab.dream.strict_loop import _install_strict_geometry
 
 _REPO = Path(__file__).resolve().parents[2]
 _FRONTIER_ALIAS = _REPO / "ai_lab" / "reports" / "easy" / "frontier_latest.json"
+_X_MECHANISM_LEDGER = _REPO / "ai_lab" / "reports" / "easy" / "x_mechanism_ledger.json"
 _X_MECHANISM_BUDGET = 8
 
 
@@ -80,6 +81,9 @@ def _attach_x_mechanism(result: dict[str, Any]) -> dict[str, Any]:
     """
     report = result["report"]
     burst_id = str(report.get("burst_id") or "unknown-burst")
+    # Keep cumulative why-evidence in reports/easy because that directory is already part of the
+    # hourly evidence commit. This makes the mechanism memory survive across clean GitHub runners.
+    x_mechanism_discovery._LEDGER = _X_MECHANISM_LEDGER
     mechanism = x_mechanism_discovery.run_mechanism_discovery(
         burst_id=burst_id,
         budget=_X_MECHANISM_BUDGET,
