@@ -27,28 +27,28 @@
 
 ### 3. 条件と結びつく名無し変化 X-dcc459d23a
 
-同条件 31/39、近い条件 22/39、対照 0/39。対照で消える傾向があるため、単なる反復回数より成立条件を絞る価値があります。
+同条件 32/40、近い条件 23/40、対照 0/40。対照で消える傾向があるため、単なる反復回数より成立条件を絞る価値があります。
 
 - 証拠の位置づけ: **CANDIDATE**
 - 元データ: `ai_lab/discoveries/unknown_followups.json`
 
 ### 4. 広く繰り返す名無し変化 X-b991d59a4d
 
-1846回、64個の独立seed、64条件で観測。ただし広く出すぎるため、今後は回数を増やすより『何を変えると消えるか』を優先します。
+1852回、64個の独立seed、64条件で観測。ただし広く出すぎるため、今後は回数を増やすより『何を変えると消えるか』を優先します。
 
 - 証拠の位置づけ: **ROBUST_RECURRENT_CANDIDATE**
 - 元データ: `ai_lab/reports/emergence/latest.json`
 
 ### 5. 2渦・3渦の局所エネルギー地図が蓄積
 
-持続2渦 29件（pair-only 19件）、3渦の局所エネルギー 23件。形だけで関係を選んだ後にエネルギーを測っています。
+持続2渦 27件（pair-only 22件）、3渦の局所エネルギー 20件。形だけで関係を選んだ後にエネルギーを測っています。
 
 - 証拠の位置づけ: **MEASURED_SHADOW**
 - 元データ: `ai_lab/reports/easy/latest.json`
 
 ### 6. 同じ歴史を保った長時間追跡を確認
 
-最新burstでPrefix Identity=MATCHの長時間追跡があり、raw F-depthは F7。履歴不一致を長時間結果として混ぜていません。
+最新burstでPrefix Identity=MATCHの長時間追跡があり、raw F-depthは F6。履歴不一致を長時間結果として混ぜていません。
 
 - 証拠の位置づけ: **PREFIX_MATCH**
 - 元データ: `ai_lab/discoveries/deep_time_fission.json`
