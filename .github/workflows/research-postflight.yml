@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: aeterna-research-postflight
@@ -31,11 +32,31 @@ jobs:
           python-version: '3.11'
           cache: pip
 
+      # The :47 watchdog can finish the Genesis Dream Loop successfully without executing a new
+      # research burst. That is a deliberate no-op, not a new provenance context. Query the upstream
+      # job steps and classify it narrowly: watchdog success + explicit Backup-not-needed success +
+      # core research skipped. Missing/renamed/ambiguous steps fail closed in upstream_run_gate.py.
+      - name: Detect explicit no-op upstream Dream run
+        id: upstream
+        if: github.event_name == 'workflow_run'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python -m ai_lab.dream.upstream_run_gate
+
+      - name: Record intentional no-op
+        if: steps.upstream.outputs.noop == 'true'
+        run: |
+          echo "Genesis Dream Loop ${{ github.event.workflow_run.id }} was an explicit watchdog no-op."
+          echo "No new burst exists, so runtime-context/manifest postflight is intentionally skipped."
+
       - name: Install research audit dependencies
+        if: steps.upstream.outputs.noop != 'true'
         run: pip install -r requirements.txt
 
       - name: Audit final research infrastructure state
         id: health
+        if: steps.upstream.outputs.noop != 'true'
         shell: bash
         run: |
           python -m ai_lab.dream.research_health
@@ -50,13 +71,16 @@ jobs:
           echo "Research infrastructure healthy=$HEALTHY"
 
       - name: Preserve durable research operations backlog
+        if: steps.upstream.outputs.noop != 'true'
         run: python -m ai_lab.dream.research_backlog
 
       - name: Enforce instrument and production protocol contracts
+        if: steps.upstream.outputs.noop != 'true'
         shell: bash
         run: python -m ai_lab.dream.research_contract_audit > ai_lab/reports/easy/research_contract_latest.json
 
       - name: Enforce same-burst runtime context coherence
+        if: steps.upstream.outputs.noop != 'true'
         shell: bash
         env:
           EXPECTED_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -68,6 +92,7 @@ jobs:
             > ai_lab/reports/easy/runtime_context_latest.json
 
       - name: Create or verify immutable burst manifest
+        if: steps.upstream.outputs.noop != 'true'
         shell: bash
         env:
           UPSTREAM_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -101,10 +126,11 @@ jobs:
           fi
 
       - name: Update manifest-backed research burst index
+        if: steps.upstream.outputs.noop != 'true'
         run: python -m ai_lab.dream.research_index
 
       - name: Upload postflight diagnostics
-        if: always()
+        if: ${{ always() && steps.upstream.outputs.noop != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: research-postflight-${{ github.run_id }}
@@ -123,7 +149,7 @@ jobs:
             ai_lab/reports/easy/research_history_latest.md
 
       - name: Persist healthy postflight records
-        if: steps.health.outputs.healthy == 'true'
+        if: steps.upstream.outputs.noop != 'true' && steps.health.outputs.healthy == 'true'
         shell: bash
         run: |
           git config user.name "aeterna-research-integrity-bot"
@@ -162,7 +188,7 @@ jobs:
           exit 1
 
       - name: Fail closed on infrastructure integrity errors
-        if: steps.health.outputs.healthy != 'true'
+        if: steps.upstream.outputs.noop != 'true' && steps.health.outputs.healthy != 'true'
         run: |
           echo "::error::Research infrastructure health audit found strict integrity errors."
           cat ai_lab/reports/easy/research_health_latest.md || true
