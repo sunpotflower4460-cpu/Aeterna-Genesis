@@ -16,7 +16,7 @@ on:
   schedule:
     # Primary evidence burst every hour at :17.
     - cron: '17 * * * *'
-    # Six additional specialist swarms per day.  These are serialized by the same concurrency group
+    # Six additional specialist swarms per day. These are serialized by the same concurrency group
     # and deliberately rotate different scientific questions instead of duplicating the broad sweep.
     # JST: novelty 09:07/21:07, native3d 01:07/13:07, mechanism 05:07/17:07.
     - cron: '7 0,12 * * *'
@@ -110,16 +110,48 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run selected Adaptive Dream v8 Pure Genesis R0 + NØ research profile
-        if: steps.watchdog.outputs.run_burst == 'true'
-        # Leave headroom inside the 50-minute job so state save, artifacts and the evidence commit
-        # still run when a burst overruns, instead of being killed with it. Specialist budgets trade
-        # broad 2D volume for novelty/3D/mechanism depth and remain bounded by the same wall clock.
+      # Keep the original production step and literal baseline CLI intact. production_protocol.py audits
+      # this exact command so an accidental workflow edit cannot silently disable a research lane.
+      - name: Run hourly Adaptive Dream v8 Pure Genesis R0 + NØ research
+        if: steps.watchdog.outputs.run_burst == 'true' && steps.profile.outputs.profile == 'baseline'
+        timeout-minutes: 38
+        run: |
+          python -m ai_lab.dream.strict_goal_loop \
+            --quick \
+            --trials 2048 \
+            --native3d-trials 100 \
+            --workers 4 \
+            --repro-top 8 \
+            --repro-seeds 3 \
+            --compare-native3d-top 12 \
+            --geometry-top 16 \
+            --geometry-broad 32 \
+            --followup-trials-2d 256 \
+            --followup-trials-3d 32 \
+            --followup-max-leads 4 \
+            --fission-path-trials-2d 24 \
+            --fission-path-max-leads 2 \
+            --deep-time-max-leads 1 \
+            --open-ended-probes 24 \
+            --open-ended-max-episodes 3 \
+            --unknown-followup-max-patterns 2 \
+            --max-synthesized-hypotheses 3 \
+            --root-law-trials 24 \
+            --root-sizes 8,12,16 \
+            --root-steps 48 \
+            --frontier-experiments 24 \
+            --native-variants 1 \
+            --max-jobs 12
+
+      - name: Run specialist Adaptive Dream research swarm
+        if: steps.watchdog.outputs.run_burst == 'true' && steps.profile.outputs.profile != 'baseline'
+        # Specialist budgets trade broad 2D volume for novelty/3D/mechanism depth while preserving the
+        # same wall-clock bound and all existing truth gates.
         timeout-minutes: 38
         env:
           AETERNA_EXPLORATION_PROFILE: ${{ steps.profile.outputs.profile }}
         run: |
-          echo "Aeterna exploration profile: $AETERNA_EXPLORATION_PROFILE"
+          echo "Aeterna specialist profile: $AETERNA_EXPLORATION_PROFILE"
           echo "Purpose: ${{ steps.profile.outputs.purpose }}"
           python -m ai_lab.dream.strict_goal_loop ${{ steps.profile.outputs.args }}
 
