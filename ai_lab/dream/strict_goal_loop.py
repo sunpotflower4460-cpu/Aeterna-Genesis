@@ -5,7 +5,8 @@ Adaptive Research Yield chooses informative frontier lanes; Progress Ratchet add
 route-escape planning from Research Memory. Context-aware X identity prevents a changed start-side search
 focus from being mistaken for an already-tested question. Mature recurrent X-patterns also receive a
 persistent paired-control mechanism-dissection lane so recurrence count does not become the research goal.
-None changes physics, truth gates, Rooms or official Levels.
+Pure Genesis relation states additionally receive observation-only metric/identity/lineage instruments;
+these never alter root dynamics, law ranking, truth gates, Rooms or official Levels.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ from ai_lab.dream import prefix_audit
 from ai_lab.dream import progress_context
 from ai_lab.dream import progress_ratchet
 from ai_lab.dream import protocol_fingerprint
+from ai_lab.dream import relation_instrument_adapter
 from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
@@ -148,6 +150,7 @@ def _publish_dry_run_progress_memory(report: dict[str, Any]) -> None:
 def _print_adaptive_summary(result: dict[str, Any]) -> None:
     r = result["report"]
     root = r.get("pure_genesis_r0") or {}
+    relation_instruments = root.get("relation_instrument_summary") or {}
     field = r.get("emergent_field_frontier") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
     frontier = r.get("autonomous_frontier_expansion") or {}
@@ -160,6 +163,14 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
     print(f"  Pure Genesis laws={root.get('law_trials', 0)} top={len(root.get('top_laws') or [])}")
     print(f"  Why Gate accepted={int((root.get('why_gate') or {}).get('accepted', 0))} unexplained physical givens=0")
     print(f"  Root Integrity critic questions={len(critic)} permutation-quotient=True")
+    if relation_instruments:
+        caps = relation_instruments.get("capabilities") or {}
+        print(
+            "  relation instruments="
+            f"metric:{(caps.get('emergent_metric_geometry') or {}).get('instrument_status')} "
+            f"identity:{(caps.get('persistent_individual_identity') or {}).get('instrument_status')} "
+            f"lineage:{(caps.get('division_with_inheritance') or {}).get('instrument_status')}"
+        )
     print(
         f"  emergent-field trials={int(field.get('trials') or 0)} "
         f"stable={int((field.get('counts') or {}).get('stable') or 0)}"
@@ -182,6 +193,7 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
             f"escape_next={bool(progress.get('next_burst_escape_required'))}"
         )
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
+    print("  NOTE: relation metric/identity/lineage outputs are candidates only; no physical space, life or biological division is claimed.")
     print("  NOTE: mature X counts are not a target; paired-control why-lane tests scale-normalized explanations and interventions.")
     print("  NOTE: intervened X-mechanism runs are exploratory and never count as strict-zero evidence.")
     print("  NOTE: uniform-field morphology is observation-only; no node/edge/network is seeded or claimed.")
@@ -192,6 +204,7 @@ def main(argv: list[str] | None = None) -> int:
     _install_strict_geometry()
     _install_strict_followup_geometry()
     prefix_audit.install_geometry_digest_wrapper(base.hourly, strict)
+    relation_instrument_adapter.install()
     research_optimizer.install()
     progress_ratchet.install()
     progress_context.install()
