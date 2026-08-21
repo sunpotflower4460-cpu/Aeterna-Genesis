@@ -1,0 +1,47 @@
+name: Exploration Swarm CI
+
+on:
+  pull_request:
+    paths:
+      - 'ai_lab/dream/swarm_profile.py'
+      - 'tests/test_swarm_profile.py'
+      - '.github/workflows/dream-loop.yml'
+      - '.github/workflows/swarm-profile-ci.yml'
+      - 'docs/AUTONOMOUS_EXPLORATION_SWARM.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Test deterministic schedule and budget profiles
+        run: pytest -q tests/test_swarm_profile.py
+      - name: Show nominal daily plan
+        run: python -m ai_lab.dream.swarm_profile --daily-summary
+      - name: Validate all manual profiles render recognized strict-goal-loop flags
+        shell: bash
+        run: |
+          for profile in baseline novelty native3d mechanism; do
+            echo "--- $profile ---"
+            python -m ai_lab.dream.swarm_profile --event-name workflow_dispatch --manual-profile "$profile" > "/tmp/$profile.json"
+            python - <<'PY' "/tmp/$profile.json"
+          import json
+          import sys
+          from ai_lab.dream import adaptive_v8
+
+          payload = json.load(open(sys.argv[1], encoding='utf-8'))
+          args = payload['cli_args']
+          adaptive_v8.build_parser().parse_args(args)
+          assert '--seed' not in args
+          PY
+          done
