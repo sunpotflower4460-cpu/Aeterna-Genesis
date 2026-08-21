@@ -30,6 +30,8 @@ on:
       - 'tests/test_multiworld_genesis.py'
       - 'tests/test_deep_time.py'
       - 'tests/test_open_ended_emergence.py'
+      - 'tests/test_x_mechanism_discovery.py'
+      - 'tests/test_x_mechanism_continuity.py'
       - 'tests/test_dream_watchdog.py'
       - 'tools/collect_app_data.py'
       - 'app/src/components/DreamNightReport.tsx'
@@ -53,7 +55,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Dream Loop unit tests
-        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_nothing_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_progress_ratchet.py tests/test_crossworld_replication.py tests/test_research_compass.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
+        run: pytest -q tests/test_ceiling_and_saturation.py tests/test_dry_run_and_archive.py tests/test_dream_loop.py tests/test_dream_state_recovery.py tests/test_adaptive_dream.py tests/test_hypothesis_evolution.py tests/test_pure_genesis.py tests/test_nothing_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_progress_ratchet.py tests/test_crossworld_replication.py tests/test_research_compass.py tests/test_hourly_discovery.py tests/test_strict_geometry.py tests/test_vortex_energy_landscape.py tests/test_promising_followups.py tests/test_zero_to_fission_path.py tests/test_multiworld_genesis.py tests/test_deep_time.py tests/test_open_ended_emergence.py tests/test_x_mechanism_discovery.py tests/test_x_mechanism_continuity.py tests/test_dream_watchdog.py tests/test_ai_lab.py tests/test_ai_ledger.py
       - name: Unit tests must not touch tracked scientific evidence
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -69,7 +71,7 @@ jobs:
             --quick --mode random --trials 4 --repro-top 1 --repro-seeds 3 \
             --native-variants 1 --max-jobs 4 \
             --no-record --no-refresh-app --seed 42
-      - name: Tiny strict Adaptive Dream dry-run with NØ, Yield and durable Progress Ratchet
+      - name: Tiny strict Adaptive Dream dry-run with NØ, Yield and persistent X mechanism dissection
         run: |
           python -m ai_lab.dream.strict_goal_loop \
             --quick --trials 8 --native3d-trials 2 --workers 1 \
@@ -99,7 +101,7 @@ jobs:
             exit 1
           fi
           echo "Dry runs left the working tree clean."
-      - name: Easy, NØ, environment, ratcheted frontier, replication, emergence and Multi-World reports were produced
+      - name: Easy, NØ, X-mechanism, environment, ratcheted frontier, replication, emergence and Multi-World reports were produced
         env:
           DRY: runtime/dry-run/latest
         run: |
@@ -109,6 +111,7 @@ jobs:
           test -f $DRY/ai_lab/reports/easy/latest.md
           test -f $DRY/ai_lab/reports/easy/environment_latest.json
           test -f $DRY/ai_lab/reports/easy/frontier_latest.json
+          test -f $DRY/ai_lab/reports/easy/x_mechanism_latest.json
           test -f $DRY/ai_lab/reports/easy/nothing_latest.json
           test -f $DRY/ai_lab/reports/easy/nothing_latest.md
           test -f $DRY/ai_lab/reports/easy/nothing_latest.png
@@ -131,6 +134,8 @@ jobs:
           grep -q 'deep_time_followup' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'open_ended_emergence' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'unknown_pattern_followup' $DRY/ai_lab/reports/easy/latest.json
+          grep -q 'x_mechanism_discovery' $DRY/ai_lab/reports/easy/latest.json
+          grep -q '"counts_as_strict_zero_evidence": false' $DRY/ai_lab/reports/easy/x_mechanism_latest.json
           grep -q 'question_critic' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'local_vortex_energy_question' $DRY/ai_lab/reports/easy/latest.json
           grep -q 'hypothesis_evolution_v7' $DRY/ai_lab/reports/easy/latest.json
@@ -166,8 +171,11 @@ jobs:
           from pathlib import Path
           root = Path('runtime/dry-run/latest/ai_lab/reports/easy')
           easy = json.loads((root / 'latest.json').read_text())
+          x_mechanism = json.loads((root / 'x_mechanism_latest.json').read_text())
           environment = json.loads((root / 'environment_latest.json').read_text())
           assert environment['burst_id'] == easy['burst_id']
+          assert x_mechanism['burst_id'] == easy['burst_id']
+          assert x_mechanism['policy']['counts_as_strict_zero_evidence'] is False
           PY
 
   observatory:
