@@ -1,14 +1,14 @@
 # Research Continuity — read before changing direction
 
-latest strict burst: `dream-20260821-0336`
-continuity digest: `604ff7bed7b32a041e09`
+latest strict burst: `dream-20260821-0337`
+continuity digest: `a465cfd2544ab0d5b994`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
 ## Must carry forward
 
-- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=5/6, control=10/17, triangle_required=False.
-- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=28, pair-only=20, triads=22, split-asym=0.127159, no-split-asym=0.086077, energy-before-geometry=0. 因果・力・結合エネルギーとはまだ呼ばない。
+- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=2/3, control=8/13, triangle_required=False.
+- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=26, pair-only=24, triads=17, split-asym=0.069988, no-split-asym=0.143757, energy-before-geometry=1. 因果・力・結合エネルギーとはまだ呼ばない。
 - `deep:deep-ee841262151c` [strict-deep-time] — Deep-Time deep-ee841262151c: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-eddd2955c6d8` [strict-deep-time] — Deep-Time deep-eddd2955c6d8: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-e873384a7436` [strict-deep-time] — Deep-Time deep-e873384a7436: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
@@ -23,7 +23,7 @@ continuity digest: `604ff7bed7b32a041e09`
 - `ops:instrument:growth-accounting` [research-operations] — 外部から一様な供給だけを与えた補助実験で、形を指定せず成長・分化・収支が同時に起きるか？
 - `ops:instrument:damage-recovery` [research-operations] — 自然にできたまとまりを後から部分的に乱したとき、同じ統計的個性へ戻るか？
 - `x:X-fa3969eebd` [strict/open-ended-followup] — X-fa3969eebd: status=REPEATED_SPECIFIC_CANDIDATE; same=9/19, nearby=?, control=0/19. 回数だけでなく、何を変えると消えるかを追う。
-- `x:X-f023a067af` [strict/open-ended-followup] — X-f023a067af: status=REPEATED_SPECIFIC_CANDIDATE; same=8/15, nearby=?, control=0/15. 回数だけでなく、何を変えると消えるかを追う。
+- `x:X-f023a067af` [strict/open-ended-followup] — X-f023a067af: status=REPEATED_SPECIFIC_CANDIDATE; same=8/16, nearby=?, control=0/16. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-e64f84a189` [strict/open-ended-followup] — X-e64f84a189: status=REPEATED_SPECIFIC_CANDIDATE; same=7/7, nearby=?, control=0/7. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-deea6a8f25` [strict/open-ended-followup] — X-deea6a8f25: status=REPEATED_SPECIFIC_CANDIDATE; same=5/18, nearby=?, control=0/18. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-dcc459d23a` [strict/open-ended-followup] — X-dcc459d23a: status=REPEATED_SPECIFIC_CANDIDATE; same=32/41, nearby=?, control=0/41. 回数だけでなく、何を変えると消えるかを追う。
@@ -39,6 +39,7 @@ continuity digest: `604ff7bed7b32a041e09`
 - `science:doi:10.1098/rstb.1952.0012` [science-bridge] — 既存科学の文脈: The Chemical Basis of Morphogenesis — A spatially homogeneous state can become unstable and develop structure through reaction and transport, with small disturbances acting as triggers.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1038/s41467-026-69940-w` [science-bridge] — 既存科学の文脈: Kibble-Zurek mechanism and beyond in a holographic superfluid disk — Crossing a continuous transition at finite rate connects quench timescales to spontaneous symmetry breaking and topological-defect production.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1038/nphys3984` [science-bridge] — 既存科学の文脈: Growth and division of active droplets provides a model for protocells — A chemically driven material supply can make droplets grow until shape instabilities produce division-like daughter droplets.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
+- `x-mechanism:X-b991d59a4d` [x-mechanism-exploratory] — paired fresh-seed controlsと回転する一因子介入を続け、amp_std増加がamp_cv増加を伴うかを切り分ける。
 
 ## Integrity
 
@@ -59,5 +60,6 @@ continuity digest: `604ff7bed7b32a041e09`
 - `strict-geometry`: 1
 - `strict-local-energy`: 1
 - `unknown-x`: 8
+- `x-mechanism`: 1
 
-manifest relation: `MATCH`
+manifest relation: `OLDER_FINALIZED_MANIFEST_REFERENCE`
