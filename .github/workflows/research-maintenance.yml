@@ -26,16 +26,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: pip
 
-      - run: pip install -r requirements.txt
+      - name: Refresh diversity-aware handoff before organizing
+        run: python -m ai_lab.dream.research_continuity_entrypoint
 
       - name: Reindex, validate and organize without deleting evidence
         id: maintenance
         shell: bash
         run: |
           set +e
-          python -m ai_lab.dream.research_maintenance --apply-safe
+          python -m ai_lab.dream.research_maintenance
           CODE=$?
           set -e
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
