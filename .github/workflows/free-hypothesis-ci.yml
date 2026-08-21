@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - 'ai_lab/dream/free_hypothesis_lab.py'
+      - 'ai_lab/dream/free_hypothesis_entrypoint.py'
       - 'ai_lab/discoveries/ai_scientist_directions.json'
       - 'tests/test_free_hypothesis_lab.py'
+      - 'tests/test_free_hypothesis_context.py'
       - 'docs/FREE_HYPOTHESIS_LAB.md'
       - '.github/workflows/free-hypothesis-*.yml'
   workflow_dispatch:
@@ -25,10 +27,26 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Unit tests
-        run: pytest -q tests/test_free_hypothesis_lab.py
+        run: pytest -q tests/test_free_hypothesis_lab.py tests/test_free_hypothesis_context.py
+      - name: Current tracked report schema must feed nonzero geometry context when present
+        run: |
+          python - <<'PY'
+          from ai_lab.dream.free_hypothesis_entrypoint import current_evidence_context
+          from ai_lab.dream import free_hypothesis_lab as lab
+          easy = lab._read(lab._EASY, {})
+          geo = easy.get('geometry_summary') or {}
+          ctx = current_evidence_context()
+          if int(geo.get('persistent_pair_seen', 0) or 0) > 0:
+              assert ctx['pairs'] == int(geo['persistent_pair_seen'])
+          if int(geo.get('triad_local_energy_measured', 0) or 0) > 0:
+              assert ctx['triads'] == int(geo['triad_local_energy_measured'])
+          assert ctx['triangle_split'] == int(geo.get('fission_like_after_triangle', 0) or 0)
+          assert ctx['nontriangle_split'] == int(geo.get('fission_like_after_control', 0) or 0)
+          print(ctx)
+          PY
       - name: Dry-run real free hypotheses without writing tracked evidence
         run: |
-          python -m ai_lab.dream.free_hypothesis_lab \
+          python -m ai_lab.dream.free_hypothesis_entrypoint \
             --quick --max-hypotheses 2 --replicates 1 --seed 123 --no-record
       - name: Free-lab dry run must not touch working tree
         run: |
