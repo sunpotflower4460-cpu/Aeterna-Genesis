@@ -1,16 +1,8 @@
 """Non-destructive research maintenance and organization.
 
-"Cleaning" a scientific repository must not mean deleting inconvenient, negative or old evidence.
-This module therefore performs only safe housekeeping automatically:
-
-* parse/identity checks for important ledgers and latest aliases,
-* duplicate/stale-reference detection,
-* compact catalog regeneration,
-* Research Continuity refresh,
-* archive inventory for existing immutable hot/cold ledger storage.
-
-It never deletes raw evidence, immutable manifests, negative results, quarantined results, or historical
-research memory.  Anything that would require destructive cleanup is reported for review instead.
+Scientific cleaning must never mean deleting inconvenient, negative or old evidence. Automatic work is
+therefore limited to validation, index/catalog regeneration, continuity refresh and archive inventory.
+Potentially destructive actions are only reported for review and are never performed here.
 """
 from __future__ import annotations
 
@@ -48,6 +40,14 @@ _TRACKED_JSON = {
     "ai_scientist_directions": _DISC / "ai_scientist_directions.json",
 }
 
+# These may legitimately be absent before their first derived/scheduled run. Core strict provenance,
+# Research Memory and existing discovery ledgers are never silently classified as optional.
+_OPTIONAL_NAMES = {
+    "research_continuity",
+    "science_bridge_directions",
+    "science_bridge_ledger",
+}
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -62,14 +62,19 @@ def _read_json(path: Path) -> tuple[Any | None, str | None]:
         return None, type(exc).__name__
 
 
+def _write(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def _sha(path: Path) -> str | None:
     if not path.exists() or not path.is_file():
         return None
-    h = hashlib.sha256()
+    digest = hashlib.sha256()
     with path.open("rb") as fh:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _duplicate_values(rows: Any, key: str) -> list[str]:
@@ -79,7 +84,7 @@ def _duplicate_values(rows: Any, key: str) -> list[str]:
             continue
         value = str(row[key])
         counts[value] = counts.get(value, 0) + 1
-    return sorted(value for value, n in counts.items() if n > 1)
+    return sorted(value for value, count in counts.items() if count > 1)
 
 
 def _structure_duplicates(name: str, doc: Any) -> list[dict[str, Any]]:
@@ -98,11 +103,12 @@ def _structure_duplicates(name: str, doc: Any) -> list[dict[str, Any]]:
         checks += [("continuity-key", doc.get("lessons"), "key")]
     elif name == "science_bridge_ledger":
         checks += [("science-ledger-key", doc.get("sources"), "key")]
-    return [
-        {"file": name, "identity": label, "duplicates": dup}
-        for label, rows, key in checks
-        if (dup := _duplicate_values(rows, key))
-    ]
+    findings = []
+    for label, rows, identity_key in checks:
+        duplicates = _duplicate_values(rows, identity_key)
+        if duplicates:
+            findings.append({"file": name, "identity": label, "duplicates": duplicates})
+    return findings
 
 
 def _archive_inventory() -> list[dict[str, Any]]:
@@ -114,25 +120,23 @@ def _archive_inventory() -> list[dict[str, Any]]:
         rows.append({
             "directory": str(directory.relative_to(_REPO)),
             "part_count": len(parts),
-            "bytes": sum(p.stat().st_size for p in parts),
-            "parts": [p.name for p in parts[-8:]],
+            "bytes": sum(part.stat().st_size for part in parts),
+            "recent_parts": [part.name for part in parts[-8:]],
         })
     return rows
 
 
 def _catalog_entry(name: str, path: Path, doc: Any | None, error: str | None) -> dict[str, Any]:
-    rel = str(path.relative_to(_REPO))
-    generated_at = doc.get("generated_at") if isinstance(doc, dict) else None
-    burst = doc.get("burst_id") if isinstance(doc, dict) else None
     return {
         "name": name,
-        "path": rel,
+        "path": str(path.relative_to(_REPO)),
+        "required": name not in _OPTIONAL_NAMES,
         "exists": path.exists(),
         "parse_error": error,
         "bytes": path.stat().st_size if path.exists() and path.is_file() else 0,
         "sha256": _sha(path),
-        "generated_at": generated_at,
-        "burst_id": burst,
+        "generated_at": doc.get("generated_at") if isinstance(doc, dict) else None,
+        "burst_id": doc.get("burst_id") if isinstance(doc, dict) else None,
     }
 
 
@@ -140,20 +144,20 @@ def build(*, apply_safe: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
     safe_actions: list[str] = []
     if apply_safe:
         research_continuity.run(persist=True)
-        safe_actions.append("refreshed research_continuity from existing evidence without deleting source history")
+        safe_actions.append("refreshed Research Continuity from source evidence without deleting history")
 
     documents: dict[str, Any] = {}
     catalog_rows: list[dict[str, Any]] = []
     parse_failures: list[dict[str, Any]] = []
     duplicates: list[dict[str, Any]] = []
     missing_optional: list[str] = []
+    missing_required: list[str] = []
     for name, path in _TRACKED_JSON.items():
         doc, error = _read_json(path)
         documents[name] = doc
         catalog_rows.append(_catalog_entry(name, path, doc, error))
         if error == "MISSING":
-            # Science Bridge files may not exist before its first run; this is reported but not fatal.
-            missing_optional.append(name)
+            (missing_optional if name in _OPTIONAL_NAMES else missing_required).append(name)
         elif error:
             parse_failures.append({"name": name, "path": str(path.relative_to(_REPO)), "error": error})
         duplicates.extend(_structure_duplicates(name, doc))
@@ -174,6 +178,7 @@ def build(*, apply_safe: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
 
     archives = _archive_inventory()
     now = _now()
+    healthy = not parse_failures and not duplicates and not stale_refs and not missing_required
     catalog = {
         "version": 1,
         "mode": "research-organization-catalog",
@@ -195,11 +200,12 @@ def build(*, apply_safe: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
         "apply_safe": bool(apply_safe),
         "safe_actions_applied": safe_actions,
         "parse_failures": parse_failures,
+        "missing_required_files": missing_required,
+        "missing_optional_files": missing_optional,
         "duplicate_identity_findings": duplicates,
         "stale_reference_findings": stale_refs,
-        "missing_optional_files": missing_optional,
         "archive_inventory": archives,
-        "healthy_for_automatic_organization": not parse_failures and not duplicates and not stale_refs,
+        "healthy_for_automatic_organization": healthy,
         "destructive_cleanup_required": False,
         "destructive_cleanup_performed": False,
         "policy": {
@@ -210,6 +216,7 @@ def build(*, apply_safe: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
             "git_history_is_authoritative": True,
             "safe_automatic_cleanup_means_reindex_validate_and_organize": True,
             "potentially_destructive_actions_require_separate_review": True,
+            "missing_core_research_state_is_healthy": False,
         },
     }
     return report, catalog
@@ -221,16 +228,16 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"safe maintenance healthy: **{report.get('healthy_for_automatic_organization')}**",
         "",
-        "この掃除は科学的証拠を消しません。索引・handoffの再生成、重複/壊れた参照の検出だけを自動で行います。",
+        "この掃除は科学的証拠を消しません。索引/handoff再生成と、壊れた・重複した参照の検出だけを自動で行います。",
         "",
+        f"- missing required: {len(report.get('missing_required_files') or [])}",
         f"- parse failures: {len(report.get('parse_failures') or [])}",
         f"- duplicate identity findings: {len(report.get('duplicate_identity_findings') or [])}",
         f"- stale reference findings: {len(report.get('stale_reference_findings') or [])}",
         f"- archive directories: {len(report.get('archive_inventory') or [])}",
         "",
     ]
-    for item in report.get("safe_actions_applied") or []:
-        lines.append(f"- safe action: {item}")
+    lines.extend(f"- safe action: {item}" for item in (report.get("safe_actions_applied") or []))
     lines += [
         "",
         "Raw evidence / negative results / quarantine / immutable manifests are never deleted by this job.",
@@ -250,10 +257,10 @@ def run(*, apply_safe: bool = False, persist: bool = True) -> dict[str, Any]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    ap = argparse.ArgumentParser(description="Safely organize Aeterna research without deleting evidence")
-    ap.add_argument("--apply-safe", action="store_true")
-    ap.add_argument("--no-record", action="store_true")
-    return ap
+    parser = argparse.ArgumentParser(description="Safely organize Aeterna research without deleting evidence")
+    parser.add_argument("--apply-safe", action="store_true")
+    parser.add_argument("--no-record", action="store_true")
+    return parser
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -262,6 +269,7 @@ def main(argv: list[str] | None = None) -> int:
     print(
         "Research Maintenance: "
         f"healthy={report.get('healthy_for_automatic_organization')} "
+        f"missing_required={len(report.get('missing_required_files') or [])} "
         f"parse={len(report.get('parse_failures') or [])} "
         f"duplicates={len(report.get('duplicate_identity_findings') or [])} "
         f"stale={len(report.get('stale_reference_findings') or [])}"
