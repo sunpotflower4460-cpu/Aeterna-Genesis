@@ -1,7 +1,7 @@
 name: Free Hypothesis Lab
 
 on:
-  # Four independent idea/provocation windows per day.  They are intentionally offset from the
+  # Four independent idea/provocation windows per day. They are intentionally offset from the
   # primary Dream burst and share the same concurrency group so evidence writes never race.
   schedule:
     - cron: '37 2,8,14,20 * * *'
@@ -10,6 +10,7 @@ on:
     paths:
       - 'ai_lab/dream/free_hypothesis_lab.py'
       - 'ai_lab/dream/free_hypothesis_entrypoint.py'
+      - 'ai_lab/dream/research_continuity.py'
       - 'ai_lab/discoveries/ai_scientist_directions.json'
       - '.github/workflows/free-hypothesis-lab.yml'
   workflow_dispatch:
@@ -46,6 +47,9 @@ jobs:
             --replicates 3 \
             --seed "${{ github.run_number }}"
 
+      - name: Carry important exploratory lessons forward
+        run: python -m ai_lab.dream.research_continuity
+
       - name: Upload free-lab evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -58,6 +62,8 @@ jobs:
             ai_lab/reports/easy/free_hypothesis_latest.md
             ai_lab/discoveries/free_hypothesis_lab.json
             ai_lab/discoveries/ai_scientist_directions.json
+            ai_lab/discoveries/research_continuity.json
+            ai_lab/reports/easy/research_continuity_latest.md
 
       - name: Persist free-lab evidence without touching strict scientific ledgers
         shell: bash
@@ -67,12 +73,14 @@ jobs:
           git add -- \
             ai_lab/reports/easy/free_hypothesis_latest.json \
             ai_lab/reports/easy/free_hypothesis_latest.md \
-            ai_lab/discoveries/free_hypothesis_lab.json
+            ai_lab/discoveries/free_hypothesis_lab.json \
+            ai_lab/discoveries/research_continuity.json \
+            ai_lab/reports/easy/research_continuity_latest.md
           if git diff --cached --quiet; then
-            echo "No Free Hypothesis evidence changed."
+            echo "No Free Hypothesis evidence/continuity changed."
             exit 0
           fi
-          git commit -m "record separated Free Hypothesis Lab evidence"
+          git commit -m "record separated Free Hypothesis Lab evidence and continuity"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
               exit 0
