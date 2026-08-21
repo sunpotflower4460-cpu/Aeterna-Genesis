@@ -1,26 +1,59 @@
 # Aeterna-Genesis
 
-**本物の場から、最小条件で、構造が勝手に出るのを、掟つきで一個ずつ積む。**
+**宇宙水槽に前提条件を入れ、世界自身が何を始めるかを、人間とAIが一緒に観察する。**
+
+Aeterna-Genesis は、完成した結果を組み立てるためのシミュレータではありません。
+法則・物質・初期状態・seed・境界・持続入力などの **Recipe（前提条件）** を宇宙水槽へ与え、t=0 から走らせたときに何が起こるかを記録し、条件地図を育てる研究環境です。
+
+人間もAIも「こんな系を見たい」「こんなことを実現したい」という **Intent** を持って構いません。AIは人間の指示がなくても新しい水槽アイディアを考えてよい。一方で、見たい結果そのものを初期条件・方程式・発生位置・発生時刻・外部命令として仕込むことは分けます。
+
+> **Intent は自由。結果は仕込まない。**  
+> planning layer は Intent を読める。physics solver は Intent 文を読まない。
+
+詳しい中心思想 → [`docs/UNIVERSE_AQUARIUM.md`](docs/UNIVERSE_AQUARIUM.md)  
+現在の水槽一覧 → [`aquaria/registry.json`](aquaria/registry.json)  
+Human Note × AI Direction Note → [`aquaria/notebook.json`](aquaria/notebook.json)  
+AI が最初に読むもの → [`AGENTS.md`](AGENTS.md)
+
+## 今の研究環境
+
+```text
+Universe Aquarium
+  Idea / Intent
+      ↓
+  Recipe（前提条件）
+      ↓
+  Integrity Check
+      ↓
+  Run from t=0
+      ↓
+  Observation
+      ↓
+  Discovery / Negative Evidence
+      ↓
+  Human Note + AI Direction Note
+      ↓
+  Next Recipe
+
+Evidence Library ── 過去の物理・測定器・失敗を参照
+Genesis Rooms    ── 実際に走った再現可能な宇宙
+AI Genesis Lab   ── 人間の水槽もAI自身の水槽も自動探索
+Observatory App  ── 人間が宇宙を見て、現在地と方向書を把握
+```
+
+Seeded / scaffolded / driven な水槽も正当な研究です。strict minimal-start と上下関係にはせず、**何を前提として入れた水槽なのかを正確に分けます。**
+Goal-directed（例：分裂を見たい、トーラス形成を見たい）も禁止しません。目的を見ながら前提条件を探すことと、結果を直接描くことを区別します。
 
 > 🧭 **いま大事な発見・前進だけを先に見る → [`CURRENT_RESEARCH.md`](CURRENT_RESEARCH.md)**  
 > 生の失敗・quarantine・全試行は削除せず証拠庫に残し、Current Research Frontでは重要な発見と次の問いを優先表示します。
 
-> **【三層移行 進行中】** 個別実験の研究庫から、**0 から立ち上がる 3D 物理・Genesis Room・
-> AI 始原条件探索**の三層研究環境へ段階移行している。
-> **AI が最初に読むもの → [`AGENTS.md`](AGENTS.md)**。現在地は [`docs/GENESIS_MAP.md`](docs/GENESIS_MAP.md)、
-> 誠実さの憲法は [`docs/PHYSICS_INTEGRITY.md`](docs/PHYSICS_INTEGRITY.md)、創発の深さは
-> [`docs/EMERGENCE_LEVELS.md`](docs/EMERGENCE_LEVELS.md)、移行記録は [`docs/MIGRATION.md`](docs/MIGRATION.md)。
+> **【Research OS / Universe Aquarium 移行中】** 個別実験の研究庫から、**Evidence Library・Genesis Room・AI自律探索・人間AI共有Aquarium・Observatory** を一つの研究環境へ統合している。
+> 現在地は [`docs/GENESIS_MAP.md`](docs/GENESIS_MAP.md)、誠実さの憲法は [`docs/PHYSICS_INTEGRITY.md`](docs/PHYSICS_INTEGRITY.md)、創発の深さは [`docs/EMERGENCE_LEVELS.md`](docs/EMERGENCE_LEVELS.md)、移行記録は [`docs/MIGRATION.md`](docs/MIGRATION.md)。
 > 既存 `experiments/e001–e045` は**削除せず** Evidence Library（物理辞書）として保存する。
-
-宇宙が始まるとき、おそらく最小条件しかない。その条件から、意図せずに——石が
-水に作る波紋、雨が降り雷が鳴るのと同じように——構造が "勝手に" 生まれた。
-それを、この場で、本物としてやる。観測されている要素（幾何・物質・渦・トーラス・
-重力…）が、作為なく、最小条件から創発するのを、一個ずつ確かめて積む。
 
 ## 「本物の物理」の二つの意味（混ぜると擬似に転ぶ）
 
-- **(A) 忠実な創発**：本物の法則（実在の場の方程式）を入れ、最小条件から現象が
-  勝手に出る。法則は "与えられて本物"、結果は "勝手に出る"。
+- **(A) 忠実な創発**：本物の法則（実在の場の方程式）を入れ、前提条件から現象が結果として出る。法則は "与えられて本物"、結果は "世界に任せる"。
   **これは本物の物理。今すぐ厳密にできる。** ここを厳密に積む。
 - **(B) 法則自体を根から導く**：場の方程式さえ 0≠無 から出す。最深の目標。**まだ。**
 
@@ -43,7 +76,7 @@
 各主張には claim tier（`measured | observed | interpretive | analogy | frontier`）
 を必ず付ける（[docs/claim_ledger.md](docs/claim_ledger.md)）。
 
-## モジュール一覧
+## モジュール一覧（Evidence Libraryの一部）
 
 | モジュール | 問い | STATUS | tier | A/B |
 |---|---|---|---|---|
@@ -68,37 +101,22 @@
 > 階層に内在し ε も手入れ。MERA/AdS の構造再現であり忠実な創発ではない。GREEN とは
 > 呼ばない（[AUDIT](experiments/e004_octave_holography/AUDIT.md) 参照）。
 
-剥がす順番の全体地図は [docs/00_grand_map.md](docs/00_grand_map.md)。
+## リポジトリ構造（現在）
 
-## リポジトリ構造
-
-```
+```text
 Aeterna-Genesis/
-├── README.md              # マニフェスト + 掟の要約 + モジュール一覧
-├── LAW.md                 # 掟の全文（7監査・claim tier・忠実な場の規則）
-├── core/                  # 共有の数値道具（再利用。実験ごとに再実装しない）
-│   ├── fft.py             # 2D FFT・波数格子（split-step 用）
-│   ├── field.py           # 複素場の初期化・規格化・トラップ・split-step 伝播
-│   ├── vortex.py          # 渦検出（位相巻き数＋密度極小）、循環の量子化チェック
-│   └── measure.py         # 保存量・累積回転・（後で）次元/相関/スペクトル
-├── experiments/
-│   ├── e001_gpe_vortex_precession/
-│   │   ├── run.py         # 監査ヘッダ＋測定を表示、result.json を保存
-│   │   ├── robustness.py  # 監査6：R0×Ω スイープ
-│   │   ├── AUDIT.md       # 7監査の結果（人間可読）
-│   │   ├── result.json    # 基準測定値（再現確認用）
-│   │   └── robustness.json
-│   └── e002_gpe_two_vortex/
-│       ├── run.py         # 同符号＝共回転／逆符号＝並進、result.json を保存
-│       ├── robustness.py  # 監査6：間隔 d スイープ
-│       ├── AUDIT.md       # 7監査＋正直な注記（クリーン窓）
-│       ├── result.json
-│       └── robustness.json
-├── docs/
-│   ├── 00_grand_map.md    # 全体地図（背骨と剥がす順番）
-│   └── claim_ledger.md    # 全主張の claim tier 台帳
-├── tests/                 # core 単体テスト＋e001 回帰テスト
-└── .github/workflows/ci.yml
+├── aquaria/               # 人間/AI共有の水槽台帳・方向書（planning only）
+├── experiments/           # Evidence Library
+├── rooms/                 # 実際に走った公式/候補Universe
+├── ai_lab/                # 自律探索・Research Memory・Compass
+├── genesis/               # 物理モデル・solver・diagnostics・recording
+├── app/                   # Observatory / Universe Aquarium Lab
+├── schemas/               # Room / Run / Aquarium等の機械契約
+├── docs/                  # 研究原則・現在地・監査
+├── tests/                 # 回帰・integrity・schema tests
+├── AGENTS.md              # 全AI共通ルール
+├── LAW.md                 # 掟の全文
+└── CURRENT_RESEARCH.md     # 人間向けの現在地
 ```
 
 ## 使い方
@@ -106,21 +124,24 @@ Aeterna-Genesis/
 ```bash
 pip install -r requirements.txt
 
-# e001 を基準パラメータで再現（result.json を生成）
-python experiments/e001_gpe_vortex_precession/run.py
-
-# 監査6（頑健性スイープ）
-python experiments/e001_gpe_vortex_precession/robustness.py
-
-# core 単体テスト＋e001 回帰テスト
+# 全体テスト
 pytest tests/
-```
 
-**期待される結果（e001）**：渦が中心の周りを半径ほぼ一定（≈10）で回り、累積
-回転角は 8000 步で 360° を超える（≈462°）。循環は +1 に量子化、エネルギー・
-ノルムは保存。詳細は [AUDIT.md](experiments/e001_gpe_vortex_precession/AUDIT.md)。
+# 人間/AI共有 Aquarium Compass
+python -m ai_lab.aquarium.compass
+
+# Observatory のデータを組み立てる
+python tools/build_catalog.py
+python tools/collect_app_data.py
+
+cd app
+npm ci
+npm run typecheck
+npm run build
+```
 
 ## スタック
 
-Python（numpy / scipy）。FFT・線形代数・将来の誘導重力（実線形代数）が速く
-標準的なため。CI が緑＝「掟つきで再現可能」——擬似でない構造的保証。
+物理・Research OSは Python（numpy / scipyほか）。Observatoryは React / TypeScript / R3F。
+
+CI が緑であることは「見た目が良い」という意味ではなく、**前提条件・証拠・表示・研究計画を混ぜず、再現・監査できる構造を守っている**ことを意味する。

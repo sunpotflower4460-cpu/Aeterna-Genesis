@@ -46,7 +46,7 @@ function InboxBanner() {
   if (candidates.length === 0 && jobs.length === 0) return null
   return (
     <button className="glass" onClick={toInbox} style={{
-      textAlign: 'left', width: '100%', marginTop: 32, padding: '16px 18px', display: 'flex',
+      textAlign: 'left', width: '100%', marginTop: 14, padding: '16px 18px', display: 'flex',
       alignItems: 'center', gap: 14, border: '1px dashed var(--line)', background: 'var(--panel)', color: 'var(--ink)',
     }}>
       <div style={{ fontSize: 22 }}>◇</div>
@@ -61,9 +61,34 @@ function InboxBanner() {
   )
 }
 
+function AquariumBanner() {
+  const toAquaria = useStore((s) => s.toAquaria)
+  const registry = useStore((s) => s.aquariumRegistry)
+  const notebook = useStore((s) => s.aquariumNotebook)
+  return (
+    <button className="glass" onClick={toAquaria} style={{
+      textAlign: 'left', width: '100%', marginTop: 32, padding: '18px 20px', display: 'flex',
+      alignItems: 'center', gap: 15, border: '1px solid rgba(79,227,224,.28)',
+      background: 'linear-gradient(115deg, rgba(79,227,224,.08), rgba(169,139,250,.045)), var(--panel)', color: 'var(--ink)',
+    }}>
+      <div style={{ fontSize: 25 }}>◌</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 650, fontSize: 15.5 }}>Universe Aquarium Lab</div>
+        <div className="muted" style={{ fontSize: 12.5, marginTop: 4, lineHeight: 1.55 }}>
+          「こんな世界を見たい」を人間とAIで共有し、結果を置かずに前提条件を探索する研究室。
+        </div>
+      </div>
+      <div className="mono" style={{ fontSize: 11, color: 'var(--accent)', textAlign: 'right' }}>
+        {registry?.aquaria.length ?? 0} aquaria<br />{notebook?.entries.length ?? 0} notes · 開く →
+      </div>
+    </button>
+  )
+}
+
 export default function Lobby() {
   const catalog = useStore((s) => s.catalog)!
   const rooms = catalog.rooms
+  const toAquaria = useStore((s) => s.toAquaria)
   return (
     <div style={{ height: '100%', overflow: 'auto' }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 20px 80px' }}>
@@ -73,7 +98,8 @@ export default function Lobby() {
             <h1 style={{ margin: 0, fontSize: 30, fontWeight: 600, letterSpacing: '-.02em' }}>あなたの宇宙</h1>
             <p className="muted" style={{ margin: '6px 0 0' }}>始原条件から育った宇宙を選ぶ</p>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button className="lens" onClick={toAquaria}>◌ Aquariums</button>
             {rooms.length >= 2 && (
               <button className="lens" onClick={() => useStore.getState().toCompare(rooms[0].room_id, rooms[1].room_id)}>
                 ◫ Compare
@@ -84,6 +110,8 @@ export default function Lobby() {
             </span>
           </div>
         </div>
+
+        <AquariumBanner />
 
         <h2 style={{ fontSize: 15, fontWeight: 600, margin: '28px 0 12px', color: 'var(--muted)' }}>正式 Genesis Rooms</h2>
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))' }}>
