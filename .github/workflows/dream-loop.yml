@@ -16,21 +16,40 @@ on:
   schedule:
     # Primary evidence burst every hour at :17.
     - cron: '17 * * * *'
+    # Six additional specialist swarms per day.  These are serialized by the same concurrency group
+    # and deliberately rotate different scientific questions instead of duplicating the broad sweep.
+    # JST: novelty 09:07/21:07, native3d 01:07/13:07, mechanism 05:07/17:07.
+    - cron: '7 0,12 * * *'
+    - cron: '7 4,16 * * *'
+    - cron: '7 8,20 * * *'
     # Safety-net check at :47. It only runs a burst when the latest completed report is >70 min old.
     - cron: '47 * * * *'
   workflow_dispatch:
+    inputs:
+      research_profile:
+        description: 'Research compute profile (auto keeps schedule-driven rotation)'
+        required: false
+        default: auto
+        type: choice
+        options:
+          - auto
+          - baseline
+          - novelty
+          - native3d
+          - mechanism
 
 permissions:
   contents: write
 
 concurrency:
+  # Shared across hourly, specialist and watchdog events so generated evidence never races itself.
   group: genesis-dream-loop
   cancel-in-progress: false
 
 jobs:
   research-burst:
     runs-on: ubuntu-latest
-    # A real research burst must stay bounded and finish before the next one.
+    # A real research burst must stay bounded and finish before the queue grows without limit.
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +74,7 @@ jobs:
             RUN_BURST="$(python -m ai_lab.dream.watchdog --latest ai_lab/reports/easy/latest.json --max-age-minutes 70)"
           else
             RUN_BURST="true"
-            echo "Dream watchdog: primary/push/manual event, run normally." >&2
+            echo "Dream watchdog: primary/specialist/push/manual event, run normally." >&2
           fi
           echo "run_burst=$RUN_BURST" >> "$GITHUB_OUTPUT"
           echo "run_burst=$RUN_BURST"
@@ -63,6 +82,17 @@ jobs:
       - name: Backup not needed
         if: steps.watchdog.outputs.run_burst != 'true'
         run: echo "A recent completed Dream report exists; the :47 safety-net exits without duplicating research."
+
+      - name: Select autonomous exploration swarm profile
+        if: steps.watchdog.outputs.run_burst == 'true'
+        id: profile
+        env:
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          AETERNA_MANUAL_PROFILE: ${{ github.event.inputs.research_profile || 'auto' }}
+        run: |
+          python -m ai_lab.dream.swarm_profile --emit-github-output
+          echo "Selected profile: $(grep '^profile=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)"
+          python -m ai_lab.dream.swarm_profile --daily-summary
 
       - name: Install research dependencies
         if: steps.watchdog.outputs.run_burst == 'true'
@@ -80,38 +110,18 @@ jobs:
           restore-keys: |
             dream-state-${{ runner.os }}-
 
-      - name: Run hourly Adaptive Dream v8 Pure Genesis R0 + NØ research
+      - name: Run selected Adaptive Dream v8 Pure Genesis R0 + NØ research profile
         if: steps.watchdog.outputs.run_burst == 'true'
         # Leave headroom inside the 50-minute job so state save, artifacts and the evidence commit
-        # still run when a burst overruns, instead of being killed with it.
+        # still run when a burst overruns, instead of being killed with it. Specialist budgets trade
+        # broad 2D volume for novelty/3D/mechanism depth and remain bounded by the same wall clock.
         timeout-minutes: 38
+        env:
+          AETERNA_EXPLORATION_PROFILE: ${{ steps.profile.outputs.profile }}
         run: |
-          python -m ai_lab.dream.strict_goal_loop \
-            --quick \
-            --trials 2048 \
-            --native3d-trials 100 \
-            --workers 4 \
-            --repro-top 8 \
-            --repro-seeds 3 \
-            --compare-native3d-top 12 \
-            --geometry-top 16 \
-            --geometry-broad 32 \
-            --followup-trials-2d 256 \
-            --followup-trials-3d 32 \
-            --followup-max-leads 4 \
-            --fission-path-trials-2d 24 \
-            --fission-path-max-leads 2 \
-            --deep-time-max-leads 1 \
-            --open-ended-probes 24 \
-            --open-ended-max-episodes 3 \
-            --unknown-followup-max-patterns 2 \
-            --max-synthesized-hypotheses 3 \
-            --root-law-trials 24 \
-            --root-sizes 8,12,16 \
-            --root-steps 48 \
-            --frontier-experiments 24 \
-            --native-variants 1 \
-            --max-jobs 12
+          echo "Aeterna exploration profile: $AETERNA_EXPLORATION_PROFILE"
+          echo "Purpose: ${{ steps.profile.outputs.purpose }}"
+          python -m ai_lab.dream.strict_goal_loop ${{ steps.profile.outputs.args }}
 
       # Shadow-only: heterogeneous Worlds are observed in a common envelope but cannot change the
       # g001 search budget, official Levels, promotion gates or hypothesis confidence. The same step
@@ -170,7 +180,7 @@ jobs:
         if: ${{ always() && steps.watchdog.outputs.run_burst == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: genesis-research-report-${{ github.run_number }}
+          name: genesis-research-report-${{ github.run_number }}-${{ steps.profile.outputs.profile }}
           retention-days: 30
           if-no-files-found: warn
           path: |
@@ -230,6 +240,8 @@ jobs:
       - name: Persist generated evidence to repository
         if: ${{ vars.PERSIST_DREAM_RESULTS != 'false' && steps.watchdog.outputs.run_burst == 'true' }}
         shell: bash
+        env:
+          PROFILE_NAME: ${{ steps.profile.outputs.profile }}
         run: |
           git config user.name "aeterna-dream-bot"
           git config user.email "aeterna-dream-bot@users.noreply.github.com"
@@ -267,7 +279,7 @@ jobs:
             echo "No generated Dream evidence changed."
             exit 0
           fi
-          git commit -m "record hourly Adaptive Dream evidence"
+          git commit -m "record ${PROFILE_NAME:-baseline} Adaptive Dream evidence"
           # A feature commit can land while a 30-50 minute burst is running. Rebase the generated
           # evidence on top of it rather than discarding an entire burst to a rejected push.
           for attempt in 1 2 3; do
