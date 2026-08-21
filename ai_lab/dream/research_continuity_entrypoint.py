@@ -1,12 +1,14 @@
 """Production entrypoint for a topic-diverse, actionable Research Continuity handoff.
 
-The authoritative evidence remains in the underlying ledgers/manifests/Git history.  This adapter only
+The authoritative evidence remains in the underlying ledgers/manifests/Git history. This adapter only
 changes the compact ``must_carry_forward`` navigation view so a large family (currently Deep-Time) cannot
-crowd every other research question out of the next autonomous scientist's working context.  It also
-carries the separated X-mechanism intervention ledger forward as exploratory mechanism questions.
+crowd every other research question out of the next autonomous scientist's working context. It also
+carries the separated X-mechanism intervention ledger forward as exploratory mechanism questions, with a
+separate working-memory bucket from ordinary X discovery so recurrence observations cannot crowd out the
+question of *why* an X fires.
 
-No evidence is deleted.  No scientific status, Room, Level, truth gate, physics law or initial condition is
-changed.  Free-Hypothesis, Science-Bridge and intervened X-mechanism material remains explicitly non-strict.
+No evidence is deleted. No scientific status, Room, Level, truth gate, physics law or initial condition is
+changed. Free-Hypothesis, Science-Bridge and intervened X-mechanism material remains explicitly non-strict.
 """
 from __future__ import annotations
 
@@ -22,11 +24,12 @@ _X_MECHANISMS = Path(__file__).resolve().parents[2] / "ai_lab" / "discoveries" /
 _ORIGINAL_CURRENT_LESSONS = base._current_lessons
 
 # Reserve a small number of seats for distinct scientific questions, then fill by priority while keeping
-# hard caps.  The full ``lessons`` ledger is still unbounded by these handoff caps.
+# hard caps. The full ``lessons`` ledger is still unbounded by these handoff caps.
 _BUCKET_MINIMUMS: dict[str, int] = {
     "strict-geometry": 1,
     "strict-local-energy": 1,
     "unknown-x": 4,
+    "x-mechanism": 2,
     "strict-deep-time": 4,
     "free-hypothesis": 2,
     "science-bridge": 4,
@@ -39,6 +42,7 @@ _BUCKET_CAPS: dict[str, int] = {
     "strict-geometry": 2,
     "strict-local-energy": 2,
     "unknown-x": 8,
+    "x-mechanism": 4,
     "strict-deep-time": 6,
     "free-hypothesis": 6,
     "science-bridge": 8,
@@ -101,7 +105,7 @@ def _x_mechanism_lessons() -> list[dict[str, Any]]:
 
 
 def _current_lessons_with_x() -> list[dict[str, Any]]:
-    # The original function remains authoritative for all existing lanes.  X mechanism is additive only.
+    # The original function remains authoritative for all existing lanes. X mechanism is additive only.
     rows = list(_ORIGINAL_CURRENT_LESSONS())
     existing = {str(row.get("key")) for row in rows if isinstance(row, dict)}
     rows.extend(row for row in _x_mechanism_lessons() if str(row.get("key")) not in existing)
@@ -115,7 +119,10 @@ def _bucket(row: dict[str, Any]) -> str:
         return "strict-geometry"
     if kind == "local_energy_competing_explanation" or lane == "strict-local-energy":
         return "strict-local-energy"
-    if kind in {"unknown_transition", "x_mechanism_dissection"} or "open-ended" in lane or "x-mechanism" in lane:
+    # Mechanism dissection gets its own protected working-memory quota. It remains exploratory/non-strict.
+    if kind == "x_mechanism_dissection" or "x-mechanism" in lane:
+        return "x-mechanism"
+    if kind == "unknown_transition" or "open-ended" in lane:
         return "unknown-x"
     if kind == "deep_time" or lane == "strict-deep-time":
         return "strict-deep-time"
@@ -319,6 +326,7 @@ def build(existing: dict[str, Any] | None = None) -> dict[str, Any]:
     doc["policy"]["family_cap_deletes_source_lessons"] = False
     doc["policy"]["older_manifest_reference_implies_bad_physics"] = False
     doc["policy"]["x_mechanism_interventions_remain_non_strict"] = True
+    doc["policy"]["x_discovery_and_x_mechanism_have_separate_working_memory"] = True
     doc["continuity_digest"] = base._compact_hash({
         "latest_strict_burst": doc.get("latest_strict_burst"),
         "must_carry_forward": doc.get("must_carry_forward"),
