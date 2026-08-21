@@ -5,11 +5,11 @@
     {
       "id": "direction-energy-shell-001",
       "author": "AI Scientist",
-      "enabled": true,
+      "enabled": false,
       "experiment_type": "annular_energy_shell",
       "title": "リング状のエネルギー界面は関係網の形成や分岐を変えるか",
       "question": "同じ平均エネルギーでも、曲率を持つエネルギー界面を置いた場合に欠陥・関係・分岐の統計は変わるか？",
-      "rationale": "局所エネルギー偏りと幾何崩壊の時間順序が一定していないため、総量と空間配置を大胆に分離してみる。",
+      "rationale": "局所エネルギー偏りと幾何崩壊の時間順序が一定していないため、総量と空間配置を大胆に分離してみる。単独介入より対照ペアを優先するため、現在はAI方向枠では休止する（自動探索候補としての存在は変更しない）。",
       "parameters": {
         "radius": 0.5,
         "width": 0.09,
@@ -21,24 +21,61 @@
       "author": "AI Scientist",
       "enabled": true,
       "experiment_type": "circular_confinement",
-      "title": "0が存在できる場所そのものを丸くしたら何が変わるか",
-      "question": "正方形周期空間ではなく円形の有限領域にすると、欠陥・多体関係・分岐の頻度はどう変化するか？",
-      "rationale": "三角形が分離に特別とは限らないため、個々の形ではなく全体系の境界曲率・閉じ込めが効く可能性を探索する。",
+      "title": "円形閉じ込めを楕円対照と組にして境界効果を分解する",
+      "question": "円形と、面積スケールを近づけた楕円形の有限領域を比較したとき、欠陥・関係・分岐統計の差は曲率そのもの、異方性、有限サイズのどれと整合するか？",
+      "rationale": "三角形はcontrolより特別とは言えないため、形の物語を増やすのではなく、円と楕円の対照で境界曲率と異方性を分離する。結果はscaffolded exploratoryでありstrict証拠へ昇格させない。",
       "parameters": {
         "radius": 0.82
       }
     },
     {
-      "id": "direction-periodic-drive-001",
+      "id": "direction-boundary-anisotropy-control-002",
       "author": "AI Scientist",
       "enabled": true,
+      "experiment_type": "elliptic_confinement",
+      "title": "楕円対照で円形境界の候補説明を壊す",
+      "question": "円形閉じ込めで差が出た場合、その差は楕円形でも残るか、それとも等方的な曲率に依存するか？",
+      "rationale": "単一形状の陽性結果は形状固有・有限サイズ・異方性を混同しやすい。円/楕円を対で読むことで、陽性でも陰性でも説明空間を狭める。",
+      "parameters": {
+        "axis_x": 0.86,
+        "axis_y": 0.58
+      }
+    },
+    {
+      "id": "direction-periodic-drive-001",
+      "author": "AI Scientist",
+      "enabled": false,
       "experiment_type": "periodic_global_drive",
       "title": "0へ周期的に環境エネルギーを与えたら内部時間尺度と共鳴するか",
       "question": "長時間でだけ現れる関係網変化は、外部時間尺度との共鳴・非共鳴によって大きく変わるか？",
-      "rationale": "Deep-Timeで短時間には見えない変化が出るため、時間尺度そのものが機構の手掛かりかもしれない。",
+      "rationale": "Deep-Timeで短時間には見えない変化が出るため、時間尺度そのものが機構の手掛かりかもしれない。固定1周期の単独介入よりslow/fast quench対照を先に優先するため、現在は休止する。",
       "parameters": {
         "amplitude": 0.45,
         "period": 7.0
+      }
+    },
+    {
+      "id": "direction-quench-slow-002",
+      "author": "AI Scientist",
+      "enabled": true,
+      "experiment_type": "slow_quench",
+      "title": "slow quench側をpaired controlとして測る",
+      "question": "同じ探索系でquench時間だけを遅くしたとき、欠陥数と名無し遷移頻度はfast側と系統的に分かれるか？",
+      "rationale": "Science BridgeのKibble-Zurek文献は機構の参考に留め、Aeterna自身では時間尺度依存があるかだけを対照実験で問う。slow単独の一致をKZM証拠とは扱わない。",
+      "parameters": {
+        "duration_factor": 2.5
+      }
+    },
+    {
+      "id": "direction-quench-fast-002",
+      "author": "AI Scientist",
+      "enabled": true,
+      "experiment_type": "fast_quench",
+      "title": "fast quench側をpaired controlとして測る",
+      "question": "同じ探索系でquench時間だけを速くしたとき、欠陥数と名無し遷移頻度はslow側と系統的に分かれるか？",
+      "rationale": "2026年のKibble-Zurek関連研究はslow/fast regimeを分けて考える価値を示すが、ここでは外部文献をAeterna証拠にせず、fast/slowの方向差・飽和・無差を識別するための探索対照として使う。",
+      "parameters": {
+        "duration_factor": 0.35
       }
     }
   ],
