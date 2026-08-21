@@ -1,14 +1,14 @@
 # Research Continuity — read before changing direction
 
-latest strict burst: `dream-20260821-0337`
-continuity digest: `a465cfd2544ab0d5b994`
+latest strict burst: `dream-20260821-0338`
+continuity digest: `e94b696d930b00eddc90`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
 ## Must carry forward
 
-- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=2/3, control=8/13, triangle_required=False.
-- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=26, pair-only=24, triads=17, split-asym=0.069988, no-split-asym=0.143757, energy-before-geometry=1. 因果・力・結合エネルギーとはまだ呼ばない。
+- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=2/3, control=11/14, triangle_required=False.
+- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=24, pair-only=20, triads=17, split-asym=0.158905, no-split-asym=0.049135, energy-before-geometry=0. 因果・力・結合エネルギーとはまだ呼ばない。
 - `deep:deep-ee841262151c` [strict-deep-time] — Deep-Time deep-ee841262151c: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-eddd2955c6d8` [strict-deep-time] — Deep-Time deep-eddd2955c6d8: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-e873384a7436` [strict-deep-time] — Deep-Time deep-e873384a7436: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
@@ -24,9 +24,9 @@ continuity digest: `a465cfd2544ab0d5b994`
 - `ops:instrument:damage-recovery` [research-operations] — 自然にできたまとまりを後から部分的に乱したとき、同じ統計的個性へ戻るか？
 - `x:X-fa3969eebd` [strict/open-ended-followup] — X-fa3969eebd: status=REPEATED_SPECIFIC_CANDIDATE; same=9/19, nearby=?, control=0/19. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-f023a067af` [strict/open-ended-followup] — X-f023a067af: status=REPEATED_SPECIFIC_CANDIDATE; same=8/16, nearby=?, control=0/16. 回数だけでなく、何を変えると消えるかを追う。
-- `x:X-e64f84a189` [strict/open-ended-followup] — X-e64f84a189: status=REPEATED_SPECIFIC_CANDIDATE; same=7/7, nearby=?, control=0/7. 回数だけでなく、何を変えると消えるかを追う。
+- `x:X-e64f84a189` [strict/open-ended-followup] — X-e64f84a189: status=REPEATED_SPECIFIC_CANDIDATE; same=8/8, nearby=?, control=0/8. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-deea6a8f25` [strict/open-ended-followup] — X-deea6a8f25: status=REPEATED_SPECIFIC_CANDIDATE; same=5/18, nearby=?, control=0/18. 回数だけでなく、何を変えると消えるかを追う。
-- `x:X-dcc459d23a` [strict/open-ended-followup] — X-dcc459d23a: status=REPEATED_SPECIFIC_CANDIDATE; same=32/41, nearby=?, control=0/41. 回数だけでなく、何を変えると消えるかを追う。
+- `x:X-dcc459d23a` [strict/open-ended-followup] — X-dcc459d23a: status=REPEATED_SPECIFIC_CANDIDATE; same=33/42, nearby=?, control=0/42. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-d7d980689e` [strict/open-ended-followup] — X-d7d980689e: status=REPEATED_SPECIFIC_CANDIDATE; same=4/7, nearby=?, control=0/7. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-a428f23471` [strict/open-ended-followup] — X-a428f23471: status=REPEATED_SPECIFIC_CANDIDATE; same=2/5, nearby=?, control=0/5. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-8c982007fa` [strict/open-ended-followup] — X-8c982007fa: status=REPEATED_SPECIFIC_CANDIDATE; same=1/4, nearby=?, control=0/4. 回数だけでなく、何を変えると消えるかを追う。
