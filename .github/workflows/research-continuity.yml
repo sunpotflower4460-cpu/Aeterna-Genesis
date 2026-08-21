@@ -1,0 +1,77 @@
+name: Research Continuity Handoff
+
+on:
+  workflow_run:
+    workflows:
+      - "Genesis Dream Loop"
+      - "Free Hypothesis Lab"
+      - "Science Bridge"
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Serialize handoff writes with all generated scientific/exploratory evidence writers.
+  group: genesis-dream-loop
+  cancel-in-progress: false
+
+jobs:
+  continuity:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 50
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Rebuild durable research handoff from authoritative ledgers
+        run: python -m ai_lab.dream.research_continuity
+
+      - name: Upload continuity handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-continuity-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            ai_lab/discoveries/research_continuity.json
+            ai_lab/reports/easy/research_continuity_latest.md
+
+      - name: Persist continuity without rewriting source evidence
+        shell: bash
+        run: |
+          git config user.name "aeterna-continuity-bot"
+          git config user.email "aeterna-continuity-bot@users.noreply.github.com"
+          git add -- \
+            ai_lab/discoveries/research_continuity.json \
+            ai_lab/reports/easy/research_continuity_latest.md
+          if git diff --cached --quiet; then
+            echo "Research Continuity already current."
+            exit 0
+          fi
+          git commit -m "refresh durable research continuity handoff"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch --depth=50 origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Continuity conflicts with newer evidence; refusing to overwrite it."
+              exit 1
+            fi
+            sleep $((attempt * 4))
+          done
+          exit 1
