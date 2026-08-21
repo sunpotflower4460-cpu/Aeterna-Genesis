@@ -1,9 +1,9 @@
 """Production policy adapter for Research Continuity.
 
-The durable lesson ledger may contain hundreds of valid Deep-Time or X entries. A plain global top-N can
-therefore crowd other scientifically important lanes out of the compact handoff. This adapter keeps the
-underlying complete ledger unchanged, but builds a *diversity-aware* `must_carry_forward` so the next AI
-Scientist always sees representative strict, exploratory, literature and instrumentation lessons.
+The complete durable lesson ledger is intentionally allowed to grow. The compact handoff is different:
+it must not let one prolific lane (for example hundreds of Deep-Time leads) hide every other important
+class of evidence. This adapter guarantees representative per-lane caps while leaving the underlying
+complete continuity ledger unchanged.
 """
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ _LANE_QUOTAS: dict[str, int] = {
     "cross-world-shadow": 1,
 }
 _SCIENCE_DIRECTION_QUOTA = 6
+_OTHER_LANES_QUOTA = 4
 _MAX_HANDOFF = 40
 
 
@@ -42,24 +43,22 @@ def _lesson_text(row: dict[str, Any]) -> str:
     kind = str(row.get("kind") or "")
     if kind == "unknown_transition":
         return (
-            f"{snap.get('pattern_id')} is {snap.get('status')}; "
-            f"exact/near/contrast rates={_fmt_rate(snap.get('exact_rate'))}/"
-            f"{_fmt_rate(snap.get('nearby_rate'))}/{_fmt_rate(snap.get('contrast_rate'))}. "
-            "Keep both specificity and weakening/non-replication as evidence."
+            f"{snap.get('pattern_id')} is {snap.get('status')}; exact/near/contrast rates="
+            f"{_fmt_rate(snap.get('exact_rate'))}/{_fmt_rate(snap.get('nearby_rate'))}/"
+            f"{_fmt_rate(snap.get('contrast_rate'))}. Keep specificity, weakening and non-replication."
         )
     if kind == "competing_geometry_explanation":
         return (
             f"Triangle split rate={_fmt_rate(snap.get('triangle_rate'))}, control split rate="
-            f"{_fmt_rate(snap.get('control_rate'))}, excess={_fmt_rate(snap.get('triangle_excess_rate'))}. "
-            f"triangle_required={snap.get('triangle_required')}; do not make triangle a required natural route."
+            f"{_fmt_rate(snap.get('control_rate'))}, excess={_fmt_rate(snap.get('triangle_excess_rate'))}; "
+            f"triangle_required={snap.get('triangle_required')}. Do not make triangle a required natural route."
         )
     if kind == "local_energy_competing_explanation":
         return (
             f"Local energy: pairs={snap.get('pair_relations')} (pair-only={snap.get('pair_only')}), "
             f"triads={snap.get('triad_energy_relations')}, split/no-split vertex asymmetry="
-            f"{snap.get('split_asymmetry')}/{snap.get('no_split_asymmetry')}, "
-            f"energy-before-geometry={snap.get('energy_peak_preceded_geometry')}. "
-            "Geometry selected first; no causal/force/binding-energy claim."
+            f"{snap.get('split_asymmetry')}/{snap.get('no_split_asymmetry')}, energy-before-geometry="
+            f"{snap.get('energy_peak_preceded_geometry')}. Geometry was selected first; no causal/force/binding claim."
         )
     if kind == "deep_time":
         return (
@@ -72,8 +71,8 @@ def _lesson_text(row: dict[str, Any]) -> str:
         return str(snap.get("strict_transfer_question") or f"Retest abstract factor {snap.get('abstract_factor')} from strict zero.")
     if kind == "external_scientific_context":
         return (
-            f"External science context: {snap.get('title')} ({snap.get('doi')}); mechanism={snap.get('mechanism')}. "
-            "This is a map for experiment design, not Aeterna evidence."
+            f"External science: {snap.get('title')} ({snap.get('doi')}); mechanism={snap.get('mechanism')}. "
+            "Use as a map for falsifiable design, never as Aeterna evidence."
         )
     if kind == "operational_or_instrument_debt":
         return str(snap.get("question") or snap.get("purpose") or snap.get("message") or "Unresolved research instrumentation debt.")
@@ -107,7 +106,14 @@ def balanced_carry_forward(lessons: list[dict[str, Any]], science_directions: di
             continue
         buckets[str(row.get("lane") or "other")].append(row)
     for rows in buckets.values():
-        rows.sort(key=lambda row: (int(row.get("priority", 0) or 0), str(row.get("last_seen_at") or ""), str(row.get("key"))), reverse=True)
+        rows.sort(
+            key=lambda row: (
+                int(row.get("priority", 0) or 0),
+                str(row.get("last_seen_at") or ""),
+                str(row.get("key")),
+            ),
+            reverse=True,
+        )
 
     chosen: list[dict[str, Any]] = []
     chosen_keys: set[str] = set()
@@ -119,7 +125,7 @@ def balanced_carry_forward(lessons: list[dict[str, Any]], science_directions: di
         chosen_keys.add(key)
         chosen.append(item)
 
-    # Reserve explicit literature-inspired questions first so a large strict lane cannot hide them.
+    # Literature directions receive an explicit reservation before prolific simulation lanes.
     directions = [
         row for row in (science_directions.get("directions") or [])
         if isinstance(row, dict) and row.get("enabled") is not False
@@ -136,18 +142,20 @@ def balanced_carry_forward(lessons: list[dict[str, Any]], science_directions: di
             "counts_as_strict_zero_evidence": False,
         })
 
-    # Guaranteed representation per lane.
+    # Hard per-lane caps: a prolific lane may keep its best representatives but cannot consume another
+    # lane's reserved attention budget. The complete lesson ledger still retains every item.
     for lane, quota in _LANE_QUOTAS.items():
         for row in buckets.get(lane, [])[:quota]:
             add(_entry(row))
 
-    # Fill remaining slots by priority across every lane, after diversity guarantees are satisfied.
-    remainder = [
-        row for rows in buckets.values() for row in rows
-        if str(row.get("key") or "") not in chosen_keys
-    ]
-    remainder.sort(key=lambda row: (int(row.get("priority", 0) or 0), str(row.get("last_seen_at") or ""), str(row.get("key"))), reverse=True)
-    for row in remainder:
+    # Unknown future lanes receive a small shared reserve instead of being silently discarded.
+    known = set(_LANE_QUOTAS)
+    other_rows = [row for lane, rows in buckets.items() if lane not in known for row in rows]
+    other_rows.sort(
+        key=lambda row: (int(row.get("priority", 0) or 0), str(row.get("last_seen_at") or ""), str(row.get("key"))),
+        reverse=True,
+    )
+    for row in other_rows[:_OTHER_LANES_QUOTA]:
         add(_entry(row))
     return chosen[:_MAX_HANDOFF]
 
@@ -178,10 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     lane_counts: dict[str, int] = defaultdict(int)
     for row in doc.get("must_carry_forward") or []:
         lane_counts[str(row.get("lane"))] += 1
-    print(
-        f"Balanced Research Continuity: carry={len(doc.get('must_carry_forward') or [])} "
-        f"lanes={dict(sorted(lane_counts.items()))}"
-    )
+    print(f"Balanced Research Continuity: carry={len(doc.get('must_carry_forward') or [])} lanes={dict(sorted(lane_counts.items()))}")
     return 0
 
 
