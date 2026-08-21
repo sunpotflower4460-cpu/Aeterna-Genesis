@@ -5,9 +5,12 @@ on:
     paths:
       - 'ai_lab/dream/science_bridge*.py'
       - 'ai_lab/dream/research_continuity.py'
+      - 'ai_lab/dream/research_continuity_entrypoint.py'
       - 'ai_lab/dream/research_maintenance.py'
+      - 'ai_lab/dream/research_maintenance_entrypoint.py'
       - 'ai_lab/discoveries/science_bridge_*.json'
       - 'tests/test_science_bridge_continuity.py'
+      - 'tests/test_research_continuity_diversity.py'
       - '.github/workflows/science-bridge.yml'
       - '.github/workflows/research-continuity.yml'
       - '.github/workflows/research-maintenance.yml'
@@ -33,7 +36,7 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Unit tests
-        run: pytest -q tests/test_science_bridge_continuity.py
+        run: pytest -q tests/test_science_bridge_continuity.py tests/test_research_continuity_diversity.py
 
       - name: Offline literature translation dry-run
         run: python -m ai_lab.dream.science_bridge --no-record
@@ -43,11 +46,11 @@ jobs:
           python -m ai_lab.dream.science_bridge_runner \
             --quick --replicates 1 --seed 123 --no-record
 
-      - name: Continuity dry-run
-        run: python -m ai_lab.dream.research_continuity --no-record
+      - name: Topic-diverse continuity dry-run
+        run: python -m ai_lab.dream.research_continuity_entrypoint --no-record
 
-      - name: Safe maintenance diagnostic dry-run
-        run: python -m ai_lab.dream.research_maintenance --no-record
+      - name: Safe maintenance diagnostic dry-run with production adapter
+        run: python -m ai_lab.dream.research_maintenance_entrypoint --no-record
 
       - name: Dry-runs must not alter tracked evidence
         run: |
@@ -57,11 +60,13 @@ jobs:
             exit 1
           fi
 
-      - name: Enforce separated scientific semantics
+      - name: Enforce separated scientific semantics and continuity diversity
         shell: bash
         run: |
           grep -q 'literature_claim_is_aeterna_evidence.*False' ai_lab/dream/science_bridge.py
           grep -q 'counts_as_strict_zero_evidence.*False' ai_lab/dream/science_bridge_runner.py
           grep -q 'negative_results_are_carried_forward.*True' ai_lab/dream/research_continuity.py
+          grep -q 'must_carry_forward_is_topic_diverse.*True' ai_lab/dream/research_continuity_entrypoint.py
+          grep -q 'family_cap_deletes_source_lessons.*False' ai_lab/dream/research_continuity_entrypoint.py
           grep -q 'negative_results_are_deleted.*False' ai_lab/dream/research_maintenance.py
           grep -q 'destructive_cleanup_performed.*False' ai_lab/dream/research_maintenance.py
