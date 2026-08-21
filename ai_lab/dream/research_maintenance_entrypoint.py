@@ -20,7 +20,7 @@ def install_production_adapters() -> None:
         **maintenance._TRACKED_JSON,
         "x_mechanisms": _X_MECHANISMS,
     }
-    maintenance._OPTIONAL_NAMES = {**maintenance._OPTIONAL_NAMES, "x_mechanisms"}
+    maintenance._OPTIONAL_NAMES = {*maintenance._OPTIONAL_NAMES, "x_mechanisms"}
 
 
 def main(argv: list[str] | None = None) -> int:
