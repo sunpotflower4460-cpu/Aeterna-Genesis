@@ -16,6 +16,7 @@ from typing import Any
 import numpy as np
 
 from ai_lab.dream import pure_genesis
+from ai_lab.dream import relation_frontier_adapter
 from genesis.diagnostics import relation_structure
 
 _ORIGINAL_RUN_ONE = pure_genesis.run_one
@@ -253,6 +254,7 @@ def install() -> None:
         return
     pure_genesis.run_one = _instrumented_run_one
     pure_genesis.run_root_research = _instrumented_run_root_research
+    relation_frontier_adapter.install()
     _INSTALLED = True
 
 
@@ -260,4 +262,5 @@ def uninstall_for_tests() -> None:
     global _INSTALLED
     pure_genesis.run_one = _ORIGINAL_RUN_ONE
     pure_genesis.run_root_research = _ORIGINAL_RUN_ROOT_RESEARCH
+    relation_frontier_adapter.uninstall_for_tests()
     _INSTALLED = False
