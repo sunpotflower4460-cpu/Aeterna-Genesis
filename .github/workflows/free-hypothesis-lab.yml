@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - 'ai_lab/dream/free_hypothesis_lab.py'
+      - 'ai_lab/dream/free_hypothesis_entrypoint.py'
       - 'ai_lab/discoveries/ai_scientist_directions.json'
       - '.github/workflows/free-hypothesis-lab.yml'
   workflow_dispatch:
@@ -39,7 +40,7 @@ jobs:
       - name: Run evidence-aware free hypothesis sandbox
         timeout-minutes: 24
         run: |
-          python -m ai_lab.dream.free_hypothesis_lab \
+          python -m ai_lab.dream.free_hypothesis_entrypoint \
             --quick \
             --max-hypotheses 8 \
             --replicates 3 \
