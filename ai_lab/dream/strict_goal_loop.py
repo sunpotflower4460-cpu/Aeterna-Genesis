@@ -3,12 +3,14 @@
 Strict geometry and Prefix Identity instrumentation remain identical to the existing entry point.
 Adaptive Research Yield chooses informative frontier lanes; Progress Ratchet adds durable no-repeat and
 route-escape planning from Research Memory. Context-aware X identity prevents a changed start-side search
-focus from being mistaken for an already-tested question. None changes physics, truth gates, Rooms or
-official Levels.
+focus from being mistaken for an already-tested question. Mature recurrent X-patterns also receive a
+persistent paired-control mechanism-dissection lane so recurrence count does not become the research goal.
+None changes physics, truth gates, Rooms or official Levels.
 """
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +26,7 @@ from ai_lab.dream import protocol_fingerprint
 from ai_lab.dream import research_optimizer
 from ai_lab.dream import strict_geometry as strict
 from ai_lab.dream import why_gate
+from ai_lab.dream import x_mechanism_discovery
 from ai_lab.dream.strict_followup_loop import _install_strict_followup_geometry
 from ai_lab.dream.strict_loop import _install_strict_geometry
 
@@ -57,6 +60,70 @@ def _run_adaptive_v8_exact(argv: list[str] | None) -> dict[str, Any]:
     )
 
 
+def _write_json_if_present(path_value: Any, payload: dict[str, Any]) -> None:
+    if not path_value:
+        return
+    path = Path(str(path_value))
+    if not path.exists() or not path.is_file():
+        return
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _x_mechanism_budget() -> int:
+    profile = str(os.environ.get("AETERNA_EXPLORATION_PROFILE") or "baseline").lower()
+    return {
+        "native3d": 2,
+        "novelty": 6,
+        "mechanism": 12,
+        "baseline": 4,
+    }.get(profile, 4)
+
+
+def _attach_x_mechanism(result: dict[str, Any]) -> dict[str, Any]:
+    """Attach additive mechanism evidence without mutating historical X fingerprints or strict gates."""
+    report = result["report"]
+    burst_id = str(report.get("burst_id") or "unknown-burst")
+    mechanism = x_mechanism_discovery.run_mechanism_discovery(
+        burst_id=burst_id,
+        budget=_x_mechanism_budget(),
+        persist=True,
+    )
+    report["x_mechanism_discovery"] = mechanism
+    frontier = report.setdefault("autonomous_frontier_expansion", {})
+    if isinstance(frontier, dict):
+        frontier["x_identity_mechanism"] = mechanism
+
+    paths = result.get("paths") or {}
+    _write_json_if_present(paths.get("latest"), report)
+    _write_json_if_present(paths.get("json"), report)
+
+    easy_paths = result.get("easy_paths") or {}
+    latest_easy_value = easy_paths.get("latest")
+    if latest_easy_value:
+        latest_easy = Path(str(latest_easy_value))
+        easy: dict[str, Any] | None = None
+        if latest_easy.exists() and latest_easy.is_file():
+            try:
+                easy = json.loads(latest_easy.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                easy = None
+        if isinstance(easy, dict):
+            easy["x_mechanism_discovery"] = {
+                "pattern_id": mechanism.get("pattern_id"),
+                "observations_seen": mechanism.get("observations_seen"),
+                "experiments": mechanism.get("experiments"),
+                "status": mechanism.get("status"),
+                "leading_explanation": mechanism.get("leading_explanation"),
+                "leading_sensitivity_candidate": mechanism.get("leading_sensitivity_candidate"),
+                "next_question": mechanism.get("next_question"),
+                "counts_as_strict_zero_evidence": False,
+                "policy": mechanism.get("policy") or {},
+            }
+            latest_easy.write_text(json.dumps(easy, indent=2, ensure_ascii=False), encoding="utf-8")
+            _write_json_if_present(easy_paths.get("json"), easy)
+    return mechanism
+
+
 def _publish_frontier_alias(report: dict[str, Any]) -> None:
     frontier = report.get("autonomous_frontier_expansion") or {}
     if not frontier:
@@ -84,6 +151,7 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
     field = r.get("emergent_field_frontier") or {}
     port = r.get("hypothesis_portfolio_v7") or {}
     frontier = r.get("autonomous_frontier_expansion") or {}
+    mechanism = r.get("x_mechanism_discovery") or {}
     critic = (root.get("root_integrity_audit") or {}).get("critic_questions") or []
     budget = frontier.get("budget") or {}
     progress = frontier.get("progress_ratchet") or {}
@@ -100,6 +168,13 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
         f"  frontier mechanism experiments={int(budget.get('executed', 0))} "
         f"allocation={budget.get('allocated', {})}"
     )
+    if mechanism.get("ran"):
+        print(
+            f"  X why-lane pattern={mechanism.get('pattern_id')} "
+            f"experiments={mechanism.get('experiments', 0)} status={mechanism.get('status')}"
+        )
+        if mechanism.get("leading_sensitivity_candidate"):
+            print(f"  X paired sensitivity={mechanism.get('leading_sensitivity_candidate')}")
     if progress:
         print(
             f"  progress={progress.get('status')} new_questions={len(progress.get('new_question_keys') or [])} "
@@ -107,6 +182,8 @@ def _print_adaptive_summary(result: dict[str, Any]) -> None:
             f"escape_next={bool(progress.get('next_burst_escape_required'))}"
         )
     print(f"  shared portfolio active={len(port.get('active') or [])} runnable={port.get('runnable_focuses', 0)}")
+    print("  NOTE: mature X counts are not a target; paired-control why-lane tests scale-normalized explanations and interventions.")
+    print("  NOTE: intervened X-mechanism runs are exploratory and never count as strict-zero evidence.")
     print("  NOTE: uniform-field morphology is observation-only; no node/edge/network is seeded or claimed.")
     print("  NOTE: Research Memory prevents routine exact-repeat drift; F0-F7 remains one human-written reference path.")
 
@@ -120,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
     progress_context.install()
 
     result = _run_adaptive_v8_exact(argv)
+    _attach_x_mechanism(result)
     _print_adaptive_summary(result)
     report = result["report"]
     burst_id = str(report.get("burst_id") or "unknown-burst")
