@@ -2,7 +2,7 @@ name: Science Bridge
 
 on:
   # Two literature-refresh + experiment windows per day. They share the Dream concurrency group so
-  # generated evidence/continuity cannot race the strict or Free Hypothesis writers.
+  # generated evidence writes cannot race the strict or Free Hypothesis writers.
   schedule:
     - cron: '53 1,13 * * *'
   push:
@@ -10,7 +10,6 @@ on:
     paths:
       - 'ai_lab/dream/science_bridge.py'
       - 'ai_lab/dream/science_bridge_runner.py'
-      - 'ai_lab/dream/research_continuity.py'
       - 'ai_lab/discoveries/science_bridge_sources.json'
       - '.github/workflows/science-bridge.yml'
   workflow_dispatch:
@@ -53,9 +52,6 @@ jobs:
             --replicates 3 \
             --seed "${{ github.run_number }}"
 
-      - name: Carry literature and experiment lessons into durable handoff
-        run: python -m ai_lab.dream.research_continuity
-
       - name: Upload Science Bridge evidence and context
         if: always()
         uses: actions/upload-artifact@v4
@@ -73,8 +69,6 @@ jobs:
             ai_lab/reports/easy/free_hypothesis_latest.json
             ai_lab/reports/easy/free_hypothesis_latest.md
             ai_lab/discoveries/free_hypothesis_lab.json
-            ai_lab/discoveries/research_continuity.json
-            ai_lab/reports/easy/research_continuity_latest.md
 
       - name: Persist literature bridge without touching strict scientific ledgers
         shell: bash
@@ -90,14 +84,12 @@ jobs:
             ai_lab/discoveries/science_bridge_experiment_ledger.json \
             ai_lab/reports/easy/free_hypothesis_latest.json \
             ai_lab/reports/easy/free_hypothesis_latest.md \
-            ai_lab/discoveries/free_hypothesis_lab.json \
-            ai_lab/discoveries/research_continuity.json \
-            ai_lab/reports/easy/research_continuity_latest.md
+            ai_lab/discoveries/free_hypothesis_lab.json
           if git diff --cached --quiet; then
             echo "No Science Bridge evidence/context changed."
             exit 0
           fi
-          git commit -m "record separated Science Bridge evidence and continuity"
+          git commit -m "record separated Science Bridge evidence"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
               echo "Science Bridge evidence pushed on attempt $attempt."
