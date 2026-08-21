@@ -1,0 +1,87 @@
+name: Free Hypothesis Lab
+
+on:
+  # Four independent idea/provocation windows per day.  They are intentionally offset from the
+  # primary Dream burst and share the same concurrency group so evidence writes never race.
+  schedule:
+    - cron: '37 2,8,14,20 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'ai_lab/dream/free_hypothesis_lab.py'
+      - 'ai_lab/discoveries/ai_scientist_directions.json'
+      - '.github/workflows/free-hypothesis-lab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: genesis-dream-loop
+  cancel-in-progress: false
+
+jobs:
+  free-hypothesis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run evidence-aware free hypothesis sandbox
+        timeout-minutes: 24
+        run: |
+          python -m ai_lab.dream.free_hypothesis_lab \
+            --quick \
+            --max-hypotheses 8 \
+            --replicates 3 \
+            --seed "${{ github.run_number }}"
+
+      - name: Upload free-lab evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: free-hypothesis-lab-${{ github.run_number }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            ai_lab/reports/easy/free_hypothesis_latest.json
+            ai_lab/reports/easy/free_hypothesis_latest.md
+            ai_lab/discoveries/free_hypothesis_lab.json
+            ai_lab/discoveries/ai_scientist_directions.json
+
+      - name: Persist free-lab evidence without touching strict scientific ledgers
+        shell: bash
+        run: |
+          git config user.name "aeterna-free-hypothesis-bot"
+          git config user.email "aeterna-free-hypothesis-bot@users.noreply.github.com"
+          git add -- \
+            ai_lab/reports/easy/free_hypothesis_latest.json \
+            ai_lab/reports/easy/free_hypothesis_latest.md \
+            ai_lab/discoveries/free_hypothesis_lab.json
+          if git diff --cached --quiet; then
+            echo "No Free Hypothesis evidence changed."
+            exit 0
+          fi
+          git commit -m "record separated Free Hypothesis Lab evidence"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch --depth=50 origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Free-lab evidence conflicts with main; refusing to overwrite other research."
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
