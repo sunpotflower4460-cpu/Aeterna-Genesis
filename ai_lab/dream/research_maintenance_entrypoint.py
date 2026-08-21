@@ -1,13 +1,14 @@
-"""Production adapter for topic-diverse continuity plus non-destructive X-mechanism cataloging.
+"""Production adapter for topic-diverse continuity plus non-destructive X/relation cataloging.
 
-The underlying maintenance policy remains non-destructive.  This module installs the production Research
-Continuity adapter and asks maintenance to parse/catalog the X-mechanism ledger when it exists.  The ledger
-is optional until its first Dream run; maintenance never deletes or rewrites it.
+The underlying maintenance policy remains non-destructive. This module installs the production Research
+Continuity adapters, including relation-instrument measurement state, and asks maintenance to parse/catalog
+the X-mechanism ledger when it exists. No source scientific evidence is deleted or rewritten.
 """
 from __future__ import annotations
 
 from pathlib import Path
 
+from ai_lab.dream import relation_continuity_patch
 from ai_lab.dream import research_continuity_entrypoint as continuity
 from ai_lab.dream import research_maintenance as maintenance
 
@@ -15,6 +16,7 @@ _X_MECHANISMS = Path(__file__).resolve().parents[2] / "ai_lab" / "discoveries" /
 
 
 def install_production_adapters() -> None:
+    relation_continuity_patch.install()
     maintenance.research_continuity = continuity
     maintenance._TRACKED_JSON = {
         **maintenance._TRACKED_JSON,
