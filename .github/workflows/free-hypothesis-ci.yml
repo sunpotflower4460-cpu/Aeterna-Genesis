@@ -1,0 +1,44 @@
+name: Free Hypothesis Lab CI
+
+on:
+  pull_request:
+    paths:
+      - 'ai_lab/dream/free_hypothesis_lab.py'
+      - 'ai_lab/discoveries/ai_scientist_directions.json'
+      - 'tests/test_free_hypothesis_lab.py'
+      - 'docs/FREE_HYPOTHESIS_LAB.md'
+      - '.github/workflows/free-hypothesis-*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Unit tests
+        run: pytest -q tests/test_free_hypothesis_lab.py
+      - name: Dry-run real free hypotheses without writing tracked evidence
+        run: |
+          python -m ai_lab.dream.free_hypothesis_lab \
+            --quick --max-hypotheses 2 --replicates 1 --seed 123 --no-record
+      - name: Free-lab dry run must not touch working tree
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::Free Hypothesis Lab --no-record modified tracked files."
+            exit 1
+          fi
+      - name: Strict boundary must remain explicit in source and direction notebook
+        run: |
+          grep -q 'counts_as_strict_zero_evidence.*False' ai_lab/dream/free_hypothesis_lab.py
+          grep -q '"counts_as_strict_zero_evidence": false' ai_lab/discoveries/ai_scientist_directions.json
+          grep -q 'room_promotion_allowed.*False' ai_lab/dream/free_hypothesis_lab.py
