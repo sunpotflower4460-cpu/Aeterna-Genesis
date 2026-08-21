@@ -1,0 +1,93 @@
+name: Safe Research Maintenance
+
+on:
+  schedule:
+    # Daily 03:23 JST. Organization only; no raw scientific evidence is deleted.
+    - cron: '23 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: genesis-dream-loop
+  cancel-in-progress: false
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 50
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Reindex, validate and organize without deleting evidence
+        id: maintenance
+        shell: bash
+        run: |
+          set +e
+          python -m ai_lab.dream.research_maintenance --apply-safe
+          CODE=$?
+          set -e
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "Maintenance diagnostic exit code: $CODE"
+
+      - name: Upload maintenance report even when findings exist
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-maintenance-${{ github.run_id }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            ai_lab/reports/easy/research_maintenance_latest.json
+            ai_lab/reports/easy/research_maintenance_latest.md
+            ai_lab/discoveries/research_catalog.json
+            ai_lab/discoveries/research_continuity.json
+            ai_lab/reports/easy/research_continuity_latest.md
+
+      - name: Persist derived organization records only
+        shell: bash
+        run: |
+          git config user.name "aeterna-maintenance-bot"
+          git config user.email "aeterna-maintenance-bot@users.noreply.github.com"
+          git add -- \
+            ai_lab/reports/easy/research_maintenance_latest.json \
+            ai_lab/reports/easy/research_maintenance_latest.md \
+            ai_lab/discoveries/research_catalog.json \
+            ai_lab/discoveries/research_continuity.json \
+            ai_lab/reports/easy/research_continuity_latest.md
+          if git diff --cached --quiet; then
+            echo "No derived organization records changed."
+            exit 0
+          fi
+          git commit -m "organize research state without deleting evidence"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch --depth=50 origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Maintenance derived records conflict with newer evidence; refusing overwrite."
+              exit 1
+            fi
+            sleep $((attempt * 4))
+          done
+          exit 1
+
+      - name: Fail visibly when core organization integrity is unhealthy
+        if: steps.maintenance.outputs.code != '0'
+        run: |
+          echo "::error::Safe maintenance found missing/corrupt/duplicate/stale core research state."
+          cat ai_lab/reports/easy/research_maintenance_latest.md || true
+          exit 1
