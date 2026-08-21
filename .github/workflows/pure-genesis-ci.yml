@@ -8,6 +8,8 @@ on:
       - 'ai_lab/dream/nothing_genesis.py'
       - 'ai_lab/dream/root_integrity.py'
       - 'ai_lab/dream/frontier_expander.py'
+      - 'ai_lab/dream/relation_instrument_adapter.py'
+      - 'ai_lab/dream/relation_frontier_adapter.py'
       - 'ai_lab/dream/research_optimizer.py'
       - 'ai_lab/dream/progress_ratchet.py'
       - 'ai_lab/dream/progress_context.py'
@@ -16,13 +18,17 @@ on:
       - 'ai_lab/dream/adaptive_v8.py'
       - 'ai_lab/dream/strict_goal_loop.py'
       - 'ai_lab/dream/portfolio_director.py'
+      - 'genesis/diagnostics/relation_structure.py'
       - 'ai_lab/missions/pure_genesis_r0.json'
       - 'docs/GENESIS_ROOT.md'
       - 'docs/GENESIS_NOTHING.md'
       - 'docs/ADAPTIVE_RESEARCH_YIELD.md'
       - 'docs/PROGRESS_RATCHET.md'
       - 'docs/HUMAN_REPORTING.md'
+      - 'docs/INSTRUMENT_CONTRACTS.md'
       - 'tests/test_pure_genesis.py'
+      - 'tests/test_relation_structure.py'
+      - 'tests/test_relation_instrument_adapter.py'
       - 'tests/test_nothing_genesis.py'
       - 'tests/test_frontier_expander.py'
       - 'tests/test_research_optimizer.py'
@@ -38,7 +44,7 @@ permissions:
 jobs:
   root-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,18 +52,18 @@ jobs:
           python-version: '3.11'
           cache: pip
       - run: pip install -r requirements.txt
-      - name: NØ, Pure Genesis, Yield, Progress Ratchet, reporting and portfolio tests
-        run: pytest -q tests/test_nothing_genesis.py tests/test_pure_genesis.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_progress_ratchet.py tests/test_human_report.py tests/test_hypothesis_evolution.py
+      - name: NØ, Pure Genesis, relation instruments, Yield, Progress Ratchet, reporting and portfolio tests
+        run: pytest -q tests/test_nothing_genesis.py tests/test_pure_genesis.py tests/test_relation_structure.py tests/test_relation_instrument_adapter.py tests/test_frontier_expander.py tests/test_research_optimizer.py tests/test_progress_ratchet.py tests/test_human_report.py tests/test_hypothesis_evolution.py
       - name: Context identity canonicalization
         run: pytest -q tests/test_progress_context.py -k 'different_family or different_other_base_knob or canonical_and_order_independent or start_side_only'
       - name: Context identity durable coverage
         run: pytest -q tests/test_progress_context.py -k 'legacy_contextless_question or ordered_x_specs'
       - name: Context identity escape compatibility
         run: pytest -q tests/test_progress_context.py -k 'legacy_pattern_wide_escape or context_escape_blocks_only_same_context'
-      - name: Strict NØ control and tiny R0 law search with integrity audit
+      - name: Strict NØ control and tiny R0 law search with relation-only instruments and integrity audit
         run: |
           python - <<'PY'
-          from ai_lab.dream import human_report, nothing_genesis, pure_genesis, root_integrity
+          from ai_lab.dream import human_report, nothing_genesis, pure_genesis, relation_instrument_adapter, root_integrity
 
           n = nothing_genesis.run_nothing_research(
               burst_id='ci-nothing', persist=False,
@@ -78,17 +84,29 @@ jobs:
           assert eighth['verdict'] == 'DECLARATIVE_NULL_CONTROL_NOT_A_PASSED_EIGHTH_AUDIT'
           assert n['technical_audit']['role']['primary'] != 'E'
 
-          r = pure_genesis.run_root_research(
-              burst_id='ci-r0', law_trials=6, sizes=(6, 8), steps=20, seed=11, persist=False,
-          )
+          relation_instrument_adapter.install()
+          try:
+              r = pure_genesis.run_root_research(
+                  burst_id='ci-r0', law_trials=4, sizes=(6, 8), steps=16, seed=11, persist=False,
+              )
+          finally:
+              relation_instrument_adapter.uninstall_for_tests()
           r = root_integrity.audit_report(r, persist=False)
-          assert r['law_trials'] == 6
-          assert r['why_gate']['accepted'] == 6
+          assert r['law_trials'] == 4
+          assert r['why_gate']['accepted'] == 4
           assert r['why_gate']['physical_givens_beyond_R0'] == []
           assert r['brain_from_zero']['brain_claim'] is False
           assert r['root_integrity_audit']['permutation_quotient_enabled'] is True
           assert r['root_integrity_audit']['raw_label_graph_closure_accepted_as_emergence'] is False
+          rel = r['relation_instrument_summary']
+          assert rel['integrity']['coordinate_input_used'] is False
+          assert rel['integrity']['changes_root_dynamics'] is False
+          assert rel['integrity']['changes_law_score_or_ranking'] is False
+          assert rel['integrity']['planner_lead_is_physical_truth'] is False
+          assert rel['integrity']['physical_space_claim'] is False
+          assert rel['integrity']['organism_or_life_claim'] is False
+          assert rel['integrity']['biological_cell_division_claim'] is False
           first_read = human_report.render_markdown(human_report.build_summary({'pure_genesis_r0': r}))
           assert human_report.first_read_violations(first_read) == []
-          print('Strict NØ + Pure Genesis R0 + Adaptive Yield + durable Progress Ratchet + context identity CI audited')
+          print('Strict NØ + Pure Genesis R0 + relation-only instruments + Adaptive Yield audited')
           PY

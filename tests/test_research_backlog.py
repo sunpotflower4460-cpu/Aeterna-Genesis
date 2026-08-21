@@ -82,6 +82,26 @@ def test_capability_lead_marks_request_satisfied_but_preserves_history(monkeypat
     assert second["policy"]["resolved_entries_are_deleted"] is False
 
 
+def test_measured_capability_marks_engineering_satisfied_without_inventing_science(monkeypatch, tmp_path):
+    paths = _paths(monkeypatch, tmp_path)
+    _write(paths["_FRONTIER"], _frontier("b1"))
+    _write(paths["_HEALTH"], {"burst_id": "b1", "checks": []})
+    first = research_backlog.build_backlog(existing={"entries": []})
+
+    _write(paths["_FRONTIER"], _frontier("b2", requests=[], capability_status="MEASURED"))
+    _write(paths["_HEALTH"], {"burst_id": "b2", "checks": []})
+    second = research_backlog.build_backlog(existing=first)
+    row = next(x for x in second["entries"] if x["key"] == "instrument:identity-continuity")
+    assert row["status"] == "MEASUREMENT_ACTIVE"
+    assert row["related_capability_status"] == "MEASURED"
+    assert row["times_requested"] == 1
+    assert row["operational_priority_score"] == 8.0
+    assert second["active_count"] == 0
+    assert second["recommended_next"] is None
+    assert second["policy"]["implemented_measurement_without_lead_is_engineering_debt"] is False
+    assert second["policy"]["instrument_request_is_evidence_of_phenomenon"] is False
+
+
 def test_health_warning_is_preserved_then_resolved(monkeypatch, tmp_path):
     paths = _paths(monkeypatch, tmp_path)
     _write(paths["_FRONTIER"], _frontier("b1", requests=[]))

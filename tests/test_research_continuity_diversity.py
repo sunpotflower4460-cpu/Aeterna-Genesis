@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+
+from ai_lab.dream import relation_continuity_patch
 from ai_lab.dream import research_continuity_entrypoint as continuity
 
 
@@ -178,5 +181,48 @@ def test_full_lessons_are_not_truncated_by_handoff_caps() -> None:
     selected = continuity.diverse_carry_forward(lessons, {"directions": []}, limit=40)
     assert len(lessons) == 20
     assert len(selected) == continuity._BUCKET_CAPS["strict-deep-time"]
-    # The selector returns a compact navigation view only; source lesson objects are untouched.
     assert all("selection_reason" not in row for row in lessons)
+
+
+def test_relation_measurement_replaces_measurement_active_debt_and_gets_own_handoff_bucket(monkeypatch, tmp_path) -> None:
+    root = tmp_path / "root.json"
+    root.write_text(json.dumps({
+        "burst_id": "dream-test",
+        "relation_instrument_summary": {
+            "capabilities": {
+                "emergent_metric_geometry": {
+                    "instrument_status": "MEASURED",
+                    "measured_runs": 12,
+                    "candidate_runs": 0,
+                    "candidate_sizes": [],
+                },
+                "persistent_individual_identity": {
+                    "instrument_status": "LEAD",
+                    "measured_runs": 12,
+                    "candidate_runs": 4,
+                    "candidate_sizes": [8, 12],
+                },
+            }
+        },
+    }))
+    monkeypatch.setattr(relation_continuity_patch, "_ROOT", root)
+    base_rows = [
+        _lesson("ops:identity", "research-operations", "operational_or_instrument_debt", 82, {
+            "status": "MEASUREMENT_ACTIVE",
+            "question": "build identity detector again",
+        }),
+    ]
+    monkeypatch.setattr(relation_continuity_patch, "_ORIGINAL_BASE_LESSONS", lambda: list(base_rows))
+
+    rows = relation_continuity_patch._base_lessons_with_measurement_state()
+    assert not any(row.get("kind") == "operational_or_instrument_debt" for row in rows)
+    relation_rows = [row for row in rows if row.get("kind") == "relation_instrument_measurement"]
+    assert len(relation_rows) == 2
+    assert {row["snapshot"]["status"] for row in relation_rows} == {"MEASURED", "LEAD"}
+    assert all(row["snapshot"]["planner_lead_is_physical_truth"] is False for row in relation_rows)
+
+    relation_continuity_patch.install()
+    selected = continuity.diverse_carry_forward(relation_rows, {"directions": []}, limit=40)
+    assert selected
+    assert all(row["handoff_bucket"] == "relation-instruments" for row in selected)
+    assert all("physical" not in str(row.get("question_or_lesson", "")).lower() for row in selected)

@@ -56,6 +56,10 @@ def _score(row: dict[str, Any]) -> float:
     if kind == "instrument_request":
         if status == "CAPABILITY_LEAD_REPORTED":
             return 5.0
+        if status == "MEASUREMENT_ACTIVE":
+            # Engineering debt is resolved. A non-positive measurement remains a science result, not a
+            # reason to keep asking an engineer to build the same instrument again.
+            return 8.0
         if status == "DORMANT_NOT_REQUESTED_THIS_BURST":
             return 25.0 + min(15.0, float(row.get("times_requested", 0) or 0))
         base = 50.0 + min(30.0, float(row.get("times_requested", 0) or 0))
@@ -63,6 +67,14 @@ def _score(row: dict[str, Any]) -> float:
             base -= 5.0
         return base
     return 0.0
+
+
+def _operational_status(capability_status: str | None, *, requested: bool) -> str:
+    if capability_status == "LEAD":
+        return "CAPABILITY_LEAD_REPORTED"
+    if capability_status == "MEASURED":
+        return "MEASUREMENT_ACTIVE"
+    return "OPEN" if requested else "DORMANT_NOT_REQUESTED_THIS_BURST"
 
 
 def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -90,6 +102,8 @@ def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
         key = f"instrument:{rid}"
         prior = old.get(key, {})
         new_burst = str(prior.get("last_requested_burst") or "") != burst
+        capability = _REQUEST_TO_CAPABILITY.get(rid)
+        capability_status = capabilities.get(capability or "")
         row = {
             **prior,
             "key": key,
@@ -97,15 +111,15 @@ def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
             "request_id": rid,
             "question": request.get("question"),
             "purpose": request.get("purpose"),
-            "status": "OPEN",
+            "status": _operational_status(capability_status, requested=True),
             "scaffolded_only": bool(request.get("may_use_scaffolded_analogy_lane")),
             "scaffolded_lane_cannot_count_as_pure_genesis_proof": bool(
                 request.get("scaffolded_lane_cannot_count_as_pure_genesis_proof")
             ),
             "new_physical_axiom": bool(request.get("new_physical_axiom", False)),
             "target_morphology_seeded": bool(request.get("target_morphology_seeded", False)),
-            "related_capability": _REQUEST_TO_CAPABILITY.get(rid),
-            "related_capability_status": capabilities.get(_REQUEST_TO_CAPABILITY.get(rid, "")),
+            "related_capability": capability,
+            "related_capability_status": capability_status,
             "first_requested_burst": prior.get("first_requested_burst") or burst,
             "last_requested_burst": burst,
             "times_requested": int(prior.get("times_requested", 0) or 0) + int(new_burst),
@@ -122,11 +136,7 @@ def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
         capability_status = capabilities.get(capability or "")
         row["related_capability"] = capability
         row["related_capability_status"] = capability_status
-        row["status"] = (
-            "CAPABILITY_LEAD_REPORTED"
-            if capability_status == "LEAD"
-            else "DORMANT_NOT_REQUESTED_THIS_BURST"
-        )
+        row["status"] = _operational_status(capability_status, requested=False)
         old[key] = row
 
     for check in health.get("checks") or []:
@@ -169,10 +179,10 @@ def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
     )
     active = [
         row for row in entries
-        if row.get("status") not in {"RESOLVED", "CAPABILITY_LEAD_REPORTED"}
+        if row.get("status") not in {"RESOLVED", "CAPABILITY_LEAD_REPORTED", "MEASUREMENT_ACTIVE"}
     ]
     return {
-        "version": 1,
+        "version": 2,
         "mode": "durable-research-operations-backlog",
         "last_burst": burst,
         "entries": entries,
@@ -185,6 +195,7 @@ def build_backlog(existing: dict[str, Any] | None = None) -> dict[str, Any]:
             "operational_score_routes_physical_compute": False,
             "operational_score_changes_scientific_truth": False,
             "instrument_request_is_evidence_of_phenomenon": False,
+            "implemented_measurement_without_lead_is_engineering_debt": False,
             "scaffolded_lane_counts_as_pure_genesis_proof": False,
         },
         "integrity": {
@@ -204,6 +215,7 @@ def render_markdown(backlog: dict[str, Any]) -> str:
         f"burst `{backlog.get('last_burst')}` — active operational items: {backlog.get('active_count', 0)}",
         "",
         "これは測定器・研究インフラの作業待ちリストです。物理的な発見の順位ではありません。",
+        "`MEASUREMENT_ACTIVE` は『測れるようになったが科学的leadはまだない』を意味し、未実装とは区別します。",
         "",
     ]
     for row in (backlog.get("entries") or [])[:16]:
