@@ -33,12 +33,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: pip
 
-      - run: pip install -r requirements.txt
-
-      - name: Rebuild durable research handoff from authoritative ledgers
-        run: python -m ai_lab.dream.research_continuity
+      - name: Rebuild diversity-aware durable research handoff
+        run: python -m ai_lab.dream.research_continuity_entrypoint
 
       - name: Upload continuity handoff
         uses: actions/upload-artifact@v4
@@ -61,7 +58,7 @@ jobs:
             echo "Research Continuity already current."
             exit 0
           fi
-          git commit -m "refresh durable research continuity handoff"
+          git commit -m "refresh balanced durable research continuity handoff"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
               exit 0
