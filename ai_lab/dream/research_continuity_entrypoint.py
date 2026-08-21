@@ -2,20 +2,24 @@
 
 The authoritative evidence remains in the underlying ledgers/manifests/Git history.  This adapter only
 changes the compact ``must_carry_forward`` navigation view so a large family (currently Deep-Time) cannot
-crowd every other research question out of the next autonomous scientist's working context.
+crowd every other research question out of the next autonomous scientist's working context.  It also
+carries the separated X-mechanism intervention ledger forward as exploratory mechanism questions.
 
 No evidence is deleted.  No scientific status, Room, Level, truth gate, physics law or initial condition is
-changed.  Free-Hypothesis and Science-Bridge material remains explicitly non-strict.
+changed.  Free-Hypothesis, Science-Bridge and intervened X-mechanism material remains explicitly non-strict.
 """
 from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any
 
 from ai_lab.dream import research_continuity as base
 
 _DEFAULT_LIMIT = 40
+_X_MECHANISMS = Path(__file__).resolve().parents[2] / "ai_lab" / "discoveries" / "x_mechanisms.json"
+_ORIGINAL_CURRENT_LESSONS = base._current_lessons
 
 # Reserve a small number of seats for distinct scientific questions, then fill by priority while keeping
 # hard caps.  The full ``lessons`` ledger is still unbounded by these handoff caps.
@@ -56,6 +60,54 @@ def _count(node: Any) -> str:
     return f"{hit}/{n}"
 
 
+def _x_mechanism_lessons() -> list[dict[str, Any]]:
+    ledger = base._read(_X_MECHANISMS, {"patterns": {}})
+    easy = base._read(base._EASY, {})
+    burst = str(easy.get("burst_id") or "unknown")
+    rows: list[dict[str, Any]] = []
+    ranked = sorted(
+        (
+            (int(raw.get("latest_observations", 0) or 0), str(pid), raw)
+            for pid, raw in (ledger.get("patterns") or {}).items()
+            if isinstance(raw, dict)
+        ),
+        reverse=True,
+    )
+    for _, pattern_id, raw in ranked[:6]:
+        status = str(raw.get("status") or "UNRESOLVED")
+        rows.append({
+            "key": f"x-mechanism:{pattern_id}",
+            "kind": "x_mechanism_dissection",
+            "lane": "x-mechanism-exploratory",
+            "importance": "carry",
+            "priority": 78 if status != "UNRESOLVED" else 68,
+            "burst": burst,
+            "snapshot": {
+                "pattern_id": pattern_id,
+                "status": status,
+                "latest_observations": raw.get("latest_observations"),
+                "target_events": raw.get("target_events"),
+                "unique_fresh_seed_groups": raw.get("unique_fresh_seed_groups"),
+                "event_classes": raw.get("event_classes"),
+                "leading_explanation": raw.get("leading_explanation"),
+                "leading_sensitivity_candidate": raw.get("leading_sensitivity_candidate"),
+                "next_question": raw.get("next_question"),
+                "counts_as_strict_zero_evidence": False,
+                "causal_claim_about_nature": False,
+            },
+            "source": "ai_lab/discoveries/x_mechanisms.json",
+        })
+    return rows
+
+
+def _current_lessons_with_x() -> list[dict[str, Any]]:
+    # The original function remains authoritative for all existing lanes.  X mechanism is additive only.
+    rows = list(_ORIGINAL_CURRENT_LESSONS())
+    existing = {str(row.get("key")) for row in rows if isinstance(row, dict)}
+    rows.extend(row for row in _x_mechanism_lessons() if str(row.get("key")) not in existing)
+    return rows
+
+
 def _bucket(row: dict[str, Any]) -> str:
     lane = str(row.get("lane") or "")
     kind = str(row.get("kind") or "")
@@ -63,7 +115,7 @@ def _bucket(row: dict[str, Any]) -> str:
         return "strict-geometry"
     if kind == "local_energy_competing_explanation" or lane == "strict-local-energy":
         return "strict-local-energy"
-    if kind == "unknown_transition" or "open-ended" in lane:
+    if kind in {"unknown_transition", "x_mechanism_dissection"} or "open-ended" in lane or "x-mechanism" in lane:
         return "unknown-x"
     if kind == "deep_time" or lane == "strict-deep-time":
         return "strict-deep-time"
@@ -84,6 +136,7 @@ def _lesson_text(row: dict[str, Any]) -> str:
 
     direct = (
         snapshot.get("strict_transfer_question")
+        or snapshot.get("next_question")
         or snapshot.get("question")
         or snapshot.get("purpose")
         or snapshot.get("message")
@@ -96,6 +149,13 @@ def _lesson_text(row: dict[str, Any]) -> str:
             f"{snapshot.get('pattern_id')}: status={snapshot.get('status')}; "
             f"same={_count(snapshot.get('exact'))}, nearby={_count(snapshot.get('nearby'))}, "
             f"control={_count(snapshot.get('contrast'))}. 回数だけでなく、何を変えると消えるかを追う。"
+        )
+
+    if kind == "x_mechanism_dissection":
+        return (
+            f"{snapshot.get('pattern_id')} の機構分解: status={snapshot.get('status')}; "
+            f"explanation={snapshot.get('leading_explanation')}; sensitivity={snapshot.get('leading_sensitivity_candidate')}. "
+            "介入結果はstrict-zero証拠ではなく、支持された説明もholdoutで壊し続ける。"
         )
 
     if kind == "competing_geometry_explanation":
@@ -172,7 +232,6 @@ def _candidate_rows(lessons: list[dict[str, Any]], science_directions: dict[str,
         row["handoff_bucket"] = _bucket(row)
         rows.append(row)
 
-    # Stable deterministic order; priority remains meaningful inside every bucket.
     rows.sort(key=lambda row: (int(row.get("priority", 0) or 0), str(row.get("key"))), reverse=True)
     return rows
 
@@ -206,13 +265,11 @@ def diverse_carry_forward(
         selected.append({**row, "selection_reason": reason})
         return True
 
-    # First guarantee representation for every active research family.
     for bucket in _BUCKET_ORDER:
         minimum = min(_BUCKET_MINIMUMS[bucket], _BUCKET_CAPS[bucket])
         for row in by_bucket.get(bucket, [])[:minimum]:
             take(row, "topic-reserved")
 
-    # Then spend remaining slots on the strongest items, still respecting family caps.
     for row in candidates:
         take(row, "priority-fill")
         if len(selected) >= limit:
@@ -230,7 +287,8 @@ def diverse_carry_forward(
 
 
 def install_selector() -> None:
-    # Planning/navigation-only adapter. Source evidence and the durable full lesson ledger are untouched.
+    # Planning/navigation-only adapters. Source evidence and the durable full lesson ledger are untouched.
+    base._current_lessons = _current_lessons_with_x
     base._carry_forward = diverse_carry_forward
 
 
@@ -243,7 +301,6 @@ def build(existing: dict[str, Any] | None = None) -> dict[str, Any]:
     if manifest_burst == latest_burst and latest_burst:
         manifest_relation = "MATCH"
     elif manifest_burst:
-        # Continuity may run immediately after Dream while postflight is still finalizing that burst's manifest.
         manifest_relation = "OLDER_FINALIZED_MANIFEST_REFERENCE"
     else:
         manifest_relation = "NO_MANIFEST_REFERENCE"
@@ -261,6 +318,7 @@ def build(existing: dict[str, Any] | None = None) -> dict[str, Any]:
     doc.setdefault("policy", {})["must_carry_forward_is_topic_diverse"] = True
     doc["policy"]["family_cap_deletes_source_lessons"] = False
     doc["policy"]["older_manifest_reference_implies_bad_physics"] = False
+    doc["policy"]["x_mechanism_interventions_remain_non_strict"] = True
     doc["continuity_digest"] = base._compact_hash({
         "latest_strict_burst": doc.get("latest_strict_burst"),
         "must_carry_forward": doc.get("must_carry_forward"),
