@@ -1,6 +1,6 @@
 # Research Operations Backlog
 
-burst `dream-20260822-0381` — active operational items: 3
+burst `dream-20260822-0382` — active operational items: 3
 
 これは測定器・研究インフラの作業待ちリストです。物理的な発見の順位ではありません。
 `MEASUREMENT_ACTIVE` は『測れるようになったが科学的leadはまだない』を意味し、未実装とは区別します。
