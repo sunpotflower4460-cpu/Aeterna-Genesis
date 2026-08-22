@@ -1,7 +1,7 @@
 # Research Continuity — read before changing direction
 
 latest strict burst: `dream-20260822-0365`
-continuity digest: `dc6a5f526333affaae1f`
+continuity digest: `e0a2820e603894cb1ba7`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
@@ -68,4 +68,4 @@ continuity digest: `dc6a5f526333affaae1f`
 - `unknown-x`: 8
 - `x-mechanism`: 3
 
-manifest relation: `OLDER_FINALIZED_MANIFEST_REFERENCE`
+manifest relation: `MATCH`
