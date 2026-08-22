@@ -1402,13 +1402,13 @@
     },
     "X-87c10fb560": {
       "pattern_id": "X-87c10fb560",
-      "latest_observations": 536,
-      "bursts": 5,
-      "experiments": 18,
+      "latest_observations": 539,
+      "bursts": 6,
+      "experiments": 22,
       "intervention_stats": {
         "baseline": {
-          "n": 10,
-          "hit": 4
+          "n": 12,
+          "hit": 6
         },
         "drive-weaker": {
           "knob": "drive_strength",
@@ -1473,30 +1473,48 @@
           "hit": 0,
           "paired_n": 1,
           "paired_hit_delta_sum": 0.0
+        },
+        "correlation-shorter": {
+          "knob": "correlation_length",
+          "factor": 0.65,
+          "n": 1,
+          "hit": 0,
+          "paired_n": 1,
+          "paired_hit_delta_sum": -1.0
+        },
+        "correlation-longer": {
+          "knob": "correlation_length",
+          "factor": 1.55,
+          "n": 1,
+          "hit": 0,
+          "paired_n": 1,
+          "paired_hit_delta_sum": -1.0
         }
       },
       "event_classes": {
-        "AMPLITUDE_SCALE_TRACKING": 7
+        "AMPLITUDE_SCALE_TRACKING": 9
       },
       "quench_phase_counts": {
-        "POST_QUENCH": 7
+        "POST_QUENCH": 9
       },
-      "target_events": 7,
-      "sum_amp_cv_log_gain": 0.0031869999999999997,
+      "target_events": 9,
+      "sum_amp_cv_log_gain": 0.002423,
       "defect_change_events": 0,
       "fresh_seed_groups": [
         19960826,
+        83626850,
         132708106,
         237626923,
         504929351,
         511892934,
         576181154,
+        675592235,
         769756996,
         893806906,
         977126879,
         990775792
       ],
-      "unique_fresh_seed_groups": 10,
+      "unique_fresh_seed_groups": 12,
       "recent_events": [
         {
           "burst_id": "dream-20260822-0358",
@@ -1644,13 +1662,55 @@
           "defect_count_after": 0.0,
           "defect_count_changed": false,
           "known_context": []
+        },
+        {
+          "burst_id": "dream-20260822-0365",
+          "seed": 83626850,
+          "intervention": "baseline-0",
+          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
+          "event_time": 25.7,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 0.695216,
+          "amp_std_log_gain": 0.695439,
+          "amp_cv_before": 0.48213502,
+          "amp_cv_after": 0.48224247,
+          "amp_cv_log_gain": 0.000223,
+          "high_amp_fraction_delta": 0.000434,
+          "spectral_k_rms_delta": -0.000281,
+          "spectral_entropy_delta": -0.001279,
+          "gradient_rms_log_gain": 0.692284,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
+        },
+        {
+          "burst_id": "dream-20260822-0365",
+          "seed": 675592235,
+          "intervention": "baseline-1",
+          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
+          "event_time": 25.7,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 0.69547,
+          "amp_std_log_gain": 0.694483,
+          "amp_cv_before": 0.52295445,
+          "amp_cv_after": 0.5224386,
+          "amp_cv_log_gain": -0.000987,
+          "high_amp_fraction_delta": -0.001302,
+          "spectral_k_rms_delta": -0.000167,
+          "spectral_entropy_delta": -0.000811,
+          "gradient_rms_log_gain": 0.692283,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
         }
       ],
-      "intervention_cursor": 8,
+      "intervention_cursor": 0,
       "status": "UNRESOLVED",
       "leading_explanation": "振幅スケール成長、相対的不均一化、複数機構の混在をまだ十分に切り分けられていません。",
       "leading_sensitivity_candidate": null,
-      "last_burst": "dream-20260822-0363",
+      "last_burst": "dream-20260822-0365",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -1940,21 +2000,24 @@
         "paired_n": 4,
         "paired_hit_rate_delta": -0.5
       }
+    },
+    {
+      "burst_id": "dream-20260822-0365",
+      "pattern_id": "X-87c10fb560",
+      "observations_seen": 539,
+      "experiments": 4,
+      "target_events": 2,
+      "status": "UNRESOLVED",
+      "sensitivity": null
     }
   ],
   "latest": {
-    "burst_id": "dream-20260822-0364",
-    "pattern_id": "X-c41277c11b",
-    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは noise-higher が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
-    "leading_sensitivity_candidate": {
-      "intervention": "noise-higher",
-      "knob": "noise_amplitude",
-      "factor": 2.4,
-      "paired_n": 4,
-      "paired_hit_rate_delta": -0.5
-    },
-    "next_question": "noise-higher のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
+    "burst_id": "dream-20260822-0365",
+    "pattern_id": "X-87c10fb560",
+    "status": "UNRESOLVED",
+    "leading_explanation": "振幅スケール成長、相対的不均一化、複数機構の混在をまだ十分に切り分けられていません。",
+    "leading_sensitivity_candidate": null,
+    "next_question": "paired fresh-seed controlsと回転する一因子介入を続け、amp_std増加がamp_cv増加を伴うかを切り分ける。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
