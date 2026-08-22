@@ -875,13 +875,13 @@
     },
     "X-c41277c11b": {
       "pattern_id": "X-c41277c11b",
-      "latest_observations": 797,
-      "bursts": 16,
-      "experiments": 76,
+      "latest_observations": 810,
+      "bursts": 17,
+      "experiments": 80,
       "intervention_stats": {
         "baseline": {
-          "n": 32,
-          "hit": 13
+          "n": 34,
+          "hit": 14
         },
         "drive-weaker": {
           "knob": "drive_strength",
@@ -918,17 +918,17 @@
         "quench-faster": {
           "knob": "quench_duration",
           "factor": 0.6,
-          "n": 4,
-          "hit": 1,
-          "paired_n": 4,
+          "n": 5,
+          "hit": 2,
+          "paired_n": 5,
           "paired_hit_delta_sum": -1.0
         },
         "quench-slower": {
           "knob": "quench_duration",
           "factor": 1.6,
-          "n": 4,
+          "n": 5,
           "hit": 1,
-          "paired_n": 4,
+          "paired_n": 5,
           "paired_hit_delta_sum": 0.0
         },
         "noise-lower": {
@@ -965,14 +965,14 @@
         }
       },
       "event_classes": {
-        "AMPLITUDE_SCALE_TRACKING": 20,
+        "AMPLITUDE_SCALE_TRACKING": 22,
         "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION": 3
       },
       "quench_phase_counts": {
-        "POST_QUENCH": 23
+        "POST_QUENCH": 25
       },
-      "target_events": 23,
-      "sum_amp_cv_log_gain": -2.0910719999999996,
+      "target_events": 25,
+      "sum_amp_cv_log_gain": -2.2592359999999996,
       "defect_change_events": 0,
       "fresh_seed_groups": [
         738279,
@@ -982,6 +982,7 @@
         162549417,
         193334628,
         215441844,
+        225931024,
         272759741,
         285773928,
         340187703,
@@ -993,6 +994,7 @@
         459252407,
         574700840,
         653714241,
+        664083981,
         686918903,
         694532263,
         706239235,
@@ -1008,7 +1010,7 @@
         943772083,
         990187254
       ],
-      "unique_fresh_seed_groups": 32,
+      "unique_fresh_seed_groups": 34,
       "recent_events": [
         {
           "burst_id": "dream-20260821-0342",
@@ -1492,9 +1494,51 @@
           "defect_count_after": 0.0,
           "defect_count_changed": false,
           "known_context": []
+        },
+        {
+          "burst_id": "dream-20260822-0378",
+          "seed": 225931024,
+          "intervention": "baseline-0",
+          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
+          "event_time": 11.28333333,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 1.591159,
+          "amp_std_log_gain": 1.523304,
+          "amp_cv_before": 0.42182696,
+          "amp_cv_after": 0.39415343,
+          "amp_cv_log_gain": -0.067855,
+          "high_amp_fraction_delta": 0.001736,
+          "spectral_k_rms_delta": -0.000273,
+          "spectral_entropy_delta": -0.001928,
+          "gradient_rms_log_gain": 1.53976,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
+        },
+        {
+          "burst_id": "dream-20260822-0378",
+          "seed": 225931024,
+          "intervention": "quench-faster",
+          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
+          "event_time": 9.55,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 1.561129,
+          "amp_std_log_gain": 1.46082,
+          "amp_cv_before": 0.44020542,
+          "amp_cv_after": 0.39819121,
+          "amp_cv_log_gain": -0.100309,
+          "high_amp_fraction_delta": 0.005208,
+          "spectral_k_rms_delta": -6.9e-05,
+          "spectral_entropy_delta": 0.002173,
+          "gradient_rms_log_gain": 1.505128,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
         }
       ],
-      "intervention_cursor": 4,
+      "intervention_cursor": 6,
       "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
       "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは noise-higher が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
       "leading_sensitivity_candidate": {
@@ -1504,7 +1548,7 @@
         "paired_n": 4,
         "paired_hit_rate_delta": -0.5
       },
-      "last_burst": "dream-20260822-0371",
+      "last_burst": "dream-20260822-0378",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -3082,15 +3126,36 @@
       "target_events": 4,
       "status": "SUPPORTED_SIMULATOR_EXPLANATION",
       "sensitivity": null
+    },
+    {
+      "burst_id": "dream-20260822-0378",
+      "pattern_id": "X-c41277c11b",
+      "observations_seen": 810,
+      "experiments": 4,
+      "target_events": 2,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "sensitivity": {
+        "intervention": "noise-higher",
+        "knob": "noise_amplitude",
+        "factor": 2.4,
+        "paired_n": 4,
+        "paired_hit_rate_delta": -0.5
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260822-0377",
-    "pattern_id": "X-dcc459d23a",
-    "status": "SUPPORTED_SIMULATOR_EXPLANATION",
-    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。",
-    "leading_sensitivity_candidate": null,
-    "next_question": "支持された説明を定期holdoutで壊しに行きつつ、別の未解決Xにも機構探索を回す。",
+    "burst_id": "dream-20260822-0378",
+    "pattern_id": "X-c41277c11b",
+    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは noise-higher が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
+    "leading_sensitivity_candidate": {
+      "intervention": "noise-higher",
+      "knob": "noise_amplitude",
+      "factor": 2.4,
+      "paired_n": 4,
+      "paired_hit_rate_delta": -0.5
+    },
+    "next_question": "noise-higher のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
