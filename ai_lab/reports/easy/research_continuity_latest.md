@@ -1,7 +1,7 @@
 # Research Continuity — read before changing direction
 
 latest strict burst: `dream-20260823-0383`
-continuity digest: `366d48be254953dd3fc5`
+continuity digest: `dd87899b0dd1c8410471`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
@@ -40,13 +40,13 @@ continuity digest: `366d48be254953dd3fc5`
 - `science-direction:science-kzm-fast-quench-analogy` [science-bridge/free-hypothesis] — Do faster environmental changes alter defect and anonymous-transition statistics in the opposite regime?
 - `science-direction:science-active-droplet-local-supply-analogy` [science-bridge/free-hypothesis] — Does a localized supply of field amplitude create a later growth-to-instability sequence rather than merely a larger static structure?
 - `free:single_random_energy_kick` [free-hypothesis] — 外部キックなしでも内部揺らぎへの応答・修復・分岐の同じ統計が現れるか
+- `free:radial_quench` [free-hypothesis] — 空間パターンを指定せず、局所時定数の不均一だけで同様の組織化が起こるか
 - `free:fast_quench` [free-hypothesis] — strictな一様開始のまま急冷速度だけで未知遷移の頻度が変わるか
 - `science:doi:10.1146/annurev-conmatphys-031214-014710` [science-bridge] — 既存科学の文脈: Motility-Induced Phase Separation — Persistent self-driven motion can itself generate phase separation even without ordinary attractive interactions.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1098/rstb.1952.0012` [science-bridge] — 既存科学の文脈: The Chemical Basis of Morphogenesis — A spatially homogeneous state can become unstable and develop structure through reaction and transport, with small disturbances acting as triggers.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1038/s41467-026-69940-w` [science-bridge] — 既存科学の文脈: Kibble-Zurek mechanism and beyond in a holographic superfluid disk — Crossing a continuous transition at finite rate connects quench timescales to spontaneous symmetry breaking and topological-defect production.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1038/nphys3984` [science-bridge] — 既存科学の文脈: Growth and division of active droplets provides a model for protocells — A chemically driven material supply can make droplets grow until shape instabilities produce division-like daughter droplets.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `relation-instrument:metric-from-relations` [pure-genesis-relation-instruments] — 関係だけから得た距離・近傍・次元候補は、匿名label置換・relation rewire・holdoutを越えて残るか？ 現在は測定可能だがleadなし。負の結果を保ち、別law/sizeで探索する。
-- `relation-instrument:lineage-accounting` [pure-genesis-relation-instruments] — 持続した親候補の後に持続する2候補が現れ、親→娘の構造収支が無関係pair対照を上回るか？ 現在は測定可能だがleadなし。負の結果を保ち、別law/sizeで探索する。
 
 ## Integrity
 
@@ -60,8 +60,8 @@ continuity digest: `366d48be254953dd3fc5`
 1つの研究系統だけでworking handoffを埋めないための表示です。全履歴は `lessons` と元ledgerに残ります。
 
 - `cross-world`: 1
-- `free-hypothesis`: 2
-- `relation-instruments`: 3
+- `free-hypothesis`: 3
+- `relation-instruments`: 2
 - `research-operations`: 6
 - `science-bridge`: 8
 - `strict-deep-time`: 6
