@@ -3298,12 +3298,12 @@
     },
     "X-28f62e46f9": {
       "pattern_id": "X-28f62e46f9",
-      "latest_observations": 358,
-      "bursts": 9,
-      "experiments": 46,
+      "latest_observations": 361,
+      "bursts": 10,
+      "experiments": 50,
       "intervention_stats": {
         "baseline": {
-          "n": 18,
+          "n": 20,
           "hit": 11
         },
         "drive-weaker": {
@@ -3373,31 +3373,32 @@
         "correlation-shorter": {
           "knob": "correlation_length",
           "factor": 0.65,
-          "n": 2,
+          "n": 3,
           "hit": 1,
-          "paired_n": 2,
+          "paired_n": 3,
           "paired_hit_delta_sum": -1.0
         },
         "correlation-longer": {
           "knob": "correlation_length",
           "factor": 1.55,
-          "n": 2,
-          "hit": 0,
-          "paired_n": 2,
-          "paired_hit_delta_sum": 0.0
+          "n": 3,
+          "hit": 1,
+          "paired_n": 3,
+          "paired_hit_delta_sum": 1.0
         }
       },
       "event_classes": {
-        "MIXED_OR_UNRESOLVED": 19
+        "MIXED_OR_UNRESOLVED": 20
       },
       "quench_phase_counts": {
-        "POST_QUENCH": 19
+        "POST_QUENCH": 20
       },
-      "target_events": 19,
-      "sum_amp_cv_log_gain": -35.889813999999994,
-      "defect_change_events": 19,
+      "target_events": 20,
+      "sum_amp_cv_log_gain": -37.499249999999996,
+      "defect_change_events": 20,
       "fresh_seed_groups": [
         68362158,
+        83604605,
         152727259,
         164761183,
         222349240,
@@ -3407,6 +3408,7 @@
         466358860,
         483431190,
         499867774,
+        511538501,
         546407699,
         592089775,
         689797431,
@@ -3416,7 +3418,7 @@
         946949114,
         994715949
       ],
-      "unique_fresh_seed_groups": 18,
+      "unique_fresh_seed_groups": 20,
       "recent_events": [
         {
           "burst_id": "dream-20260822-0379",
@@ -3865,13 +3867,37 @@
           "known_context": [
             "vortices_appear"
           ]
+        },
+        {
+          "burst_id": "dream-20260823-0400",
+          "seed": 83604605,
+          "intervention": "correlation-longer",
+          "explanation_class": "MIXED_OR_UNRESOLVED",
+          "event_time": 10.5,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 0.55717,
+          "amp_std_log_gain": -1.052266,
+          "amp_cv_before": 0.38426112,
+          "amp_cv_after": 0.07685235,
+          "amp_cv_log_gain": -1.609436,
+          "high_amp_fraction_delta": -0.211806,
+          "spectral_k_rms_delta": 0.130147,
+          "spectral_entropy_delta": 0.310956,
+          "gradient_rms_log_gain": 0.802584,
+          "defect_count_before": 0.0,
+          "defect_count_after": 6.0,
+          "defect_count_changed": true,
+          "known_context": [
+            "vortices_appear",
+            "relation_presence_changes"
+          ]
         }
       ],
-      "intervention_cursor": 8,
+      "intervention_cursor": 0,
       "status": "UNRESOLVED",
       "leading_explanation": "振幅スケール成長、相対的不均一化、複数機構の混在をまだ十分に切り分けられていません。",
       "leading_sensitivity_candidate": null,
-      "last_burst": "dream-20260823-0396",
+      "last_burst": "dream-20260823-0400",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -4518,21 +4544,24 @@
         "paired_n": 5,
         "paired_hit_rate_delta": -0.4
       }
+    },
+    {
+      "burst_id": "dream-20260823-0400",
+      "pattern_id": "X-28f62e46f9",
+      "observations_seen": 361,
+      "experiments": 4,
+      "target_events": 1,
+      "status": "UNRESOLVED",
+      "sensitivity": null
     }
   ],
   "latest": {
-    "burst_id": "dream-20260823-0399",
-    "pattern_id": "X-c41277c11b",
-    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは noise-higher が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
-    "leading_sensitivity_candidate": {
-      "intervention": "noise-higher",
-      "knob": "noise_amplitude",
-      "factor": 2.4,
-      "paired_n": 5,
-      "paired_hit_rate_delta": -0.4
-    },
-    "next_question": "noise-higher のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
+    "burst_id": "dream-20260823-0400",
+    "pattern_id": "X-28f62e46f9",
+    "status": "UNRESOLVED",
+    "leading_explanation": "振幅スケール成長、相対的不均一化、複数機構の混在をまだ十分に切り分けられていません。",
+    "leading_sensitivity_candidate": null,
+    "next_question": "paired fresh-seed controlsと回転する一因子介入を続け、amp_std増加がamp_cv増加を伴うかを切り分ける。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
