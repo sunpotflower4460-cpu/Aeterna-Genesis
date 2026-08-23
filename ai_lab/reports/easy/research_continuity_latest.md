@@ -1,7 +1,7 @@
 # Research Continuity — read before changing direction
 
 latest strict burst: `dream-20260823-0384`
-continuity digest: `d8b81ad1c71000f390bd`
+continuity digest: `b1a41fd88f9759599d66`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
@@ -42,10 +42,10 @@ continuity digest: `d8b81ad1c71000f390bd`
 - `free:single_random_energy_kick` [free-hypothesis] — 外部キックなしでも内部揺らぎへの応答・修復・分岐の同じ統計が現れるか
 - `free:radial_quench` [free-hypothesis] — 空間パターンを指定せず、局所時定数の不均一だけで同様の組織化が起こるか
 - `free:fast_quench` [free-hypothesis] — strictな一様開始のまま急冷速度だけで未知遷移の頻度が変わるか
+- `free:elliptic_confinement` [free-hypothesis] — 特定形状を置かず、異方的な有限サイズ制約だけでも同じ差が残るか
 - `science:doi:10.1146/annurev-conmatphys-031214-014710` [science-bridge] — 既存科学の文脈: Motility-Induced Phase Separation — Persistent self-driven motion can itself generate phase separation even without ordinary attractive interactions.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1098/rstb.1952.0012` [science-bridge] — 既存科学の文脈: The Chemical Basis of Morphogenesis — A spatially homogeneous state can become unstable and develop structure through reaction and transport, with small disturbances acting as triggers.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1038/s41467-026-69940-w` [science-bridge] — 既存科学の文脈: Kibble-Zurek mechanism and beyond in a holographic superfluid disk — Crossing a continuous transition at finite rate connects quench timescales to spontaneous symmetry breaking and topological-defect production.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
-- `science:doi:10.1038/nphys3984` [science-bridge] — 既存科学の文脈: Growth and division of active droplets provides a model for protocells — A chemically driven material supply can make droplets grow until shape instabilities produce division-like daughter droplets.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `relation-instrument:metric-from-relations` [pure-genesis-relation-instruments] — 関係だけから得た距離・近傍・次元候補は、匿名label置換・relation rewire・holdoutを越えて残るか？ 現在は測定可能だがleadなし。負の結果を保ち、別law/sizeで探索する。
 
 ## Integrity
@@ -60,14 +60,14 @@ continuity digest: `d8b81ad1c71000f390bd`
 1つの研究系統だけでworking handoffを埋めないための表示です。全履歴は `lessons` と元ledgerに残ります。
 
 - `cross-world`: 1
-- `free-hypothesis`: 3
+- `free-hypothesis`: 4
 - `relation-instruments`: 2
 - `research-operations`: 6
-- `science-bridge`: 8
+- `science-bridge`: 7
 - `strict-deep-time`: 6
 - `strict-geometry`: 1
 - `strict-local-energy`: 1
 - `unknown-x`: 8
 - `x-mechanism`: 4
 
-manifest relation: `OLDER_FINALIZED_MANIFEST_REFERENCE`
+manifest relation: `MATCH`
