@@ -961,12 +961,12 @@
     },
     "X-c41277c11b": {
       "pattern_id": "X-c41277c11b",
-      "latest_observations": 810,
-      "bursts": 17,
-      "experiments": 80,
+      "latest_observations": 824,
+      "bursts": 18,
+      "experiments": 82,
       "intervention_stats": {
         "baseline": {
-          "n": 34,
+          "n": 36,
           "hit": 14
         },
         "drive-weaker": {
@@ -1069,6 +1069,7 @@
         193334628,
         215441844,
         225931024,
+        265449201,
         272759741,
         285773928,
         340187703,
@@ -1079,6 +1080,7 @@
         447058725,
         459252407,
         574700840,
+        633362949,
         653714241,
         664083981,
         686918903,
@@ -1096,7 +1098,7 @@
         943772083,
         990187254
       ],
-      "unique_fresh_seed_groups": 34,
+      "unique_fresh_seed_groups": 36,
       "recent_events": [
         {
           "burst_id": "dream-20260821-0342",
@@ -1634,7 +1636,7 @@
         "paired_n": 4,
         "paired_hit_rate_delta": -0.5
       },
-      "last_burst": "dream-20260822-0378",
+      "last_burst": "dream-20260823-0385",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -3709,15 +3711,36 @@
       "target_events": 1,
       "status": "SUPPORTED_SIMULATOR_EXPLANATION",
       "sensitivity": null
+    },
+    {
+      "burst_id": "dream-20260823-0385",
+      "pattern_id": "X-c41277c11b",
+      "observations_seen": 824,
+      "experiments": 2,
+      "target_events": 0,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "sensitivity": {
+        "intervention": "noise-higher",
+        "knob": "noise_amplitude",
+        "factor": 2.4,
+        "paired_n": 4,
+        "paired_hit_rate_delta": -0.5
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260823-0384",
-    "pattern_id": "X-dcc459d23a",
-    "status": "SUPPORTED_SIMULATOR_EXPLANATION",
-    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。",
-    "leading_sensitivity_candidate": null,
-    "next_question": "支持された説明を定期holdoutで壊しに行きつつ、別の未解決Xにも機構探索を回す。",
+    "burst_id": "dream-20260823-0385",
+    "pattern_id": "X-c41277c11b",
+    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは noise-higher が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
+    "leading_sensitivity_candidate": {
+      "intervention": "noise-higher",
+      "knob": "noise_amplitude",
+      "factor": 2.4,
+      "paired_n": 4,
+      "paired_hit_rate_delta": -0.5
+    },
+    "next_question": "noise-higher のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
