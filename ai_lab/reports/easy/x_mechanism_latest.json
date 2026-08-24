@@ -1,177 +1,144 @@
 {
   "version": 2,
   "mode": "persistent-x-mechanism-dissection",
-  "burst_id": "dream-20260824-0408",
+  "burst_id": "dream-20260824-0409",
   "ran": true,
-  "pattern_id": "X-28f62e46f9",
-  "source_recurrence_status": "REPEATED_SPECIFIC_CANDIDATE",
-  "observations_seen": 373,
-  "experiments": 4,
+  "pattern_id": "X-87c10fb560",
+  "source_recurrence_status": "REPEATED_NONSPECIFIC",
+  "observations_seen": 630,
+  "experiments": 2,
   "target_events_this_burst": 0,
   "cumulative": {
     "bursts": 14,
-    "experiments": 76,
-    "target_events": 20,
+    "experiments": 58,
+    "target_events": 30,
     "unique_fresh_seed_groups": 28,
     "event_classes": {
-      "MIXED_OR_UNRESOLVED": 20
+      "AMPLITUDE_SCALE_TRACKING": 30
     },
     "quench_phase_counts": {
-      "POST_QUENCH": 20
+      "POST_QUENCH": 30
     },
     "intervention_stats": {
       "baseline": {
         "n": 28,
-        "hit": 11
+        "hit": 16
       },
       "drive-weaker": {
         "knob": "drive_strength",
         "factor": 0.55,
-        "n": 5,
+        "n": 3,
         "hit": 0,
-        "paired_n": 5,
-        "paired_hit_delta_sum": -3.0
+        "paired_n": 3,
+        "paired_hit_delta_sum": -2.0
       },
       "drive-stronger": {
         "knob": "drive_strength",
         "factor": 1.55,
-        "n": 5,
+        "n": 3,
         "hit": 2,
-        "paired_n": 5,
-        "paired_hit_delta_sum": 1.0
+        "paired_n": 3,
+        "paired_hit_delta_sum": 0.0
       },
       "diffusion-weaker": {
         "knob": "diffusion_ratio",
         "factor": 0.55,
-        "n": 5,
-        "hit": 2,
-        "paired_n": 5,
-        "paired_hit_delta_sum": 0.0
+        "n": 3,
+        "hit": 3,
+        "paired_n": 3,
+        "paired_hit_delta_sum": 2.0
       },
       "diffusion-stronger": {
         "knob": "diffusion_ratio",
         "factor": 1.65,
-        "n": 5,
+        "n": 3,
         "hit": 1,
-        "paired_n": 5,
-        "paired_hit_delta_sum": 0.0
+        "paired_n": 3,
+        "paired_hit_delta_sum": -2.0
       },
       "quench-faster": {
         "knob": "quench_duration",
         "factor": 0.6,
-        "n": 5,
-        "hit": 1,
-        "paired_n": 5,
-        "paired_hit_delta_sum": -1.0
+        "n": 3,
+        "hit": 0,
+        "paired_n": 3,
+        "paired_hit_delta_sum": -3.0
       },
       "quench-slower": {
         "knob": "quench_duration",
         "factor": 1.6,
-        "n": 5,
-        "hit": 0,
-        "paired_n": 5,
+        "n": 3,
+        "hit": 2,
+        "paired_n": 3,
         "paired_hit_delta_sum": 0.0
       },
       "noise-lower": {
         "knob": "noise_amplitude",
         "factor": 0.35,
-        "n": 5,
-        "hit": 0,
-        "paired_n": 5,
-        "paired_hit_delta_sum": -2.0
+        "n": 3,
+        "hit": 2,
+        "paired_n": 3,
+        "paired_hit_delta_sum": 0.0
       },
       "noise-higher": {
         "knob": "noise_amplitude",
         "factor": 2.4,
-        "n": 5,
+        "n": 3,
         "hit": 1,
-        "paired_n": 5,
-        "paired_hit_delta_sum": -1.0
+        "paired_n": 3,
+        "paired_hit_delta_sum": 0.0
       },
       "correlation-shorter": {
         "knob": "correlation_length",
         "factor": 0.65,
-        "n": 4,
+        "n": 3,
         "hit": 1,
-        "paired_n": 4,
+        "paired_n": 3,
         "paired_hit_delta_sum": -1.0
       },
       "correlation-longer": {
         "knob": "correlation_length",
         "factor": 1.55,
-        "n": 4,
-        "hit": 1,
-        "paired_n": 4,
-        "paired_hit_delta_sum": 1.0
+        "n": 3,
+        "hit": 2,
+        "paired_n": 3,
+        "paired_hit_delta_sum": -1.0
       }
     },
-    "defect_change_events": 20
+    "defect_change_events": 0
   },
-  "status": "UNRESOLVED",
-  "leading_explanation": "振幅スケール成長、相対的不均一化、複数機構の混在をまだ十分に切り分けられていません。",
-  "leading_sensitivity_candidate": {
-    "intervention": "drive-weaker",
-    "knob": "drive_strength",
-    "factor": 0.55,
-    "paired_n": 5,
-    "paired_hit_rate_delta": -0.6
-  },
-  "next_question": "paired fresh-seed controlsと回転する一因子介入を続け、amp_std増加がamp_cv増加を伴うかを切り分ける。",
+  "status": "SUPPORTED_SIMULATOR_EXPLANATION",
+  "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。",
+  "leading_sensitivity_candidate": null,
+  "next_question": "支持された説明を定期holdoutで壊しに行きつつ、別の未解決Xにも機構探索を回す。",
   "results": [
     {
-      "seed": 777397294,
-      "paired_control_seed": 777397294,
+      "seed": 993182903,
+      "paired_control_seed": 993182903,
       "intervention": "baseline-0",
       "intervened_knob": null,
       "factor": 1.0,
       "same_pattern_seen": false,
       "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-0bbb5f1a50"
+        "X-dcc459d23a",
+        "X-9aa2d642d8"
       ],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
+      "zero_purity": "scaffolded-start"
     },
     {
-      "seed": 390545814,
-      "paired_control_seed": 390545814,
+      "seed": 82681454,
+      "paired_control_seed": 82681454,
       "intervention": "baseline-1",
       "intervened_knob": null,
       "factor": 1.0,
       "same_pattern_seen": false,
       "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-3c0c31450e",
-        "X-8431ef8a32"
+        "X-dcc459d23a",
+        "X-2e1f616798"
       ],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
-    },
-    {
-      "seed": 777397294,
-      "paired_control_seed": 777397294,
-      "intervention": "noise-lower",
-      "intervened_knob": "noise_amplitude",
-      "factor": 0.35,
-      "same_pattern_seen": false,
-      "target_event_metrics": [],
-      "other_pattern_ids": [
-        "X-df1c8ffe7f",
-        "X-0bbb5f1a50"
-      ],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
-    },
-    {
-      "seed": 390545814,
-      "paired_control_seed": 390545814,
-      "intervention": "noise-higher",
-      "intervened_knob": "noise_amplitude",
-      "factor": 2.4,
-      "same_pattern_seen": false,
-      "target_event_metrics": [],
-      "other_pattern_ids": [
-        "X-a428f23471",
-        "X-2216c21fa6"
-      ],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
+      "zero_purity": "scaffolded-start"
     }
   ],
   "policy": {
