@@ -1,139 +1,145 @@
 {
   "version": 2,
   "mode": "persistent-x-mechanism-dissection",
-  "burst_id": "dream-20260824-0426",
+  "burst_id": "dream-20260824-0427",
   "ran": true,
-  "pattern_id": "X-dcc459d23a",
-  "source_recurrence_status": "REPEATED_SPECIFIC_CANDIDATE",
-  "observations_seen": 623,
-  "experiments": 4,
-  "target_events_this_burst": 2,
+  "pattern_id": "X-c41277c11b",
+  "source_recurrence_status": "REPEATED_NONSPECIFIC",
+  "observations_seen": 940,
+  "experiments": 12,
+  "target_events_this_burst": 4,
   "cumulative": {
-    "bursts": 13,
-    "experiments": 52,
-    "target_events": 32,
-    "unique_fresh_seed_groups": 26,
+    "bursts": 24,
+    "experiments": 122,
+    "target_events": 31,
+    "unique_fresh_seed_groups": 48,
     "event_classes": {
-      "AMPLITUDE_SCALE_TRACKING": 28,
+      "AMPLITUDE_SCALE_TRACKING": 27,
       "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION": 4
     },
     "quench_phase_counts": {
-      "POST_QUENCH": 32
+      "POST_QUENCH": 31
     },
     "intervention_stats": {
       "baseline": {
-        "n": 26,
-        "hit": 21
+        "n": 48,
+        "hit": 16
       },
       "drive-weaker": {
         "knob": "drive_strength",
         "factor": 0.55,
-        "n": 3,
+        "n": 8,
         "hit": 1,
-        "paired_n": 3,
-        "paired_hit_delta_sum": -1.0
+        "paired_n": 8,
+        "paired_hit_delta_sum": -2.0
       },
       "drive-stronger": {
         "knob": "drive_strength",
         "factor": 1.55,
-        "n": 3,
+        "n": 8,
         "hit": 1,
-        "paired_n": 3,
-        "paired_hit_delta_sum": -2.0
+        "paired_n": 8,
+        "paired_hit_delta_sum": 0.0
       },
       "diffusion-weaker": {
         "knob": "diffusion_ratio",
         "factor": 0.55,
-        "n": 3,
+        "n": 8,
         "hit": 2,
-        "paired_n": 3,
+        "paired_n": 8,
         "paired_hit_delta_sum": -1.0
       },
       "diffusion-stronger": {
         "knob": "diffusion_ratio",
         "factor": 1.65,
-        "n": 3,
-        "hit": 2,
-        "paired_n": 3,
-        "paired_hit_delta_sum": -1.0
+        "n": 8,
+        "hit": 1,
+        "paired_n": 8,
+        "paired_hit_delta_sum": 0.0
       },
       "quench-faster": {
         "knob": "quench_duration",
         "factor": 0.6,
-        "n": 3,
-        "hit": 0,
-        "paired_n": 3,
-        "paired_hit_delta_sum": -3.0
+        "n": 7,
+        "hit": 2,
+        "paired_n": 7,
+        "paired_hit_delta_sum": -2.0
       },
       "quench-slower": {
         "knob": "quench_duration",
         "factor": 1.6,
-        "n": 3,
+        "n": 7,
         "hit": 1,
-        "paired_n": 3,
-        "paired_hit_delta_sum": -1.0
+        "paired_n": 7,
+        "paired_hit_delta_sum": 0.0
       },
       "noise-lower": {
         "knob": "noise_amplitude",
         "factor": 0.35,
-        "n": 2,
+        "n": 7,
         "hit": 2,
-        "paired_n": 2,
-        "paired_hit_delta_sum": 0.0
+        "paired_n": 7,
+        "paired_hit_delta_sum": -1.0
       },
       "noise-higher": {
         "knob": "noise_amplitude",
         "factor": 2.4,
-        "n": 2,
-        "hit": 1,
-        "paired_n": 2,
-        "paired_hit_delta_sum": -1.0
+        "n": 7,
+        "hit": 0,
+        "paired_n": 7,
+        "paired_hit_delta_sum": -2.0
       },
       "correlation-shorter": {
         "knob": "correlation_length",
         "factor": 0.65,
-        "n": 2,
-        "hit": 0,
-        "paired_n": 2,
+        "n": 7,
+        "hit": 3,
+        "paired_n": 7,
         "paired_hit_delta_sum": 0.0
       },
       "correlation-longer": {
         "knob": "correlation_length",
         "factor": 1.55,
-        "n": 2,
-        "hit": 1,
-        "paired_n": 2,
+        "n": 7,
+        "hit": 2,
+        "paired_n": 7,
         "paired_hit_delta_sum": 0.0
       }
     },
     "defect_change_events": 0
   },
-  "status": "SUPPORTED_SIMULATOR_EXPLANATION",
-  "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。",
-  "leading_sensitivity_candidate": null,
-  "next_question": "支持された説明を定期holdoutで壊しに行きつつ、別の未解決Xにも機構探索を回す。",
+  "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+  "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
+  "leading_sensitivity_candidate": {
+    "intervention": "quench-faster",
+    "knob": "quench_duration",
+    "factor": 0.6,
+    "paired_n": 7,
+    "paired_hit_rate_delta": -0.2857
+  },
+  "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
   "results": [
     {
-      "seed": 450324833,
-      "paired_control_seed": 450324833,
+      "seed": 387625872,
+      "paired_control_seed": 387625872,
       "intervention": "baseline-0",
       "intervened_knob": null,
       "factor": 1.0,
       "same_pattern_seen": true,
       "target_event_metrics": [
         {
-          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
-          "event_time": 23.825,
+          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
+          "event_time": 10.225,
           "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 0.536941,
-          "amp_std_log_gain": 0.360166,
-          "amp_cv_before": 0.20583976,
-          "amp_cv_after": 0.17248718,
-          "amp_cv_log_gain": -0.176775,
-          "high_amp_fraction_delta": 0.0,
-          "spectral_k_rms_delta": 1e-05,
-          "spectral_entropy_delta": -0.000328,
-          "gradient_rms_log_gain": 0.36106,
+          "mean_amp_log_gain": 1.6981,
+          "amp_std_log_gain": 1.656099,
+          "amp_cv_before": 0.5024775,
+          "amp_cv_after": 0.48181002,
+          "amp_cv_log_gain": -0.042001,
+          "high_amp_fraction_delta": 0.009115,
+          "spectral_k_rms_delta": -0.000683,
+          "spectral_entropy_delta": -0.008173,
+          "gradient_rms_log_gain": 1.655192,
           "defect_count_before": 0.0,
           "defect_count_after": 0.0,
           "defect_count_changed": false,
@@ -141,68 +147,225 @@
         }
       ],
       "other_pattern_ids": [
-        "X-fc011ee93f"
+        "X-8c982007fa",
+        "X-c90c542349"
       ],
-      "zero_purity": "scaffolded-start"
+      "zero_purity": "Z-A:minimal-white"
     },
     {
-      "seed": 192187358,
-      "paired_control_seed": 192187358,
+      "seed": 289822387,
+      "paired_control_seed": 289822387,
       "intervention": "baseline-1",
       "intervened_knob": null,
       "factor": 1.0,
-      "same_pattern_seen": true,
-      "target_event_metrics": [
-        {
-          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
-          "event_time": 23.825,
-          "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 0.541047,
-          "amp_std_log_gain": 0.37038,
-          "amp_cv_before": 0.20102549,
-          "amp_cv_after": 0.16948515,
-          "amp_cv_log_gain": -0.170666,
-          "high_amp_fraction_delta": -0.000434,
-          "spectral_k_rms_delta": 2e-06,
-          "spectral_entropy_delta": -0.000854,
-          "gradient_rms_log_gain": 0.371808,
-          "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
-        }
-      ],
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-66b4a8961a"
+        "X-a0c7c2f685",
+        "X-e3846b5c29"
       ],
-      "zero_purity": "scaffolded-start"
+      "zero_purity": "Z-A:minimal-white"
     },
     {
-      "seed": 450324833,
-      "paired_control_seed": 450324833,
+      "seed": 387625872,
+      "paired_control_seed": 387625872,
       "intervention": "quench-faster",
       "intervened_knob": "quench_duration",
       "factor": 0.6,
       "same_pattern_seen": false,
       "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-c7065e7ee0",
-        "X-029f9907c2"
+        "X-d484f669e7",
+        "X-2f112f9d68",
+        "X-88394247b7",
+        "X-039e1497be"
       ],
-      "zero_purity": "scaffolded-start"
+      "zero_purity": "Z-A:minimal-white"
     },
     {
-      "seed": 192187358,
-      "paired_control_seed": 192187358,
+      "seed": 289822387,
+      "paired_control_seed": 289822387,
       "intervention": "quench-slower",
       "intervened_knob": "quench_duration",
       "factor": 1.6,
       "same_pattern_seen": false,
       "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-d7d980689e"
+        "X-deea6a8f25",
+        "X-79c8f1eed4"
       ],
-      "zero_purity": "scaffolded-start"
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 387625872,
+      "paired_control_seed": 387625872,
+      "intervention": "noise-lower",
+      "intervened_knob": "noise_amplitude",
+      "factor": 0.35,
+      "same_pattern_seen": true,
+      "target_event_metrics": [
+        {
+          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
+          "event_time": 11.075,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 1.620775,
+          "amp_std_log_gain": 1.486584,
+          "amp_cv_before": 0.49948978,
+          "amp_cv_after": 0.43676558,
+          "amp_cv_log_gain": -0.134191,
+          "high_amp_fraction_delta": 0.014757,
+          "spectral_k_rms_delta": 0.001117,
+          "spectral_entropy_delta": 0.004613,
+          "gradient_rms_log_gain": 1.568689,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
+        }
+      ],
+      "other_pattern_ids": [
+        "X-af9c5c4873",
+        "X-039e1497be"
+      ],
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 289822387,
+      "paired_control_seed": 289822387,
+      "intervention": "noise-higher",
+      "intervened_knob": "noise_amplitude",
+      "factor": 2.4,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-3676634d1f",
+        "X-e2a92cfb29",
+        "X-d2776d1acb"
+      ],
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 387625872,
+      "paired_control_seed": 387625872,
+      "intervention": "correlation-shorter",
+      "intervened_knob": "correlation_length",
+      "factor": 0.65,
+      "same_pattern_seen": true,
+      "target_event_metrics": [
+        {
+          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
+          "event_time": 10.225,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 1.6981,
+          "amp_std_log_gain": 1.656099,
+          "amp_cv_before": 0.5024775,
+          "amp_cv_after": 0.48181002,
+          "amp_cv_log_gain": -0.042001,
+          "high_amp_fraction_delta": 0.009115,
+          "spectral_k_rms_delta": -0.000683,
+          "spectral_entropy_delta": -0.008173,
+          "gradient_rms_log_gain": 1.655192,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
+        }
+      ],
+      "other_pattern_ids": [
+        "X-8c982007fa",
+        "X-c90c542349"
+      ],
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 289822387,
+      "paired_control_seed": 289822387,
+      "intervention": "correlation-longer",
+      "intervened_knob": "correlation_length",
+      "factor": 1.55,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-a0c7c2f685",
+        "X-e3846b5c29"
+      ],
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 387625872,
+      "paired_control_seed": 387625872,
+      "intervention": "drive-weaker",
+      "intervened_knob": "drive_strength",
+      "factor": 0.55,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-fc51cd23fe",
+        "X-087661a1dd"
+      ],
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 289822387,
+      "paired_control_seed": 289822387,
+      "intervention": "drive-stronger",
+      "intervened_knob": "drive_strength",
+      "factor": 1.55,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-58ceecfd02",
+        "X-b9770001c4",
+        "X-b988482a76"
+      ],
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 387625872,
+      "paired_control_seed": 387625872,
+      "intervention": "diffusion-weaker",
+      "intervened_knob": "diffusion_ratio",
+      "factor": 0.55,
+      "same_pattern_seen": true,
+      "target_event_metrics": [
+        {
+          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
+          "event_time": 10.25,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 1.660817,
+          "amp_std_log_gain": 1.598468,
+          "amp_cv_before": 0.52417929,
+          "amp_cv_after": 0.49249527,
+          "amp_cv_log_gain": -0.062349,
+          "high_amp_fraction_delta": 0.003906,
+          "spectral_k_rms_delta": -0.000688,
+          "spectral_entropy_delta": -0.002506,
+          "gradient_rms_log_gain": 1.609139,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
+        }
+      ],
+      "other_pattern_ids": [
+        "X-a0ba747323"
+      ],
+      "zero_purity": "Z-A:minimal-white"
+    },
+    {
+      "seed": 289822387,
+      "paired_control_seed": 289822387,
+      "intervention": "diffusion-stronger",
+      "intervened_knob": "diffusion_ratio",
+      "factor": 1.65,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-deea6a8f25",
+        "X-79c8f1eed4",
+        "X-67e9aeb002"
+      ],
+      "zero_purity": "Z-A:minimal-white"
     }
   ],
   "policy": {
