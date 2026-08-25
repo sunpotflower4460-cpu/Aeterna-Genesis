@@ -1,0 +1,5 @@
+# room-auto-dream-20260825-0449-native-window-v001-local3d-s89951 — Genesis Autopilot candidate
+
+Campaign `dream-20260825-0449`, trial `native-window-v001`, stage `local-3d`, seed `89951`.
+
+This is **non-official**. It was computed from t=0 by the repository's reference stepper, with no runtime intervention. Promotion remains gated; this artifact never writes `rooms/official/`.
