@@ -1,207 +1,240 @@
 {
   "version": 2,
   "mode": "persistent-x-mechanism-dissection",
-  "burst_id": "dream-20260825-0444",
+  "burst_id": "dream-20260825-0445",
   "ran": true,
-  "pattern_id": "X-87c10fb560",
-  "source_recurrence_status": "REPEATED_NONSPECIFIC",
-  "observations_seen": 724,
-  "experiments": 4,
+  "pattern_id": "X-28f62e46f9",
+  "source_recurrence_status": "REPEATED_SPECIFIC_CANDIDATE",
+  "observations_seen": 409,
+  "experiments": 6,
   "target_events_this_burst": 2,
   "cumulative": {
-    "bursts": 19,
-    "experiments": 78,
-    "target_events": 45,
-    "unique_fresh_seed_groups": 38,
+    "bursts": 30,
+    "experiments": 144,
+    "target_events": 41,
+    "unique_fresh_seed_groups": 60,
     "event_classes": {
-      "AMPLITUDE_SCALE_TRACKING": 45
+      "MIXED_OR_UNRESOLVED": 41
     },
     "quench_phase_counts": {
-      "POST_QUENCH": 45
+      "POST_QUENCH": 41
     },
     "intervention_stats": {
       "baseline": {
-        "n": 38,
-        "hit": 24
+        "n": 60,
+        "hit": 23
       },
       "drive-weaker": {
         "knob": "drive_strength",
         "factor": 0.55,
-        "n": 4,
-        "hit": 1,
-        "paired_n": 4,
-        "paired_hit_delta_sum": -2.0
+        "n": 9,
+        "hit": 0,
+        "paired_n": 9,
+        "paired_hit_delta_sum": -4.0
       },
       "drive-stronger": {
         "knob": "drive_strength",
         "factor": 1.55,
-        "n": 4,
-        "hit": 3,
-        "paired_n": 4,
+        "n": 9,
+        "hit": 2,
+        "paired_n": 9,
         "paired_hit_delta_sum": 0.0
       },
       "diffusion-weaker": {
         "knob": "diffusion_ratio",
         "factor": 0.55,
-        "n": 4,
-        "hit": 4,
-        "paired_n": 4,
-        "paired_hit_delta_sum": 2.0
+        "n": 9,
+        "hit": 5,
+        "paired_n": 9,
+        "paired_hit_delta_sum": 1.0
       },
       "diffusion-stronger": {
         "knob": "diffusion_ratio",
         "factor": 1.65,
-        "n": 4,
+        "n": 9,
         "hit": 2,
-        "paired_n": 4,
+        "paired_n": 9,
         "paired_hit_delta_sum": -1.0
       },
       "quench-faster": {
         "knob": "quench_duration",
         "factor": 0.6,
-        "n": 4,
-        "hit": 0,
-        "paired_n": 4,
-        "paired_hit_delta_sum": -3.0
+        "n": 8,
+        "hit": 4,
+        "paired_n": 8,
+        "paired_hit_delta_sum": 1.0
       },
       "quench-slower": {
         "knob": "quench_duration",
         "factor": 1.6,
-        "n": 4,
-        "hit": 3,
-        "paired_n": 4,
+        "n": 8,
+        "hit": 0,
+        "paired_n": 8,
         "paired_hit_delta_sum": 0.0
       },
       "noise-lower": {
         "knob": "noise_amplitude",
         "factor": 0.35,
-        "n": 4,
-        "hit": 3,
-        "paired_n": 4,
-        "paired_hit_delta_sum": 0.0
+        "n": 8,
+        "hit": 0,
+        "paired_n": 8,
+        "paired_hit_delta_sum": -3.0
       },
       "noise-higher": {
         "knob": "noise_amplitude",
         "factor": 2.4,
-        "n": 4,
-        "hit": 2,
-        "paired_n": 4,
-        "paired_hit_delta_sum": 0.0
+        "n": 8,
+        "hit": 1,
+        "paired_n": 8,
+        "paired_hit_delta_sum": -1.0
       },
       "correlation-shorter": {
         "knob": "correlation_length",
         "factor": 0.65,
-        "n": 4,
-        "hit": 1,
-        "paired_n": 4,
-        "paired_hit_delta_sum": -2.0
+        "n": 8,
+        "hit": 2,
+        "paired_n": 8,
+        "paired_hit_delta_sum": -3.0
       },
       "correlation-longer": {
         "knob": "correlation_length",
         "factor": 1.55,
-        "n": 4,
+        "n": 8,
         "hit": 2,
-        "paired_n": 4,
-        "paired_hit_delta_sum": -2.0
+        "paired_n": 8,
+        "paired_hit_delta_sum": -1.0
       }
     },
-    "defect_change_events": 0
+    "defect_change_events": 41
   },
-  "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-  "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
+  "status": "UNRESOLVED",
+  "leading_explanation": "振幅スケール成長、相対的不均一化、複数機構の混在をまだ十分に切り分けられていません。",
   "leading_sensitivity_candidate": {
-    "intervention": "quench-faster",
-    "knob": "quench_duration",
-    "factor": 0.6,
-    "paired_n": 4,
-    "paired_hit_rate_delta": -0.75
+    "intervention": "drive-weaker",
+    "knob": "drive_strength",
+    "factor": 0.55,
+    "paired_n": 9,
+    "paired_hit_rate_delta": -0.4444
   },
-  "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
+  "next_question": "paired fresh-seed controlsと回転する一因子介入を続け、amp_std増加がamp_cv増加を伴うかを切り分ける。",
   "results": [
     {
-      "seed": 271981825,
-      "paired_control_seed": 271981825,
+      "seed": 919633637,
+      "paired_control_seed": 919633637,
       "intervention": "baseline-0",
       "intervened_knob": null,
       "factor": 1.0,
-      "same_pattern_seen": true,
-      "target_event_metrics": [
-        {
-          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
-          "event_time": 25.82,
-          "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 1.060612,
-          "amp_std_log_gain": 1.012176,
-          "amp_cv_before": 0.32246236,
-          "amp_cv_after": 0.30721569,
-          "amp_cv_log_gain": -0.048436,
-          "high_amp_fraction_delta": -0.001302,
-          "spectral_k_rms_delta": -0.000124,
-          "spectral_entropy_delta": -0.00207,
-          "gradient_rms_log_gain": 1.003261,
-          "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
-        }
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-e338b4da7c",
+        "X-4f99b14e25"
       ],
-      "other_pattern_ids": [],
       "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
     },
     {
-      "seed": 420383393,
-      "paired_control_seed": 420383393,
+      "seed": 280217316,
+      "paired_control_seed": 280217316,
       "intervention": "baseline-1",
       "intervened_knob": null,
       "factor": 1.0,
       "same_pattern_seen": true,
       "target_event_metrics": [
         {
-          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
-          "event_time": 25.82,
+          "explanation_class": "MIXED_OR_UNRESOLVED",
+          "event_time": 20.7125,
           "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 1.057647,
-          "amp_std_log_gain": 0.961989,
-          "amp_cv_before": 0.11909807,
-          "amp_cv_after": 0.10823332,
-          "amp_cv_log_gain": -0.095658,
-          "high_amp_fraction_delta": -0.000434,
-          "spectral_k_rms_delta": -0.000143,
-          "spectral_entropy_delta": 0.002514,
-          "gradient_rms_log_gain": 1.003675,
+          "mean_amp_log_gain": 0.787878,
+          "amp_std_log_gain": -0.654032,
+          "amp_cv_before": 0.40612042,
+          "amp_cv_after": 0.09603751,
+          "amp_cv_log_gain": -1.441911,
+          "high_amp_fraction_delta": -0.204861,
+          "spectral_k_rms_delta": 0.061538,
+          "spectral_entropy_delta": 0.252311,
+          "gradient_rms_log_gain": 0.963821,
           "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
+          "defect_count_after": 4.0,
+          "defect_count_changed": true,
+          "known_context": [
+            "vortices_appear"
+          ]
         }
       ],
       "other_pattern_ids": [],
       "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
     },
     {
-      "seed": 271981825,
-      "paired_control_seed": 271981825,
-      "intervention": "correlation-shorter",
-      "intervened_knob": "correlation_length",
-      "factor": 0.65,
+      "seed": 919633637,
+      "paired_control_seed": 919633637,
+      "intervention": "drive-weaker",
+      "intervened_knob": "drive_strength",
+      "factor": 0.55,
       "same_pattern_seen": false,
       "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-66003f8c05"
+        "X-79bf1ed334",
+        "X-dce8d72ab3"
       ],
       "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
     },
     {
-      "seed": 420383393,
-      "paired_control_seed": 420383393,
-      "intervention": "correlation-longer",
-      "intervened_knob": "correlation_length",
+      "seed": 280217316,
+      "paired_control_seed": 280217316,
+      "intervention": "drive-stronger",
+      "intervened_knob": "drive_strength",
       "factor": 1.55,
       "same_pattern_seen": false,
       "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-471f3249b3"
+        "X-adb738221b",
+        "X-d64a269b15"
       ],
+      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
+    },
+    {
+      "seed": 919633637,
+      "paired_control_seed": 919633637,
+      "intervention": "diffusion-weaker",
+      "intervened_knob": "diffusion_ratio",
+      "factor": 0.55,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-20237c4856"
+      ],
+      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
+    },
+    {
+      "seed": 280217316,
+      "paired_control_seed": 280217316,
+      "intervention": "diffusion-stronger",
+      "intervened_knob": "diffusion_ratio",
+      "factor": 1.65,
+      "same_pattern_seen": true,
+      "target_event_metrics": [
+        {
+          "explanation_class": "MIXED_OR_UNRESOLVED",
+          "event_time": 20.7125,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 0.787878,
+          "amp_std_log_gain": -0.654032,
+          "amp_cv_before": 0.40612042,
+          "amp_cv_after": 0.09603751,
+          "amp_cv_log_gain": -1.441911,
+          "high_amp_fraction_delta": -0.204861,
+          "spectral_k_rms_delta": 0.061538,
+          "spectral_entropy_delta": 0.252311,
+          "gradient_rms_log_gain": 0.963821,
+          "defect_count_before": 0.0,
+          "defect_count_after": 4.0,
+          "defect_count_changed": true,
+          "known_context": [
+            "vortices_appear"
+          ]
+        }
+      ],
+      "other_pattern_ids": [],
       "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
     }
   ],
