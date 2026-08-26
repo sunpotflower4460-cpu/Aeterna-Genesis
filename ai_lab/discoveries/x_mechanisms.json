@@ -1518,13 +1518,13 @@
     },
     "X-c41277c11b": {
       "pattern_id": "X-c41277c11b",
-      "latest_observations": 1097,
-      "bursts": 33,
-      "experiments": 162,
+      "latest_observations": 1101,
+      "bursts": 34,
+      "experiments": 166,
       "intervention_stats": {
         "baseline": {
-          "n": 66,
-          "hit": 26
+          "n": 68,
+          "hit": 27
         },
         "drive-weaker": {
           "knob": "drive_strength",
@@ -1577,17 +1577,17 @@
         "noise-lower": {
           "knob": "noise_amplitude",
           "factor": 0.35,
-          "n": 9,
+          "n": 10,
           "hit": 2,
-          "paired_n": 9,
-          "paired_hit_delta_sum": -3.0
+          "paired_n": 10,
+          "paired_hit_delta_sum": -4.0
         },
         "noise-higher": {
           "knob": "noise_amplitude",
           "factor": 2.4,
-          "n": 9,
+          "n": 10,
           "hit": 0,
-          "paired_n": 9,
+          "paired_n": 10,
           "paired_hit_delta_sum": -4.0
         },
         "correlation-shorter": {
@@ -1609,13 +1609,13 @@
       },
       "event_classes": {
         "AMPLITUDE_SCALE_TRACKING": 34,
-        "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION": 11
+        "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION": 12
       },
       "quench_phase_counts": {
-        "POST_QUENCH": 45
+        "POST_QUENCH": 46
       },
-      "target_events": 45,
-      "sum_amp_cv_log_gain": -4.125718999999999,
+      "target_events": 46,
+      "sum_amp_cv_log_gain": -4.3795269999999995,
       "defect_change_events": 0,
       "fresh_seed_groups": [
         738279,
@@ -1653,6 +1653,7 @@
         459252407,
         524805695,
         530797919,
+        550310245,
         569993665,
         574700840,
         586974933,
@@ -1680,12 +1681,13 @@
         878240038,
         896407893,
         911752937,
+        913885071,
         932820413,
         936826301,
         943772083,
         990187254
       ],
-      "unique_fresh_seed_groups": 66,
+      "unique_fresh_seed_groups": 68,
       "recent_events": [
         {
           "burst_id": "dream-20260821-0342",
@@ -2631,19 +2633,40 @@
           "defect_count_after": 0.0,
           "defect_count_changed": false,
           "known_context": []
+        },
+        {
+          "burst_id": "dream-20260826-0480",
+          "seed": 550310245,
+          "intervention": "baseline-0",
+          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
+          "event_time": 15.44285714,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 0.670751,
+          "amp_std_log_gain": 0.416943,
+          "amp_cv_before": 0.2750237,
+          "amp_cv_after": 0.21337453,
+          "amp_cv_log_gain": -0.253808,
+          "high_amp_fraction_delta": 0.000434,
+          "spectral_k_rms_delta": -6e-05,
+          "spectral_entropy_delta": -0.001495,
+          "gradient_rms_log_gain": 0.511247,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
         }
       ],
-      "intervention_cursor": 6,
+      "intervention_cursor": 8,
       "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
       "leading_explanation": "amp_std増加の多くが平均振幅増加と一緒に起き、amp_cvは比較的安定しています。単純な振幅スケール効果かをpaired controlで反証中です。",
       "leading_sensitivity_candidate": {
-        "intervention": "noise-higher",
-        "knob": "noise_amplitude",
-        "factor": 2.4,
-        "paired_n": 9,
-        "paired_hit_rate_delta": -0.4444
+        "intervention": "quench-faster",
+        "knob": "quench_duration",
+        "factor": 0.6,
+        "paired_n": 10,
+        "paired_hit_rate_delta": -0.4
       },
-      "last_burst": "dream-20260826-0478",
+      "last_burst": "dream-20260826-0480",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -8908,21 +8931,36 @@
         "paired_n": 5,
         "paired_hit_rate_delta": -0.8
       }
+    },
+    {
+      "burst_id": "dream-20260826-0480",
+      "pattern_id": "X-c41277c11b",
+      "observations_seen": 1101,
+      "experiments": 4,
+      "target_events": 1,
+      "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
+      "sensitivity": {
+        "intervention": "quench-faster",
+        "knob": "quench_duration",
+        "factor": 0.6,
+        "paired_n": 10,
+        "paired_hit_rate_delta": -0.4
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260826-0479",
-    "pattern_id": "X-87c10fb560",
-    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
+    "burst_id": "dream-20260826-0480",
+    "pattern_id": "X-c41277c11b",
+    "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
+    "leading_explanation": "amp_std増加の多くが平均振幅増加と一緒に起き、amp_cvは比較的安定しています。単純な振幅スケール効果かをpaired controlで反証中です。",
     "leading_sensitivity_candidate": {
       "intervention": "quench-faster",
       "knob": "quench_duration",
       "factor": 0.6,
-      "paired_n": 5,
-      "paired_hit_rate_delta": -0.8
+      "paired_n": 10,
+      "paired_hit_rate_delta": -0.4
     },
-    "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
+    "next_question": "平均振幅で正規化したときXの特徴が消えるかを別seed・別介入で反証し、単純な増幅を未知構造と誤認していないか確認する。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
