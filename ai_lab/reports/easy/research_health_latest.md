@@ -1,6 +1,6 @@
 # Research Infrastructure Health
 
-✅ burst `dream-20260826-0482` — strict errors: 0, warnings: 1
+✅ burst `dream-20260826-0484` — strict errors: 0, warnings: 1
 
 これは研究インフラの整合性監査です。科学的な負の結果・未再現・低gainを失敗扱いしません。
 
