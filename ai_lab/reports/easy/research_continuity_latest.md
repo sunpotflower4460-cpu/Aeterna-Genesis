@@ -1,14 +1,14 @@
 # Research Continuity — read before changing direction
 
-latest strict burst: `dream-20260828-0512`
-continuity digest: `16e96f5f5ca691aadf69`
+latest strict burst: `dream-20260828-0513`
+continuity digest: `bcb34ba8551887055b0f`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
 ## Must carry forward
 
-- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=3/3, control=10/11, triangle_required=False.
-- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=19, pair-only=17, triads=14, split-asym=0.561597, no-split-asym=None, energy-before-geometry=0. 因果・力・結合エネルギーとはまだ呼ばない。
+- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=5/8, control=16/24, triangle_required=False.
+- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=46, pair-only=39, triads=34, split-asym=0.061738, no-split-asym=0.165504, energy-before-geometry=0. 因果・力・結合エネルギーとはまだ呼ばない。
 - `deep:deep-fdb3e0252eed` [strict-deep-time] — Deep-Time deep-fdb3e0252eed: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-ee841262151c` [strict-deep-time] — Deep-Time deep-ee841262151c: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-eddd2955c6d8` [strict-deep-time] — Deep-Time deep-eddd2955c6d8: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
@@ -24,7 +24,7 @@ continuity digest: `16e96f5f5ca691aadf69`
 - `ops:instrument:damage-recovery` [research-operations] — 自然にできたまとまりを後から部分的に乱したとき、同じ統計的個性へ戻るか？
 - `x:X-ff29196d15` [strict/open-ended-followup] — X-ff29196d15: status=REPEATED_SPECIFIC_CANDIDATE; same=2/4, nearby=?, control=0/4. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-fc51cd23fe` [strict/open-ended-followup] — X-fc51cd23fe: status=REPEATED_SPECIFIC_CANDIDATE; same=2/11, nearby=?, control=0/11. 回数だけでなく、何を変えると消えるかを追う。
-- `x:X-fa3969eebd` [strict/open-ended-followup] — X-fa3969eebd: status=REPEATED_SPECIFIC_CANDIDATE; same=11/27, nearby=?, control=0/27. 回数だけでなく、何を変えると消えるかを追う。
+- `x:X-fa3969eebd` [strict/open-ended-followup] — X-fa3969eebd: status=REPEATED_SPECIFIC_CANDIDATE; same=11/28, nearby=?, control=0/28. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-f023a067af` [strict/open-ended-followup] — X-f023a067af: status=REPEATED_SPECIFIC_CANDIDATE; same=13/27, nearby=?, control=0/27. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-ee656d0a1c` [strict/open-ended-followup] — X-ee656d0a1c: status=REPEATED_SPECIFIC_CANDIDATE; same=2/4, nearby=?, control=0/4. 回数だけでなく、何を変えると消えるかを追う。
 - `x:X-e64f84a189` [strict/open-ended-followup] — X-e64f84a189: status=REPEATED_SPECIFIC_CANDIDATE; same=9/9, nearby=?, control=0/9. 回数だけでなく、何を変えると消えるかを追う。
@@ -33,6 +33,7 @@ continuity digest: `16e96f5f5ca691aadf69`
 - `x-mechanism:X-dcc459d23a` [x-mechanism-exploratory] — drive-weaker のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。
 - `x-mechanism:X-b991d59a4d` [x-mechanism-exploratory] — quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。
 - `x-mechanism:X-87c10fb560` [x-mechanism-exploratory] — quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。
+- `relation-instrument:identity-continuity` [pure-genesis-relation-instruments] — 結果形状やnode IDを使わず追った関係構造は、time-shuffle対照より長く同一候補として持続するか？ fresh law/sizeと観測閾値holdoutでleadを壊しに行く。
 - `science-direction:science-turing-spatial-control-analogy` [science-bridge/free-hypothesis] — If the local control timescale varies smoothly in space, does anonymous organization change in a reproducible way?
 - `science-direction:science-kzm-slow-quench-analogy` [science-bridge/free-hypothesis] — Do slower environmental changes alter defect and anonymous-transition statistics?
 - `science-direction:science-kzm-fast-quench-analogy` [science-bridge/free-hypothesis] — Do faster environmental changes alter defect and anonymous-transition statistics in the opposite regime?
@@ -46,7 +47,6 @@ continuity digest: `16e96f5f5ca691aadf69`
 - `science:doi:10.1098/rstb.1952.0012` [science-bridge] — 既存科学の文脈: The Chemical Basis of Morphogenesis — A spatially homogeneous state can become unstable and develop structure through reaction and transport, with small disturbances acting as triggers.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `science:doi:10.1038/s41467-026-69940-w` [science-bridge] — 既存科学の文脈: Kibble-Zurek mechanism and beyond in a holographic superfluid disk — Crossing a continuous transition at finite rate connects quench timescales to spontaneous symmetry breaking and topological-defect production.. 論文の主張はAeternaの証拠ではなく、反証可能な実験の材料としてのみ使う。
 - `relation-instrument:metric-from-relations` [pure-genesis-relation-instruments] — 関係だけから得た距離・近傍・次元候補は、匿名label置換・relation rewire・holdoutを越えて残るか？ 現在は測定可能だがleadなし。負の結果を保ち、別law/sizeで探索する。
-- `relation-instrument:lineage-accounting` [pure-genesis-relation-instruments] — 持続した親候補の後に持続する2候補が現れ、親→娘の構造収支が無関係pair対照を上回るか？ 現在は測定可能だがleadなし。負の結果を保ち、別law/sizeで探索する。
 
 ## Integrity
 
