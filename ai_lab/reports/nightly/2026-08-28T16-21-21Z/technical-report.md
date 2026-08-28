@@ -1,0 +1,277 @@
+# 🌙 Genesis Night Report
+
+Burst: `dream-20260828-0512`  
+Generated: `2026-08-28T16:21:21.319419+00:00`
+
+## 実験記録
+
+- 実験・ジョブ: **1425**
+- 新規候補: **7**
+- 再現成功: **6**
+- 昇格候補: **3**
+- 段階通過: **0**
+- 3D移行失敗: **0**
+- 負の結果: **0**
+- 数値警告: **0**
+
+## 今回もっとも注目すべきこと
+
+**Local 3Dまで生き残った候補**
+
+2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。
+
+> なぜ見る価値がある？ 2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。
+
+## 出来事
+
+### 昇格候補 — Local 3Dまで生き残った候補
+
+2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。
+
+- 状態: `local_3d_passed`
+- 見る価値: `high`
+- 測定メモ: L1 / local-3d / seed 90312
+- Room: `room-auto-dream-20260828-0512-native-window-v000-local3d-s90312`
+- View Preset: `view-25ec3dabf6727ebe`
+
+> 2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。
+
+### 昇格候補 — Local 3Dまで生き残った候補
+
+2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。
+
+- 状態: `local_3d_passed`
+- 見る価値: `high`
+- 測定メモ: L1 / local-3d / seed 90313
+- Room: `room-auto-dream-20260828-0512-native-window-v000-local3d-s90313`
+- View Preset: `view-45924a1e556732a1`
+
+> 2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。
+
+### 昇格候補 — Local 3Dまで生き残った候補
+
+2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。
+
+- 状態: `local_3d_passed`
+- 見る価値: `high`
+- 測定メモ: L1 / local-3d / seed 90314
+- Room: `room-auto-dream-20260828-0512-native-window-v000-local3d-s90314`
+- View Preset: `view-fcfae22ca534f68d`
+
+> 2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。
+
+### 再現成功 — 別seedでも同じ到達Levelを再現
+
+3 seed 中 3 seed で L2 以上を再現しました。
+
+- 状態: `2d_reproducible`
+- 見る価値: `medium`
+- 測定メモ: L2 / novelty 0.04 / 再現 3/3 / seed 149884
+- View Preset: `view-c93c0f20a3f1d46c`
+
+> 一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。
+
+### 再現成功 — 別seedでも同じ到達Levelを再現
+
+3 seed 中 3 seed で L2 以上を再現しました。
+
+- 状態: `2d_reproducible`
+- 見る価値: `medium`
+- 測定メモ: L2 / novelty 0.04 / 再現 3/3 / seed 933541
+- View Preset: `view-dc5e0593d2e379c2`
+
+> 一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。
+
+### 再現成功 — 別seedでも同じ到達Levelを再現
+
+3 seed 中 3 seed で L2 以上を再現しました。
+
+- 状態: `2d_reproducible`
+- 見る価値: `medium`
+- 測定メモ: L2 / novelty 0.03 / 再現 3/3 / seed 152950
+- View Preset: `view-47c8e8794a3ba137`
+
+> 一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。
+
+### 再現成功 — 別seedでも同じ到達Levelを再現
+
+3 seed 中 3 seed で L2 以上を再現しました。
+
+- 状態: `2d_reproducible`
+- 見る価値: `medium`
+- 測定メモ: L2 / novelty 0.02 / 再現 3/3 / seed 275505
+- View Preset: `view-498ad9fd8582b6b9`
+
+> 一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。
+
+### 再現成功 — 別seedでも同じ到達Levelを再現
+
+3 seed 中 3 seed で L2 以上を再現しました。
+
+- 状態: `2d_reproducible`
+- 見る価値: `medium`
+- 測定メモ: L2 / novelty 0.02 / 再現 3/3 / seed 668622
+- View Preset: `view-723046c55bdfe276`
+
+> 一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。
+
+### 再現成功 — 別seedでも同じ到達Levelを再現
+
+3 seed 中 3 seed で L2 以上を再現しました。
+
+- 状態: `2d_reproducible`
+- 見る価値: `medium`
+- 測定メモ: L2 / novelty 0.00 / 再現 3/3 / seed 527081
+- View Preset: `view-bd6be0f973e7131d`
+
+> 一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。
+
+### 新規候補 — 2Dを入口にせず3Dから直接見つかった候補
+
+2D選別なしのNative 3D探索から L2 を検出しました。
+
+- 状態: `native_3d_screened`
+- 見る価値: `high`
+- 測定メモ: L2 / seed 616729
+- View Preset: `view-87d21ea045c9d617`
+
+> 3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。
+
+### 新規候補 — 2Dを入口にせず3Dから直接見つかった候補
+
+2D選別なしのNative 3D探索から L2 を検出しました。
+
+- 状態: `native_3d_screened`
+- 見る価値: `high`
+- 測定メモ: L2 / seed 427386
+- View Preset: `view-9e1374ebf5e1583a`
+
+> 3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。
+
+### 新規候補 — 2Dを入口にせず3Dから直接見つかった候補
+
+2D選別なしのNative 3D探索から L2 を検出しました。
+
+- 状態: `native_3d_screened`
+- 見る価値: `high`
+- 測定メモ: L2 / seed 774658
+- View Preset: `view-322e1a09932169e7`
+
+> 3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。
+
+### 新規候補 — 2Dを入口にせず3Dから直接見つかった候補
+
+2D選別なしのNative 3D探索から L2 を検出しました。
+
+- 状態: `native_3d_screened`
+- 見る価値: `high`
+- 測定メモ: L2 / seed 244537
+- View Preset: `view-ca622dd9d2305317`
+
+> 3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。
+
+### 新規候補 — 2Dを入口にせず3Dから直接見つかった候補
+
+2D選別なしのNative 3D探索から L2 を検出しました。
+
+- 状態: `native_3d_screened`
+- 見る価値: `high`
+- 測定メモ: L2 / seed 705041
+- View Preset: `view-194c37fb259e8e1f`
+
+> 3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。
+
+### 新規候補 — 2Dを入口にせず3Dから直接見つかった候補
+
+2D選別なしのNative 3D探索から L2 を検出しました。
+
+- 状態: `native_3d_screened`
+- 見る価値: `high`
+- 測定メモ: L2 / seed 804447
+- View Preset: `view-c30eac0453f74b35`
+
+> 3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。
+
+### 新規候補 — 3Dから直接始めたときだけ深くなる挙動候補
+
+同条件で3Dは L2、後追い2D比較は L1 でした。
+
+- 状態: `native_3d_dimension_candidate`
+- 見る価値: `high`
+- 測定メモ: L2 / seed 697293
+- View Preset: `view-336f804ba8676243`
+
+> 3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。
+
+### 希少挙動 — 3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測
+
+自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。
+
+- 状態: `fission_like_geometry_candidate`
+- 見る価値: `high`
+- 測定メモ: seed 152950
+- View Preset: `view-b5a05f0028309225`
+
+> 三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。
+
+### 希少挙動 — 3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測
+
+自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。
+
+- 状態: `fission_like_geometry_candidate`
+- 見る価値: `high`
+- 測定メモ: seed 668622
+- View Preset: `view-5980e35bfa512178`
+
+> 三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。
+
+### 希少挙動 — 3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測
+
+自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。
+
+- 状態: `fission_like_geometry_candidate`
+- 見る価値: `high`
+- 測定メモ: seed 88213
+- View Preset: `view-a38b2934d2fda43b`
+
+> 三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。
+
+### 新規領域 — 2D探索を通過した始原条件
+
+seed 90312 で L1 に到達し、次元移行テストへ進みました。
+
+- 状態: `2d_screened`
+- 見る価値: `medium`
+- 測定メモ: L1 / 2d-screen / seed 90312
+- Room: `room-auto-dream-20260828-0512-native-window-v000-2dscreen-s90312`
+- View Preset: `view-cae39e155a440646`
+
+> 既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。
+
+### 新規領域 — 2D探索を通過した始原条件
+
+seed 90313 で L1 に到達し、次元移行テストへ進みました。
+
+- 状態: `2d_screened`
+- 見る価値: `medium`
+- 測定メモ: L1 / 2d-screen / seed 90313
+- Room: `room-auto-dream-20260828-0512-native-window-v000-2dscreen-s90313`
+- View Preset: `view-61927ae292f2c7c4`
+
+> 既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。
+
+### 新規領域 — 2D探索を通過した始原条件
+
+seed 90314 で L1 に到達し、次元移行テストへ進みました。
+
+- 状態: `2d_screened`
+- 見る価値: `medium`
+- 測定メモ: L1 / 2d-screen / seed 90314
+- Room: `room-auto-dream-20260828-0512-native-window-v000-2dscreen-s90314`
+- View Preset: `view-63e46e0bc3dd7ac7`
+
+> 既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。
+
+---
+Novelty / visual interest はランキングと観察補助であり、物理的成功判定ではありません。
+Dream Loop は `rooms/official/` を書き換えません。
