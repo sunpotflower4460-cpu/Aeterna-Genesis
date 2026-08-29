@@ -18,21 +18,21 @@
 - 証拠の位置づけ: **CANDIDATE**
 - 元データ: `ai_lab/discoveries/unknown_followups.json`
 
-### 2. 条件と結びつく名無し変化 X-e64f84a189
-
-同条件 9/9、近い条件 4/9、対照 0/9。対照で消える傾向があるため、単なる反復回数より成立条件を絞る価値があります。
-
-- 証拠の位置づけ: **CANDIDATE**
-- 元データ: `ai_lab/discoveries/unknown_followups.json`
-
-### 3. 条件と結びつく名無し変化 X-72162ca538
+### 2. 条件と結びつく名無し変化 X-72162ca538
 
 同条件 6/7、近い条件 4/7、対照 0/7。対照で消える傾向があるため、単なる反復回数より成立条件を絞る価値があります。
 
 - 証拠の位置づけ: **CANDIDATE**
 - 元データ: `ai_lab/discoveries/unknown_followups.json`
 
-### 4. 別世界でも重なった変化 X-125bb00df1
+### 3. 条件と結びつく名無し変化 X-dcc459d23a
+
+同条件 66/83、近い条件 48/83、対照 0/83。対照で消える傾向があるため、単なる反復回数より成立条件を絞る価値があります。
+
+- 証拠の位置づけ: **CANDIDATE**
+- 元データ: `ai_lab/discoveries/unknown_followups.json`
+
+### 4. 別世界でも重なった変化 X-b59348d4a7
 
 開始純度までそろえた比較で一致候補。 projection coverage=1.00。別世界で似ても、同じ物理や普遍法則とはまだ言いません。
 
@@ -41,21 +41,21 @@
 
 ### 5. 広く繰り返す名無し変化 X-b991d59a4d
 
-3364回、64個の独立seed、64条件で観測。ただし広く出すぎるため、今後は回数を増やすより『何を変えると消えるか』を優先します。
+3369回、64個の独立seed、64条件で観測。ただし広く出すぎるため、今後は回数を増やすより『何を変えると消えるか』を優先します。
 
 - 証拠の位置づけ: **ROBUST_RECURRENT_CANDIDATE**
 - 元データ: `ai_lab/reports/emergence/latest.json`
 
 ### 6. 2渦・3渦の局所エネルギー地図が蓄積
 
-持続2渦 32件（pair-only 25件）、3渦の局所エネルギー 20件。形だけで関係を選んだ後にエネルギーを測っています。
+持続2渦 30件（pair-only 24件）、3渦の局所エネルギー 19件。形だけで関係を選んだ後にエネルギーを測っています。
 
 - 証拠の位置づけ: **MEASURED_SHADOW**
 - 元データ: `ai_lab/reports/easy/latest.json`
 
 ### 7. 同じ歴史を保った長時間追跡を確認
 
-最新burstでPrefix Identity=MATCHの長時間追跡があり、raw F-depthは F7。履歴不一致を長時間結果として混ぜていません。
+最新burstでPrefix Identity=MATCHの長時間追跡があり、raw F-depthは F4。履歴不一致を長時間結果として混ぜていません。
 
 - 証拠の位置づけ: **PREFIX_MATCH**
 - 元データ: `ai_lab/discoveries/deep_time_fission.json`
