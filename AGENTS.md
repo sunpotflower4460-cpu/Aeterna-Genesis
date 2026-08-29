@@ -9,6 +9,35 @@
 > [`docs/CAUSAL_CLOSURE.md`](docs/CAUSAL_CLOSURE.md)（C0〜C4）、能力の多軸記述は [`docs/PERIODIC_TABLE.md`](docs/PERIODIC_TABLE.md)。
 > 自走個体は「探す」でなく角モード固有値の順序を「測る」＝ [`docs/ANGULAR_MODES.md`](docs/ANGULAR_MODES.md)（M1）。
 
+> 🧭 **いまの本線は単細胞／袋。三角や渦の輪を「細胞」と追わない。**
+> 「中と外がある一個が、自分としてしばらく残る」＝[`docs/UNICELLULAR_FRONT.md`](docs/UNICELLULAR_FRONT.md)。
+> 人向けカード：[`ai_lab/reports/easy/unicellular-front.md`](ai_lab/reports/easy/unicellular-front.md)。
+
+---
+
+## 三つの仕事を混ぜない（本線は袋）
+
+**「中と外がある一個が、自分としてしばらく残る」／「境のある一個」** がいまの本線である。余談ではない。
+
+この物理での意味（生物の講義ではない）：
+
+- **袋**：中と外があり、**境が残る**領域。描いた円ではない。置いた小胞・膜場でもない。
+- **渦の芯は袋の反対**：芯は振幅の**穴**（巻き）。暗い芯を身体と数えない。
+- **密な側**は高振幅の地（viridis の黄色い地面）。候補のからだはつながった**内側**で、閉じた皮を持つ。
+- **火**：その一個が、世界が平らにならそうとするのに抗って形を保つこと。大域の駆動・クエンチは部屋の気候。代謝場を足さない。
+- **レシピ／継承は一個が在ってから。** 分裂・輪のくびれ・三渦の三角は別の仕事。
+
+| レーン | 問うこと | 細胞と数えない |
+|---|---|---|
+| **1. 単細胞／袋（本線）** | 皮のある、ひとつの残る内側 | 三角・輪・F7・穴の個数 |
+| **2. 渦の穴の関係** | 対・三角・残り芯。穴の幾何 | 「細胞」 |
+| **3. トーラス（測る。仮定しない）** | からだの位相（風船かドーナツか）／渦の輪（穴のループ）／世界のトーラス（周期箱） | 穴を組んでドーナツにして細胞と呼ぶこと |
+
+人の勘「差 → 渦 → それがトーラス」は**拘束しない**。別案：振幅の差 → ひとつの境のある塊が残る。塊がドーナツ型なら、そのときトーラスと呼ぶ。最初から要求しない。
+
+- 袋を置かない。形も場所も置かない。合言葉を弱めない。
+- [PR 133](https://github.com/sunpotflower4460-cpu/Aeterna-Genesis/pull/133) は三角（穴の幾何）。[PR 134](https://github.com/sunpotflower4460-cpu/Aeterna-Genesis/pull/134) は輪のくびれ。どちらも**別レーン**。歴史は消さない。本線の成功にしない。
+
 ---
 
 ## このプロジェクトは何か
@@ -64,13 +93,14 @@
 
 ## 読む順
 
-1. `AGENTS.md`（これ）
-2. `docs/PHYSICS_INTEGRITY.md` — 誠実さの規律、E/V/S/N/F/Q、claim tier、**第8監査**
-3. `docs/EMERGENCE_LEVELS.md` — Level 0–8 と**測定指標**
-4. `docs/ROOM_MODEL.md` — Genesis Room とは、schema
-5. `docs/DIMENSION_POLICY.md` — 2D 探索 / 3D 正式 / 次元移行監査
-6. `docs/AI_EXPERIMENT_POLICY.md` — AI の変更可能範囲・昇格段階
-7. `docs/GENESIS_MAP.md` — 現在地（三層の中身）
+1. `AGENTS.md`（これ）— **袋が本線。三角／輪を細胞と追わない。**
+2. [`docs/UNICELLULAR_FRONT.md`](docs/UNICELLULAR_FRONT.md) — 単細胞／袋のコンパス
+3. `docs/PHYSICS_INTEGRITY.md` — 誠実さの規律、E/V/S/N/F/Q、claim tier、**第8監査**
+4. `docs/EMERGENCE_LEVELS.md` — Level 0–8 と**測定指標**
+5. `docs/ROOM_MODEL.md` — Genesis Room とは、schema
+6. `docs/DIMENSION_POLICY.md` — 2D 探索 / 3D 正式 / 次元移行監査
+7. `docs/AI_EXPERIMENT_POLICY.md` — AI の変更可能範囲・昇格段階
+8. `docs/GENESIS_MAP.md` — 現在地（三層の中身）
 
 Claude 固有の手順が要る場合のみ `CLAUDE.md`。原則は本ファイルへ集約。
 

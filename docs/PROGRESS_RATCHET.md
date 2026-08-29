@@ -27,6 +27,7 @@ Progress Ratchet はその上に、もう一つの問いを置く。
 ### 1. Research Compass — 人が最初に見るもの
 
 `CURRENT_RESEARCH.md` と `research_compass_latest.*` は、現在の大事な発見・前進・次の問いを人向けに見やすくする。
+**袋の三レーン表は固定**（[`UNICELLULAR_FRONT.md`](UNICELLULAR_FRONT.md)）。X カードが変わっても、三角／輪を本線にしない。
 
 失敗の詳細を前面に出しすぎないが、生データは削除しない。
 

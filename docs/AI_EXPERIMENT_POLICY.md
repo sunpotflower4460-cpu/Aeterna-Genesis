@@ -23,7 +23,7 @@ AI（Claude / Codex）が始原条件を探索するときの明文化ルール�
 15. 「生命」「脳」「身体」「宇宙」等の強い語は、正式定義を満たさない限り使わない。
 16. **実験を提案・実行する前に `ai_lab/discoveries/research_memory.json` を確認する。** `avoid_exact_repeat=true` の問いは、`reopen_when` に書かれた実質的な新条件がない限り同じ形で繰り返さない。負の証拠を消すのではなく、**次の問いを変えるために使う。**
 
-> 人向けの現在地は [`CURRENT_RESEARCH.md`](../CURRENT_RESEARCH.md)、Research Compassの方針は [`docs/RESEARCH_COMPASS.md`](RESEARCH_COMPASS.md)。失敗詳細を人向けに軽くしても、AIの研究記憶からは消さない。
+> 人向けの現在地は [`CURRENT_RESEARCH.md`](../CURRENT_RESEARCH.md)、Research Compassの方針は [`docs/RESEARCH_COMPASS.md`](RESEARCH_COMPASS.md)。**いまの本線は袋**（[`UNICELLULAR_FRONT.md`](UNICELLULAR_FRONT.md)）。三角・輪を細胞と追わない。失敗詳細を人向けに軽くしても、AIの研究記憶からは消さない。
 
 ---
 
@@ -125,6 +125,7 @@ AI は通常これらを直接編集しない。**昇格コマンドを通じて
 
 1. 親 Room を選ぶ。
 2. **`research_memory.json` を確認し、同じ問いの惰性反復でないことを確認する。** 既知の弱化・飽和・quarantineなら、`reopen_when`を満たす新しい問いへ変える。
+2b. **本線は袋。** [`UNICELLULAR_FRONT.md`](UNICELLULAR_FRONT.md) を読む。三角・渦の輪・F7 を単細胞の成功にしない。穴を数えて袋の不在を救わない。継承は一個のあと。
 3. 始原条件の一部を変更する（一つ/少数）。
 4. **必ず時刻 0 から再実行**する。
 5. 自然創発の到達 Level を測定する（`docs/EMERGENCE_LEVELS.md`）。
