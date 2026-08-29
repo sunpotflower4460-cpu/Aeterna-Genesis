@@ -3,6 +3,7 @@
 **本物の場から、最小条件で、構造が勝手に出るのを、掟つきで一個ずつ積む。**
 
 > 🧭 **いま大事な発見・前進だけを先に見る → [`CURRENT_RESEARCH.md`](CURRENT_RESEARCH.md)**  
+> **いまの本線は袋**（中と外がある一個）。三角や渦の輪は細胞ではない → [`docs/UNICELLULAR_FRONT.md`](docs/UNICELLULAR_FRONT.md)  
 > 生の失敗・quarantine・全試行は削除せず証拠庫に残し、Current Research Frontでは重要な発見と次の問いを優先表示します。
 
 > **【三層移行 進行中】** 個別実験の研究庫から、**0 から立ち上がる 3D 物理・Genesis Room・
