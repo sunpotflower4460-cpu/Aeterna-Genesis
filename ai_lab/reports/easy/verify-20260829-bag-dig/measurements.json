@@ -1,0 +1,4769 @@
+{
+  "module": "verify-20260829-bag-dig",
+  "not_an_official_room": true,
+  "question": "Why does white+TDGL fill the room with dense ground, and does a bag appear if we only change coarseness/cooling?",
+  "put_in": "existing g001 TDGL; white near-zero (+ optional smoothed noise, same rms); no bag/circle/membrane",
+  "not_success": [
+    "triangle",
+    "ring_pinch_1_to_2",
+    "F7",
+    "hole_count_as_body"
+  ],
+  "bag_criterion_frozen": {
+    "amp_max_grown": 0.3,
+    "mean_amp_grown": 0.3,
+    "dense_rel_max": 0.5,
+    "min_body_frac": 0.02,
+    "max_body_frac": 0.4,
+    "max_span_frac": 0.9,
+    "persist_snapshots": 5,
+    "hole_rel_max": 0.25,
+    "min_hole_voxels": 1,
+    "outside_abs": 0.5
+  },
+  "goal_progress_json_untouched": true,
+  "mixing_audit": {
+    "official_level2_localization": {
+      "mixed_with_holes": true,
+      "where": "genesis/diagnostics/measures.py::assess_level",
+      "rule": "localization = defects>0 and persistent_defects",
+      "room_g001_a": "detected.localization=true because defect_count=241 (holes)",
+      "fix_this_round": "Do not retune official L2. Point it out. Bag ruler stays separate and does not use hole count as a pass.",
+      "changed_measures_py": false
+    },
+    "pr135_bag_criterion": {
+      "mixed_with_holes": false,
+      "mixed_with_triangle": false,
+      "hole_fields_are_informational": true,
+      "bag_candidate_ignores_n_holes": true,
+      "this_report_reuses_frozen_gates": true
+    },
+    "triangle_and_ring": {
+      "pr133": "hole geometry. not a bag.",
+      "pr134": "ring pinch. hole loop. not a bag.",
+      "used_as_success_here": false
+    }
+  },
+  "why_yellow_fills": {
+    "equation": "d\u03c8/dt = eps \u03c8 - |\u03c8|^2 \u03c8 + Du lap \u03c8",
+    "after_quench_eps": 1.0,
+    "bulk_potential": "V(r)=-r^2/2 + r^4/4",
+    "stable_bulk_amplitude": 1.0,
+    "unstable_at_zero": true,
+    "second_stable_amplitude": null,
+    "holes_remain_only_if_topological": true,
+    "V_at_0": 0.0,
+    "V_at_1": -0.25
+  },
+  "tdgl_variants": [
+    {
+      "name": "default",
+      "seed": 0,
+      "corr": 0.0,
+      "params": {
+        "Du": 1.0,
+        "dt": 0.1,
+        "eps_final": 1.0,
+        "quench_start": 0.0,
+        "quench_duration": 8.0,
+        "noise_amplitude": 0.01
+      },
+      "persist": {
+        "persistent_one_body": false,
+        "longest_consecutive_bag_frames": 0,
+        "required_consecutive": 5,
+        "span_indices": null
+      },
+      "frames": [
+        {
+          "t": 0.0,
+          "sha256": "1daff4c7e9efea0a89d69f3a266b53795aeb084815765c0982961e226a67021d",
+          "class": {
+            "mean_amp": 0.012607546157915673,
+            "amp_max": 0.04041100426442912,
+            "amp_min": 0.00041522924077887723,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1310763888888889,
+            "hole_frac": 0.3875868055555556,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 229,
+            "n_significant_dense": 0,
+            "n_hole_components": 259,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 121,
+              "voxels": 7,
+              "frac": 0.0030381944444444445,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "n_components": 229
+            },
+            "winding_defect_count": 598,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 2
+          }
+        },
+        {
+          "t": 2.2,
+          "sha256": "7fa94c1b388393e76c4b148e7e147af970f1bb8a1f7ad78d6697ad80e76e43f4",
+          "class": {
+            "mean_amp": 0.00031227966301135865,
+            "amp_max": 0.0009217718473694104,
+            "amp_min": 1.1029533434971556e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1853298611111111,
+            "hole_frac": 0.3411458333333333,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 22,
+            "n_significant_dense": 3,
+            "n_hole_components": 14,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 11,
+              "voxels": 102,
+              "frac": 0.044270833333333336,
+              "span_frac": [
+                0.4375,
+                0.25
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.4375,
+                0.25
+              ],
+              "n_components": 22
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 1
+          }
+        },
+        {
+          "t": 4.4,
+          "sha256": "5c6fea80624f0b26e66e2d7761b319a8c0688941cb9823193f58fb12401b5e15",
+          "class": {
+            "mean_amp": 0.00014293693124780066,
+            "amp_max": 0.0003898282006247452,
+            "amp_min": 4.715416071072778e-06,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.2565104166666667,
+            "hole_frac": 0.3081597222222222,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 14,
+            "n_significant_dense": 2,
+            "n_hole_components": 13,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 7,
+              "voxels": 323,
+              "frac": 0.1401909722222222,
+              "span_frac": [
+                0.6875,
+                0.5
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.6875,
+                0.5
+              ],
+              "n_components": 14
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 2
+          }
+        },
+        {
+          "t": 6.6000000000000005,
+          "sha256": "a3a077f17590c100b301f841a45406e725636bd9caf316d96e88263bcd594b36",
+          "class": {
+            "mean_amp": 0.00025192596480142914,
+            "amp_max": 0.0006123944188965487,
+            "amp_min": 1.2179642142513669e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3355034722222222,
+            "hole_frac": 0.2647569444444444,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 10,
+            "n_significant_dense": 3,
+            "n_hole_components": 10,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 522,
+              "frac": 0.2265625,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "n_components": 10
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 6
+          }
+        },
+        {
+          "t": 8.8,
+          "sha256": "1935fb5e313e274c491f4ca12b0ac643591271e521ff508d46aa87fd4ecf6058",
+          "class": {
+            "mean_amp": 0.0013878713988601456,
+            "amp_max": 0.003242700731157639,
+            "amp_min": 3.872506418403019e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3446180555555556,
+            "hole_frac": 0.24522569444444445,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 7,
+            "n_significant_dense": 3,
+            "n_hole_components": 10,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 571,
+              "frac": 0.2478298611111111,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "n_components": 7
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 11.0,
+          "sha256": "64bff7fcfd4b701742438be5efb8559003bc80e6c0f319b817f2212dcbed7030",
+          "class": {
+            "mean_amp": 0.010063110443560919,
+            "amp_max": 0.023076299736585915,
+            "amp_min": 0.0002607251320271229,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.35546875,
+            "hole_frac": 0.22916666666666666,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 5,
+            "n_significant_dense": 3,
+            "n_hole_components": 9,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 3,
+              "voxels": 586,
+              "frac": 0.2543402777777778,
+              "span_frac": [
+                0.8125,
+                0.5208333333333334
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.8125,
+                0.5208333333333334
+              ],
+              "n_components": 5
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 13.200000000000001,
+          "sha256": "ea64f48d531d233c23bf467f4f2d5d00511db0f39465d596b17c872158ad7c3d",
+          "class": {
+            "mean_amp": 0.07424843174546646,
+            "amp_max": 0.1657255214016815,
+            "amp_min": 0.0006558429178161707,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3828125,
+            "hole_frac": 0.2265625,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 4,
+            "n_significant_dense": 2,
+            "n_hole_components": 9,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 779,
+              "frac": 0.3381076388888889,
+              "span_frac": [
+                1.0,
+                0.6041666666666666
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.6041666666666666
+              ],
+              "n_components": 4
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 15.4,
+          "sha256": "0e653f57ea74b5dcf130a43b091a0a61d4a7e157edc963a4e37967c9fbc23cfd",
+          "class": {
+            "mean_amp": 0.45838866376195725,
+            "amp_max": 0.7986625536682839,
+            "amp_min": 0.021390740943621884,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.5724826388888888,
+            "hole_frac": 0.11328125,
+            "outside_abs_frac": 0.5559895833333334,
+            "n_dense_components": 5,
+            "n_significant_dense": 2,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1103,
+              "frac": 0.4787326388888889,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "n_components": 5
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 6
+          }
+        },
+        {
+          "t": 17.6,
+          "sha256": "09deaa84fdef90c95c0fcefffa05fa1f45d75837a6cc8ee2b34d6eff27c00e63",
+          "class": {
+            "mean_amp": 0.9091918208894127,
+            "amp_max": 0.9957770361671296,
+            "amp_min": 0.02106754490817365,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9739583333333334,
+            "hole_frac": 0.006510416666666667,
+            "outside_abs_frac": 0.026475694444444444,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 5,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2244,
+              "frac": 0.9739583333333334,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 19.8,
+          "sha256": "c1ec357cf98c3ddcc97f5819273b6a57a153eeaf042d47f1babf27b35f3edf54",
+          "class": {
+            "mean_amp": 0.9650966331739546,
+            "amp_max": 0.9996738486470452,
+            "amp_min": 0.1994461103581734,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9947916666666666,
+            "hole_frac": 0.0013020833333333333,
+            "outside_abs_frac": 0.005208333333333333,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 2,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2292,
+              "frac": 0.9947916666666666,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 4,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 22.0,
+          "sha256": "e29dec36a80d53a8fa37683f4dba83e31c9c9bd5b2106432b53beab23f4a283a",
+          "class": {
+            "mean_amp": 0.9714208835342713,
+            "amp_max": 0.999758662036477,
+            "amp_min": 0.09728114915441495,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9956597222222222,
+            "hole_frac": 0.0013020833333333333,
+            "outside_abs_frac": 0.004340277777777778,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 3,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2294,
+              "frac": 0.9956597222222222,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 4,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        }
+      ],
+      "end_sha256": "e29dec36a80d53a8fa37683f4dba83e31c9c9bd5b2106432b53beab23f4a283a"
+    },
+    {
+      "name": "default",
+      "seed": 1,
+      "corr": 0.0,
+      "params": {
+        "Du": 1.0,
+        "dt": 0.1,
+        "eps_final": 1.0,
+        "quench_start": 0.0,
+        "quench_duration": 8.0,
+        "noise_amplitude": 0.01
+      },
+      "persist": {
+        "persistent_one_body": false,
+        "longest_consecutive_bag_frames": 0,
+        "required_consecutive": 5,
+        "span_indices": null
+      },
+      "frames": [
+        {
+          "t": 0.0,
+          "sha256": "099d3389fa4b09fea75accd279653cb5243254e2bf768970ec9e15658d212f75",
+          "class": {
+            "mean_amp": 0.01255421245638306,
+            "amp_max": 0.037947270759911486,
+            "amp_min": 0.0005750721638228947,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1584201388888889,
+            "hole_frac": 0.37109375,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 262,
+            "n_significant_dense": 0,
+            "n_hole_components": 285,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 115,
+              "voxels": 7,
+              "frac": 0.0030381944444444445,
+              "span_frac": [
+                0.041666666666666664,
+                0.08333333333333333
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.041666666666666664,
+                0.08333333333333333
+              ],
+              "n_components": 262
+            },
+            "winding_defect_count": 611,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 2.2,
+          "sha256": "4586cc1ca5002ccfa465b8c556d73b8c2c4c1129c7c2d0a4d7275a927cd100ac",
+          "class": {
+            "mean_amp": 0.0003151065520597737,
+            "amp_max": 0.0008857573786056019,
+            "amp_min": 1.6401301557553495e-06,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1996527777777778,
+            "hole_frac": 0.3038194444444444,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 22,
+            "n_significant_dense": 2,
+            "n_hole_components": 19,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 8,
+              "voxels": 111,
+              "frac": 0.048177083333333336,
+              "span_frac": [
+                0.3958333333333333,
+                0.2708333333333333
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.3958333333333333,
+                0.2708333333333333
+              ],
+              "n_components": 22
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 4.4,
+          "sha256": "24971b3c651e58a86a52fcf32160ad4ff2b3b60c994aa9035f536214bb8bfc1b",
+          "class": {
+            "mean_amp": 0.00015118606620427523,
+            "amp_max": 0.00042730365840812844,
+            "amp_min": 4.650555790307624e-06,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1796875,
+            "hole_frac": 0.3072916666666667,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 14,
+            "n_significant_dense": 2,
+            "n_hole_components": 6,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 5,
+              "voxels": 122,
+              "frac": 0.05295138888888889,
+              "span_frac": [
+                0.4166666666666667,
+                0.22916666666666666
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.4166666666666667,
+                0.22916666666666666
+              ],
+              "n_components": 14
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 6.6000000000000005,
+          "sha256": "de6cbf5a79a26494d41aab3b1817d89883ab9a0f24ee95e5b766091974b2353c",
+          "class": {
+            "mean_amp": 0.0002745511391525016,
+            "amp_max": 0.0007690984202184411,
+            "amp_min": 8.085508590457895e-06,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.19921875,
+            "hole_frac": 0.3155381944444444,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 12,
+            "n_significant_dense": 3,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 4,
+              "voxels": 133,
+              "frac": 0.05772569444444445,
+              "span_frac": [
+                0.4166666666666667,
+                0.22916666666666666
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.4166666666666667,
+                0.22916666666666666
+              ],
+              "n_components": 12
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 8.8,
+          "sha256": "76cbf801821752f3272fee91e5f041e3c4e1e01ee43075ddb1f84ec4b2c3951d",
+          "class": {
+            "mean_amp": 0.001530934266688654,
+            "amp_max": 0.0042158060901016136,
+            "amp_min": 3.350854364035895e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.2183159722222222,
+            "hole_frac": 0.3020833333333333,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 11,
+            "n_significant_dense": 3,
+            "n_hole_components": 5,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 4,
+              "voxels": 184,
+              "frac": 0.0798611111111111,
+              "span_frac": [
+                0.4166666666666667,
+                0.375
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.4166666666666667,
+                0.375
+              ],
+              "n_components": 11
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 11.0,
+          "sha256": "b71f27fbd61e99167c5ec37a4064cea0c4ea741ab9909e7e86fab5e4d048c97a",
+          "class": {
+            "mean_amp": 0.011116283953481354,
+            "amp_max": 0.029754056329304415,
+            "amp_min": 0.00022553141526950786,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.2595486111111111,
+            "hole_frac": 0.2934027777777778,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 8,
+            "n_significant_dense": 4,
+            "n_hole_components": 5,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 3,
+              "voxels": 213,
+              "frac": 0.09244791666666667,
+              "span_frac": [
+                0.4166666666666667,
+                0.375
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.4166666666666667,
+                0.375
+              ],
+              "n_components": 8
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 13.200000000000001,
+          "sha256": "0d75ccbfd68ac2e5751cb76e483df76bc95a35bd829490c4f5d824abe16ed2e6",
+          "class": {
+            "mean_amp": 0.08148910643057322,
+            "amp_max": 0.20822181737533776,
+            "amp_min": 0.0018174760978013696,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3033854166666667,
+            "hole_frac": 0.2690972222222222,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 9,
+            "n_significant_dense": 4,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 3,
+              "voxels": 244,
+              "frac": 0.10590277777777778,
+              "span_frac": [
+                0.4166666666666667,
+                0.3958333333333333
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.4166666666666667,
+                0.3958333333333333
+              ],
+              "n_components": 9
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 15.4,
+          "sha256": "8c28e0703b0aaf6d198f1e5f79c2dd5a9938b461e9bb8d139f8a66e73b80e8ad",
+          "class": {
+            "mean_amp": 0.48980302042027074,
+            "amp_max": 0.8551425436792536,
+            "amp_min": 0.008044627285960221,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.6362847222222222,
+            "hole_frac": 0.10590277777777778,
+            "outside_abs_frac": 0.4674479166666667,
+            "n_dense_components": 5,
+            "n_significant_dense": 3,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 1033,
+              "frac": 0.4483506944444444,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 5
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 17.6,
+          "sha256": "855d1f96cf0dddbb4a07853068777392ed97c834389bff3d18e653fee67e053a",
+          "class": {
+            "mean_amp": 0.907231878936001,
+            "amp_max": 0.9974442105758008,
+            "amp_min": 0.07673469213941392,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9665798611111112,
+            "hole_frac": 0.005642361111111111,
+            "outside_abs_frac": 0.03342013888888889,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2227,
+              "frac": 0.9665798611111112,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 7,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 19.8,
+          "sha256": "92c8a4550520bcdceaed01766de1f967f830f18146bda6dcb3c2e566a1294ebb",
+          "class": {
+            "mean_amp": 0.952785672142794,
+            "amp_max": 0.9998136596470611,
+            "amp_min": 0.10887798055525742,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9900173611111112,
+            "hole_frac": 0.00390625,
+            "outside_abs_frac": 0.009982638888888888,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 5,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2281,
+              "frac": 0.9900173611111112,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 6,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 22.0,
+          "sha256": "4864e003fcfb1a8283e2cfffc4ff529fed2a7ad862ba89f6b13f610be7b420b1",
+          "class": {
+            "mean_amp": 0.9630392814653896,
+            "amp_max": 0.9997746826150222,
+            "amp_min": 0.02755363928941534,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9943576388888888,
+            "hole_frac": 0.002170138888888889,
+            "outside_abs_frac": 0.005642361111111111,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2291,
+              "frac": 0.9943576388888888,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 4,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        }
+      ],
+      "end_sha256": "4864e003fcfb1a8283e2cfffc4ff529fed2a7ad862ba89f6b13f610be7b420b1"
+    },
+    {
+      "name": "fast_quench",
+      "seed": 0,
+      "corr": 0.0,
+      "params": {
+        "Du": 1.0,
+        "dt": 0.1,
+        "eps_final": 1.0,
+        "quench_start": 0.0,
+        "quench_duration": 1.0,
+        "noise_amplitude": 0.01
+      },
+      "persist": {
+        "persistent_one_body": false,
+        "longest_consecutive_bag_frames": 0,
+        "required_consecutive": 5,
+        "span_indices": null
+      },
+      "frames": [
+        {
+          "t": 0.0,
+          "sha256": "1daff4c7e9efea0a89d69f3a266b53795aeb084815765c0982961e226a67021d",
+          "class": {
+            "mean_amp": 0.012607546157915673,
+            "amp_max": 0.04041100426442912,
+            "amp_min": 0.00041522924077887723,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1310763888888889,
+            "hole_frac": 0.3875868055555556,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 229,
+            "n_significant_dense": 0,
+            "n_hole_components": 259,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 121,
+              "voxels": 7,
+              "frac": 0.0030381944444444445,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "n_components": 229
+            },
+            "winding_defect_count": 598,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 2
+          }
+        },
+        {
+          "t": 2.2,
+          "sha256": "ef06369c9155d399dd80ab083a017c39f035e9c42c44b74397aff66c8fd15be6",
+          "class": {
+            "mean_amp": 0.005037426974557702,
+            "amp_max": 0.01484943094578061,
+            "amp_min": 4.6215182518658e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1801215277777778,
+            "hole_frac": 0.3342013888888889,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 22,
+            "n_significant_dense": 3,
+            "n_hole_components": 17,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 60,
+              "frac": 0.026041666666666668,
+              "span_frac": [
+                0.3541666666666667,
+                0.1875
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.3541666666666667,
+                0.1875
+              ],
+              "n_components": 22
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 4.4,
+          "sha256": "c6766bf1a9c3df6327f627c30bed35f563fde9623eefcc2784166ed06a760ae1",
+          "class": {
+            "mean_amp": 0.028548988592736066,
+            "amp_max": 0.07972821546081273,
+            "amp_min": 0.0010191066892894628,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.2339409722222222,
+            "hole_frac": 0.3268229166666667,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 15,
+            "n_significant_dense": 2,
+            "n_hole_components": 12,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 8,
+              "voxels": 286,
+              "frac": 0.12413194444444445,
+              "span_frac": [
+                0.6666666666666666,
+                0.5
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.6666666666666666,
+                0.5
+              ],
+              "n_components": 15
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 6.6000000000000005,
+          "sha256": "5ff0306d69012594e91faf26388614be863f49b6e239bde3d6288e059dd911e4",
+          "class": {
+            "mean_amp": 0.18029759047565927,
+            "amp_max": 0.42638063344750604,
+            "amp_min": 0.006383942601331875,
+            "grown": false,
+            "local_order": true,
+            "dense_frac": 0.3546006944444444,
+            "hole_frac": 0.2426215277777778,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 10,
+            "n_significant_dense": 3,
+            "n_hole_components": 12,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 531,
+              "frac": 0.23046875,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "n_components": 10
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 8.8,
+          "sha256": "dd17e9f378d493ea9c1a953f68e946451472845e8cacfa05343a571c8dfa972d",
+          "class": {
+            "mean_amp": 0.7002837717488894,
+            "amp_max": 0.9585828003582444,
+            "amp_min": 0.03970786490947388,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.8428819444444444,
+            "hole_frac": 0.03211805555555555,
+            "outside_abs_frac": 0.1796875,
+            "n_dense_components": 4,
+            "n_significant_dense": 1,
+            "n_hole_components": 17,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1871,
+              "frac": 0.8120659722222222,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 4
+            },
+            "winding_defect_count": 1,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 11.0,
+          "sha256": "c8ae4b80f10757f4b797ebfc8bff37d1e926e8aceda77205a8a3ab07b0bfb176",
+          "class": {
+            "mean_amp": 0.9221819671109236,
+            "amp_max": 0.998536239016463,
+            "amp_min": 0.1263303444265182,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9796006944444444,
+            "hole_frac": 0.00390625,
+            "outside_abs_frac": 0.020833333333333332,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 9,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2257,
+              "frac": 0.9796006944444444,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 10,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 13.200000000000001,
+          "sha256": "3a9806f430ec6c03c35a2ee7357c05b2b64034eb95680ab593cfae358ddc1ee7",
+          "class": {
+            "mean_amp": 0.9453459667214088,
+            "amp_max": 0.9992487047681211,
+            "amp_min": 0.08832992296286044,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9895833333333334,
+            "hole_frac": 0.0030381944444444445,
+            "outside_abs_frac": 0.010416666666666666,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2280,
+              "frac": 0.9895833333333334,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 10,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 15.4,
+          "sha256": "386bfea24065e04c52612506463243200a0bcdda2560cc4396ad208dae9c45c3",
+          "class": {
+            "mean_amp": 0.9527891128554147,
+            "amp_max": 0.999709488349602,
+            "amp_min": 0.13916948344831936,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9891493055555556,
+            "hole_frac": 0.0026041666666666665,
+            "outside_abs_frac": 0.010850694444444444,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 6,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2279,
+              "frac": 0.9891493055555556,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 8,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 17.6,
+          "sha256": "e506cca0710a9256d433275be2513b13707b06e9c3b59f5ea3151fc8a0dc28eb",
+          "class": {
+            "mean_amp": 0.9592736479555002,
+            "amp_max": 0.9995485327928348,
+            "amp_min": 0.06769573417817248,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9908854166666666,
+            "hole_frac": 0.001736111111111111,
+            "outside_abs_frac": 0.009114583333333334,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2283,
+              "frac": 0.9908854166666666,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 6,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 19.8,
+          "sha256": "87009efe902ea87ce66ec408fc8f7198ad04806da328110c45f5ed349b5de279",
+          "class": {
+            "mean_amp": 0.9642021721738983,
+            "amp_max": 0.9996449279725553,
+            "amp_min": 0.16523521418519194,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9926215277777778,
+            "hole_frac": 0.0013020833333333333,
+            "outside_abs_frac": 0.007378472222222222,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 3,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2287,
+              "frac": 0.9926215277777778,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 6,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 22.0,
+          "sha256": "e04384e99653cfcbe6f4bc7c314ec3479bddf5d07a03559fc758d1e86c892364",
+          "class": {
+            "mean_amp": 0.9663531524243124,
+            "amp_max": 0.999691827021012,
+            "amp_min": 0.10499996872531125,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9921875,
+            "hole_frac": 0.00043402777777777775,
+            "outside_abs_frac": 0.0078125,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2286,
+              "frac": 0.9921875,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 6,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        }
+      ],
+      "end_sha256": "e04384e99653cfcbe6f4bc7c314ec3479bddf5d07a03559fc758d1e86c892364"
+    },
+    {
+      "name": "slow_quench",
+      "seed": 0,
+      "corr": 0.0,
+      "params": {
+        "Du": 1.0,
+        "dt": 0.1,
+        "eps_final": 1.0,
+        "quench_start": 0.0,
+        "quench_duration": 24.0,
+        "noise_amplitude": 0.01
+      },
+      "persist": {
+        "persistent_one_body": false,
+        "longest_consecutive_bag_frames": 0,
+        "required_consecutive": 5,
+        "span_indices": null
+      },
+      "frames": [
+        {
+          "t": 0.0,
+          "sha256": "1daff4c7e9efea0a89d69f3a266b53795aeb084815765c0982961e226a67021d",
+          "class": {
+            "mean_amp": 0.012607546157915673,
+            "amp_max": 0.04041100426442912,
+            "amp_min": 0.00041522924077887723,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1310763888888889,
+            "hole_frac": 0.3875868055555556,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 229,
+            "n_significant_dense": 0,
+            "n_hole_components": 259,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 121,
+              "voxels": 7,
+              "frac": 0.0030381944444444445,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "n_components": 229
+            },
+            "winding_defect_count": 598,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 2
+          }
+        },
+        {
+          "t": 2.2,
+          "sha256": "c94785bb5921dc767b291f6a41b3a8ac2a63ea6d2818d40526e8eea0b6862469",
+          "class": {
+            "mean_amp": 0.0002037491925478019,
+            "amp_max": 0.0006012954152561556,
+            "amp_min": 7.115859563292929e-06,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.18489583333333334,
+            "hole_frac": 0.3411458333333333,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 22,
+            "n_significant_dense": 3,
+            "n_hole_components": 14,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 11,
+              "voxels": 102,
+              "frac": 0.044270833333333336,
+              "span_frac": [
+                0.4375,
+                0.25
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.4375,
+                0.25
+              ],
+              "n_components": 22
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 2
+          }
+        },
+        {
+          "t": 4.4,
+          "sha256": "327f8a246b40a65839b46428c847fdc4861a7386aedacfc8cdbf5a84bc9caa8c",
+          "class": {
+            "mean_amp": 2.6514112520531748e-05,
+            "amp_max": 7.164271574417559e-05,
+            "amp_min": 1.3168247553445933e-06,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.2638888888888889,
+            "hole_frac": 0.3038194444444444,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 13,
+            "n_significant_dense": 3,
+            "n_hole_components": 13,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 6,
+              "voxels": 335,
+              "frac": 0.14539930555555555,
+              "span_frac": [
+                0.6875,
+                0.5
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.6875,
+                0.5
+              ],
+              "n_components": 13
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 6.6000000000000005,
+          "sha256": "f72f093bb91127f02b468d7f15b28f39dd60ce85d409ebec57a6cd10405da7ed",
+          "class": {
+            "mean_amp": 6.1610257061212805e-06,
+            "amp_max": 1.4706889983608868e-05,
+            "amp_min": 3.0846697899266825e-07,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3433159722222222,
+            "hole_frac": 0.2573784722222222,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 9,
+            "n_significant_dense": 3,
+            "n_hole_components": 10,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 542,
+              "frac": 0.23524305555555555,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5208333333333334
+              ],
+              "n_components": 9
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 8.8,
+          "sha256": "de635d2bf85da094ff30202ab4e3d0f32cc448d026b3e597abac8da596b1e19f",
+          "class": {
+            "mean_amp": 2.334380428506224e-06,
+            "amp_max": 5.4232575256710265e-06,
+            "amp_min": 2.3690107562238127e-08,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3424479166666667,
+            "hole_frac": 0.2361111111111111,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 5,
+            "n_significant_dense": 3,
+            "n_hole_components": 10,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 581,
+              "frac": 0.2521701388888889,
+              "span_frac": [
+                0.9791666666666666,
+                0.5
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                0.9791666666666666,
+                0.5
+              ],
+              "n_components": 5
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 11.0,
+          "sha256": "ffd160208b60503e77d772fe1ec7c3ae1b0a7c8c8579079449dc3597f27dc49b",
+          "class": {
+            "mean_amp": 1.3915815754972315e-06,
+            "amp_max": 3.1620895243929355e-06,
+            "amp_min": 1.16287290375063e-08,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3663194444444444,
+            "hole_frac": 0.2326388888888889,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 5,
+            "n_significant_dense": 3,
+            "n_hole_components": 9,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 3,
+              "voxels": 609,
+              "frac": 0.2643229166666667,
+              "span_frac": [
+                0.8125,
+                0.5208333333333334
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.8125,
+                0.5208333333333334
+              ],
+              "n_components": 5
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 13.200000000000001,
+          "sha256": "21cf060679b87f4aa36c855e94cb3928b2d93791e7da08381041c70be9137224",
+          "class": {
+            "mean_amp": 1.2785837307573e-06,
+            "amp_max": 2.85659214058365e-06,
+            "amp_min": 5.5666811112063955e-08,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3858506944444444,
+            "hole_frac": 0.2348090277777778,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 3,
+            "n_significant_dense": 2,
+            "n_hole_components": 8,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 795,
+              "frac": 0.3450520833333333,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "n_components": 3
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 15.4,
+          "sha256": "9a0661bc48a97c7f9b98ada83e962a6db140c02c80980d94dfed0cb58b3c7247",
+          "class": {
+            "mean_amp": 1.7832102218338369e-06,
+            "amp_max": 3.941939932778168e-06,
+            "amp_min": 5.75934348246986e-08,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4001736111111111,
+            "hole_frac": 0.2400173611111111,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 840,
+              "frac": 0.3645833333333333,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 17.6,
+          "sha256": "420a83342290dc0b5cc82a06f42f87a226f2d6430a3e2edaa840b8c68d80703b",
+          "class": {
+            "mean_amp": 3.729575169862072e-06,
+            "amp_max": 8.202339581085042e-06,
+            "amp_min": 6.6081546009865e-08,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4036458333333333,
+            "hole_frac": 0.24305555555555555,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 858,
+              "frac": 0.3723958333333333,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 19.8,
+          "sha256": "4c4940b100e9f9218635aeafacf44fbc5dd8733a925330004b7ba829735385a6",
+          "class": {
+            "mean_amp": 1.1578263267215328e-05,
+            "amp_max": 2.5375097289949412e-05,
+            "amp_min": 1.0180450888127496e-07,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4092881944444444,
+            "hole_frac": 0.2517361111111111,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 6,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 884,
+              "frac": 0.3836805555555556,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 22.0,
+          "sha256": "93c335e2cbec03e891921987fbe01cd57a6161baabda4939aff564f9231a2c37",
+          "class": {
+            "mean_amp": 5.2879686648640216e-05,
+            "amp_max": 0.00011531691886149306,
+            "amp_min": 5.540976340511067e-07,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4110243055555556,
+            "hole_frac": 0.2677951388888889,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 899,
+              "frac": 0.3901909722222222,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        }
+      ],
+      "end_sha256": "93c335e2cbec03e891921987fbe01cd57a6161baabda4939aff564f9231a2c37"
+    },
+    {
+      "name": "slow_quench_wait",
+      "seed": 0,
+      "corr": 0.0,
+      "params": {
+        "Du": 1.0,
+        "dt": 0.1,
+        "eps_final": 1.0,
+        "quench_start": 0.0,
+        "quench_duration": 24.0,
+        "noise_amplitude": 0.01
+      },
+      "persist": {
+        "persistent_one_body": false,
+        "longest_consecutive_bag_frames": 0,
+        "required_consecutive": 5,
+        "span_indices": null
+      },
+      "frames": [
+        {
+          "t": 0.0,
+          "sha256": "1daff4c7e9efea0a89d69f3a266b53795aeb084815765c0982961e226a67021d",
+          "class": {
+            "mean_amp": 0.012607546157915673,
+            "amp_max": 0.04041100426442912,
+            "amp_min": 0.00041522924077887723,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.1310763888888889,
+            "hole_frac": 0.3875868055555556,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 229,
+            "n_significant_dense": 0,
+            "n_hole_components": 259,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 121,
+              "voxels": 7,
+              "frac": 0.0030381944444444445,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.0625,
+                0.08333333333333333
+              ],
+              "n_components": 229
+            },
+            "winding_defect_count": 598,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 2
+          }
+        },
+        {
+          "t": 5.0,
+          "sha256": "43c54f05f5847a25577c44eb5403f7d8632010d4dcc2e459df4bb8f16115490a",
+          "class": {
+            "mean_amp": 1.6907077230772453e-05,
+            "amp_max": 4.414931799085826e-05,
+            "amp_min": 2.3637873975640077e-07,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.2890625,
+            "hole_frac": 0.2890625,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 12,
+            "n_significant_dense": 3,
+            "n_hole_components": 12,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 6,
+              "voxels": 378,
+              "frac": 0.1640625,
+              "span_frac": [
+                0.7083333333333334,
+                0.5208333333333334
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.7083333333333334,
+                0.5208333333333334
+              ],
+              "n_components": 12
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 10.0,
+          "sha256": "4dfba6e91eefa3bd7fdc024563642c077f7c907c604826bfa4faa5dba7dd7458",
+          "class": {
+            "mean_amp": 1.6667789488089937e-06,
+            "amp_max": 3.8274177347474966e-06,
+            "amp_min": 3.9007792320619e-08,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3541666666666667,
+            "hole_frac": 0.22960069444444445,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 5,
+            "n_significant_dense": 3,
+            "n_hole_components": 9,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 3,
+              "voxels": 586,
+              "frac": 0.2543402777777778,
+              "span_frac": [
+                0.8125,
+                0.5208333333333334
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.8125,
+                0.5208333333333334
+              ],
+              "n_components": 5
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 15.0,
+          "sha256": "ef79ab6e1637d353bc8574296da2abab48dd487c3969a627bc38ebd351e2cf9f",
+          "class": {
+            "mean_amp": 1.6281858943011306e-06,
+            "amp_max": 3.6033678382652264e-06,
+            "amp_min": 4.7495580541586854e-08,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.3988715277777778,
+            "hole_frac": 0.2387152777777778,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 834,
+              "frac": 0.3619791666666667,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 6
+          }
+        },
+        {
+          "t": 20.0,
+          "sha256": "8468ccbef45b2bc59b81d7af60a950ef26b7d86d2a500ba1d60e205f046405dc",
+          "class": {
+            "mean_amp": 1.3083935463975193e-05,
+            "amp_max": 2.866715975687132e-05,
+            "amp_min": 1.1915365079666238e-07,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4092881944444444,
+            "hole_frac": 0.2560763888888889,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 6,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 886,
+              "frac": 0.3845486111111111,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 25.0,
+          "sha256": "4c8f3f6032c698acb3cf45ae55cf76aefc1c0157a7f9d2e62358f6ac75d07962",
+          "class": {
+            "mean_amp": 0.0007445438979025365,
+            "amp_max": 0.001608540386743518,
+            "amp_min": 2.308998154467106e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4097222222222222,
+            "hole_frac": 0.2677951388888889,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 1,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 913,
+              "frac": 0.3962673611111111,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 30.0,
+          "sha256": "3d1a04bf4736c54273948e9060a2e1909335ba1abfff2b87ebfb89fcee5be48f",
+          "class": {
+            "mean_amp": 0.08036997951862666,
+            "amp_max": 0.1690873547460547,
+            "amp_min": 0.00039175645508087673,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4201388888888889,
+            "hole_frac": 0.2478298611111111,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 1,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 965,
+              "frac": 0.4188368055555556,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5833333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 35.0,
+          "sha256": "6710b03253afd3df379bc44940c6daa6a914a99ee7e1daf02eba27cbc80ac00f",
+          "class": {
+            "mean_amp": 0.9684353328313955,
+            "amp_max": 0.9989408863643707,
+            "amp_min": 0.17733578661573046,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9943576388888888,
+            "hole_frac": 0.0008680555555555555,
+            "outside_abs_frac": 0.005642361111111111,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2291,
+              "frac": 0.9943576388888888,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 40.0,
+          "sha256": "40e2bd2baf6079c7eead768d720ac733c3f159c9e60834c987958a4d46973834",
+          "class": {
+            "mean_amp": 0.9851780187852507,
+            "amp_max": 0.9998558884648663,
+            "amp_min": 0.21873994290183807,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9973958333333334,
+            "hole_frac": 0.00043402777777777775,
+            "outside_abs_frac": 0.0026041666666666665,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2298,
+              "frac": 0.9973958333333334,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 45.0,
+          "sha256": "adfacb14efbd4093a130a48c2d713cd6bda939073d60d161b56f52b0e0c54f51",
+          "class": {
+            "mean_amp": 0.9859772988581825,
+            "amp_max": 0.9998731731671464,
+            "amp_min": 0.06906151782118139,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9982638888888888,
+            "hole_frac": 0.0008680555555555555,
+            "outside_abs_frac": 0.001736111111111111,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 2,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2300,
+              "frac": 0.9982638888888888,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 50.0,
+          "sha256": "1a165574bb05d0711da0ac861420f7f62a21d62c5406a5c9748f147ab9c1ed7e",
+          "class": {
+            "mean_amp": 0.9865403873867251,
+            "amp_max": 0.9998780463617348,
+            "amp_min": 0.09520526973132838,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9982638888888888,
+            "hole_frac": 0.00043402777777777775,
+            "outside_abs_frac": 0.001736111111111111,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2300,
+              "frac": 0.9982638888888888,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        }
+      ],
+      "end_sha256": "1a165574bb05d0711da0ac861420f7f62a21d62c5406a5c9748f147ab9c1ed7e"
+    },
+    {
+      "name": "coarse_noise",
+      "seed": 0,
+      "corr": 4.0,
+      "params": {
+        "Du": 1.0,
+        "dt": 0.1,
+        "eps_final": 1.0,
+        "quench_start": 0.0,
+        "quench_duration": 8.0,
+        "noise_amplitude": 0.01
+      },
+      "persist": {
+        "persistent_one_body": false,
+        "longest_consecutive_bag_frames": 0,
+        "required_consecutive": 5,
+        "span_indices": null
+      },
+      "frames": [
+        {
+          "t": 0.0,
+          "sha256": "36853ad707f28e536566b8b8a1279096b7d3bf5b6c36555364ec8268f2d57ef5",
+          "class": {
+            "mean_amp": 0.012569909244748304,
+            "amp_max": 0.034644565328402176,
+            "amp_min": 0.0003889671318842556,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.24609375,
+            "hole_frac": 0.31640625,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 8,
+            "n_significant_dense": 2,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": false,
+            "largest_dense": {
+              "label": 5,
+              "voxels": 365,
+              "frac": 0.1584201388888889,
+              "span_frac": [
+                0.7708333333333334,
+                0.5625
+              ],
+              "percolates": false
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": false,
+              "span_frac": [
+                0.7708333333333334,
+                0.5625
+              ],
+              "n_components": 8
+            },
+            "winding_defect_count": 7,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 2.2,
+          "sha256": "acde375126b6a34f874b4b7aa69a9323df5bc7e1e1881b1b6506dafee6a41961",
+          "class": {
+            "mean_amp": 0.001913065508675904,
+            "amp_max": 0.004179244448945263,
+            "amp_min": 3.9351100477905716e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4049479166666667,
+            "hole_frac": 0.20963541666666666,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 7,
+            "n_significant_dense": 3,
+            "n_hole_components": 10,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 2,
+              "voxels": 665,
+              "frac": 0.2886284722222222,
+              "span_frac": [
+                1.0,
+                0.5416666666666666
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5416666666666666
+              ],
+              "n_components": 7
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 6
+          }
+        },
+        {
+          "t": 4.4,
+          "sha256": "8d91b2f7ef3eef6c5552abdf4b1aecc19f3d0c2206c1ee9dd334684d103894e6",
+          "class": {
+            "mean_amp": 0.0011163767961296694,
+            "amp_max": 0.0024364416968702726,
+            "amp_min": 2.6081166441772054e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4197048611111111,
+            "hole_frac": 0.2105034722222222,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 3,
+            "n_significant_dense": 2,
+            "n_hole_components": 10,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 820,
+              "frac": 0.3559027777777778,
+              "span_frac": [
+                1.0,
+                0.5416666666666666
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5416666666666666
+              ],
+              "n_components": 3
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 4
+          }
+        },
+        {
+          "t": 6.6000000000000005,
+          "sha256": "4fb93ae4be8497bcdfe15dc252094cb96e0767072b823ffa23fbadb022042afd",
+          "class": {
+            "mean_amp": 0.0022303593575499726,
+            "amp_max": 0.004838467521472205,
+            "amp_min": 3.685540515922767e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4370659722222222,
+            "hole_frac": 0.21571180555555555,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 9,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 879,
+              "frac": 0.3815104166666667,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 8.8,
+          "sha256": "e776f030c5e698321a89dd498f40b33c306cd27103200d9d5657f79f5b542559",
+          "class": {
+            "mean_amp": 0.013298551332424092,
+            "amp_max": 0.0286639039444783,
+            "amp_min": 0.00014402197465383942,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4379340277777778,
+            "hole_frac": 0.2265625,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 8,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 890,
+              "frac": 0.3862847222222222,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 11.0,
+          "sha256": "b1623460cc5e0046083a5021ebf21fe1f0490e82aab3ec55df0ce255bc7c2944",
+          "class": {
+            "mean_amp": 0.10119293132900865,
+            "amp_max": 0.21441074720369704,
+            "amp_min": 0.0008198484385883804,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.4405381944444444,
+            "hole_frac": 0.2204861111111111,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 6,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 901,
+              "frac": 0.3910590277777778,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.5625
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 13.200000000000001,
+          "sha256": "196009ad76e003fbfa174c9c96fd080525ddfd85ea3bb5f827fad67299b452e4",
+          "class": {
+            "mean_amp": 0.5696253382081613,
+            "amp_max": 0.8789534613453996,
+            "amp_min": 0.030983277638106495,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.6961805555555556,
+            "hole_frac": 0.06380208333333333,
+            "outside_abs_frac": 0.3888888888888889,
+            "n_dense_components": 3,
+            "n_significant_dense": 1,
+            "n_hole_components": 7,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1578,
+              "frac": 0.6848958333333334,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 3
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 3
+          }
+        },
+        {
+          "t": 15.4,
+          "sha256": "a2e36f953dd4c4062b988f42e153136db2688f1d4cb5057b7e4c8bb20313b8f9",
+          "class": {
+            "mean_amp": 0.9462155288025866,
+            "amp_max": 0.9977073893434453,
+            "amp_min": 0.05085681824081623,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9913194444444444,
+            "hole_frac": 0.0013020833333333333,
+            "outside_abs_frac": 0.008680555555555556,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 2,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2284,
+              "frac": 0.9913194444444444,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 17.6,
+          "sha256": "5a113b6d3029a8c9261885224b8ec009d7939f5d803b2b821433d8f28b44f805",
+          "class": {
+            "mean_amp": 0.9790797174339312,
+            "amp_max": 0.9997142754193973,
+            "amp_min": 0.09684232800144264,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9973958333333334,
+            "hole_frac": 0.00043402777777777775,
+            "outside_abs_frac": 0.0026041666666666665,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2298,
+              "frac": 0.9973958333333334,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 19.8,
+          "sha256": "4b37ac356a0983307630aedd3cd6f29d3d0a0bad6bfb0be7ef69d12b03673b50",
+          "class": {
+            "mean_amp": 0.9819424005156873,
+            "amp_max": 0.9997674259393936,
+            "amp_min": 0.060289292587744556,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9978298611111112,
+            "hole_frac": 0.00043402777777777775,
+            "outside_abs_frac": 0.002170138888888889,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2299,
+              "frac": 0.9978298611111112,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 22.0,
+          "sha256": "2af06f474e54b1f9f9e2f8eaeb4f215814337a6132098261d239bd6a0fbc737d",
+          "class": {
+            "mean_amp": 0.9831209889127661,
+            "amp_max": 0.9997614475374399,
+            "amp_min": 0.14370070487252054,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9982638888888888,
+            "hole_frac": 0.0008680555555555555,
+            "outside_abs_frac": 0.001736111111111111,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 2,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2300,
+              "frac": 0.9982638888888888,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        }
+      ],
+      "end_sha256": "2af06f474e54b1f9f9e2f8eaeb4f215814337a6132098261d239bd6a0fbc737d"
+    },
+    {
+      "name": "very_coarse_noise",
+      "seed": 0,
+      "corr": 8.0,
+      "params": {
+        "Du": 1.0,
+        "dt": 0.1,
+        "eps_final": 1.0,
+        "quench_start": 0.0,
+        "quench_duration": 8.0,
+        "noise_amplitude": 0.01
+      },
+      "persist": {
+        "persistent_one_body": false,
+        "longest_consecutive_bag_frames": 0,
+        "required_consecutive": 5,
+        "span_indices": null
+      },
+      "frames": [
+        {
+          "t": 0.0,
+          "sha256": "d34871930ee27c8b02e4dcbbb8be3b078e05dbd4a807294aa1b904b226c7f51f",
+          "class": {
+            "mean_amp": 0.012950460919963111,
+            "amp_max": 0.022038058575282234,
+            "amp_min": 0.00024878658159885374,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.6171875,
+            "hole_frac": 0.13932291666666666,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 2,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1228,
+              "frac": 0.5329861111111112,
+              "span_frac": [
+                1.0,
+                0.625
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.625
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 2.2,
+          "sha256": "cb555f4b3bc5cdd7880176b243d1c439863a4408bfb537478994b1ce41d01743",
+          "class": {
+            "mean_amp": 0.0021425239412507144,
+            "amp_max": 0.0036691918580248435,
+            "amp_min": 2.060829462098631e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.5959201388888888,
+            "hole_frac": 0.14756944444444445,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1198,
+              "frac": 0.5199652777777778,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 8
+          }
+        },
+        {
+          "t": 4.4,
+          "sha256": "74d7807a7689dc7ff749f8492992d05079f47d29f3452ef257585b32b5fff332",
+          "class": {
+            "mean_amp": 0.0013333579469435206,
+            "amp_max": 0.0023271385865960407,
+            "amp_min": 1.8516694994369153e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.5802951388888888,
+            "hole_frac": 0.15711805555555555,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1181,
+              "frac": 0.5125868055555556,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 8
+          }
+        },
+        {
+          "t": 6.6000000000000005,
+          "sha256": "b48964d6951e001ddeae753b1dfdea06a2afba717d0ae1d8fe7edb2644d45fb7",
+          "class": {
+            "mean_amp": 0.0027875509930192074,
+            "amp_max": 0.004922409482980988,
+            "amp_min": 3.343745173251969e-05,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.5685763888888888,
+            "hole_frac": 0.1605902777777778,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 3,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1171,
+              "frac": 0.5082465277777778,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 6
+          }
+        },
+        {
+          "t": 8.8,
+          "sha256": "970fded28d104fd7d1c429d40d1eaca028f6f18706fe3cd914ce83f63e6222c0",
+          "class": {
+            "mean_amp": 0.017177431146895104,
+            "amp_max": 0.030608478228362157,
+            "amp_min": 0.0004504913352139838,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.5581597222222222,
+            "hole_frac": 0.1605902777777778,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 3,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1164,
+              "frac": 0.5052083333333334,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 6
+          }
+        },
+        {
+          "t": 11.0,
+          "sha256": "551482c97cf2726740f1aeb791787f1bae17f9602ab1347d383a385806002551",
+          "class": {
+            "mean_amp": 0.13341922016236757,
+            "amp_max": 0.23698990416454688,
+            "amp_min": 0.003924822096239426,
+            "grown": false,
+            "local_order": false,
+            "dense_frac": 0.5607638888888888,
+            "hole_frac": 0.1566840277777778,
+            "outside_abs_frac": 1.0,
+            "n_dense_components": 2,
+            "n_significant_dense": 2,
+            "n_hole_components": 3,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1180,
+              "frac": 0.5121527777777778,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                0.6458333333333334
+              ],
+              "n_components": 2
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 5
+          }
+        },
+        {
+          "t": 13.200000000000001,
+          "sha256": "3efce12dd66090a23de54eedad6bef17ade5121e869bf6432571a1a5c625b042",
+          "class": {
+            "mean_amp": 0.6725203936911837,
+            "amp_max": 0.9083246878806583,
+            "amp_min": 0.03304805049761471,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.8159722222222222,
+            "hole_frac": 0.04383680555555555,
+            "outside_abs_frac": 0.22178819444444445,
+            "n_dense_components": 3,
+            "n_significant_dense": 1,
+            "n_hole_components": 4,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 1842,
+              "frac": 0.7994791666666666,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 3
+            },
+            "winding_defect_count": 0,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 2
+          }
+        },
+        {
+          "t": 15.4,
+          "sha256": "bcf322c9b240fbf41b46fc5a584352533d42049c3dcf76b761f5c445477a9c89",
+          "class": {
+            "mean_amp": 0.9652515881673894,
+            "amp_max": 0.9987131721094059,
+            "amp_min": 0.19247200899740402,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9943576388888888,
+            "hole_frac": 0.0008680555555555555,
+            "outside_abs_frac": 0.005642361111111111,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2291,
+              "frac": 0.9943576388888888,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 17.6,
+          "sha256": "4d4b2bc0a315b2dc7c5c514b4dd7d829424c683ca7699ef3753199aff72b7e34",
+          "class": {
+            "mean_amp": 0.9832197716490404,
+            "amp_max": 0.9998084212354876,
+            "amp_min": 0.2700526332784169,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9969618055555556,
+            "hole_frac": 0.0,
+            "outside_abs_frac": 0.0030381944444444445,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 0,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2297,
+              "frac": 0.9969618055555556,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 19.8,
+          "sha256": "d783c2e7fbff6c4220a76e5ab72e1d6e34b39b671d61b5aaaca64d712abef816",
+          "class": {
+            "mean_amp": 0.9847731284143821,
+            "amp_max": 0.9998517489704238,
+            "amp_min": 0.20974795245785668,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9978298611111112,
+            "hole_frac": 0.00043402777777777775,
+            "outside_abs_frac": 0.002170138888888889,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2299,
+              "frac": 0.9978298611111112,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        },
+        {
+          "t": 22.0,
+          "sha256": "de27f429a316f83dbc6e2bf45ff21f7426c87d8160ec31b16d1aeb6e1545e1f1",
+          "class": {
+            "mean_amp": 0.9854518278036544,
+            "amp_max": 0.999854918833303,
+            "amp_min": 0.15792775343995846,
+            "grown": true,
+            "local_order": true,
+            "dense_frac": 0.9969618055555556,
+            "hole_frac": 0.00043402777777777775,
+            "outside_abs_frac": 0.0030381944444444445,
+            "n_dense_components": 1,
+            "n_significant_dense": 1,
+            "n_hole_components": 1,
+            "dense_is_room_bulk": true,
+            "largest_dense": {
+              "label": 1,
+              "voxels": 2297,
+              "frac": 0.9969618055555556,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "percolates": true
+            },
+            "bag_candidate": false,
+            "bag_rescued_by_holes": false,
+            "percolation": {
+              "spans_all": true,
+              "span_frac": [
+                1.0,
+                1.0
+              ],
+              "n_components": 1
+            },
+            "winding_defect_count": 2,
+            "holes_are_not_the_body": true,
+            "hist_n_peaks": 0
+          }
+        }
+      ],
+      "end_sha256": "de27f429a316f83dbc6e2bf45ff21f7426c87d8160ec31b16d1aeb6e1545e1f1"
+    }
+  ],
+  "tdgl_yellow_fill_table": [
+    {
+      "name": "default",
+      "seed": 0,
+      "corr": 0.0,
+      "quench_duration": 8.0,
+      "t0_mean": 0.012607546157915673,
+      "growth_t": 15.4,
+      "growth_mean": 0.45838866376195725,
+      "growth_dense_frac": 0.5724826388888888,
+      "end_mean": 0.9714208835342713,
+      "end_dense_frac": 0.9956597222222222,
+      "end_outside_abs_frac": 0.004340277777777778,
+      "end_n_holes": 3,
+      "end_windings": 4,
+      "end_hist_peaks": 0,
+      "end_room_bulk": true,
+      "bag_candidate_any": false,
+      "persistent_one_body": false,
+      "longest_bag_run": 0,
+      "end_sha256": "e29dec36a80d53a8fa37683f4dba83e31c9c9bd5b2106432b53beab23f4a283a"
+    },
+    {
+      "name": "default",
+      "seed": 1,
+      "corr": 0.0,
+      "quench_duration": 8.0,
+      "t0_mean": 0.01255421245638306,
+      "growth_t": 15.4,
+      "growth_mean": 0.48980302042027074,
+      "growth_dense_frac": 0.6362847222222222,
+      "end_mean": 0.9630392814653896,
+      "end_dense_frac": 0.9943576388888888,
+      "end_outside_abs_frac": 0.005642361111111111,
+      "end_n_holes": 4,
+      "end_windings": 4,
+      "end_hist_peaks": 0,
+      "end_room_bulk": true,
+      "bag_candidate_any": false,
+      "persistent_one_body": false,
+      "longest_bag_run": 0,
+      "end_sha256": "4864e003fcfb1a8283e2cfffc4ff529fed2a7ad862ba89f6b13f610be7b420b1"
+    },
+    {
+      "name": "fast_quench",
+      "seed": 0,
+      "corr": 0.0,
+      "quench_duration": 1.0,
+      "t0_mean": 0.012607546157915673,
+      "growth_t": 8.8,
+      "growth_mean": 0.7002837717488894,
+      "growth_dense_frac": 0.8428819444444444,
+      "end_mean": 0.9663531524243124,
+      "end_dense_frac": 0.9921875,
+      "end_outside_abs_frac": 0.0078125,
+      "end_n_holes": 1,
+      "end_windings": 6,
+      "end_hist_peaks": 0,
+      "end_room_bulk": true,
+      "bag_candidate_any": false,
+      "persistent_one_body": false,
+      "longest_bag_run": 0,
+      "end_sha256": "e04384e99653cfcbe6f4bc7c314ec3479bddf5d07a03559fc758d1e86c892364"
+    },
+    {
+      "name": "slow_quench",
+      "seed": 0,
+      "corr": 0.0,
+      "quench_duration": 24.0,
+      "t0_mean": 0.012607546157915673,
+      "growth_t": 22.0,
+      "growth_mean": 5.2879686648640216e-05,
+      "growth_dense_frac": 0.4110243055555556,
+      "end_mean": 5.2879686648640216e-05,
+      "end_dense_frac": 0.4110243055555556,
+      "end_outside_abs_frac": 1.0,
+      "end_n_holes": 4,
+      "end_windings": 0,
+      "end_hist_peaks": 5,
+      "end_room_bulk": true,
+      "bag_candidate_any": false,
+      "persistent_one_body": false,
+      "longest_bag_run": 0,
+      "end_sha256": "93c335e2cbec03e891921987fbe01cd57a6161baabda4939aff564f9231a2c37"
+    },
+    {
+      "name": "slow_quench_wait",
+      "seed": 0,
+      "corr": 0.0,
+      "quench_duration": 24.0,
+      "t0_mean": 0.012607546157915673,
+      "growth_t": 35.0,
+      "growth_mean": 0.9684353328313955,
+      "growth_dense_frac": 0.9943576388888888,
+      "end_mean": 0.9865403873867251,
+      "end_dense_frac": 0.9982638888888888,
+      "end_outside_abs_frac": 0.001736111111111111,
+      "end_n_holes": 1,
+      "end_windings": 2,
+      "end_hist_peaks": 0,
+      "end_room_bulk": true,
+      "bag_candidate_any": false,
+      "persistent_one_body": false,
+      "longest_bag_run": 0,
+      "end_sha256": "1a165574bb05d0711da0ac861420f7f62a21d62c5406a5c9748f147ab9c1ed7e"
+    },
+    {
+      "name": "coarse_noise",
+      "seed": 0,
+      "corr": 4.0,
+      "quench_duration": 8.0,
+      "t0_mean": 0.012569909244748304,
+      "growth_t": 13.200000000000001,
+      "growth_mean": 0.5696253382081613,
+      "growth_dense_frac": 0.6961805555555556,
+      "end_mean": 0.9831209889127661,
+      "end_dense_frac": 0.9982638888888888,
+      "end_outside_abs_frac": 0.001736111111111111,
+      "end_n_holes": 2,
+      "end_windings": 2,
+      "end_hist_peaks": 0,
+      "end_room_bulk": true,
+      "bag_candidate_any": false,
+      "persistent_one_body": false,
+      "longest_bag_run": 0,
+      "end_sha256": "2af06f474e54b1f9f9e2f8eaeb4f215814337a6132098261d239bd6a0fbc737d"
+    },
+    {
+      "name": "very_coarse_noise",
+      "seed": 0,
+      "corr": 8.0,
+      "quench_duration": 8.0,
+      "t0_mean": 0.012950460919963111,
+      "growth_t": 13.200000000000001,
+      "growth_mean": 0.6725203936911837,
+      "growth_dense_frac": 0.8159722222222222,
+      "end_mean": 0.9854518278036544,
+      "end_dense_frac": 0.9969618055555556,
+      "end_outside_abs_frac": 0.0030381944444444445,
+      "end_n_holes": 1,
+      "end_windings": 2,
+      "end_hist_peaks": 0,
+      "end_room_bulk": true,
+      "bag_candidate_any": false,
+      "persistent_one_body": false,
+      "longest_bag_run": 0,
+      "end_sha256": "de27f429a316f83dbc6e2bf45ff21f7426c87d8160ec31b16d1aeb6e1545e1f1"
+    }
+  ],
+  "any_persistent_one_body": false,
+  "outside_remains_in_this_white": false,
+  "official_rooms": {
+    "g001_lens_honesty": {
+      "decorative_particles": false,
+      "interpolated_for_display": true,
+      "changes_physics": false,
+      "quantized_uint8": true
+    },
+    "g001_lens_grid": [
+      20,
+      20,
+      20
+    ],
+    "g001_note": "Display lens 20\u00b3 downsampled from 64\u00b3. Not a rerun. Official localization=true is Level-2 winding defects (holes), not a bag.",
+    "g001_official_summaries": {
+      "0": {
+        "reached_level": 2,
+        "final_mean_amplitude": 0.973843
+      },
+      "1": {
+        "reached_level": 2,
+        "final_mean_amplitude": 0.98179
+      },
+      "2": {
+        "reached_level": 2,
+        "final_mean_amplitude": 0.986806
+      }
+    },
+    "g001_official_defects": 241,
+    "g001_official_detected": {
+      "difference": true,
+      "localization": true
+    },
+    "g001_lens_hole_undercount": "End lens n_hole_components is 0\u20131; official defect_count is 241. The 20\u00b3 display lens is not a hole census. Use stored summaries for defects.",
+    "g001_lens_frames": [
+      {
+        "t": 0.0,
+        "class": {
+          "mean_amp": 0.0,
+          "amp_max": 0.0,
+          "amp_min": 0.0,
+          "grown": false,
+          "local_order": false,
+          "dense_frac": 0.0,
+          "hole_frac": 1.0,
+          "outside_abs_frac": 1.0,
+          "n_dense_components": 0,
+          "n_significant_dense": 0,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": false,
+          "largest_dense": null,
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": false,
+            "span_frac": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "n_components": 0
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 1
+        },
+        "sha256": "4f7988030a00d082fe445e00a2ac5dab502300ff1b80e8592dd569867b60ef74"
+      },
+      {
+        "t": 5.8,
+        "class": {
+          "mean_amp": 0.0,
+          "amp_max": 0.0,
+          "amp_min": 0.0,
+          "grown": false,
+          "local_order": false,
+          "dense_frac": 0.0,
+          "hole_frac": 1.0,
+          "outside_abs_frac": 1.0,
+          "n_dense_components": 0,
+          "n_significant_dense": 0,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": false,
+          "largest_dense": null,
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": false,
+            "span_frac": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "n_components": 0
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 1
+        },
+        "sha256": "4f7988030a00d082fe445e00a2ac5dab502300ff1b80e8592dd569867b60ef74"
+      },
+      {
+        "t": 11.6,
+        "class": {
+          "mean_amp": 0.0,
+          "amp_max": 0.0,
+          "amp_min": 0.0,
+          "grown": false,
+          "local_order": false,
+          "dense_frac": 0.0,
+          "hole_frac": 1.0,
+          "outside_abs_frac": 1.0,
+          "n_dense_components": 0,
+          "n_significant_dense": 0,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": false,
+          "largest_dense": null,
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": false,
+            "span_frac": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "n_components": 0
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 1
+        },
+        "sha256": "4f7988030a00d082fe445e00a2ac5dab502300ff1b80e8592dd569867b60ef74"
+      },
+      {
+        "t": 17.4,
+        "class": {
+          "mean_amp": 0.5973303350513566,
+          "amp_max": 0.9599394997275896,
+          "amp_min": 0.0,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.720125,
+          "hole_frac": 0.061625,
+          "outside_abs_frac": 0.304,
+          "n_dense_components": 2,
+          "n_significant_dense": 1,
+          "n_hole_components": 148,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 5759,
+            "frac": 0.719875,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 2
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 3
+        },
+        "sha256": "9ae8042f19246451642cbb57362ac368844de2fb0e0674525ee6f4b8b206df7d"
+      },
+      {
+        "t": 23.2,
+        "class": {
+          "mean_amp": 0.9513414960018584,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.2504781936420735,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.99075,
+          "hole_frac": 0.0,
+          "outside_abs_frac": 0.00925,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 0,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7926,
+            "frac": 0.99075,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "5f4a870e4ff201b6448cab37506b33b8a4bd7e12d1263be47c4be740b9eccb0d"
+      },
+      {
+        "t": 29.0,
+        "class": {
+          "mean_amp": 0.9584862966674934,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.18785864523155515,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.993,
+          "hole_frac": 0.00025,
+          "outside_abs_frac": 0.007,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7944,
+            "frac": 0.993,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "6814aca1fa292995b424a796966ecbc148d89fc5112e02d2af8a46d2db771aae"
+      },
+      {
+        "t": 34.8,
+        "class": {
+          "mean_amp": 0.9620564984769163,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.2504781936420735,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.993125,
+          "hole_frac": 0.0,
+          "outside_abs_frac": 0.006875,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 0,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7945,
+            "frac": 0.993125,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "7708b5c89c1ec0f1447713f3fb62bac665cb5954571d6a345e22155095a1b65e"
+      },
+      {
+        "t": 40.6,
+        "class": {
+          "mean_amp": 0.9644949625913687,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.20768554661918534,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.992375,
+          "hole_frac": 0.000125,
+          "outside_abs_frac": 0.007625,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7939,
+            "frac": 0.992375,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "a3dae628a9ea00a06a379d793338753dc3c135fa88c7296dcd459ac2f7dce2f0"
+      },
+      {
+        "t": 46.4,
+        "class": {
+          "mean_amp": 0.9668417145191874,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.24252446814096681,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.99425,
+          "hole_frac": 0.000125,
+          "outside_abs_frac": 0.00575,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7954,
+            "frac": 0.99425,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "16a6c18852ef95a2f40ffc901d812bee9c689fe9700e7548602fecab4a7c32ca"
+      },
+      {
+        "t": 52.2,
+        "class": {
+          "mean_amp": 0.9691118454355422,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.24252446814096681,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.994625,
+          "hole_frac": 0.000125,
+          "outside_abs_frac": 0.005375,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7957,
+            "frac": 0.994625,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "a4db4e1d86566cfc514d9e1a488f92d5015fa085a71d6e6a5797e5ac453a7188"
+      },
+      {
+        "t": 58.0,
+        "class": {
+          "mean_amp": 0.9705945874134176,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.280043133932516,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.99375,
+          "hole_frac": 0.0,
+          "outside_abs_frac": 0.00625,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 0,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7950,
+            "frac": 0.99375,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "9e130c313cb7febb253d33be8be83702260384d7feaf3d39d0a218abd295f0d6"
+      },
+      {
+        "t": 63.8,
+        "class": {
+          "mean_amp": 0.9718789486088958,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.2729522834116026,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.994125,
+          "hole_frac": 0.0,
+          "outside_abs_frac": 0.005875,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 0,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7953,
+            "frac": 0.994125,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "cb9539b88444a7e47c0c1f3470efc895995319e04f760d874460351599efa225"
+      },
+      {
+        "t": 69.6,
+        "class": {
+          "mean_amp": 0.9731726729430773,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.21692047878807352,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.995,
+          "hole_frac": 0.000125,
+          "outside_abs_frac": 0.005,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7960,
+            "frac": 0.995,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "aecdd1e191fe83549a70f0b8644220823625dabe5917207c8069bff2fd2d7afe"
+      },
+      {
+        "t": 69.9,
+        "class": {
+          "mean_amp": 0.9732335970130819,
+          "amp_max": 0.9999539989419514,
+          "amp_min": 0.20768554661918534,
+          "grown": true,
+          "local_order": true,
+          "dense_frac": 0.995,
+          "hole_frac": 0.000125,
+          "outside_abs_frac": 0.005,
+          "n_dense_components": 1,
+          "n_significant_dense": 1,
+          "n_hole_components": 1,
+          "dense_is_room_bulk": true,
+          "largest_dense": {
+            "label": 1,
+            "voxels": 7960,
+            "frac": 0.995,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "bag_candidate": false,
+          "bag_rescued_by_holes": false,
+          "percolation": {
+            "spans_all": true,
+            "span_frac": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "n_components": 1
+          },
+          "winding_defect_count": null,
+          "holes_are_not_the_body": true,
+          "hist_n_peaks": 0
+        },
+        "sha256": "0b8ac2a2957fa3e34ef4a0e061010f2b89f701a6e86bad738d4edd79c87a9df0"
+      }
+    ],
+    "g001_lens_persist": {
+      "persistent_one_body": false,
+      "longest_consecutive_bag_frames": 0,
+      "required_consecutive": 5,
+      "span_indices": null
+    },
+    "g003_lens_honesty": {
+      "decorative_particles": false,
+      "interpolated_for_display": true,
+      "changes_physics": false,
+      "quantized_uint8": true
+    },
+    "g003_lens_grid": [
+      48,
+      48
+    ],
+    "g003_note": "Existing two-ground white (Model H / Cahn-Hilliard). Mapped, not promoted to bag mainline. 50-50 start. Display 48\u00b2 from 128\u00b2.",
+    "g003_official_interface_fraction": 0.3248,
+    "g003_official_domain_scale": 13.307,
+    "g003_lens_frames": [
+      {
+        "t": 0.0,
+        "class": {
+          "mean_phi": 0.000988381209150405,
+          "phi_min": -0.1287532470588234,
+          "phi_max": 0.13556924705882367,
+          "pos_frac": 0.47265625,
+          "neg_frac": 0.52734375,
+          "n_pos_components": 182,
+          "n_neg_components": 129,
+          "largest_pos": {
+            "label": 46,
+            "voxels": 89,
+            "frac": 0.038628472222222224,
+            "span_frac": [
+              0.3125,
+              0.375
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 2,
+            "voxels": 271,
+            "frac": 0.11762152777777778,
+            "span_frac": [
+              0.375,
+              0.8125
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "002e5f6c0376bd61415cae426d0a8b0e99fb303b1f2b96d42c92827c44431a52"
+      },
+      {
+        "t": 5.0,
+        "class": {
+          "mean_phi": 0.00017141222086064433,
+          "phi_min": -0.1287532470588234,
+          "phi_max": 0.13556924705882367,
+          "pos_frac": 0.4735243055555556,
+          "neg_frac": 0.5264756944444444,
+          "n_pos_components": 68,
+          "n_neg_components": 46,
+          "largest_pos": {
+            "label": 33,
+            "voxels": 197,
+            "frac": 0.08550347222222222,
+            "span_frac": [
+              0.6041666666666666,
+              0.5
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 3,
+            "voxels": 273,
+            "frac": 0.11848958333333333,
+            "span_frac": [
+              0.5625,
+              0.75
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "779953f5c3e908faefdfb4ec74ae0bf00f2b2701461797bcbcd118e5fd5fa298"
+      },
+      {
+        "t": 10.0,
+        "class": {
+          "mean_phi": 3.583013344234591e-05,
+          "phi_min": -0.3450171058823529,
+          "phi_max": 0.35183310588235295,
+          "pos_frac": 0.4965277777777778,
+          "neg_frac": 0.5034722222222222,
+          "n_pos_components": 49,
+          "n_neg_components": 54,
+          "largest_pos": {
+            "label": 5,
+            "voxels": 257,
+            "frac": 0.1115451388888889,
+            "span_frac": [
+              0.75,
+              0.6666666666666666
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 25,
+            "voxels": 200,
+            "frac": 0.08680555555555555,
+            "span_frac": [
+              0.6458333333333334,
+              0.5
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "f5007c9f07f3fd7546bce3c2b3c20cb0a47dfbecdaf18e1efcc9824e73914dad"
+      },
+      {
+        "t": 15.0,
+        "class": {
+          "mean_phi": -7.889317129621672e-05,
+          "phi_min": -0.6654080078431373,
+          "phi_max": 0.6642142352941178,
+          "pos_frac": 0.5026041666666666,
+          "neg_frac": 0.4973958333333333,
+          "n_pos_components": 40,
+          "n_neg_components": 51,
+          "largest_pos": {
+            "label": 3,
+            "voxels": 287,
+            "frac": 0.12456597222222222,
+            "span_frac": [
+              0.75,
+              0.6666666666666666
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 3,
+            "voxels": 216,
+            "frac": 0.09375,
+            "span_frac": [
+              0.75,
+              0.2916666666666667
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 4
+        },
+        "sha256": "bb9251e87c59ac3c7d358b31856da0753ccd9af6893998c1ea58ba9d796c20cd"
+      },
+      {
+        "t": 20.0,
+        "class": {
+          "mean_phi": 0.00012621819172121151,
+          "phi_min": -0.8656523215686275,
+          "phi_max": 0.8964976392156863,
+          "pos_frac": 0.49609375,
+          "neg_frac": 0.50390625,
+          "n_pos_components": 45,
+          "n_neg_components": 46,
+          "largest_pos": {
+            "label": 24,
+            "voxels": 231,
+            "frac": 0.10026041666666667,
+            "span_frac": [
+              0.5833333333333334,
+              0.5625
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 12,
+            "voxels": 250,
+            "frac": 0.10850694444444445,
+            "span_frac": [
+              0.7916666666666666,
+              0.625
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "18b2984cc5523c70c29db3054f6f5f6f6e4d0cd295838bdf8f7d6fe0b79d8a4d"
+      },
+      {
+        "t": 25.0,
+        "class": {
+          "mean_phi": 0.0005677290917756791,
+          "phi_min": -0.9297305019607843,
+          "phi_max": 0.9685855921568629,
+          "pos_frac": 0.4995659722222222,
+          "neg_frac": 0.5004340277777778,
+          "n_pos_components": 33,
+          "n_neg_components": 45,
+          "largest_pos": {
+            "label": 18,
+            "voxels": 286,
+            "frac": 0.12413194444444445,
+            "span_frac": [
+              0.6458333333333334,
+              0.5625
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 23,
+            "voxels": 177,
+            "frac": 0.07682291666666667,
+            "span_frac": [
+              0.5625,
+              0.5
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 7
+        },
+        "sha256": "786c05bd911d7d9399120672c5e4baa8d5ebfec8c3d16a4351f9b6143dbe5416"
+      },
+      {
+        "t": 30.0,
+        "class": {
+          "mean_phi": 0.0006789759327342801,
+          "phi_min": -0.9537598196078432,
+          "phi_max": 0.9685855921568629,
+          "pos_frac": 0.5008680555555556,
+          "neg_frac": 0.4991319444444444,
+          "n_pos_components": 32,
+          "n_neg_components": 35,
+          "largest_pos": {
+            "label": 11,
+            "voxels": 442,
+            "frac": 0.1918402777777778,
+            "span_frac": [
+              0.8125,
+              1.0
+            ],
+            "percolates": true
+          },
+          "largest_neg": {
+            "label": 3,
+            "voxels": 170,
+            "frac": 0.07378472222222222,
+            "span_frac": [
+              0.3125,
+              0.5625
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "b939264a5260227d56e5598b95e3c6eb0b950e59ce3901ecd03bcc53dcb011a1"
+      },
+      {
+        "t": 35.0,
+        "class": {
+          "mean_phi": 0.0003452354098584696,
+          "phi_min": -0.977789137254902,
+          "phi_max": 0.9765953647058825,
+          "pos_frac": 0.5060763888888888,
+          "neg_frac": 0.4939236111111111,
+          "n_pos_components": 29,
+          "n_neg_components": 32,
+          "largest_pos": {
+            "label": 15,
+            "voxels": 367,
+            "frac": 0.15928819444444445,
+            "span_frac": [
+              0.6041666666666666,
+              0.6666666666666666
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 11,
+            "voxels": 259,
+            "frac": 0.11241319444444445,
+            "span_frac": [
+              0.75,
+              0.5
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": true,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": true,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 7
+        },
+        "sha256": "51aef6ca78e8ec5dec10a1efa4e84b068e45d91221063c688c8ace078470a0dc"
+      },
+      {
+        "t": 40.0,
+        "class": {
+          "mean_phi": -0.00024228696895417742,
+          "phi_min": -0.9857989098039216,
+          "phi_max": 1.0166442274509808,
+          "pos_frac": 0.5008680555555556,
+          "neg_frac": 0.4991319444444444,
+          "n_pos_components": 24,
+          "n_neg_components": 28,
+          "largest_pos": {
+            "label": 12,
+            "voxels": 408,
+            "frac": 0.17708333333333334,
+            "span_frac": [
+              0.6666666666666666,
+              0.6458333333333334
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 11,
+            "voxels": 319,
+            "frac": 0.1384548611111111,
+            "span_frac": [
+              0.75,
+              0.8333333333333334
+            ],
+            "percolates": false
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "e1a4faa74016cab11a0f211f9e8b6d1ac0e3620f35414103824cc872344c6cf8"
+      },
+      {
+        "t": 45.0,
+        "class": {
+          "mean_phi": -0.0012435085375816241,
+          "phi_min": -0.9857989098039216,
+          "phi_max": 1.0246540000000002,
+          "pos_frac": 0.49609375,
+          "neg_frac": 0.50390625,
+          "n_pos_components": 21,
+          "n_neg_components": 23,
+          "largest_pos": {
+            "label": 10,
+            "voxels": 341,
+            "frac": 0.1480034722222222,
+            "span_frac": [
+              0.6666666666666666,
+              0.5833333333333334
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 4,
+            "voxels": 738,
+            "frac": 0.3203125,
+            "span_frac": [
+              1.0,
+              0.9166666666666666
+            ],
+            "percolates": true
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": true,
+          "one_body_bag": true,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "21bae00d0ac4f0b6824f95a8687ea28125c91e95333c80a53f19a1bfc7ffb5d7"
+      },
+      {
+        "t": 50.0,
+        "class": {
+          "mean_phi": -0.002203012540849599,
+          "phi_min": -1.0018184549019609,
+          "phi_max": 1.0166442274509808,
+          "pos_frac": 0.4995659722222222,
+          "neg_frac": 0.5004340277777778,
+          "n_pos_components": 18,
+          "n_neg_components": 24,
+          "largest_pos": {
+            "label": 6,
+            "voxels": 656,
+            "frac": 0.2847222222222222,
+            "span_frac": [
+              1.0,
+              0.875
+            ],
+            "percolates": true
+          },
+          "largest_neg": {
+            "label": 4,
+            "voxels": 705,
+            "frac": 0.3059895833333333,
+            "span_frac": [
+              1.0,
+              0.9166666666666666
+            ],
+            "percolates": true
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "ac93797c243d48a624b0f436ff2eb9322136821d44972a049b329eaafe4dfa25"
+      },
+      {
+        "t": 55.0,
+        "class": {
+          "mean_phi": -0.002967834572440013,
+          "phi_min": -1.0098282274509804,
+          "phi_max": 1.0166442274509808,
+          "pos_frac": 0.5,
+          "neg_frac": 0.5,
+          "n_pos_components": 15,
+          "n_neg_components": 21,
+          "largest_pos": {
+            "label": 6,
+            "voxels": 384,
+            "frac": 0.16666666666666666,
+            "span_frac": [
+              0.7916666666666666,
+              0.875
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 4,
+            "voxels": 761,
+            "frac": 0.3302951388888889,
+            "span_frac": [
+              1.0,
+              1.0
+            ],
+            "percolates": true
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 8
+        },
+        "sha256": "4c5a90d166de94517f5310eb5135a141fc6d205c0538f692815aa2ee14fb8a0c"
+      },
+      {
+        "t": 60.0,
+        "class": {
+          "mean_phi": -0.0030860343409585297,
+          "phi_min": -1.017838,
+          "phi_max": 1.008634454901961,
+          "pos_frac": 0.4965277777777778,
+          "neg_frac": 0.5034722222222222,
+          "n_pos_components": 14,
+          "n_neg_components": 18,
+          "largest_pos": {
+            "label": 6,
+            "voxels": 382,
+            "frac": 0.1657986111111111,
+            "span_frac": [
+              0.7916666666666666,
+              0.875
+            ],
+            "percolates": false
+          },
+          "largest_neg": {
+            "label": 6,
+            "voxels": 534,
+            "frac": 0.23177083333333334,
+            "span_frac": [
+              0.9375,
+              1.0
+            ],
+            "percolates": true
+          },
+          "two_grounds_present": true,
+          "phase_a_bag_candidate": false,
+          "phase_b_bag_candidate": false,
+          "one_body_bag": false,
+          "holes_are_not_the_body": true,
+          "not_promoted_to_bag_mainline": true,
+          "hist_n_peaks": 6
+        },
+        "sha256": "93ad4444b6d6876ff4ea85c8eabc4052d8da541bfaf175b71a90d9d3e8b195e7"
+      }
+    ],
+    "g003_any_one_body_bag": true,
+    "g003_persist": {
+      "persistent_one_body": false,
+      "longest_consecutive_bag_frames": 1,
+      "required_consecutive": 5,
+      "span_indices": [
+        7,
+        7
+      ]
+    },
+    "g003_ruler_leak": "Frozen ruler can mark one maze island as bag_candidate when other same-phase patches are each < min_body_frac. Those frames still have many components. Not one remaining inside. Not retuned this round."
+  },
+  "two_ground_map": {
+    "present_without_placing_a_bag": [
+      {
+        "id": "room-g003-a",
+        "white": "g003 Model H (Cahn-Hilliard + flow)",
+        "ic": "uniform mean 0 + noise 0.05 (no droplet placed)",
+        "what_grows": "two composition grounds and an interface",
+        "bag_mainline": false,
+        "why_not_promoted": "50-50 bicontinuous maze is two grounds sitting, not one remaining inside"
+      },
+      {
+        "id": "e033",
+        "white": "Cahn-Hilliard / Flory-Huggins",
+        "ic": "uniform 0.5 + noise",
+        "what_grows": "spinodal two-phase coexistence above chi_c=2",
+        "bag_mainline": false,
+        "why_not_promoted": "two grounds / wavelength; not scored as one body"
+      }
+    ],
+    "exists_but_shape_was_placed": [
+      {
+        "id": "e020",
+        "note": "round/ellipse/dumbbell/filament were PUT. Drift for the bag question. Do not use."
+      }
+    ],
+    "do_not_promote": [
+      {
+        "id": "gray_scott",
+        "note": "stain splitting without inheritance. Not a bag. Not this mainline."
+      },
+      {
+        "id": "swift_hohenberg",
+        "note": "localized bump is seeded. Not grown from undifferentiated white."
+      }
+    ],
+    "docs_only_not_run": [
+      {
+        "id": "F0_P01_active_droplet",
+        "note": "preregistration only. Not implemented this round. Do not add the field."
+      }
+    ]
+  },
+  "pictures": [
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_default_s0_t000_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_default_s0_t000_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_default_s0_growth_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_default_s0_growth_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_default_s0_end_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_default_s0_end_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_default_s0_t000_amp_stretched_not_physics.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_fast_quench_s0_t000_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_fast_quench_s0_t000_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_fast_quench_s0_growth_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_fast_quench_s0_growth_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_fast_quench_s0_end_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_fast_quench_s0_end_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_fast_quench_s0_t000_amp_stretched_not_physics.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_s0_t000_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_s0_t000_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_s0_growth_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_s0_growth_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_s0_end_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_s0_end_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_s0_t000_amp_stretched_not_physics.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_wait_s0_t000_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_wait_s0_t000_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_wait_s0_growth_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_wait_s0_growth_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_wait_s0_end_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_wait_s0_end_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_slow_quench_wait_s0_t000_amp_stretched_not_physics.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_coarse_noise_s0_t000_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_coarse_noise_s0_t000_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_coarse_noise_s0_growth_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_coarse_noise_s0_growth_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_coarse_noise_s0_end_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_coarse_noise_s0_end_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_coarse_noise_s0_t000_amp_stretched_not_physics.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_very_coarse_noise_s0_t000_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_very_coarse_noise_s0_t000_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_very_coarse_noise_s0_growth_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_very_coarse_noise_s0_growth_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_very_coarse_noise_s0_end_amp.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_very_coarse_noise_s0_end_dense_holes.png",
+    "ai_lab/reports/easy/verify-20260829-bag-dig/png/tdgl_very_coarse_noise_s0_t000_amp_stretched_not_physics.png"
+  ],
+  "next_honest_move_one": "Score the existing two-ground white (G003 / Cahn-Hilliard) for maze vs one remaining inside by changing only mean composition of a uniform+noise start. Do not place a droplet. Do not add a membrane field to TDGL. Do not return to triangles."
+}
