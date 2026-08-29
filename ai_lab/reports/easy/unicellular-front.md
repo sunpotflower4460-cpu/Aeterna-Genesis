@@ -28,4 +28,6 @@
 
 三角の記録は [PR 133](https://github.com/sunpotflower4460-cpu/Aeterna-Genesis/pull/133)。輪のくびれは [PR 134](https://github.com/sunpotflower4460-cpu/Aeterna-Genesis/pull/134)。消さない。混ぜない。
 
+**初回の測り（2026-08-29）：** 白いノイズから TDGL を 0 から回すと、袋は出ていません。部屋が黄色で埋まり、穴が残ります。詳細は [`verify-20260829-one-body-bag/human.md`](verify-20260829-one-body-bag/human.md)。穴を数えて救っていません。
+
 詳しくは [`docs/UNICELLULAR_FRONT.md`](../../../docs/UNICELLULAR_FRONT.md)。合言葉：**それは育ったのか、置いたのか？**
