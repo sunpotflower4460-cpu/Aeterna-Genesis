@@ -1,0 +1,91 @@
+name: Universe Aquarium Collaboration CI
+
+on:
+  pull_request:
+    paths:
+      - 'aquaria/**'
+      - 'schemas/aquarium-*.schema.json'
+      - 'ai_lab/aquarium/**'
+      - 'tests/test_aquarium_*.py'
+      - 'app/src/**'
+      - 'app/public/data/aquaria/**'
+      - 'app/package.json'
+      - 'app/package-lock.json'
+      - 'tools/build_catalog.py'
+      - 'tools/collect_app_data.py'
+      - 'docs/UNIVERSE_AQUARIUM.md'
+      - 'docs/AI_EXPERIMENT_POLICY.md'
+      - 'docs/GENESIS_MAP.md'
+      - 'AGENTS.md'
+      - 'README.md'
+      - '.github/workflows/aquarium-collaboration-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aquarium-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate all repository schemas and registries
+        run: python tools/validate_schemas.py
+
+      - name: Validate Aquarium registry, notebook and planning-only Compass
+        run: pytest -q tests/test_aquarium_registry.py tests/test_aquarium_compass.py
+
+      - name: Build Observatory catalog from tracked Room data
+        run: python tools/build_catalog.py
+
+      - name: Verify Observatory data assembly contains Aquarium collaboration data
+        run: |
+          TMP="$(mktemp -d)"
+          python tools/collect_app_data.py --out-dir "$TMP"
+          test -s "$TMP/aquaria/registry.json"
+          test -s "$TMP/aquaria/notebook.json"
+          python - "$TMP" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          root = Path(sys.argv[1])
+          registry = json.loads((root / 'aquaria' / 'registry.json').read_text())
+          notebook = json.loads((root / 'aquaria' / 'notebook.json').read_text())
+          assert registry['policy']['physics_may_read_intent_text'] is False
+          assert registry['policy']['intent_is_scientific_evidence'] is False
+          assert notebook['policy']['notes_are_scientific_evidence'] is False
+          assert notebook['policy']['notes_change_physics'] is False
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install Observatory dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Typecheck Observatory
+        working-directory: app
+        run: npm run typecheck
+
+      - name: Build Observatory
+        working-directory: app
+        run: npm run build
+
+      - name: State scientific boundary
+        run: |
+          echo 'Universe Aquarium metadata is planning/collaboration data.'
+          echo 'Passing this CI does not promote Rooms, assign official Levels, or make Intent into evidence.'

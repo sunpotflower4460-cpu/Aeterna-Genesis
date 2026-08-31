@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Catalog, Room, CandidateRoom } from './lib/types'
+import type { Catalog, Room, CandidateRoom, AquariumRegistry, AquariumNotebook } from './lib/types'
 
 /** Present a non-official candidate room through the same Room shape the workspace/viewport expect. */
 export function candidateAsRoom(c: CandidateRoom): Room {
@@ -23,7 +23,9 @@ export interface ViewSettings {
 
 interface State {
   catalog: Catalog | null
-  view: 'lobby' | 'room' | 'compare' | 'inbox'
+  aquariumRegistry: AquariumRegistry | null
+  aquariumNotebook: AquariumNotebook | null
+  view: 'lobby' | 'room' | 'compare' | 'inbox' | 'aquaria'
   roomId: string | null
   compareIds: [string, string]
   lens: string | null
@@ -37,9 +39,12 @@ interface State {
   pendingGenesis: Record<string, number> | null // View-vs-Genesis separation: staged, not applied
 
   setCatalog: (c: Catalog) => void
+  setAquariumRegistry: (c: AquariumRegistry | null) => void
+  setAquariumNotebook: (n: AquariumNotebook | null) => void
   openRoom: (id: string) => void
   toLobby: () => void
   toInbox: () => void
+  toAquaria: () => void
   toCompare: (a: string, b: string) => void
   setCompareId: (slot: 0 | 1, id: string) => void
   setLens: (l: string) => void
@@ -57,6 +62,8 @@ interface State {
 
 export const useStore = create<State>((set, get) => ({
   catalog: null,
+  aquariumRegistry: null,
+  aquariumNotebook: null,
   view: 'lobby',
   roomId: null,
   compareIds: ['', ''],
@@ -71,9 +78,12 @@ export const useStore = create<State>((set, get) => ({
   pendingGenesis: null,
 
   setCatalog: (c) => set({ catalog: c }),
+  setAquariumRegistry: (c) => set({ aquariumRegistry: c }),
+  setAquariumNotebook: (n) => set({ aquariumNotebook: n }),
   openRoom: (id) => set({ view: 'room', roomId: id, frame: 0, playing: true, lens: null, pendingGenesis: null }),
   toLobby: () => set({ view: 'lobby', roomId: null }),
   toInbox: () => set({ view: 'inbox' }),
+  toAquaria: () => set({ view: 'aquaria' }),
   toCompare: (a, b) => set({ view: 'compare', compareIds: [a, b], frame: 0, playing: true, lens: null }),
   setCompareId: (slot, id) => set((s) => {
     const c: [string, string] = [...s.compareIds]

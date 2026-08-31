@@ -84,6 +84,88 @@ export interface Catalog {
   jobs?: Job[]
 }
 
+export type AquariumOrigin = 'human' | 'ai' | 'joint'
+export type AquariumStatus = 'idea' | 'planned' | 'active' | 'paused' | 'archived'
+export type AquariumIntentMode = 'open_ended' | 'goal_directed'
+
+export interface AquariumIntent {
+  mode: AquariumIntentMode
+  goal: string
+  planning_may_read_goal: true
+  physics_may_read_goal: false
+}
+
+export interface AquariumIntegrity {
+  target_outcome_seeded: boolean
+  target_morphology_seeded: boolean
+  outcome_location_seeded: boolean
+  outcome_time_seeded: boolean
+  planning_metadata_changes_physics: false
+  scientific_promotion_effect: false
+}
+
+export interface Aquarium {
+  aquarium_id: string
+  title: string
+  summary?: string
+  origin: AquariumOrigin
+  status: AquariumStatus
+  intent: AquariumIntent
+  classes: string[]
+  recipe_space: Record<string, unknown>
+  observation_focus: string[]
+  related_aquaria?: string[]
+  evidence_refs: string[]
+  run_refs?: string[]
+  integrity: AquariumIntegrity
+}
+
+export interface AquariumRegistry {
+  version: number
+  mode: 'universe-aquarium-registry'
+  aquaria: Aquarium[]
+  policy: {
+    intent_is_scientific_evidence: false
+    planning_may_read_intent: true
+    physics_may_read_intent_text: false
+    goal_directed_equals_target_encoded: false
+    seeded_is_lower_value: false
+    negative_results_are_preserved: true
+  }
+}
+
+export type AquariumNoteKind = 'idea' | 'observation' | 'question' | 'direction' | 'decision' | 'warning'
+
+export interface AquariumNote {
+  note_id: string
+  aquarium_id: string
+  author_role: AquariumOrigin
+  kind: AquariumNoteKind
+  created_at: string
+  text: string
+  evidence_refs: string[]
+  status?: 'open' | 'accepted' | 'superseded' | 'done'
+}
+
+export interface AquariumNotebook {
+  version: number
+  mode: 'universe-aquarium-notebook'
+  entries: AquariumNote[]
+  policy: {
+    notes_are_scientific_evidence: false
+    notes_change_physics: false
+    history_is_append_only_in_spirit: true
+  }
+}
+
+export interface AquariumDraft {
+  title: string
+  intentMode: AquariumIntentMode
+  goal: string
+  note: string
+  createdAt: string
+}
+
 export interface LensDoc {
   source: string
   unit: string
