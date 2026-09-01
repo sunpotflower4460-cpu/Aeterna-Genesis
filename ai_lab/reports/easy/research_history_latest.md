@@ -2,6 +2,7 @@
 
 Manifest-backed navigation view. This is not a scientific confidence ranking.
 
+- `dream-20260901-0600` — health=True progress=ADVANCED newQ=16 numpy=2.4.6 scipy=1.17.1 evidence=`4bfa98e0edc8f0ada48c2fd7c0d54e2c4fc5d05c`
 - `dream-20260901-0599` — health=True progress=ADVANCED newQ=16 numpy=2.4.6 scipy=1.17.1 evidence=`e78d347e808701041d9b58d7581a7fcca53b8c8d`
 - `dream-20260901-0598` — health=True progress=ADVANCED newQ=10 numpy=2.4.6 scipy=1.17.1 evidence=`655874bd576c422bdf74cb65c9339f2420eab3d3`
 - `dream-20260901-0596` — health=True progress=ADVANCED newQ=16 numpy=2.4.6 scipy=1.17.1 evidence=`32fe91afff635783ec9a59dee722f84e79ca2799`
@@ -25,6 +26,5 @@ Manifest-backed navigation view. This is not a scientific confidence ranking.
 - `dream-20260831-0572` — health=True progress=ADVANCED newQ=11 numpy=2.4.6 scipy=1.17.1 evidence=`f426672dc25ee12aad9b37b8df483900a4e06367`
 - `dream-20260831-0571` — health=True progress=ADVANCED newQ=16 numpy=2.4.6 scipy=1.17.1 evidence=`e44aec4ec79f7a73e9c1e801387338a0c8e69906`
 - `dream-20260831-0570` — health=True progress=ADVANCED newQ=15 numpy=2.4.6 scipy=1.17.1 evidence=`d9858f94ef253d77cecf396347deb37e582da5a0`
-- `dream-20260831-0568` — health=True progress=ADVANCED newQ=11 numpy=2.4.6 scipy=1.17.1 evidence=`7944989b7dabb4be421ce4e7ba4f17b6f695a816`
 
 Each row points to an immutable manifest and an exact evidence Git commit when available. Planning/health fields are navigation metadata only.
