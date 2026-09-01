@@ -1,20 +1,20 @@
 # Research Continuity — read before changing direction
 
-latest strict burst: `dream-20260901-0607`
-continuity digest: `216d5d9efce868511fdc`
+latest strict burst: `dream-20260901-0608`
+continuity digest: `df164d84e4d809cb66a6`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
 ## Must carry forward
 
-- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=2/5, control=9/14, triangle_required=False.
-- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=34, pair-only=28, triads=18, split-asym=0.245532, no-split-asym=0.427214, energy-before-geometry=2. 因果・力・結合エネルギーとはまだ呼ばない。
+- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=6/11, control=13/16, triangle_required=False.
+- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=34, pair-only=29, triads=27, split-asym=0.226096, no-split-asym=0.188631, energy-before-geometry=1. 因果・力・結合エネルギーとはまだ呼ばない。
 - `deep:deep-fdb3e0252eed` [strict-deep-time] — Deep-Time deep-fdb3e0252eed: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-ee841262151c` [strict-deep-time] — Deep-Time deep-ee841262151c: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-eddd2955c6d8` [strict-deep-time] — Deep-Time deep-eddd2955c6d8: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
+- `deep:deep-e9403b02bed1` [strict-deep-time] — Deep-Time deep-e9403b02bed1: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-e873384a7436` [strict-deep-time] — Deep-Time deep-e873384a7436: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-e70934626453` [strict-deep-time] — Deep-Time deep-e70934626453: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
-- `deep:deep-e62530140130` [strict-deep-time] — Deep-Time deep-e62530140130: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `crossworld:shadow-semantics` [cross-world-shadow] — Cross-Worldの共通fingerprintは同じ物理・保存則・普遍法則を意味しない。start purityと再現性を別に監査する。
 - `ops:instrument:predictive-holdout` [research-operations] — 繰り返し環境と未経験環境を分け、過去依存が単なる残響ではなく将来の応答改善に使われるか？
 - `ops:instrument:metric-from-relations` [research-operations] — 座標なしの関係だけから、再現性のある距離・近傍・次元候補を後付けで定義できるか？
@@ -70,4 +70,4 @@ continuity digest: `216d5d9efce868511fdc`
 - `unknown-x`: 8
 - `x-mechanism`: 3
 
-manifest relation: `MATCH`
+manifest relation: `OLDER_FINALIZED_MANIFEST_REFERENCE`
