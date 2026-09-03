@@ -3728,6 +3728,18 @@
     "job-auto-dream-20260903-0650-native-window-v000-local3d-s97950",
     "job-auto-dream-20260903-0650-native-window-v000-local3d-s97951",
     "job-auto-dream-20260903-0650-native-window-v000-local3d-s97952",
+    "job-auto-dream-20260903-0651-native-window-v000-2dscreen-s97951",
+    "job-auto-dream-20260903-0651-native-window-v000-2dscreen-s97952",
+    "job-auto-dream-20260903-0651-native-window-v000-2dscreen-s97953",
+    "job-auto-dream-20260903-0651-native-window-v000-local3d-s97951",
+    "job-auto-dream-20260903-0651-native-window-v000-local3d-s97952",
+    "job-auto-dream-20260903-0651-native-window-v000-local3d-s97953",
+    "job-auto-dream-20260903-0651-native-window-v001-2dscreen-s97951",
+    "job-auto-dream-20260903-0651-native-window-v001-2dscreen-s97952",
+    "job-auto-dream-20260903-0651-native-window-v001-2dscreen-s97953",
+    "job-auto-dream-20260903-0651-native-window-v001-local3d-s97951",
+    "job-auto-dream-20260903-0651-native-window-v001-local3d-s97952",
+    "job-auto-dream-20260903-0651-native-window-v001-local3d-s97953",
     "job-auto-gl-haiku-1000-robustness-h001-v000-2dscreen-s0000",
     "job-auto-gl-haiku-1000-robustness-h001-v000-2dscreen-s0001",
     "job-auto-gl-haiku-1000-robustness-h001-v000-2dscreen-s0002",
@@ -5102,40 +5114,6 @@
   ],
   "events": [
     {
-      "event_id": "evt-016017ce0b0b9c7c",
-      "kind": "DIMENSION_FAILURE",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0636-native-window-v000-local3d-s97836",
-      "title": "次元を上げると挙動が崩れた候補",
-      "plain": "local-3d では必要Levelに届かず、2D側の候補がそのまま移行しませんでした。",
-      "why": "2Dの見かけを3Dの物理と混同しないための重要な負の結果です。",
-      "facts": {
-        "campaign_id": "dream-20260902-0636",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "local-3d",
-        "seed": 97836,
-        "overrides": {
-          "noise_amplitude": 0.0001,
-          "quench_duration": 16.0
-        },
-        "reached_level": 0,
-        "min_reached_level": 1,
-        "survived_stage": false,
-        "measured_by": {
-          "defect_count": 0,
-          "mean_amplitude_growth": 3.6529,
-          "persistent_defects": false,
-          "structure_factor_prominence": 16.9989
-        }
-      },
-      "scientific_status": "rejected_in_dimension_transfer",
-      "visual_interest": "medium",
-      "room_id": "room-auto-dream-20260902-0636-native-window-v000-local3d-s97836",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-016017ce0b0b9c7c"
-    },
-    {
       "event_id": "evt-02acf2cbf29d01f1",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -5255,6 +5233,45 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-032bc8d94928dbf0"
+    },
+    {
+      "event_id": "evt-04c78bca087b1c44",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56651|seed=207310",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.00014203015042787759,
+          "correlation_length": 4.402798537987379,
+          "diffusion_ratio": 0.818889323577179,
+          "drive_strength": 4.119678340745673,
+          "quench_duration": 7.918532403100709
+        },
+        "family": "white_lowk",
+        "seed": 207310,
+        "trial_index": 56651,
+        "measured_by": {
+          "mean_amplitude_growth": 18934.4331,
+          "structure_factor_prominence": 16.2316,
+          "defect_count": 12,
+          "persistent_defects": true
+        },
+        "checksum": "d5b00e4dd19c2834"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-04c78bca087b1c44"
     },
     {
       "event_id": "evt-052fd67a89641428",
@@ -5662,6 +5679,57 @@
       "view_preset_id": "view-073f3a4246c904fe"
     },
     {
+      "event_id": "evt-07d702a22379bfa0",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "white|{\"correlation_length\":2.6305934494743655,\"diffusion_ratio\":0.15857416782352107,\"drive_strength\":2.077812541735438,\"noise_amplitude\":3.64781479253986e-05,\"quench_duration\":6.059887731411086}|seed=751020",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.018,
+        "family": "white",
+        "knobs": {
+          "noise_amplitude": 3.64781479253986e-05,
+          "correlation_length": 2.6305934494743655,
+          "diffusion_ratio": 0.15857416782352107,
+          "drive_strength": 2.077812541735438,
+          "quench_duration": 6.059887731411086
+        },
+        "seed": 751020,
+        "measured_by": {
+          "mean_amplitude_growth": 42911.3848,
+          "structure_factor_prominence": 13.3587,
+          "defect_count": 30
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591851,
+            591852,
+            591853
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-07d702a22379bfa0"
+    },
+    {
       "event_id": "evt-08cdebebfc3f16bd",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -5844,57 +5912,6 @@
       "room_id": "room-auto-dream-20260903-0650-native-window-v000-local3d-s97950",
       "parent_room": "room-g001-a",
       "view_preset_id": "view-0a31e8bafde06ace"
-    },
-    {
-      "event_id": "evt-0be00c5275c30da2",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white|{\"correlation_length\":2.0799321342954467,\"diffusion_ratio\":0.11924243636112465,\"drive_strength\":2.433276676577213,\"noise_amplitude\":1.5410295917920193e-05,\"quench_duration\":5.887023235071418}|seed=37335",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0,
-        "family": "white",
-        "knobs": {
-          "noise_amplitude": 1.5410295917920193e-05,
-          "correlation_length": 2.0799321342954467,
-          "diffusion_ratio": 0.11924243636112465,
-          "drive_strength": 2.433276676577213,
-          "quench_duration": 5.887023235071418
-        },
-        "seed": 37335,
-        "measured_by": {
-          "mean_amplitude_growth": 113327.7222,
-          "structure_factor_prominence": 14.4,
-          "defect_count": 36
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591439,
-            591440,
-            591441
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-0be00c5275c30da2"
     },
     {
       "event_id": "evt-0ed6e756b9809869",
@@ -6261,6 +6278,45 @@
       "room_id": null,
       "parent_room": null,
       "view_preset_id": "view-1377fec1f61c6a90"
+    },
+    {
+      "event_id": "evt-1414a47d2e0740e4",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56685|seed=8311",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 1.8270715159936065e-05,
+          "correlation_length": 5.94189318819314,
+          "diffusion_ratio": 0.4889058219823454,
+          "drive_strength": 3.2158882532821154,
+          "quench_duration": 9.769772072522198
+        },
+        "family": "white_highk",
+        "seed": 8311,
+        "trial_index": 56685,
+        "measured_by": {
+          "mean_amplitude_growth": 268768.9992,
+          "structure_factor_prominence": 16.509,
+          "defect_count": 50,
+          "persistent_defects": true
+        },
+        "checksum": "6d15bc3fb3420299"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-1414a47d2e0740e4"
     },
     {
       "event_id": "evt-1463b4212477a4a5",
@@ -7272,6 +7328,45 @@
       "view_preset_id": "view-234cf07db0043c4d"
     },
     {
+      "event_id": "evt-237a0c03c3b10940",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56630|seed=739650",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.0004411314759753955,
+          "correlation_length": 2.3657615009503425,
+          "diffusion_ratio": 0.37776803658601393,
+          "drive_strength": 3.813555891766081,
+          "quench_duration": 9.108615047728808
+        },
+        "family": "white_highk",
+        "seed": 739650,
+        "trial_index": 56630,
+        "measured_by": {
+          "mean_amplitude_growth": 12225.4747,
+          "structure_factor_prominence": 14.7803,
+          "defect_count": 78,
+          "persistent_defects": true
+        },
+        "checksum": "680ad181e6b16a0b"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-237a0c03c3b10940"
+    },
+    {
       "event_id": "evt-24d1ca196c09382d",
       "kind": "NEW_BEHAVIOR",
       "source": "native-3d-discovery",
@@ -7658,6 +7753,57 @@
       "view_preset_id": "view-288299679d4cf986"
     },
     {
+      "event_id": "evt-292125c8b0969da5",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "single_seed|{\"correlation_length\":8.786972050297411,\"diffusion_ratio\":0.1784154423086558,\"drive_strength\":3.9437017545634268,\"noise_amplitude\":2.5065069488557586e-05,\"quench_duration\":9.906619512027165}|seed=83504",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.0168,
+        "family": "single_seed",
+        "knobs": {
+          "noise_amplitude": 2.5065069488557586e-05,
+          "correlation_length": 8.786972050297411,
+          "diffusion_ratio": 0.1784154423086558,
+          "drive_strength": 3.9437017545634268,
+          "quench_duration": 9.906619512027165
+        },
+        "seed": 83504,
+        "measured_by": {
+          "mean_amplitude_growth": 111889.3199,
+          "structure_factor_prominence": 16.1981,
+          "defect_count": 38
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591751,
+            591752,
+            591753
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-292125c8b0969da5"
+    },
+    {
       "event_id": "evt-29cff74f64618d14",
       "kind": "PROMOTION_READY",
       "source": "genesis-orchestrator",
@@ -7794,79 +7940,6 @@
       "view_preset_id": "view-2b38e6a4267b8c10"
     },
     {
-      "event_id": "evt-2c7bebf2e82b9f47",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|55072|seed=914656",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 0.0004223524460458943,
-          "correlation_length": 7.918365854949026,
-          "diffusion_ratio": 0.9312227413972974,
-          "drive_strength": 3.88594427473365,
-          "quench_duration": 5.16058505964585
-        },
-        "family": "gradient",
-        "seed": 914656,
-        "trial_index": 55072,
-        "measured_by": {
-          "mean_amplitude_growth": 3201.2056,
-          "structure_factor_prominence": 16.5446,
-          "defect_count": 44,
-          "persistent_defects": true
-        },
-        "checksum": "093e93c6d0e62bce"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-2c7bebf2e82b9f47"
-    },
-    {
-      "event_id": "evt-2cb80c3b8c1ac6c1",
-      "kind": "PROMOTION_READY",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0635-native-window-v000-local3d-s97835",
-      "title": "Local 3Dまで生き残った候補",
-      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
-      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
-      "facts": {
-        "campaign_id": "dream-20260902-0635",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "local-3d",
-        "seed": 97835,
-        "overrides": {
-          "noise_amplitude": 0.003,
-          "quench_duration": 12.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 0,
-          "mean_amplitude_growth": 195.6571,
-          "persistent_defects": false,
-          "structure_factor_prominence": 16.9953
-        }
-      },
-      "scientific_status": "local_3d_passed",
-      "visual_interest": "high",
-      "room_id": "room-auto-dream-20260902-0635-native-window-v000-local3d-s97835",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-2cb80c3b8c1ac6c1"
-    },
-    {
       "event_id": "evt-2d0caf578a3ffc18",
       "kind": "RARE_EVENT",
       "source": "geometry-probe",
@@ -7898,89 +7971,66 @@
       "view_preset_id": "view-2d0caf578a3ffc18"
     },
     {
-      "event_id": "evt-2dcf4c004822252e",
-      "kind": "PROMOTION_READY",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0635-native-window-v000-local3d-s97836",
-      "title": "Local 3Dまで生き残った候補",
-      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
-      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
+      "event_id": "evt-2dc9e6ff0bb57ca9",
+      "kind": "RARE_EVENT",
+      "source": "geometry-probe",
+      "source_key": "triangle-fission|1040079|seed=209675",
+      "title": "3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測",
+      "plain": "自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。",
+      "why": "三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。",
       "facts": {
-        "campaign_id": "dream-20260902-0635",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "local-3d",
-        "seed": 97836,
-        "overrides": {
-          "noise_amplitude": 0.003,
-          "quench_duration": 12.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 0,
-          "mean_amplitude_growth": 169.2096,
-          "persistent_defects": false,
-          "structure_factor_prominence": 16.9974
-        }
-      },
-      "scientific_status": "local_3d_passed",
-      "visual_interest": "high",
-      "room_id": "room-auto-dream-20260902-0635-native-window-v000-local3d-s97836",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-2dcf4c004822252e"
-    },
-    {
-      "event_id": "evt-2fa9fa6513fe42ca",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white|{\"correlation_length\":5.725175914884449,\"diffusion_ratio\":0.23114692535148934,\"drive_strength\":3.6038773616659094,\"noise_amplitude\":1.4597615683799991e-05,\"quench_duration\":6.64206356391135}|seed=935009",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0155,
+        "trial_index": 1040079,
         "family": "white",
         "knobs": {
-          "noise_amplitude": 1.4597615683799991e-05,
-          "correlation_length": 5.725175914884449,
-          "diffusion_ratio": 0.23114692535148934,
-          "drive_strength": 3.6038773616659094,
-          "quench_duration": 6.64206356391135
+          "noise_amplitude": 0.00014059513080797535,
+          "correlation_length": 5.43494238002357,
+          "diffusion_ratio": 0.11298803113869095,
+          "drive_strength": 3.2731478187033685,
+          "quench_duration": 6.180098099555339
         },
-        "seed": 935009,
-        "measured_by": {
-          "mean_amplitude_growth": 190992.8305,
-          "structure_factor_prominence": 18.1391,
-          "defect_count": 22
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591035,
-            591036,
-            591037
-          ]
-        }
+        "seed": 209675,
+        "triangle_score": 0.9285,
+        "triangle_regularity": 0.9285,
+        "triangle_charge_pattern": "++-",
+        "fission_like_after_triangle": true,
+        "biological_cell_division_claim": false
       },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
+      "scientific_status": "fission_like_geometry_candidate",
+      "visual_interest": "high",
       "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-2fa9fa6513fe42ca"
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-2dc9e6ff0bb57ca9"
+    },
+    {
+      "event_id": "evt-2e29be33c562abf3",
+      "kind": "RARE_EVENT",
+      "source": "geometry-probe",
+      "source_key": "triangle-fission|1040113|seed=783844",
+      "title": "3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測",
+      "plain": "自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。",
+      "why": "三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。",
+      "facts": {
+        "trial_index": 1040113,
+        "family": "white_highk",
+        "knobs": {
+          "noise_amplitude": 0.0006922963748757586,
+          "correlation_length": 1.5529291367849043,
+          "diffusion_ratio": 0.19245466425841684,
+          "drive_strength": 1.2272740756201292,
+          "quench_duration": 8.84211199577455
+        },
+        "seed": 783844,
+        "triangle_score": 0.7937,
+        "triangle_regularity": 0.8333,
+        "triangle_charge_pattern": "++-",
+        "fission_like_after_triangle": true,
+        "biological_cell_division_claim": false
+      },
+      "scientific_status": "fission_like_geometry_candidate",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-2e29be33c562abf3"
     },
     {
       "event_id": "evt-30fbd572dd699d7f",
@@ -8609,6 +8659,40 @@
       "view_preset_id": "view-3a02c1a659ad6e7d"
     },
     {
+      "event_id": "evt-3aece88c04d70b70",
+      "kind": "PROMOTION_READY",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v001-local3d-s97953",
+      "title": "Local 3Dまで生き残った候補",
+      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
+      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v001",
+        "stage": "local-3d",
+        "seed": 97953,
+        "overrides": {
+          "noise_amplitude": 0.01,
+          "quench_duration": 16.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 0,
+          "mean_amplitude_growth": 7.4167,
+          "persistent_defects": false,
+          "structure_factor_prominence": 16.999
+        }
+      },
+      "scientific_status": "local_3d_passed",
+      "visual_interest": "high",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v001-local3d-s97953",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-3aece88c04d70b70"
+    },
+    {
       "event_id": "evt-3b0b6ae8714d54c4",
       "kind": "NEW_REGION",
       "source": "genesis-orchestrator",
@@ -8641,57 +8725,6 @@
       "room_id": "room-auto-dream-20260903-0642-native-window-v000-2dscreen-s97944",
       "parent_room": "room-g001-a",
       "view_preset_id": "view-3b0b6ae8714d54c4"
-    },
-    {
-      "event_id": "evt-3b77e33bfa03ac9c",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "single_seed|{\"correlation_length\":11.099153458958012,\"diffusion_ratio\":0.14604774001225163,\"drive_strength\":2.4427965194998045,\"noise_amplitude\":1.8356917153883e-05,\"quench_duration\":10.520586516268057}|seed=117457",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0,
-        "family": "single_seed",
-        "knobs": {
-          "noise_amplitude": 1.8356917153883e-05,
-          "correlation_length": 11.099153458958012,
-          "diffusion_ratio": 0.14604774001225163,
-          "drive_strength": 2.4427965194998045,
-          "quench_duration": 10.520586516268057
-        },
-        "seed": 117457,
-        "measured_by": {
-          "mean_amplitude_growth": 90316.346,
-          "structure_factor_prominence": 13.4045,
-          "defect_count": 32
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591435,
-            591436,
-            591437
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-3b77e33bfa03ac9c"
     },
     {
       "event_id": "evt-3cf68a3119b12a6c",
@@ -9004,6 +9037,40 @@
       "view_preset_id": "view-449f425ed2345cf9"
     },
     {
+      "event_id": "evt-45ca8221279decea",
+      "kind": "PROMOTION_READY",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v000-local3d-s97951",
+      "title": "Local 3Dまで生き残った候補",
+      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
+      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v000",
+        "stage": "local-3d",
+        "seed": 97951,
+        "overrides": {
+          "noise_amplitude": 0.0001,
+          "quench_duration": 6.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 0,
+          "mean_amplitude_growth": 19813.9378,
+          "persistent_defects": false,
+          "structure_factor_prominence": 16.8976
+        }
+      },
+      "scientific_status": "local_3d_passed",
+      "visual_interest": "high",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v000-local3d-s97951",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-45ca8221279decea"
+    },
+    {
       "event_id": "evt-46d209e20f95562f",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -9228,6 +9295,40 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-4a4f584a50022138"
+    },
+    {
+      "event_id": "evt-4a970ccd3a39eedb",
+      "kind": "PROMOTION_READY",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v000-local3d-s97952",
+      "title": "Local 3Dまで生き残った候補",
+      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
+      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v000",
+        "stage": "local-3d",
+        "seed": 97952,
+        "overrides": {
+          "noise_amplitude": 0.0001,
+          "quench_duration": 6.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 0,
+          "mean_amplitude_growth": 20358.7295,
+          "persistent_defects": false,
+          "structure_factor_prominence": 16.9416
+        }
+      },
+      "scientific_status": "local_3d_passed",
+      "visual_interest": "high",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v000-local3d-s97952",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-4a970ccd3a39eedb"
     },
     {
       "event_id": "evt-4b86b829d0a7d083",
@@ -9503,40 +9604,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-4df6e189a27a0667"
-    },
-    {
-      "event_id": "evt-4e5241713b645c7f",
-      "kind": "NEW_REGION",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0635-native-window-v000-2dscreen-s97836",
-      "title": "2D探索を通過した始原条件",
-      "plain": "seed 97836 で L1 に到達し、次元移行テストへ進みました。",
-      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
-      "facts": {
-        "campaign_id": "dream-20260902-0635",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "2d-screen",
-        "seed": 97836,
-        "overrides": {
-          "noise_amplitude": 0.003,
-          "quench_duration": 12.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 6,
-          "mean_amplitude_growth": 473.0263,
-          "persistent_defects": false,
-          "structure_factor_prominence": 29.096
-        }
-      },
-      "scientific_status": "2d_screened",
-      "visual_interest": "medium",
-      "room_id": "room-auto-dream-20260902-0635-native-window-v000-2dscreen-s97836",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-4e5241713b645c7f"
     },
     {
       "event_id": "evt-5066e432504250b5",
@@ -10712,45 +10779,6 @@
       "view_preset_id": "view-5c2ddf9042ce84ae"
     },
     {
-      "event_id": "evt-5f7bbd32d16a900a",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|55000|seed=563204",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 0.004544723857541405,
-          "correlation_length": 4.099338699548117,
-          "diffusion_ratio": 0.4421577167709313,
-          "drive_strength": 4.415090966437349,
-          "quench_duration": 11.04290915332269
-        },
-        "family": "single_seed",
-        "seed": 563204,
-        "trial_index": 55000,
-        "measured_by": {
-          "mean_amplitude_growth": 1144.625,
-          "structure_factor_prominence": 16.1946,
-          "defect_count": 36,
-          "persistent_defects": true
-        },
-        "checksum": "1574e91f960dd7df"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-5f7bbd32d16a900a"
-    },
-    {
       "event_id": "evt-5f83133aa2949a11",
       "kind": "RARE_EVENT",
       "source": "geometry-probe",
@@ -11061,6 +11089,45 @@
       "view_preset_id": "view-62c7f29c53f0618a"
     },
     {
+      "event_id": "evt-6445a38ea8f8bcdf",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56684|seed=594952",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.005003288512602044,
+          "correlation_length": 2.275226521526474,
+          "diffusion_ratio": 0.1946369134565233,
+          "drive_strength": 2.501602538996402,
+          "quench_duration": 8.315226617976744
+        },
+        "family": "white_lowk",
+        "seed": 594952,
+        "trial_index": 56684,
+        "measured_by": {
+          "mean_amplitude_growth": 450.7407,
+          "structure_factor_prominence": 15.5647,
+          "defect_count": 64,
+          "persistent_defects": true
+        },
+        "checksum": "b57266c57d39d7e0"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-6445a38ea8f8bcdf"
+    },
+    {
       "event_id": "evt-65ff23112f6fae7b",
       "kind": "NEW_REGION",
       "source": "genesis-orchestrator",
@@ -11093,57 +11160,6 @@
       "room_id": "room-auto-dream-20260903-0638-native-window-v000-2dscreen-s97940",
       "parent_room": "room-g001-a",
       "view_preset_id": "view-65ff23112f6fae7b"
-    },
-    {
-      "event_id": "evt-67189c1f58ab4c52",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "ring|{\"correlation_length\":8.340630876018423,\"diffusion_ratio\":0.1166616517161019,\"drive_strength\":4.0870093899874425,\"noise_amplitude\":1.6043442077132295e-05,\"quench_duration\":12.761864123982383}|seed=209690",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0,
-        "family": "ring",
-        "knobs": {
-          "noise_amplitude": 1.6043442077132295e-05,
-          "correlation_length": 8.340630876018423,
-          "diffusion_ratio": 0.1166616517161019,
-          "drive_strength": 4.0870093899874425,
-          "quench_duration": 12.761864123982383
-        },
-        "seed": 209690,
-        "measured_by": {
-          "mean_amplitude_growth": 129678.2934,
-          "structure_factor_prominence": 17.4538,
-          "defect_count": 30
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591135,
-            591136,
-            591137
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-67189c1f58ab4c52"
     },
     {
       "event_id": "evt-681e9655d7f89308",
@@ -11255,45 +11271,6 @@
       "view_preset_id": "view-6a75358aff5cb68d"
     },
     {
-      "event_id": "evt-6b06074e51a178a5",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|55026|seed=578821",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 2.5111383301425875e-05,
-          "correlation_length": 3.683420043318789,
-          "diffusion_ratio": 0.30524473221574644,
-          "drive_strength": 1.896190909720434,
-          "quench_duration": 7.630037873470323
-        },
-        "family": "white",
-        "seed": 578821,
-        "trial_index": 55026,
-        "measured_by": {
-          "mean_amplitude_growth": 66856.2781,
-          "structure_factor_prominence": 15.3582,
-          "defect_count": 58,
-          "persistent_defects": true
-        },
-        "checksum": "e0702ddfc486e274"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-6b06074e51a178a5"
-    },
-    {
       "event_id": "evt-6b5450f44b9a2a02",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -11376,6 +11353,40 @@
       "view_preset_id": "view-6c1124c428345f95"
     },
     {
+      "event_id": "evt-6c59f85ccef154d9",
+      "kind": "NEW_REGION",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v000-2dscreen-s97953",
+      "title": "2D探索を通過した始原条件",
+      "plain": "seed 97953 で L1 に到達し、次元移行テストへ進みました。",
+      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v000",
+        "stage": "2d-screen",
+        "seed": 97953,
+        "overrides": {
+          "noise_amplitude": 0.0001,
+          "quench_duration": 6.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 6,
+          "mean_amplitude_growth": 14356.5157,
+          "persistent_defects": false,
+          "structure_factor_prominence": 28.3995
+        }
+      },
+      "scientific_status": "2d_screened",
+      "visual_interest": "medium",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v000-2dscreen-s97953",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-6c59f85ccef154d9"
+    },
+    {
       "event_id": "evt-6c5f8fac5f23a65e",
       "kind": "RARE_EVENT",
       "source": "geometry-probe",
@@ -11446,40 +11457,6 @@
       "view_preset_id": "view-6ce3bc963729eb93"
     },
     {
-      "event_id": "evt-6d56cdd4cdcf3536",
-      "kind": "PROMOTION_READY",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0635-native-window-v000-local3d-s97837",
-      "title": "Local 3Dまで生き残った候補",
-      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
-      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
-      "facts": {
-        "campaign_id": "dream-20260902-0635",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "local-3d",
-        "seed": 97837,
-        "overrides": {
-          "noise_amplitude": 0.003,
-          "quench_duration": 12.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 0,
-          "mean_amplitude_growth": 309.921,
-          "persistent_defects": false,
-          "structure_factor_prominence": 16.9952
-        }
-      },
-      "scientific_status": "local_3d_passed",
-      "visual_interest": "high",
-      "room_id": "room-auto-dream-20260902-0635-native-window-v000-local3d-s97837",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-6d56cdd4cdcf3536"
-    },
-    {
       "event_id": "evt-6df785504ffb29de",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -11529,57 +11506,6 @@
       "room_id": null,
       "parent_room": null,
       "view_preset_id": "view-6df785504ffb29de"
-    },
-    {
-      "event_id": "evt-6ebae9a3b4a3f850",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white|{\"correlation_length\":1.0978325221089573,\"diffusion_ratio\":0.14768218898366928,\"drive_strength\":2.920828631969949,\"noise_amplitude\":1.7279219165355757e-05,\"quench_duration\":6.030083507904247}|seed=625238",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0174,
-        "family": "white",
-        "knobs": {
-          "noise_amplitude": 1.7279219165355757e-05,
-          "correlation_length": 1.0978325221089573,
-          "diffusion_ratio": 0.14768218898366928,
-          "drive_strength": 2.920828631969949,
-          "quench_duration": 6.030083507904247
-        },
-        "seed": 625238,
-        "measured_by": {
-          "mean_amplitude_growth": 118012.7657,
-          "structure_factor_prominence": 10.9503,
-          "defect_count": 34
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591235,
-            591236,
-            591237
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-6ebae9a3b4a3f850"
     },
     {
       "event_id": "evt-7099f0f933a2d56c",
@@ -11840,6 +11766,130 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-72d7d97dd1a9296c"
+    },
+    {
+      "event_id": "evt-72e8ed402c81db1a",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "seeds_phase|{\"correlation_length\":10.568372908405909,\"diffusion_ratio\":0.1800157898309641,\"drive_strength\":4.3478739674494555,\"noise_amplitude\":1.0513157539983489e-05,\"quench_duration\":8.352334216650688}|seed=231028",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.0456,
+        "family": "seeds_phase",
+        "knobs": {
+          "noise_amplitude": 1.0513157539983489e-05,
+          "correlation_length": 10.568372908405909,
+          "diffusion_ratio": 0.1800157898309641,
+          "drive_strength": 4.3478739674494555,
+          "quench_duration": 8.352334216650688
+        },
+        "seed": 231028,
+        "measured_by": {
+          "mean_amplitude_growth": 285408.441,
+          "structure_factor_prominence": 20.1267,
+          "defect_count": 24
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            590951,
+            590952,
+            590953
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-72e8ed402c81db1a"
+    },
+    {
+      "event_id": "evt-72f125ce07918401",
+      "kind": "NEW_REGION",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v001-2dscreen-s97952",
+      "title": "2D探索を通過した始原条件",
+      "plain": "seed 97952 で L1 に到達し、次元移行テストへ進みました。",
+      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v001",
+        "stage": "2d-screen",
+        "seed": 97952,
+        "overrides": {
+          "noise_amplitude": 0.01,
+          "quench_duration": 16.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 3,
+          "mean_amplitude_growth": 138.573,
+          "persistent_defects": false,
+          "structure_factor_prominence": 31.887
+        }
+      },
+      "scientific_status": "2d_screened",
+      "visual_interest": "medium",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v001-2dscreen-s97952",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-72f125ce07918401"
+    },
+    {
+      "event_id": "evt-73bd262c1d787e17",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56814|seed=559195",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.0005708032252742104,
+          "correlation_length": 6.174318833292178,
+          "diffusion_ratio": 0.11104107631815936,
+          "drive_strength": 2.5398234865470886,
+          "quench_duration": 7.228656072733143
+        },
+        "family": "seeds_phase",
+        "seed": 559195,
+        "trial_index": 56814,
+        "measured_by": {
+          "mean_amplitude_growth": 3172.657,
+          "structure_factor_prominence": 12.5722,
+          "defect_count": 186,
+          "persistent_defects": true
+        },
+        "checksum": "5432e06510ea5bda"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-73bd262c1d787e17"
     },
     {
       "event_id": "evt-757d9c42199a26ec",
@@ -12225,45 +12275,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-7ada4dc964d65145"
-    },
-    {
-      "event_id": "evt-7d63a5e97ce7949a",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|54976|seed=647014",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 0.0015008566413899963,
-          "correlation_length": 5.454605790664557,
-          "diffusion_ratio": 1.622271535805015,
-          "drive_strength": 4.366723274689347,
-          "quench_duration": 10.093354831317713
-        },
-        "family": "white_highk",
-        "seed": 647014,
-        "trial_index": 54976,
-        "measured_by": {
-          "mean_amplitude_growth": 2763.661,
-          "structure_factor_prominence": 16.3749,
-          "defect_count": 30,
-          "persistent_defects": true
-        },
-        "checksum": "f56a7096c2ce4cea"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-7d63a5e97ce7949a"
     },
     {
       "event_id": "evt-7d8414cbe13edc78",
@@ -12683,6 +12694,45 @@
       "view_preset_id": "view-800e951f6dc28280"
     },
     {
+      "event_id": "evt-8034a0b579dd24f5",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56664|seed=436612",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.002350339216355542,
+          "correlation_length": 5.353415821937996,
+          "diffusion_ratio": 0.22554084798534416,
+          "drive_strength": 2.909765804302524,
+          "quench_duration": 10.959854717150296
+        },
+        "family": "single_seed",
+        "seed": 436612,
+        "trial_index": 56664,
+        "measured_by": {
+          "mean_amplitude_growth": 978.009,
+          "structure_factor_prominence": 15.8568,
+          "defect_count": 70,
+          "persistent_defects": true
+        },
+        "checksum": "4e9e4512bc78df08"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-8034a0b579dd24f5"
+    },
+    {
       "event_id": "evt-80838009044ba447",
       "kind": "NEW_BEHAVIOR",
       "source": "native-3d-discovery",
@@ -12759,57 +12809,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-8087792a149e294c"
-    },
-    {
-      "event_id": "evt-80c8b2f2359debe5",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white_highk|{\"correlation_length\":1.151953528996085,\"diffusion_ratio\":0.21221747398781096,\"drive_strength\":4.605186906988992,\"noise_amplitude\":1.0181722073908125e-05,\"quench_duration\":9.952466316806499}|seed=183359",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0143,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 1.0181722073908125e-05,
-          "correlation_length": 1.151953528996085,
-          "diffusion_ratio": 0.21221747398781096,
-          "drive_strength": 4.605186906988992,
-          "quench_duration": 9.952466316806499
-        },
-        "seed": 183359,
-        "measured_by": {
-          "mean_amplitude_growth": 522082.099,
-          "structure_factor_prominence": 9.9242,
-          "defect_count": 60
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            590834,
-            590835,
-            590836
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-80c8b2f2359debe5"
     },
     {
       "event_id": "evt-80cfa308eae5068b",
@@ -12924,37 +12923,6 @@
       "view_preset_id": "view-810a64922732068b"
     },
     {
-      "event_id": "evt-821e63ababdaedc8",
-      "kind": "RARE_EVENT",
-      "source": "geometry-probe",
-      "source_key": "triangle-fission|1011023|seed=277390",
-      "title": "3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測",
-      "plain": "自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。",
-      "why": "三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。",
-      "facts": {
-        "trial_index": 1011023,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 0.0005972320217809702,
-          "correlation_length": 1.0,
-          "diffusion_ratio": 0.13183917087017,
-          "drive_strength": 3.5598146017447823,
-          "quench_duration": 13.300841207524988
-        },
-        "seed": 277390,
-        "triangle_score": 0.8944,
-        "triangle_regularity": 0.8944,
-        "triangle_charge_pattern": "+--",
-        "fission_like_after_triangle": true,
-        "biological_cell_division_claim": false
-      },
-      "scientific_status": "fission_like_geometry_candidate",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-821e63ababdaedc8"
-    },
-    {
       "event_id": "evt-82d6da7889411399",
       "kind": "NEW_BEHAVIOR",
       "source": "native-3d-discovery",
@@ -12992,6 +12960,45 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-82d6da7889411399"
+    },
+    {
+      "event_id": "evt-83c074dfe9ca8988",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56801|seed=277089",
+      "title": "3Dから直接始めたときだけ深くなる挙動候補",
+      "plain": "同条件で3Dは L2、後追い2D比較は L1 でした。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": true,
+        "reached_level": 2,
+        "paired_2d_level": 1,
+        "dimension_delta": 1,
+        "knobs": {
+          "noise_amplitude": 0.0016933484656982104,
+          "correlation_length": 6.659141257082091,
+          "diffusion_ratio": 0.13954322447685882,
+          "drive_strength": 4.40750474785838,
+          "quench_duration": 12.438356062938208
+        },
+        "family": "spectral_powerlaw",
+        "seed": 277089,
+        "trial_index": 56801,
+        "measured_by": {
+          "mean_amplitude_growth": 2585.6826,
+          "structure_factor_prominence": 15.023,
+          "defect_count": 38,
+          "persistent_defects": true
+        },
+        "checksum": "7f0d7017a745d9ca"
+      },
+      "scientific_status": "native_3d_dimension_candidate",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-83c074dfe9ca8988"
     },
     {
       "event_id": "evt-842a800edfd1ec88",
@@ -13222,57 +13229,6 @@
       "view_preset_id": "view-86c09a8fc3fa89d7"
     },
     {
-      "event_id": "evt-87c754ef3c7abbc5",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white_highk|{\"correlation_length\":3.331028681231042,\"diffusion_ratio\":0.4661526108218236,\"drive_strength\":4.395214304606351,\"noise_amplitude\":2.5900333913687102e-05,\"quench_duration\":9.347889668685616}|seed=301212",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.018,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 2.5900333913687102e-05,
-          "correlation_length": 3.331028681231042,
-          "diffusion_ratio": 0.4661526108218236,
-          "drive_strength": 4.395214304606351,
-          "quench_duration": 9.347889668685616
-        },
-        "seed": 301212,
-        "measured_by": {
-          "mean_amplitude_growth": 235550.2095,
-          "structure_factor_prominence": 11.9411,
-          "defect_count": 30
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            590935,
-            590936,
-            590937
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-87c754ef3c7abbc5"
-    },
-    {
       "event_id": "evt-8831a9a331c8f15a",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -13465,6 +13421,96 @@
       "view_preset_id": "view-8963053eb60eb12e"
     },
     {
+      "event_id": "evt-89826bd24af98015",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "white_highk|{\"correlation_length\":7.824991322427335,\"diffusion_ratio\":0.35475493116715257,\"drive_strength\":1.779127470039121,\"noise_amplitude\":1.9080935991993913e-05,\"quench_duration\":9.214764137021731}|seed=878937",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.0192,
+        "family": "white_highk",
+        "knobs": {
+          "noise_amplitude": 1.9080935991993913e-05,
+          "correlation_length": 7.824991322427335,
+          "diffusion_ratio": 0.35475493116715257,
+          "drive_strength": 1.779127470039121,
+          "quench_duration": 9.214764137021731
+        },
+        "seed": 878937,
+        "measured_by": {
+          "mean_amplitude_growth": 113123.0715,
+          "structure_factor_prominence": 14.1794,
+          "defect_count": 20
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591651,
+            591652,
+            591653
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-89826bd24af98015"
+    },
+    {
+      "event_id": "evt-89cf626b32decbd9",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56806|seed=476574",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.00022320816430300078,
+          "correlation_length": 3.4235430215855884,
+          "diffusion_ratio": 0.4449378963746621,
+          "drive_strength": 3.9505597677681745,
+          "quench_duration": 7.458624439389416
+        },
+        "family": "gradient",
+        "seed": 476574,
+        "trial_index": 56806,
+        "measured_by": {
+          "mean_amplitude_growth": 8421.8784,
+          "structure_factor_prominence": 16.5504,
+          "defect_count": 58,
+          "persistent_defects": true
+        },
+        "checksum": "f44e0ad168b3c904"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-89cf626b32decbd9"
+    },
+    {
       "event_id": "evt-8a35ffcdd78bcff9",
       "kind": "NEW_BEHAVIOR",
       "source": "native-3d-discovery",
@@ -13538,40 +13584,6 @@
       "view_preset_id": "view-8b80a0f1df336767"
     },
     {
-      "event_id": "evt-8b8ff8452904d389",
-      "kind": "NEW_REGION",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0635-native-window-v000-2dscreen-s97837",
-      "title": "2D探索を通過した始原条件",
-      "plain": "seed 97837 で L1 に到達し、次元移行テストへ進みました。",
-      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
-      "facts": {
-        "campaign_id": "dream-20260902-0635",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "2d-screen",
-        "seed": 97837,
-        "overrides": {
-          "noise_amplitude": 0.003,
-          "quench_duration": 12.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 0,
-          "mean_amplitude_growth": 498.736,
-          "persistent_defects": false,
-          "structure_factor_prominence": 30.8841
-        }
-      },
-      "scientific_status": "2d_screened",
-      "visual_interest": "medium",
-      "room_id": "room-auto-dream-20260902-0635-native-window-v000-2dscreen-s97837",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-8b8ff8452904d389"
-    },
-    {
       "event_id": "evt-8b94b8d30f4462fa",
       "kind": "PROMOTION_READY",
       "source": "genesis-orchestrator",
@@ -13643,6 +13655,40 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-8c0b54d3dab970ef"
+    },
+    {
+      "event_id": "evt-8ca5db531d0c041d",
+      "kind": "PROMOTION_READY",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v001-local3d-s97951",
+      "title": "Local 3Dまで生き残った候補",
+      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
+      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v001",
+        "stage": "local-3d",
+        "seed": 97951,
+        "overrides": {
+          "noise_amplitude": 0.01,
+          "quench_duration": 16.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 0,
+          "mean_amplitude_growth": 5.0651,
+          "persistent_defects": false,
+          "structure_factor_prominence": 16.998
+        }
+      },
+      "scientific_status": "local_3d_passed",
+      "visual_interest": "high",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v001-local3d-s97951",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-8ca5db531d0c041d"
     },
     {
       "event_id": "evt-8cc0b33c2627c4af",
@@ -14096,6 +14142,37 @@
       "view_preset_id": "view-909ba4eb70a638e9"
     },
     {
+      "event_id": "evt-94344d1433f010d5",
+      "kind": "RARE_EVENT",
+      "source": "geometry-probe",
+      "source_key": "triangle-fission|1040607|seed=935130",
+      "title": "3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測",
+      "plain": "自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。",
+      "why": "三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。",
+      "facts": {
+        "trial_index": 1040607,
+        "family": "sparse_seeds",
+        "knobs": {
+          "noise_amplitude": 0.0006177318596299883,
+          "correlation_length": 3.264901104360133,
+          "diffusion_ratio": 0.40029596905188525,
+          "drive_strength": 3.5110746213840773,
+          "quench_duration": 10.096730635806495
+        },
+        "seed": 935130,
+        "triangle_score": 0.8229,
+        "triangle_regularity": 0.8321,
+        "triangle_charge_pattern": "++-",
+        "fission_like_after_triangle": true,
+        "biological_cell_division_claim": false
+      },
+      "scientific_status": "fission_like_geometry_candidate",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-94344d1433f010d5"
+    },
+    {
       "event_id": "evt-945c3cd3dee5dd55",
       "kind": "NEW_REGION",
       "source": "genesis-orchestrator",
@@ -14128,6 +14205,40 @@
       "room_id": "room-auto-dream-20260903-0649-native-window-v000-2dscreen-s97949",
       "parent_room": "room-g001-a",
       "view_preset_id": "view-945c3cd3dee5dd55"
+    },
+    {
+      "event_id": "evt-9472bbfbe14dc1ec",
+      "kind": "NEW_REGION",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v001-2dscreen-s97951",
+      "title": "2D探索を通過した始原条件",
+      "plain": "seed 97951 で L1 に到達し、次元移行テストへ進みました。",
+      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v001",
+        "stage": "2d-screen",
+        "seed": 97951,
+        "overrides": {
+          "noise_amplitude": 0.01,
+          "quench_duration": 16.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 2,
+          "mean_amplitude_growth": 142.9556,
+          "persistent_defects": false,
+          "structure_factor_prominence": 32.376
+        }
+      },
+      "scientific_status": "2d_screened",
+      "visual_interest": "medium",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v001-2dscreen-s97951",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-9472bbfbe14dc1ec"
     },
     {
       "event_id": "evt-949fe1aa7f952ea7",
@@ -14229,79 +14340,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-955a2009a33d1762"
-    },
-    {
-      "event_id": "evt-967438fb1198728a",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|54972|seed=590750",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 1.2292685875430652e-05,
-          "correlation_length": 5.549287511256846,
-          "diffusion_ratio": 7.73494323000236,
-          "drive_strength": 4.646458883534721,
-          "quench_duration": 9.02159097033008
-        },
-        "family": "white_highk",
-        "seed": 590750,
-        "trial_index": 54972,
-        "measured_by": {
-          "mean_amplitude_growth": 392498.4285,
-          "structure_factor_prominence": 16.5847,
-          "defect_count": 12,
-          "persistent_defects": true
-        },
-        "checksum": "3aee1428555056bf"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-967438fb1198728a"
-    },
-    {
-      "event_id": "evt-9722187ab9028bc1",
-      "kind": "PROMOTION_READY",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0634-native-window-v000-local3d-s97834",
-      "title": "Local 3Dまで生き残った候補",
-      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
-      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
-      "facts": {
-        "campaign_id": "dream-20260902-0634",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "local-3d",
-        "seed": 97834,
-        "overrides": {
-          "noise_amplitude": 0.01,
-          "quench_duration": 8.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 0,
-          "mean_amplitude_growth": 206.1021,
-          "persistent_defects": false,
-          "structure_factor_prominence": 16.9872
-        }
-      },
-      "scientific_status": "local_3d_passed",
-      "visual_interest": "high",
-      "room_id": "room-auto-dream-20260902-0634-native-window-v000-local3d-s97834",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-9722187ab9028bc1"
     },
     {
       "event_id": "evt-98ca0c2a54a28aeb",
@@ -14596,108 +14634,6 @@
       "room_id": "room-auto-dream-20260903-0648-native-window-v000-2dscreen-s97949",
       "parent_room": "room-g001-a",
       "view_preset_id": "view-9cf5862d2b7b5087"
-    },
-    {
-      "event_id": "evt-9cfc13207a8d460b",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white_highk|{\"correlation_length\":8.275803359887751,\"diffusion_ratio\":0.28680328472891875,\"drive_strength\":4.999724330190929,\"noise_amplitude\":3.222211148763204e-05,\"quench_duration\":9.161116534709421}|seed=578407",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0287,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 3.222211148763204e-05,
-          "correlation_length": 8.275803359887751,
-          "diffusion_ratio": 0.28680328472891875,
-          "drive_strength": 4.999724330190929,
-          "quench_duration": 9.161116534709421
-        },
-        "seed": 578407,
-        "measured_by": {
-          "mean_amplitude_growth": 199192.6529,
-          "structure_factor_prominence": 18.7485,
-          "defect_count": 26
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591134,
-            591135,
-            591136
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-9cfc13207a8d460b"
-    },
-    {
-      "event_id": "evt-9d74a26e95948802",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white_highk|{\"correlation_length\":6.6998240884352285,\"diffusion_ratio\":0.4623215323914467,\"drive_strength\":3.175484430149279,\"noise_amplitude\":1.0586576946875442e-05,\"quench_duration\":8.570992909274}|seed=583678",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0203,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 1.0586576946875442e-05,
-          "correlation_length": 6.6998240884352285,
-          "diffusion_ratio": 0.4623215323914467,
-          "drive_strength": 3.175484430149279,
-          "quench_duration": 8.570992909274
-        },
-        "seed": 583678,
-        "measured_by": {
-          "mean_amplitude_growth": 367122.578,
-          "structure_factor_prominence": 11.7989,
-          "defect_count": 24
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            590934,
-            590935,
-            590936
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-9d74a26e95948802"
     },
     {
       "event_id": "evt-9f545f4424d5511b",
@@ -15171,6 +15107,57 @@
       "view_preset_id": "view-a538ef55c135fe32"
     },
     {
+      "event_id": "evt-a5b5610aece8ab43",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "white|{\"correlation_length\":11.80853041707754,\"diffusion_ratio\":0.2213749320812918,\"drive_strength\":2.712072076453115,\"noise_amplitude\":1.717209599074234e-05,\"quench_duration\":5.656537239951859}|seed=433379",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.02,
+        "family": "white",
+        "knobs": {
+          "noise_amplitude": 1.717209599074234e-05,
+          "correlation_length": 11.80853041707754,
+          "diffusion_ratio": 0.2213749320812918,
+          "drive_strength": 2.712072076453115,
+          "quench_duration": 5.656537239951859
+        },
+        "seed": 433379,
+        "measured_by": {
+          "mean_amplitude_growth": 116733.5895,
+          "structure_factor_prominence": 12.8951,
+          "defect_count": 30
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591551,
+            591552,
+            591553
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-a5b5610aece8ab43"
+    },
+    {
       "event_id": "evt-a6c42f8927941b66",
       "kind": "PROMOTION_READY",
       "source": "genesis-orchestrator",
@@ -15254,6 +15241,37 @@
       "room_id": null,
       "parent_room": null,
       "view_preset_id": "view-a743cb1d65fd9c44"
+    },
+    {
+      "event_id": "evt-a8262c96c4533400",
+      "kind": "RARE_EVENT",
+      "source": "geometry-probe",
+      "source_key": "triangle-fission|1039907|seed=338789",
+      "title": "3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測",
+      "plain": "自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。",
+      "why": "三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。",
+      "facts": {
+        "trial_index": 1039907,
+        "family": "white_highk",
+        "knobs": {
+          "noise_amplitude": 2.199873815104183e-05,
+          "correlation_length": 7.535378740786101,
+          "diffusion_ratio": 0.5117502234387783,
+          "drive_strength": 3.1479448845517815,
+          "quench_duration": 9.714391301990933
+        },
+        "seed": 338789,
+        "triangle_score": 0.7099,
+        "triangle_regularity": 0.7454,
+        "triangle_charge_pattern": "+--",
+        "fission_like_after_triangle": true,
+        "biological_cell_division_claim": false
+      },
+      "scientific_status": "fission_like_geometry_candidate",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-a8262c96c4533400"
     },
     {
       "event_id": "evt-a976fd2df4064e5f",
@@ -15450,57 +15468,6 @@
       "view_preset_id": "view-aaa617877ad132a4"
     },
     {
-      "event_id": "evt-ab3f36e454ec7d7c",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white_highk|{\"correlation_length\":2.345203349726699,\"diffusion_ratio\":0.2103430277221119,\"drive_strength\":1.6213700730361715,\"noise_amplitude\":2.158757207916168e-05,\"quench_duration\":8.915132343366306}|seed=346769",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 2.158757207916168e-05,
-          "correlation_length": 2.345203349726699,
-          "diffusion_ratio": 0.2103430277221119,
-          "drive_strength": 1.6213700730361715,
-          "quench_duration": 8.915132343366306
-        },
-        "seed": 346769,
-        "measured_by": {
-          "mean_amplitude_growth": 85666.2458,
-          "structure_factor_prominence": 11.9165,
-          "defect_count": 50
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591535,
-            591536,
-            591537
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-ab3f36e454ec7d7c"
-    },
-    {
       "event_id": "evt-ab6829da19ae0ff2",
       "kind": "PROMOTION_READY",
       "source": "genesis-orchestrator",
@@ -15611,6 +15578,96 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-ac22019ea453f712"
+    },
+    {
+      "event_id": "evt-ac378de5b3622ffe",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56652|seed=860627",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.004491387717684317,
+          "correlation_length": 8.069465204654046,
+          "diffusion_ratio": 2.0569569808015737,
+          "drive_strength": 4.8339640550313865,
+          "quench_duration": 9.373077857646166
+        },
+        "family": "white_highk",
+        "seed": 860627,
+        "trial_index": 56652,
+        "measured_by": {
+          "mean_amplitude_growth": 914.099,
+          "structure_factor_prominence": 16.8222,
+          "defect_count": 10,
+          "persistent_defects": true
+        },
+        "checksum": "7db0daf5f480ade1"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-ac378de5b3622ffe"
+    },
+    {
+      "event_id": "evt-ad103f270be053ae",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "white|{\"correlation_length\":7.216310252766494,\"diffusion_ratio\":0.22259642921189787,\"drive_strength\":2.629404760009189,\"noise_amplitude\":1.4825510576796523e-05,\"quench_duration\":10.144131184331489}|seed=372844",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.0,
+        "family": "white",
+        "knobs": {
+          "noise_amplitude": 1.4825510576796523e-05,
+          "correlation_length": 7.216310252766494,
+          "diffusion_ratio": 0.22259642921189787,
+          "drive_strength": 2.629404760009189,
+          "quench_duration": 10.144131184331489
+        },
+        "seed": 372844,
+        "measured_by": {
+          "mean_amplitude_growth": 132274.2665,
+          "structure_factor_prominence": 14.5849,
+          "defect_count": 24
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591351,
+            591352,
+            591353
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-ad103f270be053ae"
     },
     {
       "event_id": "evt-adf6f3ccba134c33",
@@ -16082,6 +16139,40 @@
       "view_preset_id": "view-b2ee277fa812fc06"
     },
     {
+      "event_id": "evt-b31c703d367ddadb",
+      "kind": "NEW_REGION",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v000-2dscreen-s97951",
+      "title": "2D探索を通過した始原条件",
+      "plain": "seed 97951 で L1 に到達し、次元移行テストへ進みました。",
+      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v000",
+        "stage": "2d-screen",
+        "seed": 97951,
+        "overrides": {
+          "noise_amplitude": 0.0001,
+          "quench_duration": 6.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 2,
+          "mean_amplitude_growth": 14764.5823,
+          "persistent_defects": false,
+          "structure_factor_prominence": 32.2164
+        }
+      },
+      "scientific_status": "2d_screened",
+      "visual_interest": "medium",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v000-2dscreen-s97951",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-b31c703d367ddadb"
+    },
+    {
       "event_id": "evt-b37f5c92961aeb52",
       "kind": "RARE_EVENT",
       "source": "geometry-probe",
@@ -16305,6 +16396,57 @@
       "room_id": "room-auto-dream-20260903-0644-native-window-v000-2dscreen-s97946",
       "parent_room": "room-g001-a",
       "view_preset_id": "view-b6b3913d3a40a904"
+    },
+    {
+      "event_id": "evt-b730e12c310c04be",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "single_seed|{\"correlation_length\":8.18713124012281,\"diffusion_ratio\":0.10287940431225984,\"drive_strength\":4.577961289281104,\"noise_amplitude\":2.2491105746181904e-05,\"quench_duration\":10.945793438298967}|seed=313201",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.0217,
+        "family": "single_seed",
+        "knobs": {
+          "noise_amplitude": 2.2491105746181904e-05,
+          "correlation_length": 8.18713124012281,
+          "diffusion_ratio": 0.10287940431225984,
+          "drive_strength": 4.577961289281104,
+          "quench_duration": 10.945793438298967
+        },
+        "seed": 313201,
+        "measured_by": {
+          "mean_amplitude_growth": 142741.2214,
+          "structure_factor_prominence": 16.1558,
+          "defect_count": 40
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591251,
+            591252,
+            591253
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-b730e12c310c04be"
     },
     {
       "event_id": "evt-b90ea9e29b1693b3",
@@ -16879,57 +17021,6 @@
       "view_preset_id": "view-bf7ad3f32635d90b"
     },
     {
-      "event_id": "evt-bfe5622e5cec2424",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white_highk|{\"correlation_length\":6.304897840742634,\"diffusion_ratio\":0.22273621788145287,\"drive_strength\":1.8168668473393956,\"noise_amplitude\":1.1991215955904015e-05,\"quench_duration\":9.384052126540581}|seed=362585",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 1.1991215955904015e-05,
-          "correlation_length": 6.304897840742634,
-          "diffusion_ratio": 0.22273621788145287,
-          "drive_strength": 1.8168668473393956,
-          "quench_duration": 9.384052126540581
-        },
-        "seed": 362585,
-        "measured_by": {
-          "mean_amplitude_growth": 170336.4906,
-          "structure_factor_prominence": 11.9329,
-          "defect_count": 40
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591444,
-            591445,
-            591446
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-bfe5622e5cec2424"
-    },
-    {
       "event_id": "evt-bffd499bff831f26",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -17013,96 +17104,6 @@
       "room_id": "room-auto-dream-20260903-0645-native-window-v000-local3d-s97947",
       "parent_room": "room-g001-a",
       "view_preset_id": "view-c19396e2a1c1a85d"
-    },
-    {
-      "event_id": "evt-c21edb9a932aef05",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|54908|seed=290799",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 4.44367077419319e-05,
-          "correlation_length": 9.757774913539885,
-          "diffusion_ratio": 0.10823736449673813,
-          "drive_strength": 4.5879356145006565,
-          "quench_duration": 5.621421550016905
-        },
-        "family": "white",
-        "seed": 290799,
-        "trial_index": 54908,
-        "measured_by": {
-          "mean_amplitude_growth": 79994.528,
-          "structure_factor_prominence": 10.2504,
-          "defect_count": 230,
-          "persistent_defects": true
-        },
-        "checksum": "93b235d656f8a3c9"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-c21edb9a932aef05"
-    },
-    {
-      "event_id": "evt-c3349abc59280b1a",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white|{\"correlation_length\":11.219866764856503,\"diffusion_ratio\":0.2482531918069563,\"drive_strength\":4.791817760649326,\"noise_amplitude\":1.35507648967452e-05,\"quench_duration\":6.19301326307497}|seed=69227",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0118,
-        "family": "white",
-        "knobs": {
-          "noise_amplitude": 1.35507648967452e-05,
-          "correlation_length": 11.219866764856503,
-          "diffusion_ratio": 0.2482531918069563,
-          "drive_strength": 4.791817760649326,
-          "quench_duration": 6.19301326307497
-        },
-        "seed": 69227,
-        "measured_by": {
-          "mean_amplitude_growth": 300605.1796,
-          "structure_factor_prominence": 20.0809,
-          "defect_count": 24
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            590835,
-            590836,
-            590837
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-c3349abc59280b1a"
     },
     {
       "event_id": "evt-c3c2fd2fc4285849",
@@ -17219,6 +17220,45 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-c52a337f3f271bad"
+    },
+    {
+      "event_id": "evt-c55c0ef23bb9b1a9",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56810|seed=619721",
+      "title": "3Dから直接始めたときだけ深くなる挙動候補",
+      "plain": "同条件で3Dは L2、後追い2D比較は L1 でした。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": true,
+        "reached_level": 2,
+        "paired_2d_level": 1,
+        "dimension_delta": 1,
+        "knobs": {
+          "noise_amplitude": 2.5079332927391756e-05,
+          "correlation_length": 3.9106549458011397,
+          "diffusion_ratio": 0.10217639864176363,
+          "drive_strength": 4.1102568599141,
+          "quench_duration": 14.578225685010793
+        },
+        "family": "gradient",
+        "seed": 619721,
+        "trial_index": 56810,
+        "measured_by": {
+          "mean_amplitude_growth": 70073.8667,
+          "structure_factor_prominence": 16.5338,
+          "defect_count": 88,
+          "persistent_defects": true
+        },
+        "checksum": "d07a1609dca55a46"
+      },
+      "scientific_status": "native_3d_dimension_candidate",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-c55c0ef23bb9b1a9"
     },
     {
       "event_id": "evt-c5813f70aea8aced",
@@ -17517,35 +17557,55 @@
       "view_preset_id": "view-c88a028f9051da63"
     },
     {
-      "event_id": "evt-c8c1d3a0b865d8a9",
-      "kind": "RARE_EVENT",
-      "source": "geometry-probe",
-      "source_key": "triangle-fission|1011256|seed=563409",
-      "title": "3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測",
-      "plain": "自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。",
-      "why": "三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。",
+      "event_id": "evt-c8a386eeedf05db8",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "white|{\"correlation_length\":7.881622256058726,\"diffusion_ratio\":0.1290126930596474,\"drive_strength\":3.7854343659753384,\"noise_amplitude\":1.3475275807839048e-05,\"quench_duration\":5.819466995122582}|seed=931275",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
       "facts": {
-        "trial_index": 1011256,
-        "family": "ring",
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.0168,
+        "family": "white",
         "knobs": {
-          "noise_amplitude": 0.00041276592458157124,
-          "correlation_length": 6.910860464663954,
-          "diffusion_ratio": 0.40102652742882705,
-          "drive_strength": 1.6899927242750525,
-          "quench_duration": 8.259183345152628
+          "noise_amplitude": 1.3475275807839048e-05,
+          "correlation_length": 7.881622256058726,
+          "diffusion_ratio": 0.1290126930596474,
+          "drive_strength": 3.7854343659753384,
+          "quench_duration": 5.819466995122582
         },
-        "seed": 563409,
-        "triangle_score": 0.7071,
-        "triangle_regularity": 0.7831,
-        "triangle_charge_pattern": "++-",
-        "fission_like_after_triangle": true,
-        "biological_cell_division_claim": false
+        "seed": 931275,
+        "measured_by": {
+          "mean_amplitude_growth": 200292.7276,
+          "structure_factor_prominence": 12.096,
+          "defect_count": 48
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591051,
+            591052,
+            591053
+          ]
+        }
       },
-      "scientific_status": "fission_like_geometry_candidate",
-      "visual_interest": "high",
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
       "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-c8c1d3a0b865d8a9"
+      "parent_room": null,
+      "view_preset_id": "view-c8a386eeedf05db8"
     },
     {
       "event_id": "evt-c8cbfc777f47b4a9",
@@ -17585,40 +17645,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-c8cbfc777f47b4a9"
-    },
-    {
-      "event_id": "evt-c8e2cc77583140e9",
-      "kind": "PROMOTION_READY",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0634-native-window-v000-local3d-s97835",
-      "title": "Local 3Dまで生き残った候補",
-      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
-      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
-      "facts": {
-        "campaign_id": "dream-20260902-0634",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "local-3d",
-        "seed": 97835,
-        "overrides": {
-          "noise_amplitude": 0.01,
-          "quench_duration": 8.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 0,
-          "mean_amplitude_growth": 203.8167,
-          "persistent_defects": false,
-          "structure_factor_prominence": 16.6755
-        }
-      },
-      "scientific_status": "local_3d_passed",
-      "visual_interest": "high",
-      "room_id": "room-auto-dream-20260902-0634-native-window-v000-local3d-s97835",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-c8e2cc77583140e9"
     },
     {
       "event_id": "evt-cab50a447b8adfb0",
@@ -18075,43 +18101,38 @@
       "view_preset_id": "view-cf7478cc2da604d5"
     },
     {
-      "event_id": "evt-d040bd95c3b93e25",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|54999|seed=451833",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "event_id": "evt-d01ee9d90c9c1882",
+      "kind": "NEW_REGION",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v001-2dscreen-s97953",
+      "title": "2D探索を通過した始原条件",
+      "plain": "seed 97953 で L1 に到達し、次元移行テストへ進みました。",
+      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
       "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 0.00014371678726337442,
-          "correlation_length": 10.210449810659226,
-          "diffusion_ratio": 0.17602615756207002,
-          "drive_strength": 3.700805252151635,
-          "quench_duration": 9.588363698777233
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v001",
+        "stage": "2d-screen",
+        "seed": 97953,
+        "overrides": {
+          "noise_amplitude": 0.01,
+          "quench_duration": 16.0
         },
-        "family": "white_highk",
-        "seed": 451833,
-        "trial_index": 54999,
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
         "measured_by": {
-          "mean_amplitude_growth": 28279.877,
-          "structure_factor_prominence": 13.4674,
-          "defect_count": 134,
-          "persistent_defects": true
-        },
-        "checksum": "be6ba52de6990671"
+          "defect_count": 5,
+          "mean_amplitude_growth": 135.5361,
+          "persistent_defects": false,
+          "structure_factor_prominence": 28.9997
+        }
       },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
+      "scientific_status": "2d_screened",
+      "visual_interest": "medium",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v001-2dscreen-s97953",
       "parent_room": "room-g001-a",
-      "view_preset_id": "view-d040bd95c3b93e25"
+      "view_preset_id": "view-d01ee9d90c9c1882"
     },
     {
       "event_id": "evt-d0d5cb8c25259fc4",
@@ -18241,6 +18262,40 @@
       "room_id": null,
       "parent_room": null,
       "view_preset_id": "view-d13b843868e7d04f"
+    },
+    {
+      "event_id": "evt-d257d14110fb84ea",
+      "kind": "PROMOTION_READY",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v001-local3d-s97952",
+      "title": "Local 3Dまで生き残った候補",
+      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
+      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v001",
+        "stage": "local-3d",
+        "seed": 97952,
+        "overrides": {
+          "noise_amplitude": 0.01,
+          "quench_duration": 16.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 0,
+          "mean_amplitude_growth": 7.9847,
+          "persistent_defects": false,
+          "structure_factor_prominence": 16.9991
+        }
+      },
+      "scientific_status": "local_3d_passed",
+      "visual_interest": "high",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v001-local3d-s97952",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-d257d14110fb84ea"
     },
     {
       "event_id": "evt-d2c8d413a9029935",
@@ -18498,45 +18553,6 @@
       "view_preset_id": "view-d64db965d102dad7"
     },
     {
-      "event_id": "evt-d672fa2b7c7eacc0",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|54974|seed=934369",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 0.00026593620363016534,
-          "correlation_length": 8.957635142163618,
-          "diffusion_ratio": 0.35972019032827335,
-          "drive_strength": 3.7192849385702065,
-          "quench_duration": 11.679487513015875
-        },
-        "family": "seeds_phase",
-        "seed": 934369,
-        "trial_index": 54974,
-        "measured_by": {
-          "mean_amplitude_growth": 13237.7642,
-          "structure_factor_prominence": 15.8523,
-          "defect_count": 66,
-          "persistent_defects": true
-        },
-        "checksum": "06fcf5cf2703f539"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-d672fa2b7c7eacc0"
-    },
-    {
       "event_id": "evt-d6a1e50e2270763c",
       "kind": "NEW_REGION",
       "source": "genesis-orchestrator",
@@ -18642,45 +18658,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-d7603183de08c36e"
-    },
-    {
-      "event_id": "evt-d7b94a179da86bec",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|54986|seed=165881",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 0.0006873770060549563,
-          "correlation_length": 4.914153514362932,
-          "diffusion_ratio": 0.6391123487629177,
-          "drive_strength": 4.910717788594783,
-          "quench_duration": 6.547041384727647
-        },
-        "family": "white",
-        "seed": 165881,
-        "trial_index": 54986,
-        "measured_by": {
-          "mean_amplitude_growth": 12595.6357,
-          "structure_factor_prominence": 16.1447,
-          "defect_count": 76,
-          "persistent_defects": true
-        },
-        "checksum": "b08480bb6d5ecbda"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-d7b94a179da86bec"
     },
     {
       "event_id": "evt-d7f7c073626e275f",
@@ -19045,37 +19022,6 @@
       "view_preset_id": "view-db8b11b070d9ac02"
     },
     {
-      "event_id": "evt-dc02286c6e7be31b",
-      "kind": "RARE_EVENT",
-      "source": "geometry-probe",
-      "source_key": "triangle-fission|1012145|seed=987418",
-      "title": "3つの渦が三角に並んだ後、近くのまとまりが分かれる変化を観測",
-      "plain": "自然にできた3つの渦が三角っぽく並んだあと、近くの渦の集まりが2つ以上に分かれるような変化が続けて見えました。",
-      "why": "三角形は最初から置いていません。偶然の1回かどうかを別の条件とseedで確かめる候補です。",
-      "facts": {
-        "trial_index": 1012145,
-        "family": "white",
-        "knobs": {
-          "noise_amplitude": 3.6038648662579945e-05,
-          "correlation_length": 6.451691181866108,
-          "diffusion_ratio": 0.10560751922840529,
-          "drive_strength": 2.2845291309117166,
-          "quench_duration": 6.433433999363475
-        },
-        "seed": 987418,
-        "triangle_score": 0.6245,
-        "triangle_regularity": 0.7352,
-        "triangle_charge_pattern": "++-",
-        "fission_like_after_triangle": true,
-        "biological_cell_division_claim": false
-      },
-      "scientific_status": "fission_like_geometry_candidate",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-dc02286c6e7be31b"
-    },
-    {
       "event_id": "evt-df050a201f7052f9",
       "kind": "NEW_BEHAVIOR",
       "source": "native-3d-discovery",
@@ -19203,79 +19149,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-dfcede03af254a69"
-    },
-    {
-      "event_id": "evt-e09483ec251e2ddb",
-      "kind": "NEW_BEHAVIOR",
-      "source": "native-3d-discovery",
-      "source_key": "native3d|54899|seed=496825",
-      "title": "2Dを入口にせず3Dから直接見つかった候補",
-      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
-      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
-      "facts": {
-        "dimension": 3,
-        "native_3d": true,
-        "dimension_emergence": false,
-        "reached_level": 2,
-        "paired_2d_level": 2,
-        "dimension_delta": 0,
-        "knobs": {
-          "noise_amplitude": 0.0021639233595607326,
-          "correlation_length": 10.436787259218896,
-          "diffusion_ratio": 0.4553834142993078,
-          "drive_strength": 3.057323369602697,
-          "quench_duration": 8.398281054149134
-        },
-        "family": "white_highk",
-        "seed": 496825,
-        "trial_index": 54899,
-        "measured_by": {
-          "mean_amplitude_growth": 2051.4842,
-          "structure_factor_prominence": 16.3889,
-          "defect_count": 66,
-          "persistent_defects": true
-        },
-        "checksum": "3e641f49dfcaeeb5"
-      },
-      "scientific_status": "native_3d_screened",
-      "visual_interest": "high",
-      "room_id": null,
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-e09483ec251e2ddb"
-    },
-    {
-      "event_id": "evt-e0a9f75ed4178a8c",
-      "kind": "NEW_REGION",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0634-native-window-v000-2dscreen-s97835",
-      "title": "2D探索を通過した始原条件",
-      "plain": "seed 97835 で L2 に到達し、次元移行テストへ進みました。",
-      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
-      "facts": {
-        "campaign_id": "dream-20260902-0634",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "2d-screen",
-        "seed": 97835,
-        "overrides": {
-          "noise_amplitude": 0.01,
-          "quench_duration": 8.0
-        },
-        "reached_level": 2,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 4,
-          "mean_amplitude_growth": 143.3948,
-          "persistent_defects": true,
-          "structure_factor_prominence": 30.682
-        }
-      },
-      "scientific_status": "2d_screened",
-      "visual_interest": "medium",
-      "room_id": "room-auto-dream-20260902-0634-native-window-v000-2dscreen-s97835",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-e0a9f75ed4178a8c"
     },
     {
       "event_id": "evt-e106d5ac0e84ba8c",
@@ -19563,6 +19436,45 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-e554a418604fc905"
+    },
+    {
+      "event_id": "evt-e6b77e6f2fac8946",
+      "kind": "NEW_BEHAVIOR",
+      "source": "native-3d-discovery",
+      "source_key": "native3d|56650|seed=97140",
+      "title": "2Dを入口にせず3Dから直接見つかった候補",
+      "plain": "2D選別なしのNative 3D探索から L2 を検出しました。",
+      "why": "3Dは2D結果で選別していません。後追い2D比較は次元差の理解だけに使います。",
+      "facts": {
+        "dimension": 3,
+        "native_3d": true,
+        "dimension_emergence": false,
+        "reached_level": 2,
+        "paired_2d_level": 2,
+        "dimension_delta": 0,
+        "knobs": {
+          "noise_amplitude": 0.0007986942300859731,
+          "correlation_length": 10.513909649098489,
+          "diffusion_ratio": 0.32600571160577796,
+          "drive_strength": 3.405392626459958,
+          "quench_duration": 6.463986948555255
+        },
+        "family": "white",
+        "seed": 97140,
+        "trial_index": 56650,
+        "measured_by": {
+          "mean_amplitude_growth": 3829.5084,
+          "structure_factor_prominence": 14.3711,
+          "defect_count": 82,
+          "persistent_defects": true
+        },
+        "checksum": "aa43a0b754d31024"
+      },
+      "scientific_status": "native_3d_screened",
+      "visual_interest": "high",
+      "room_id": null,
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-e6b77e6f2fac8946"
     },
     {
       "event_id": "evt-e7014103e10ad1df",
@@ -19927,6 +19839,40 @@
       "view_preset_id": "view-ebce5949473f89c0"
     },
     {
+      "event_id": "evt-ec84c9cc894bbcd3",
+      "kind": "PROMOTION_READY",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v000-local3d-s97953",
+      "title": "Local 3Dまで生き残った候補",
+      "plain": "2DだけでなくLocal 3Dでも L1 に到達しました。次はcoarse 3Dの承認ゲートです。",
+      "why": "2D固有の見かけではない可能性が上がったため、人間が確認する価値の高い昇格候補です。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v000",
+        "stage": "local-3d",
+        "seed": 97953,
+        "overrides": {
+          "noise_amplitude": 0.0001,
+          "quench_duration": 6.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 0,
+          "mean_amplitude_growth": 20296.9755,
+          "persistent_defects": false,
+          "structure_factor_prominence": 16.8532
+        }
+      },
+      "scientific_status": "local_3d_passed",
+      "visual_interest": "high",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v000-local3d-s97953",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-ec84c9cc894bbcd3"
+    },
+    {
       "event_id": "evt-eccc615988a5b213",
       "kind": "NEW_BEHAVIOR",
       "source": "native-3d-discovery",
@@ -20215,6 +20161,57 @@
       "view_preset_id": "view-f09f95084e422d91"
     },
     {
+      "event_id": "evt-f0c7859a096c18bc",
+      "kind": "REPRODUCED",
+      "source": "dream-search",
+      "source_key": "seeds_phase|{\"correlation_length\":5.136818850745646,\"diffusion_ratio\":0.1335981012179462,\"drive_strength\":3.0765695060404545,\"noise_amplitude\":1.5023059084751667e-05,\"quench_duration\":10.803553004325535}|seed=834775",
+      "title": "別seedでも同じ到達Levelを再現",
+      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
+      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
+      "facts": {
+        "reached_level": 2,
+        "parent_level": 2,
+        "delta_level": 0,
+        "novelty": 0.0,
+        "family": "seeds_phase",
+        "knobs": {
+          "noise_amplitude": 1.5023059084751667e-05,
+          "correlation_length": 5.136818850745646,
+          "diffusion_ratio": 0.1335981012179462,
+          "drive_strength": 3.0765695060404545,
+          "quench_duration": 10.803553004325535
+        },
+        "seed": 834775,
+        "measured_by": {
+          "mean_amplitude_growth": 131288.0817,
+          "structure_factor_prominence": 15.4481,
+          "defect_count": 26
+        },
+        "reproduction": {
+          "tested": 3,
+          "stable": 3,
+          "matched": 3,
+          "ratio": 1.0,
+          "target_level": 2,
+          "levels": [
+            2,
+            2,
+            2
+          ],
+          "seeds": [
+            591451,
+            591452,
+            591453
+          ]
+        }
+      },
+      "scientific_status": "2d_reproducible",
+      "visual_interest": "medium",
+      "room_id": null,
+      "parent_room": null,
+      "view_preset_id": "view-f0c7859a096c18bc"
+    },
+    {
       "event_id": "evt-f137f8b03ff1f3d4",
       "kind": "REPRODUCED",
       "source": "dream-search",
@@ -20264,6 +20261,40 @@
       "room_id": null,
       "parent_room": null,
       "view_preset_id": "view-f137f8b03ff1f3d4"
+    },
+    {
+      "event_id": "evt-f1517fc2bd463e9e",
+      "kind": "NEW_REGION",
+      "source": "genesis-orchestrator",
+      "source_key": "job-auto-dream-20260903-0651-native-window-v000-2dscreen-s97952",
+      "title": "2D探索を通過した始原条件",
+      "plain": "seed 97952 で L1 に到達し、次元移行テストへ進みました。",
+      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
+      "facts": {
+        "campaign_id": "dream-20260903-0651",
+        "hypothesis_id": "native-window",
+        "trial_id": "native-window-v000",
+        "stage": "2d-screen",
+        "seed": 97952,
+        "overrides": {
+          "noise_amplitude": 0.0001,
+          "quench_duration": 6.0
+        },
+        "reached_level": 1,
+        "min_reached_level": 1,
+        "survived_stage": true,
+        "measured_by": {
+          "defect_count": 4,
+          "mean_amplitude_growth": 14444.8807,
+          "persistent_defects": false,
+          "structure_factor_prominence": 31.4737
+        }
+      },
+      "scientific_status": "2d_screened",
+      "visual_interest": "medium",
+      "room_id": "room-auto-dream-20260903-0651-native-window-v000-2dscreen-s97952",
+      "parent_room": "room-g001-a",
+      "view_preset_id": "view-f1517fc2bd463e9e"
     },
     {
       "event_id": "evt-f15855e1b06d2e20",
@@ -20580,57 +20611,6 @@
       "view_preset_id": "view-f50d7dbdff205e1e"
     },
     {
-      "event_id": "evt-f5cd909af5a09d68",
-      "kind": "REPRODUCED",
-      "source": "dream-search",
-      "source_key": "white_highk|{\"correlation_length\":3.6484599671122595,\"diffusion_ratio\":0.4397591058856832,\"drive_strength\":4.200397519083312,\"noise_amplitude\":3.775736273505326e-05,\"quench_duration\":8.680275062132411}|seed=853072",
-      "title": "別seedでも同じ到達Levelを再現",
-      "plain": "3 seed 中 3 seed で L2 以上を再現しました。",
-      "why": "一つの初期乱数だけに依存した偶然ではない可能性が高まったため、再現候補として扱います。",
-      "facts": {
-        "reached_level": 2,
-        "parent_level": 2,
-        "delta_level": 0,
-        "novelty": 0.0145,
-        "family": "white_highk",
-        "knobs": {
-          "noise_amplitude": 3.775736273505326e-05,
-          "correlation_length": 3.6484599671122595,
-          "diffusion_ratio": 0.4397591058856832,
-          "drive_strength": 4.200397519083312,
-          "quench_duration": 8.680275062132411
-        },
-        "seed": 853072,
-        "measured_by": {
-          "mean_amplitude_growth": 147828.4297,
-          "structure_factor_prominence": 14.0441,
-          "defect_count": 22
-        },
-        "reproduction": {
-          "tested": 3,
-          "stable": 3,
-          "matched": 3,
-          "ratio": 1.0,
-          "target_level": 2,
-          "levels": [
-            2,
-            2,
-            2
-          ],
-          "seeds": [
-            591334,
-            591335,
-            591336
-          ]
-        }
-      },
-      "scientific_status": "2d_reproducible",
-      "visual_interest": "medium",
-      "room_id": null,
-      "parent_room": null,
-      "view_preset_id": "view-f5cd909af5a09d68"
-    },
-    {
       "event_id": "evt-f61e8e1abe7cb8c0",
       "kind": "NEW_BEHAVIOR",
       "source": "native-3d-discovery",
@@ -20668,40 +20648,6 @@
       "room_id": null,
       "parent_room": "room-g001-a",
       "view_preset_id": "view-f61e8e1abe7cb8c0"
-    },
-    {
-      "event_id": "evt-f63ece303b1f9b8f",
-      "kind": "NEW_REGION",
-      "source": "genesis-orchestrator",
-      "source_key": "job-auto-dream-20260902-0635-native-window-v000-2dscreen-s97835",
-      "title": "2D探索を通過した始原条件",
-      "plain": "seed 97835 で L1 に到達し、次元移行テストへ進みました。",
-      "why": "既存Autopilotの昇格規則を満たしたため、Local 3Dへ送られます。",
-      "facts": {
-        "campaign_id": "dream-20260902-0635",
-        "hypothesis_id": "native-window",
-        "trial_id": "native-window-v000",
-        "stage": "2d-screen",
-        "seed": 97835,
-        "overrides": {
-          "noise_amplitude": 0.003,
-          "quench_duration": 12.0
-        },
-        "reached_level": 1,
-        "min_reached_level": 1,
-        "survived_stage": true,
-        "measured_by": {
-          "defect_count": 4,
-          "mean_amplitude_growth": 477.3758,
-          "persistent_defects": false,
-          "structure_factor_prominence": 30.7941
-        }
-      },
-      "scientific_status": "2d_screened",
-      "visual_interest": "medium",
-      "room_id": "room-auto-dream-20260902-0635-native-window-v000-2dscreen-s97835",
-      "parent_room": "room-g001-a",
-      "view_preset_id": "view-f63ece303b1f9b8f"
     },
     {
       "event_id": "evt-f68f525c88e964ce",
@@ -21137,7 +21083,7 @@
       "view_preset_id": "view-ffdefd59ff38c4b9"
     }
   ],
-  "last_burst": "dream-20260903-0650",
+  "last_burst": "dream-20260903-0651",
   "archived": {
     "parts": [
       "events-0001.json"
@@ -21237,6 +21183,7 @@
       "evt-0145baf60d538b2c",
       "evt-014726736f518b30",
       "evt-015df7a8d1bb3d46",
+      "evt-016017ce0b0b9c7c",
       "evt-0160916981cb4947",
       "evt-01634622fe55062d",
       "evt-0164b8c68572da7c",
@@ -21877,6 +21824,7 @@
       "evt-0bd27a38c774333e",
       "evt-0bd79dcdedcb8fb2",
       "evt-0bdfa8e8079c004b",
+      "evt-0be00c5275c30da2",
       "evt-0be373c24efb2c95",
       "evt-0be389f372c09817",
       "evt-0becad903b696a75",
@@ -23918,6 +23866,7 @@
       "evt-2c6fc1deb1370c3f",
       "evt-2c74b58a6fca115c",
       "evt-2c7bc75da9ffe8d8",
+      "evt-2c7bebf2e82b9f47",
       "evt-2c7d6264c33df841",
       "evt-2c7dbf4ab98c7f00",
       "evt-2c8114ef4fe3ca12",
@@ -23935,6 +23884,7 @@
       "evt-2ca9ed536c68e50e",
       "evt-2caea7e9fc0c0308",
       "evt-2cb6a4448bb9465a",
+      "evt-2cb80c3b8c1ac6c1",
       "evt-2cbe6dcce2124bb3",
       "evt-2cbe9b1d97fc1e54",
       "evt-2cbff34ea39cd8fd",
@@ -24008,6 +23958,7 @@
       "evt-2dc105593e579139",
       "evt-2dc1d6909a8595b1",
       "evt-2dc8114d8831db1d",
+      "evt-2dcf4c004822252e",
       "evt-2dcfab3e5fc37cd5",
       "evt-2dd0296a1b0a3616",
       "evt-2dd468f13a542b19",
@@ -24103,6 +24054,7 @@
       "evt-2f98aaa211c3f7f6",
       "evt-2fa042d7681a2d6e",
       "evt-2fa2a2cb350cd46b",
+      "evt-2fa9fa6513fe42ca",
       "evt-2fae8bff14c05141",
       "evt-2fb6da7ff22f85a3",
       "evt-2fb9a763db66e168",
@@ -24824,6 +24776,7 @@
       "evt-3b59ece855a9b114",
       "evt-3b62f2a359db86af",
       "evt-3b68f6eabafcc8e9",
+      "evt-3b77e33bfa03ac9c",
       "evt-3b7a585effc4e1ba",
       "evt-3b8108b2c53a0539",
       "evt-3b892b476fe14d9c",
@@ -25983,6 +25936,7 @@
       "evt-4e4609861c87d4b8",
       "evt-4e4866cf79210f98",
       "evt-4e4990305d62cdad",
+      "evt-4e5241713b645c7f",
       "evt-4e542fb5b9448078",
       "evt-4e5fd67bba8e2eda",
       "evt-4e693b86bf9680df",
@@ -27042,6 +26996,7 @@
       "evt-5f774762e600bf3b",
       "evt-5f7a5becf3e739a1",
       "evt-5f7b996766c2065f",
+      "evt-5f7bbd32d16a900a",
       "evt-5f7c91c7cd3ddcc8",
       "evt-5f7f8ccc59c15779",
       "evt-5f8a0f6283076a30",
@@ -27506,6 +27461,7 @@
       "evt-6703adc034a34441",
       "evt-67130a8804e48d59",
       "evt-6715c08f4af0b7fe",
+      "evt-67189c1f58ab4c52",
       "evt-6718de96edabb79d",
       "evt-6718f4fe1251140e",
       "evt-671bf3eb3be55f34",
@@ -27757,6 +27713,7 @@
       "evt-6af65f8bbb67cd4d",
       "evt-6af75079d71c74c5",
       "evt-6af8def933b0963e",
+      "evt-6b06074e51a178a5",
       "evt-6b09bf38088b89f1",
       "evt-6b0f2c759d797eaf",
       "evt-6b11166d4e7a916f",
@@ -27907,6 +27864,7 @@
       "evt-6d481ebed126c526",
       "evt-6d5480da24632034",
       "evt-6d56a67cba276679",
+      "evt-6d56cdd4cdcf3536",
       "evt-6d5fa76fcfd7a9f2",
       "evt-6d653a2c8d113e42",
       "evt-6d6efcf947d47c2d",
@@ -27990,6 +27948,7 @@
       "evt-6ea195d31da77c1c",
       "evt-6ea413666ead0235",
       "evt-6ea6ed39f3961fa3",
+      "evt-6ebae9a3b4a3f850",
       "evt-6ec05f239c68e5f8",
       "evt-6ecbbd662f59e6eb",
       "evt-6eccdebd32cb23dc",
@@ -28866,6 +28825,7 @@
       "evt-7d57d62aad993109",
       "evt-7d5e82caa7e335c2",
       "evt-7d61ccd4928af0a4",
+      "evt-7d63a5e97ce7949a",
       "evt-7d6550080d70ef16",
       "evt-7d6643e318f31194",
       "evt-7d6b4f7508304355",
@@ -29099,6 +29059,7 @@
       "evt-80b63ab1cc38a945",
       "evt-80bede504e42ff39",
       "evt-80bf353ab2e94e3c",
+      "evt-80c8b2f2359debe5",
       "evt-80cc9b140e9d40d4",
       "evt-80cdd98f6979a371",
       "evt-80d0a85a4d852d2a",
@@ -29173,6 +29134,7 @@
       "evt-82119b8c8687a0f7",
       "evt-8214639aea647f63",
       "evt-8219d7cfb06296bf",
+      "evt-821e63ababdaedc8",
       "evt-8221d66b0414b605",
       "evt-82252ff4ec1b060c",
       "evt-822a0ad31846858b",
@@ -29485,6 +29447,7 @@
       "evt-87b2c28cade957e3",
       "evt-87c15252f9143689",
       "evt-87c19f12679da694",
+      "evt-87c754ef3c7abbc5",
       "evt-87c77c09e5b7d96e",
       "evt-87cb1f66f3016a42",
       "evt-87d0336ac1043739",
@@ -29718,6 +29681,7 @@
       "evt-8b81f02f95e95594",
       "evt-8b86813a1372501b",
       "evt-8b8b58626cf938ad",
+      "evt-8b8ff8452904d389",
       "evt-8b96808ca999c0a3",
       "evt-8b9f7be86e651601",
       "evt-8ba0f43f7b60e539",
@@ -30371,6 +30335,7 @@
       "evt-967313a9f1840f28",
       "evt-967335c7fb7d2f60",
       "evt-96742547c66f6908",
+      "evt-967438fb1198728a",
       "evt-967776032ac1d954",
       "evt-96786fe40247cbf4",
       "evt-967f29764ab8bb3b",
@@ -30421,6 +30386,7 @@
       "evt-971773f16495c569",
       "evt-971c596989ff4f52",
       "evt-971ea0c6bc47a910",
+      "evt-9722187ab9028bc1",
       "evt-9724535e3769b482",
       "evt-9726ea63df0fcc44",
       "evt-9728780c81e25d1a",
@@ -30764,6 +30730,7 @@
       "evt-9cf12a3f48c4f466",
       "evt-9cf809571e023c2e",
       "evt-9cf89bcfcc96bf2f",
+      "evt-9cfc13207a8d460b",
       "evt-9cfc6af42e51fb9d",
       "evt-9d045c08aa9db3e8",
       "evt-9d073f5b547436a4",
@@ -30785,6 +30752,7 @@
       "evt-9d6331b44280ea9a",
       "evt-9d68af1ff06d6885",
       "evt-9d720f6927f18750",
+      "evt-9d74a26e95948802",
       "evt-9d78b2fa1e0db0fd",
       "evt-9d7dd6c6a2f55f82",
       "evt-9d7dfcb4474accc6",
@@ -31643,6 +31611,7 @@
       "evt-ab35c242ced7c108",
       "evt-ab3938697f6bd7ac",
       "evt-ab39f2a968ff7fea",
+      "evt-ab3f36e454ec7d7c",
       "evt-ab4516407a5ad5d8",
       "evt-ab483d8f32e598ad",
       "evt-ab49d5de1d52703c",
@@ -32944,6 +32913,7 @@
       "evt-bfd5be10510a3417",
       "evt-bfd8200b7f25a4d8",
       "evt-bfdd38b90bc03bdb",
+      "evt-bfe5622e5cec2424",
       "evt-bfe7b54b48f1bcb2",
       "evt-bfe93e95a74c3d2c",
       "evt-bfe981eadac30782",
@@ -33091,6 +33061,7 @@
       "evt-c21465cc7232269b",
       "evt-c217c5816cc5ed11",
       "evt-c21d75f8007001e5",
+      "evt-c21edb9a932aef05",
       "evt-c21fcead87cd2809",
       "evt-c22606625c811153",
       "evt-c229d759e61a2bc9",
@@ -33153,6 +33124,7 @@
       "evt-c322c00a5a0b55b6",
       "evt-c323d73908f85380",
       "evt-c329010b04aa6827",
+      "evt-c3349abc59280b1a",
       "evt-c335b855dbd9d8a0",
       "evt-c33d67a1f7100b4a",
       "evt-c33ea36693d4a596",
@@ -33498,11 +33470,13 @@
       "evt-c8b522d34678f3fc",
       "evt-c8bc2b74a6adf543",
       "evt-c8bf63f8fb809027",
+      "evt-c8c1d3a0b865d8a9",
       "evt-c8c7a088f084ed25",
       "evt-c8ccd7ae3326ba0b",
       "evt-c8d50ac3d205ed82",
       "evt-c8d99f61d91943eb",
       "evt-c8e1ef640f9bd1fa",
+      "evt-c8e2cc77583140e9",
       "evt-c8ea72b363475541",
       "evt-c8f0cd10eb807df0",
       "evt-c8f2a0a8de1d3ac0",
@@ -33947,6 +33921,7 @@
       "evt-d03e8ffdaa978783",
       "evt-d03e93ef0c35f372",
       "evt-d0402eb85c35b86f",
+      "evt-d040bd95c3b93e25",
       "evt-d0474165c446fdc6",
       "evt-d04a07517ef91ac3",
       "evt-d04c2c3886359ffd",
@@ -34305,6 +34280,7 @@
       "evt-d6693345fa8090d6",
       "evt-d66c07a34294ed43",
       "evt-d66ed2dcc467b9d5",
+      "evt-d672fa2b7c7eacc0",
       "evt-d6744501f5691c18",
       "evt-d6777d0d859d1c31",
       "evt-d67798f647019b5e",
@@ -34399,6 +34375,7 @@
       "evt-d7ad51a57f0c9a11",
       "evt-d7b4ec9be1a747f5",
       "evt-d7b9051183463f67",
+      "evt-d7b94a179da86bec",
       "evt-d7c36cf84ce31517",
       "evt-d7c9634166a83665",
       "evt-d7cadacbb7842fcb",
@@ -34674,6 +34651,7 @@
       "evt-dbf2759edbbe348e",
       "evt-dbfb61f7d1994bda",
       "evt-dbfb8316e43c5405",
+      "evt-dc02286c6e7be31b",
       "evt-dc03598e32f9b309",
       "evt-dc03cbb57d1ad04d",
       "evt-dc05995d393be6ee",
@@ -34997,11 +34975,13 @@
       "evt-e08e22f00c34a71d",
       "evt-e08e7cf5ecb36b87",
       "evt-e08f7767f411da53",
+      "evt-e09483ec251e2ddb",
       "evt-e0980726821edbbe",
       "evt-e098431f72da1a2a",
       "evt-e09a8f4276802831",
       "evt-e0a276cf9384ce76",
       "evt-e0a6173fbe0a651a",
+      "evt-e0a9f75ed4178a8c",
       "evt-e0aac3d14b370b6d",
       "evt-e0ab2a719b1116a9",
       "evt-e0ac2c5e67efaaf0",
@@ -36264,6 +36244,7 @@
       "evt-f5c09c982ba26311",
       "evt-f5c8809ca3262c08",
       "evt-f5c8a4d062aa44fe",
+      "evt-f5cd909af5a09d68",
       "evt-f5cfa9b2bb38fd64",
       "evt-f5d69484fced9d3f",
       "evt-f5d6f3ec4faada4a",
@@ -36287,6 +36268,7 @@
       "evt-f63a6e97d7acd6b7",
       "evt-f63b1a565c238242",
       "evt-f63e0d1f2d00e11e",
+      "evt-f63ece303b1f9b8f",
       "evt-f6465bbe23c649a7",
       "evt-f64664163b17aa13",
       "evt-f6480a414237435b",
@@ -36900,47 +36882,11 @@
       "evt-fffd9cad87757b1e",
       "evt-fffea5781bf48f81"
     ],
-    "count": 15756,
+    "count": 15792,
     "directory": "event_ledger.archive",
     "note": "Older entries live in the archive parts; nothing was deleted."
   },
   "insertion_order": [
-    "evt-7d63a5e97ce7949a",
-    "evt-80c8b2f2359debe5",
-    "evt-821e63ababdaedc8",
-    "evt-967438fb1198728a",
-    "evt-9722187ab9028bc1",
-    "evt-9cfc13207a8d460b",
-    "evt-9d74a26e95948802",
-    "evt-bfe5622e5cec2424",
-    "evt-c21edb9a932aef05",
-    "evt-c8c1d3a0b865d8a9",
-    "evt-c8e2cc77583140e9",
-    "evt-d672fa2b7c7eacc0",
-    "evt-e09483ec251e2ddb",
-    "evt-e0a9f75ed4178a8c",
-    "evt-f5cd909af5a09d68",
-    "evt-0be00c5275c30da2",
-    "evt-2c7bebf2e82b9f47",
-    "evt-2cb80c3b8c1ac6c1",
-    "evt-2dcf4c004822252e",
-    "evt-2fa9fa6513fe42ca",
-    "evt-3b77e33bfa03ac9c",
-    "evt-4e5241713b645c7f",
-    "evt-5f7bbd32d16a900a",
-    "evt-67189c1f58ab4c52",
-    "evt-6b06074e51a178a5",
-    "evt-6d56cdd4cdcf3536",
-    "evt-6ebae9a3b4a3f850",
-    "evt-87c754ef3c7abbc5",
-    "evt-8b8ff8452904d389",
-    "evt-ab3f36e454ec7d7c",
-    "evt-c3349abc59280b1a",
-    "evt-d040bd95c3b93e25",
-    "evt-d7b94a179da86bec",
-    "evt-dc02286c6e7be31b",
-    "evt-f63ece303b1f9b8f",
-    "evt-016017ce0b0b9c7c",
     "evt-0f8660bdeac84b35",
     "evt-111c944285961e4a",
     "evt-12914bdab8d9fbb9",
@@ -37304,6 +37250,42 @@
     "evt-dfcede03af254a69",
     "evt-e4395c08e6962b9e",
     "evt-e53950ecdf3c50f9",
-    "evt-ed7795b2cae1d9b3"
+    "evt-ed7795b2cae1d9b3",
+    "evt-04c78bca087b1c44",
+    "evt-07d702a22379bfa0",
+    "evt-1414a47d2e0740e4",
+    "evt-237a0c03c3b10940",
+    "evt-292125c8b0969da5",
+    "evt-2dc9e6ff0bb57ca9",
+    "evt-2e29be33c562abf3",
+    "evt-3aece88c04d70b70",
+    "evt-45ca8221279decea",
+    "evt-4a970ccd3a39eedb",
+    "evt-6445a38ea8f8bcdf",
+    "evt-6c59f85ccef154d9",
+    "evt-72e8ed402c81db1a",
+    "evt-72f125ce07918401",
+    "evt-73bd262c1d787e17",
+    "evt-8034a0b579dd24f5",
+    "evt-83c074dfe9ca8988",
+    "evt-89826bd24af98015",
+    "evt-89cf626b32decbd9",
+    "evt-8ca5db531d0c041d",
+    "evt-94344d1433f010d5",
+    "evt-9472bbfbe14dc1ec",
+    "evt-a5b5610aece8ab43",
+    "evt-a8262c96c4533400",
+    "evt-ac378de5b3622ffe",
+    "evt-ad103f270be053ae",
+    "evt-b31c703d367ddadb",
+    "evt-b730e12c310c04be",
+    "evt-c55c0ef23bb9b1a9",
+    "evt-c8a386eeedf05db8",
+    "evt-d01ee9d90c9c1882",
+    "evt-d257d14110fb84ea",
+    "evt-e6b77e6f2fac8946",
+    "evt-ec84c9cc894bbcd3",
+    "evt-f0c7859a096c18bc",
+    "evt-f1517fc2bd463e9e"
   ]
 }
