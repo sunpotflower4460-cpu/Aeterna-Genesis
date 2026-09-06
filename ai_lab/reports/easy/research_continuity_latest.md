@@ -1,14 +1,14 @@
 # Research Continuity — read before changing direction
 
-latest strict burst: `dream-20260906-0710`
-continuity digest: `30f18ffd7297583da643`
+latest strict burst: `dream-20260906-0711`
+continuity digest: `d98f0b0a878c3ccaec30`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
 ## Must carry forward
 
-- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=3/3, control=20/32, triangle_required=False.
-- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=60, pair-only=52, triads=37, split-asym=0.163488, no-split-asym=None, energy-before-geometry=0. 因果・力・結合エネルギーとはまだ呼ばない。
+- `geometry:triangle-vs-control-separation` [strict-geometry] — 三角形を特別扱いせず対照と比較し続ける。 triangle=4/4, control=8/14, triangle_required=False.
+- `energy:vertex-asymmetry-vs-geometry` [strict-local-energy] — 局所エネルギーは幾何で関係を選んだ後に測る。 pairs=34, pair-only=27, triads=20, split-asym=0.324402, no-split-asym=None, energy-before-geometry=0. 因果・力・結合エネルギーとはまだ呼ばない。
 - `deep:deep-fdb3e0252eed` [strict-deep-time] — Deep-Time deep-fdb3e0252eed: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-ee841262151c` [strict-deep-time] — Deep-Time deep-ee841262151c: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
 - `deep:deep-eddd2955c6d8` [strict-deep-time] — Deep-Time deep-eddd2955c6d8: status=F7_OBSERVED, effective F=7, prefix=MATCH, long-lived=False, transition=True. 同じt=0/prefix監査を優先し、低いraw depthだけを物理的退行と解釈しない。
