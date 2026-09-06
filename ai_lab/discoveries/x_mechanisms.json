@@ -1585,12 +1585,12 @@
     },
     "X-c41277c11b": {
       "pattern_id": "X-c41277c11b",
-      "latest_observations": 1748,
-      "bursts": 162,
-      "experiments": 770,
+      "latest_observations": 1756,
+      "bursts": 163,
+      "experiments": 776,
       "intervention_stats": {
         "baseline": {
-          "n": 324,
+          "n": 326,
           "hit": 121
         },
         "drive-weaker": {
@@ -1644,33 +1644,33 @@
         "noise-lower": {
           "knob": "noise_amplitude",
           "factor": 0.35,
-          "n": 44,
+          "n": 45,
           "hit": 5,
-          "paired_n": 44,
+          "paired_n": 45,
           "paired_hit_delta_sum": -16.0
         },
         "noise-higher": {
           "knob": "noise_amplitude",
           "factor": 2.4,
-          "n": 44,
+          "n": 45,
           "hit": 3,
-          "paired_n": 44,
+          "paired_n": 45,
           "paired_hit_delta_sum": -17.0
         },
         "correlation-shorter": {
           "knob": "correlation_length",
           "factor": 0.65,
-          "n": 44,
+          "n": 45,
           "hit": 14,
-          "paired_n": 44,
+          "paired_n": 45,
           "paired_hit_delta_sum": -2.0
         },
         "correlation-longer": {
           "knob": "correlation_length",
           "factor": 1.55,
-          "n": 44,
+          "n": 45,
           "hit": 16,
-          "paired_n": 44,
+          "paired_n": 45,
           "paired_hit_delta_sum": 0.0
         }
       },
@@ -1685,7 +1685,6 @@
       "sum_amp_cv_log_gain": -20.14650800000001,
       "defect_change_events": 0,
       "fresh_seed_groups": [
-        208572137,
         210828725,
         215441844,
         216053285,
@@ -1842,6 +1841,7 @@
         686918903,
         689319659,
         690508048,
+        691327511,
         694532263,
         697660623,
         699247810,
@@ -3289,17 +3289,17 @@
           "known_context": []
         }
       ],
-      "intervention_cursor": 6,
+      "intervention_cursor": 0,
       "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
       "leading_explanation": "amp_std増加の多くが平均振幅増加と一緒に起き、amp_cvは比較的安定しています。単純な振幅スケール効果かをpaired controlで反証中です。",
       "leading_sensitivity_candidate": {
         "intervention": "noise-higher",
         "knob": "noise_amplitude",
         "factor": 2.4,
-        "paired_n": 44,
-        "paired_hit_rate_delta": -0.3864
+        "paired_n": 45,
+        "paired_hit_rate_delta": -0.3778
       },
-      "last_burst": "dream-20260905-0704",
+      "last_burst": "dream-20260906-0707",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -8179,21 +8179,6 @@
   },
   "history": [
     {
-      "burst_id": "dream-20260825-0451",
-      "pattern_id": "X-87c10fb560",
-      "observations_seen": 748,
-      "experiments": 4,
-      "target_events": 2,
-      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-      "sensitivity": {
-        "intervention": "quench-faster",
-        "knob": "quench_duration",
-        "factor": 0.6,
-        "paired_n": 4,
-        "paired_hit_rate_delta": -0.75
-      }
-    },
-    {
       "burst_id": "dream-20260825-0452",
       "pattern_id": "X-28f62e46f9",
       "observations_seen": 416,
@@ -12017,21 +12002,36 @@
         "paired_n": 15,
         "paired_hit_rate_delta": -0.7333
       }
+    },
+    {
+      "burst_id": "dream-20260906-0707",
+      "pattern_id": "X-c41277c11b",
+      "observations_seen": 1756,
+      "experiments": 6,
+      "target_events": 0,
+      "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
+      "sensitivity": {
+        "intervention": "noise-higher",
+        "knob": "noise_amplitude",
+        "factor": 2.4,
+        "paired_n": 45,
+        "paired_hit_rate_delta": -0.3778
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260905-0706",
-    "pattern_id": "X-dcc459d23a",
-    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは drive-stronger が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
+    "burst_id": "dream-20260906-0707",
+    "pattern_id": "X-c41277c11b",
+    "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
+    "leading_explanation": "amp_std増加の多くが平均振幅増加と一緒に起き、amp_cvは比較的安定しています。単純な振幅スケール効果かをpaired controlで反証中です。",
     "leading_sensitivity_candidate": {
-      "intervention": "drive-stronger",
-      "knob": "drive_strength",
-      "factor": 1.55,
-      "paired_n": 15,
-      "paired_hit_rate_delta": -0.7333
+      "intervention": "noise-higher",
+      "knob": "noise_amplitude",
+      "factor": 2.4,
+      "paired_n": 45,
+      "paired_hit_rate_delta": -0.3778
     },
-    "next_question": "drive-stronger のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
+    "next_question": "平均振幅で正規化したときXの特徴が消えるかを別seed・別介入で反証し、単純な増幅を未知構造と誤認していないか確認する。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
