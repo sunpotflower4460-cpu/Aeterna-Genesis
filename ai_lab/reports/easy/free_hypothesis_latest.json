@@ -1,7 +1,7 @@
 {
   "version": 1,
   "mode": "free-hypothesis-exploratory-sandbox",
-  "generated_at": "2026-09-07T13:57:13.283443Z",
+  "generated_at": "2026-09-07T14:43:29.844459Z",
   "source_evidence_context": {
     "top_unknown": {
       "pattern_id": "X-e64f84a189",
@@ -14,31 +14,31 @@
         "quench_duration": 11.68434209679845
       }
     },
-    "pairs": 30,
-    "triads": 22,
+    "pairs": 31,
+    "triads": 23,
     "energy_precedes_geometry": 0,
-    "triangle_split": 3,
-    "nontriangle_split": 12,
-    "triangle_seen": 4,
-    "nontriangle_seen": 19,
-    "deep_leads": 1820,
-    "easy_burst_id": "dream-20260907-0743",
+    "triangle_split": 2,
+    "nontriangle_split": 16,
+    "triangle_seen": 2,
+    "nontriangle_seen": 21,
+    "deep_leads": 1821,
+    "easy_burst_id": "dream-20260907-0744",
     "geometry_detector_version": 4
   },
   "matched_control_runs": [
     {
       "finite": true,
-      "seed": 247178392,
+      "seed": 500288454,
       "raw_reference_level": 0,
-      "reference_score": 0.4079,
-      "final_mean_amplitude": 3.2142002940402816e-05,
+      "reference_score": 0.3919,
+      "final_mean_amplitude": 2.898221445669318e-05,
       "final_defect_count": 0,
-      "final_structure_prominence": 27.999994265901606,
-      "final_quench_independent_energy": 2.5301179159315985e-12,
-      "spectral_complexity": 0.18387797754907137,
-      "checksum": "1c95d749fd4f3222",
+      "final_structure_prominence": 27.999985229265924,
+      "final_quench_independent_energy": 2.689180261978225e-12,
+      "spectral_complexity": 0.17819661602664963,
+      "checksum": "0ecb47de44028a18",
       "measured_by": {
-        "mean_amplitude_growth": 0.352,
+        "mean_amplitude_growth": 0.3031,
         "structure_factor_prominence": 28.0,
         "defect_count": 0,
         "persistent_defects": false
@@ -46,17 +46,17 @@
     },
     {
       "finite": true,
-      "seed": 300982465,
+      "seed": 504563551,
       "raw_reference_level": 0,
-      "reference_score": 0.3088,
-      "final_mean_amplitude": 3.3973974854577327e-05,
+      "reference_score": 0.4027,
+      "final_mean_amplitude": 2.7110365104787765e-05,
       "final_defect_count": 0,
-      "final_structure_prominence": 27.999977303640577,
-      "final_quench_independent_energy": 1.6629495903298172e-12,
-      "spectral_complexity": 0.14650057215083034,
-      "checksum": "934c99df69f52e9e",
+      "final_structure_prominence": 27.99999089912702,
+      "final_quench_independent_energy": 1.8949827084165454e-12,
+      "spectral_complexity": 0.1820330844971244,
+      "checksum": "fcd00f51237ce919",
       "measured_by": {
-        "mean_amplitude_growth": 0.3726,
+        "mean_amplitude_growth": 0.3009,
         "structure_factor_prominence": 28.0,
         "defect_count": 0,
         "persistent_defects": false
@@ -64,17 +64,17 @@
     },
     {
       "finite": true,
-      "seed": 67655745,
+      "seed": 361492030,
       "raw_reference_level": 0,
-      "reference_score": 0.4087,
-      "final_mean_amplitude": 3.270498219892599e-05,
+      "reference_score": 0.3121,
+      "final_mean_amplitude": 2.6146273855518852e-05,
       "final_defect_count": 0,
-      "final_structure_prominence": 27.99998797113509,
-      "final_quench_independent_energy": 1.0795149948616592e-12,
-      "spectral_complexity": 0.18413222459358608,
-      "checksum": "3a276611616f29d4",
+      "final_structure_prominence": 27.99996316197411,
+      "final_quench_independent_energy": 1.4698746703143352e-12,
+      "spectral_complexity": 0.1478930387696917,
+      "checksum": "eb5325e9d528bd5c",
       "measured_by": {
-        "mean_amplitude_growth": 0.3636,
+        "mean_amplitude_growth": 0.2876,
         "structure_factor_prominence": 28.0,
         "defect_count": 0,
         "persistent_defects": false
@@ -83,32 +83,50 @@
   ],
   "hypotheses": [
     {
-      "hypothesis_id": "science-kzm-fast-quench-analogy",
-      "title": "Science Bridge: Kibble-Zurek mechanism and beyond in a holographic superfluid disk",
-      "question": "Do faster environmental changes alter defect and anonymous-transition statistics in the opposite regime?",
-      "rationale": "Literature mechanism: Crossing a continuous transition at finite rate connects quench timescales to spontaneous symmetry breaking and topological-defect production.  Translation warning: Matching a quench-rate trend would not establish Kibble-Zurek universality in g001. The bridge only imports the falsifiable idea that transition rate may control defect statistics.",
+      "hypothesis_id": "direction-fast-quench-holdout-001",
+      "title": "急冷速度だけで探索統計は再現可能に変わるか",
+      "question": "Free Hypothesis Lab の同じ source context で quench duration だけを短縮したとき、unmodified matched control に対して defect・spectral・amplitude 系の探索統計は fresh seed をまたいで同じ向きに変わるか？",
+      "rationale": "fast_quench runner は一般的な exploratory quench 比較を実行し、X fingerprint 判定や slow-side paired X holdout は行わない。したがって以前の X-c41277c11b 固有の問いをこの lane の結果で検証したとは扱わず、ここでは quench-timescale の抽象的 stress test に限定する。X 固有の future-seed paired holdout は X-mechanism lane に残す。",
       "experiment_type": "fast_quench",
       "provenance_class": "DRIVEN_EXPLORATORY",
       "parameters": {
-        "duration_factor": 0.35
+        "duration_factor": 0.6
       },
       "abstract_factor": "quench_timescale",
       "strict_transfer_question": "strictな一様開始のまま急冷速度だけで未知遷移の頻度が変わるか",
-      "source": "science-bridge:kzm-2026-superfluid-disk:10.1038/s41467-026-69940-w",
+      "source": "AI Scientist",
       "runs": [
         {
           "finite": true,
-          "seed": 282050323,
+          "seed": 262577523,
           "raw_reference_level": 1,
-          "reference_score": 1.4172,
-          "final_mean_amplitude": 0.005039591716839198,
+          "reference_score": 1.4281,
+          "final_mean_amplitude": 0.0008187027706758011,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.999981545710504,
-          "final_quench_independent_energy": 3.88388501396972e-08,
-          "spectral_complexity": 0.17328200232757843,
-          "checksum": "3f3e5d83274467c1",
+          "final_structure_prominence": 27.99992937884277,
+          "final_quench_independent_energy": 4.833578805147448e-10,
+          "spectral_complexity": 0.18357518751411447,
+          "checksum": "f04e7d650bc18950",
           "measured_by": {
-            "mean_amplitude_growth": 56.6644,
+            "mean_amplitude_growth": 8.8121,
+            "structure_factor_prominence": 27.9999,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 906026018,
+          "raw_reference_level": 1,
+          "reference_score": 1.354,
+          "final_mean_amplitude": 0.0007967545741656345,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.99999556806047,
+          "final_quench_independent_energy": 1.2294508753883307e-09,
+          "spectral_complexity": 0.15637725838986685,
+          "checksum": "11475b7ce3c5146b",
+          "measured_by": {
+            "mean_amplitude_growth": 8.6077,
             "structure_factor_prominence": 28.0,
             "defect_count": 0,
             "persistent_defects": false
@@ -116,35 +134,17 @@
         },
         {
           "finite": true,
-          "seed": 392915617,
+          "seed": 962949568,
           "raw_reference_level": 1,
-          "reference_score": 1.2779,
-          "final_mean_amplitude": 0.00508937769946308,
+          "reference_score": 1.3862,
+          "final_mean_amplitude": 0.0006882045571547849,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.999965790891903,
-          "final_quench_independent_energy": 3.75646780062783e-08,
-          "spectral_complexity": 0.11294563455343494,
-          "checksum": "251ea8b7395bd461",
+          "final_structure_prominence": 27.999988131785813,
+          "final_quench_independent_energy": 1.1652407385665094e-09,
+          "spectral_complexity": 0.16902071256360252,
+          "checksum": "fed31e4dad00e12e",
           "measured_by": {
-            "mean_amplitude_growth": 56.6352,
-            "structure_factor_prominence": 28.0,
-            "defect_count": 0,
-            "persistent_defects": false
-          }
-        },
-        {
-          "finite": true,
-          "seed": 592195666,
-          "raw_reference_level": 1,
-          "reference_score": 1.4455,
-          "final_mean_amplitude": 0.00523343157458914,
-          "final_defect_count": 0,
-          "final_structure_prominence": 27.999994485800215,
-          "final_quench_independent_energy": 6.491435150668482e-08,
-          "spectral_complexity": 0.1832695728076605,
-          "checksum": "505ca3e62deb7f08",
-          "measured_by": {
-            "mean_amplitude_growth": 58.355,
+            "mean_amplitude_growth": 7.6414,
             "structure_factor_prominence": 28.0,
             "defect_count": 0,
             "persistent_defects": false
@@ -154,101 +154,102 @@
       "finite_runs": 3,
       "mean_metrics": {
         "raw_reference_level": 1.0,
-        "reference_score": 1.3802,
-        "final_mean_amplitude": 0.0051208003302971395,
+        "reference_score": 1.3894333333333335,
+        "final_mean_amplitude": 0.0007678873006654068,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.99998060746754,
-        "final_quench_independent_energy": 4.7105959884220104e-08,
-        "spectral_complexity": 0.15649906989622464
+        "final_structure_prominence": 27.999971026229684,
+        "final_quench_independent_energy": 9.593498314898615e-10,
+        "spectral_complexity": 0.1696577194891946
       },
       "control_mean_metrics": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.3751333333333333,
-        "final_mean_amplitude": 3.294031999796871e-05,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.999986513559094,
-        "final_quench_independent_energy": 1.7575275003743583e-12,
-        "spectral_complexity": 0.1715035914311626
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
       },
       "delta_vs_unmodified_control": {
         "raw_reference_level": 1.0,
-        "reference_score": 1.005067,
-        "final_mean_amplitude": 0.005088,
+        "reference_score": 1.020533,
+        "final_mean_amplitude": 0.00074,
         "final_defect_count": 0.0,
-        "final_structure_prominence": -6e-06,
+        "final_structure_prominence": -9e-06,
         "final_quench_independent_energy": 0.0,
-        "spectral_complexity": -0.015005
+        "spectral_complexity": 0.000283
       },
-      "orientation_priority_only": 2.020072,
+      "orientation_priority_only": 2.020816,
       "counts_as_strict_zero_evidence": false,
       "may_change_room_or_official_level": false,
       "may_seed_new_strict_target": false,
       "interpretation": "探索用の介入実験。差が出ても、その介入自体が自然創発したとは主張しない。抽象的な機構仮説だけをstrict側で再検証する。"
     },
     {
-      "hypothesis_id": "science-turing-spatial-control-analogy",
-      "title": "Science Bridge: The Chemical Basis of Morphogenesis",
-      "question": "If the local control timescale varies smoothly in space, does anonymous organization change in a reproducible way?",
-      "rationale": "Literature mechanism: A spatially homogeneous state can become unstable and develop structure through reaction and transport, with small disturbances acting as triggers.  Translation warning: g001 is not Turing's multi-morphogen reaction-diffusion system. The experiment below is only a mechanism-inspired perturbation, not a reproduction of the paper.",
-      "experiment_type": "radial_quench",
-      "provenance_class": "SPATIALLY_DRIVEN_EXPLORATORY",
+      "hypothesis_id": "auto-elliptic_confinement",
+      "title": "円ではなく楕円形の0領域にする",
+      "question": "円ではなく楕円形の0領域にすると、そこから生じる関係・欠陥・分岐はどう変わるか？",
+      "rationale": "円で差が出ても円固有なのか異方性/有限サイズなのかを分解する",
+      "experiment_type": "elliptic_confinement",
+      "provenance_class": "GEOMETRY_SCAFFOLDED_EXPLORATORY",
       "parameters": {
-        "contrast": 0.42
+        "axis_x": 0.86,
+        "axis_y": 0.58
       },
-      "abstract_factor": "spatial_quench_gradient",
-      "strict_transfer_question": "空間パターンを指定せず、局所時定数の不均一だけで同様の組織化が起こるか",
-      "source": "science-bridge:turing-1952-morphogenesis:10.1098/rstb.1952.0012",
+      "abstract_factor": "boundary_anisotropy",
+      "strict_transfer_question": "特定形状を置かず、異方的な有限サイズ制約だけでも同じ差が残るか",
+      "source": "evidence-aware-auto",
       "runs": [
         {
           "finite": true,
-          "seed": 564207018,
+          "seed": 932654128,
           "raw_reference_level": 0,
-          "reference_score": 0.6103,
-          "final_mean_amplitude": 0.0001549911829617039,
+          "reference_score": 0.616,
+          "final_mean_amplitude": 1.1333825123150045e-06,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.113198679886672,
-          "final_quench_independent_energy": 5.162871868972403e-09,
-          "spectral_complexity": 0.26387908421062023,
-          "checksum": "66e8e34975352db2",
+          "final_structure_prominence": 26.301293282089024,
+          "final_quench_independent_energy": 5.575251754189738e-13,
+          "spectral_complexity": 0.27181760236836444,
+          "checksum": "76eed9fb06d2edb9",
           "measured_by": {
-            "mean_amplitude_growth": 1.6985,
-            "structure_factor_prominence": 27.1132,
+            "mean_amplitude_growth": 0.0272,
+            "structure_factor_prominence": 26.3013,
             "defect_count": 0,
             "persistent_defects": false
           }
         },
         {
           "finite": true,
-          "seed": 597405629,
+          "seed": 453253875,
           "raw_reference_level": 0,
-          "reference_score": 0.6087,
-          "final_mean_amplitude": 0.00013494236635664666,
+          "reference_score": 0.6161,
+          "final_mean_amplitude": 1.0300528020191141e-06,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.111514376720365,
-          "final_quench_independent_energy": 3.919805028630446e-09,
-          "spectral_complexity": 0.2639159358478923,
-          "checksum": "da0454d07682bb64",
+          "final_structure_prominence": 26.29836223647561,
+          "final_quench_independent_energy": 4.609073006320729e-13,
+          "spectral_complexity": 0.2718879467292966,
+          "checksum": "c0eb6939ae36339d",
           "measured_by": {
-            "mean_amplitude_growth": 1.437,
-            "structure_factor_prominence": 27.1115,
+            "mean_amplitude_growth": 0.0246,
+            "structure_factor_prominence": 26.2984,
             "defect_count": 0,
             "persistent_defects": false
           }
         },
         {
           "finite": true,
-          "seed": 1797353,
+          "seed": 834086810,
           "raw_reference_level": 0,
-          "reference_score": 0.6053,
-          "final_mean_amplitude": 6.502282066836042e-05,
+          "reference_score": 0.6157,
+          "final_mean_amplitude": 1.7127563037292913e-06,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.109540926222003,
-          "final_quench_independent_energy": 9.080819584598423e-10,
-          "spectral_complexity": 0.2639577672114565,
-          "checksum": "b664fb0c0bfb37c2",
+          "final_structure_prominence": 26.3081189966274,
+          "final_quench_independent_energy": 1.2692694091706618e-12,
+          "spectral_complexity": 0.27155474012977815,
+          "checksum": "e0ce4283553d14f2",
           "measured_by": {
-            "mean_amplitude_growth": 0.7133,
-            "structure_factor_prominence": 27.1095,
+            "mean_amplitude_growth": 0.0424,
+            "structure_factor_prominence": 26.3081,
             "defect_count": 0,
             "persistent_defects": false
           }
@@ -257,42 +258,457 @@
       "finite_runs": 3,
       "mean_metrics": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.6081,
-        "final_mean_amplitude": 0.00011831878999557033,
+        "reference_score": 0.6159333333333333,
+        "final_mean_amplitude": 1.2920638726878034e-06,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.111417994276348,
-        "final_quench_independent_energy": 3.3302529520208972e-09,
-        "spectral_complexity": 0.26391759575665635
+        "final_structure_prominence": 26.30259150506401,
+        "final_quench_independent_energy": 7.625672950739029e-13,
+        "spectral_complexity": 0.27175342974247974
       },
       "control_mean_metrics": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.3751333333333333,
-        "final_mean_amplitude": 3.294031999796871e-05,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.999986513559094,
-        "final_quench_independent_energy": 1.7575275003743583e-12,
-        "spectral_complexity": 0.1715035914311626
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
       },
       "delta_vs_unmodified_control": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.232967,
-        "final_mean_amplitude": 8.5e-05,
+        "reference_score": 0.247033,
+        "final_mean_amplitude": -2.6e-05,
         "final_defect_count": 0.0,
-        "final_structure_prominence": -0.888569,
-        "final_quench_independent_energy": 0.0,
-        "spectral_complexity": 0.092414
+        "final_structure_prominence": -1.697388,
+        "final_quench_independent_energy": -0.0,
+        "spectral_complexity": 0.102379
       },
-      "orientation_priority_only": 0.325381,
+      "orientation_priority_only": 0.349412,
       "counts_as_strict_zero_evidence": false,
       "may_change_room_or_official_level": false,
       "may_seed_new_strict_target": false,
       "interpretation": "探索用の介入実験。差が出ても、その介入自体が自然創発したとは主張しない。抽象的な機構仮説だけをstrict側で再検証する。"
     },
     {
-      "hypothesis_id": "science-kzm-slow-quench-analogy",
-      "title": "Science Bridge: Kibble-Zurek mechanism and beyond in a holographic superfluid disk",
-      "question": "Do slower environmental changes alter defect and anonymous-transition statistics?",
-      "rationale": "Literature mechanism: Crossing a continuous transition at finite rate connects quench timescales to spontaneous symmetry breaking and topological-defect production.  Translation warning: Matching a quench-rate trend would not establish Kibble-Zurek universality in g001. The bridge only imports the falsifiable idea that transition rate may control defect statistics.",
+      "hypothesis_id": "direction-circle-zero-001",
+      "title": "0が存在できる場所そのものを丸くしたら何が変わるか",
+      "question": "正方形周期空間ではなく円形の有限領域にすると、欠陥・多体関係・分岐の頻度はどう変化するか？",
+      "rationale": "三角形が分離に特別とは限らないため、個々の形ではなく全体系の境界曲率・閉じ込めが効く可能性を探索する。",
+      "experiment_type": "circular_confinement",
+      "provenance_class": "GEOMETRY_SCAFFOLDED_EXPLORATORY",
+      "parameters": {
+        "radius": 0.82
+      },
+      "abstract_factor": "confinement_and_boundary_curvature",
+      "strict_transfer_question": "円を置かず、境界曲率や有限サイズだけが変化境界を支配するかをランダム境界ensembleで確認する",
+      "source": "AI Scientist",
+      "runs": [
+        {
+          "finite": true,
+          "seed": 441346146,
+          "raw_reference_level": 0,
+          "reference_score": 0.5756,
+          "final_mean_amplitude": 4.388182895402249e-06,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.818036504808028,
+          "final_quench_independent_energy": 4.2120075385948415e-12,
+          "spectral_complexity": 0.247439254579198,
+          "checksum": "8080148a1a8a7a76",
+          "measured_by": {
+            "mean_amplitude_growth": 0.0824,
+            "structure_factor_prominence": 27.818,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 590029147,
+          "raw_reference_level": 0,
+          "reference_score": 0.5771,
+          "final_mean_amplitude": 3.7373144239833105e-06,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.792015516023508,
+          "final_quench_independent_energy": 3.094982173951139e-12,
+          "spectral_complexity": 0.24820696355175748,
+          "checksum": "92dbf0e0cb378468",
+          "measured_by": {
+            "mean_amplitude_growth": 0.0665,
+            "structure_factor_prominence": 27.792,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 995485293,
+          "raw_reference_level": 0,
+          "reference_score": 0.5759,
+          "final_mean_amplitude": 3.5325982994925197e-06,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.812836469475034,
+          "final_quench_independent_energy": 2.7366638675873974e-12,
+          "spectral_complexity": 0.2475881514527718,
+          "checksum": "6ae2ab565d43b75c",
+          "measured_by": {
+            "mean_amplitude_growth": 0.0665,
+            "structure_factor_prominence": 27.8128,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        }
+      ],
+      "finite_runs": 3,
+      "mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.5761999999999999,
+        "final_mean_amplitude": 3.88603187295936e-06,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.807629496768854,
+        "final_quench_independent_energy": 3.347884526711126e-12,
+        "spectral_complexity": 0.2477447898612424
+      },
+      "control_mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
+      },
+      "delta_vs_unmodified_control": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.2073,
+        "final_mean_amplitude": -2.4e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": -0.19235,
+        "final_quench_independent_energy": 0.0,
+        "spectral_complexity": 0.078371
+      },
+      "orientation_priority_only": 0.285671,
+      "counts_as_strict_zero_evidence": false,
+      "may_change_room_or_official_level": false,
+      "may_seed_new_strict_target": false,
+      "interpretation": "探索用の介入実験。差が出ても、その介入自体が自然創発したとは主張しない。抽象的な機構仮説だけをstrict側で再検証する。"
+    },
+    {
+      "hypothesis_id": "auto-single_random_energy_kick",
+      "title": "途中で一度だけランダムな場所へエネルギーを入れる",
+      "question": "途中で一度だけランダムな場所へエネルギーを入れると、そこから生じる関係・欠陥・分岐はどう変わるか？",
+      "rationale": "静的配置ではなく摂動への応答性そのものを調べる",
+      "experiment_type": "single_random_energy_kick",
+      "provenance_class": "DRIVEN_EXPLORATORY",
+      "parameters": {
+        "time_fraction": 0.45,
+        "radius": 0.16,
+        "factor": 4.0
+      },
+      "abstract_factor": "response_to_local_perturbation",
+      "strict_transfer_question": "外部キックなしでも内部揺らぎへの応答・修復・分岐の同じ統計が現れるか",
+      "source": "evidence-aware-auto",
+      "runs": [
+        {
+          "finite": true,
+          "seed": 210237825,
+          "raw_reference_level": 0,
+          "reference_score": 0.4757,
+          "final_mean_amplitude": 3.921280024178729e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.988576990997792,
+          "final_quench_independent_energy": 1.1496996246218772e-10,
+          "spectral_complexity": 0.2077051365176746,
+          "checksum": "1ff9aa769c50f0f4",
+          "measured_by": {
+            "mean_amplitude_growth": 0.4255,
+            "structure_factor_prominence": 27.9886,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 82313386,
+          "raw_reference_level": 0,
+          "reference_score": 0.4637,
+          "final_mean_amplitude": 8.331414447171016e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.990942114911647,
+          "final_quench_independent_energy": 1.4397425634298142e-10,
+          "spectral_complexity": 0.203447339937421,
+          "checksum": "13d0b61b35bb26e6",
+          "measured_by": {
+            "mean_amplitude_growth": 0.9249,
+            "structure_factor_prominence": 27.9909,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 244404246,
+          "raw_reference_level": 0,
+          "reference_score": 0.4762,
+          "final_mean_amplitude": 4.064368676234945e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.989917921811337,
+          "final_quench_independent_energy": 1.304952598050808e-10,
+          "spectral_complexity": 0.2078596942804352,
+          "checksum": "acd772944a47442d",
+          "measured_by": {
+            "mean_amplitude_growth": 0.4433,
+            "structure_factor_prominence": 27.9899,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        }
+      ],
+      "finite_runs": 3,
+      "mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.47186666666666666,
+        "final_mean_amplitude": 5.4390210491948964e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.98981234257359,
+        "final_quench_independent_energy": 1.2981315953674999e-10,
+        "spectral_complexity": 0.20633739024517694
+      },
+      "control_mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
+      },
+      "delta_vs_unmodified_control": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.102967,
+        "final_mean_amplitude": 2.7e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": -0.010167,
+        "final_quench_independent_energy": 0.0,
+        "spectral_complexity": 0.036963
+      },
+      "orientation_priority_only": 0.13993,
+      "counts_as_strict_zero_evidence": false,
+      "may_change_room_or_official_level": false,
+      "may_seed_new_strict_target": false,
+      "interpretation": "探索用の介入実験。差が出ても、その介入自体が自然創発したとは主張しない。抽象的な機構仮説だけをstrict側で再検証する。"
+    },
+    {
+      "hypothesis_id": "auto-uniform_energy_boost",
+      "title": "0全体へ一様に追加エネルギーを与える",
+      "question": "0全体へ一様に追加エネルギーを与えると、そこから生じる関係・欠陥・分岐はどう変わるか？",
+      "rationale": "局所エネルギー配置と関係崩壊の対応が一定しないため、まず総量と局在を分離する",
+      "experiment_type": "uniform_energy_boost",
+      "provenance_class": "DRIVEN_EXPLORATORY",
+      "parameters": {
+        "factor": 3.0
+      },
+      "abstract_factor": "energy_density_scale",
+      "strict_transfer_question": "形を与えず初期揺らぎのエネルギー尺度だけを変えると同じ変化境界が現れるか",
+      "source": "evidence-aware-auto",
+      "runs": [
+        {
+          "finite": true,
+          "seed": 909991653,
+          "raw_reference_level": 0,
+          "reference_score": 0.3113,
+          "final_mean_amplitude": 8.592651514149084e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.999947321228206,
+          "final_quench_independent_energy": 6.136127201443864e-12,
+          "spectral_complexity": 0.14753804746616914,
+          "checksum": "83cbbb66c0140fc5",
+          "measured_by": {
+            "mean_amplitude_growth": 0.3144,
+            "structure_factor_prominence": 27.9999,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 619511894,
+          "raw_reference_level": 0,
+          "reference_score": 0.4097,
+          "final_mean_amplitude": 8.199332835603485e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.999988062764018,
+          "final_quench_independent_energy": 3.165847423157781e-11,
+          "spectral_complexity": 0.18450547710790602,
+          "checksum": "8fcb59731ae2d837",
+          "measured_by": {
+            "mean_amplitude_growth": 0.2969,
+            "structure_factor_prominence": 28.0,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 643964256,
+          "raw_reference_level": 0,
+          "reference_score": 0.2407,
+          "final_mean_amplitude": 0.00010837212894725771,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.999959674984307,
+          "final_quench_independent_energy": 1.692783228896765e-11,
+          "spectral_complexity": 0.11397392612106155,
+          "checksum": "5917f80cd45b9320",
+          "measured_by": {
+            "mean_amplitude_growth": 0.3855,
+            "structure_factor_prominence": 28.0,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        }
+      ],
+      "finite_runs": 3,
+      "mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.3205666666666667,
+        "final_mean_amplitude": 9.209732414826114e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.999965019658845,
+        "final_quench_independent_energy": 1.824081124066311e-11,
+        "spectral_complexity": 0.14867248356504556
+      },
+      "control_mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
+      },
+      "delta_vs_unmodified_control": {
+        "raw_reference_level": 0.0,
+        "reference_score": -0.048333,
+        "final_mean_amplitude": 6.5e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": -1.5e-05,
+        "final_quench_independent_energy": 0.0,
+        "spectral_complexity": -0.020702
+      },
+      "orientation_priority_only": 0.069035,
+      "counts_as_strict_zero_evidence": false,
+      "may_change_room_or_official_level": false,
+      "may_seed_new_strict_target": false,
+      "interpretation": "探索用の介入実験。差が出ても、その介入自体が自然創発したとは主張しない。抽象的な機構仮説だけをstrict側で再検証する。"
+    },
+    {
+      "hypothesis_id": "direction-periodic-drive-001",
+      "title": "0へ周期的に環境エネルギーを与えたら内部時間尺度と共鳴するか",
+      "question": "長時間でだけ現れる関係網変化は、外部時間尺度との共鳴・非共鳴によって大きく変わるか？",
+      "rationale": "Deep-Timeで短時間には見えない変化が出るため、時間尺度そのものが機構の手掛かりかもしれない。",
+      "experiment_type": "periodic_global_drive",
+      "provenance_class": "DRIVEN_EXPLORATORY",
+      "parameters": {
+        "amplitude": 0.45,
+        "period": 7.0
+      },
+      "abstract_factor": "temporal_forcing_and_timescale_resonance",
+      "strict_transfer_question": "外部周期を置かず、内部時定数の比だけで同様の周期・分岐が自発するか",
+      "source": "AI Scientist",
+      "runs": [
+        {
+          "finite": true,
+          "seed": 14854355,
+          "raw_reference_level": 0,
+          "reference_score": 0.3401,
+          "final_mean_amplitude": 5.891253064457444e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.999976683364316,
+          "final_quench_independent_energy": 7.830278829478415e-12,
+          "spectral_complexity": 0.15905201440509967,
+          "checksum": "737cad040900049f",
+          "measured_by": {
+            "mean_amplitude_growth": 0.6399,
+            "structure_factor_prominence": 28.0,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 998571904,
+          "raw_reference_level": 0,
+          "reference_score": 0.2985,
+          "final_mean_amplitude": 5.325205714743658e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.99998822391037,
+          "final_quench_independent_energy": 6.2037695043475054e-12,
+          "spectral_complexity": 0.14211285330000323,
+          "checksum": "ce5241902b873fa0",
+          "measured_by": {
+            "mean_amplitude_growth": 0.5867,
+            "structure_factor_prominence": 28.0,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        },
+        {
+          "finite": true,
+          "seed": 423361884,
+          "raw_reference_level": 0,
+          "reference_score": 0.3341,
+          "final_mean_amplitude": 5.2481279263541567e-05,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.999993343457025,
+          "final_quench_independent_energy": 1.0820782881628235e-11,
+          "spectral_complexity": 0.15671284849799144,
+          "checksum": "aba05269d5403893",
+          "measured_by": {
+            "mean_amplitude_growth": 0.57,
+            "structure_factor_prominence": 28.0,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
+        }
+      ],
+      "finite_runs": 3,
+      "mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.3242333333333334,
+        "final_mean_amplitude": 5.48819556851842e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.999986083577237,
+        "final_quench_independent_energy": 8.284943738484719e-12,
+        "spectral_complexity": 0.15262590540103144
+      },
+      "control_mean_metrics": {
+        "raw_reference_level": 0.0,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
+      },
+      "delta_vs_unmodified_control": {
+        "raw_reference_level": 0.0,
+        "reference_score": -0.044667,
+        "final_mean_amplitude": 2.7e-05,
+        "final_defect_count": 0.0,
+        "final_structure_prominence": 6e-06,
+        "final_quench_independent_energy": 0.0,
+        "spectral_complexity": -0.016748
+      },
+      "orientation_priority_only": 0.061415,
+      "counts_as_strict_zero_evidence": false,
+      "may_change_room_or_official_level": false,
+      "may_seed_new_strict_target": false,
+      "interpretation": "探索用の介入実験。差が出ても、その介入自体が自然創発したとは主張しない。抽象的な機構仮説だけをstrict側で再検証する。"
+    },
+    {
+      "hypothesis_id": "auto-slow_quench",
+      "title": "非常にゆっくり環境を変える",
+      "question": "非常にゆっくり環境を変えると、そこから生じる関係・欠陥・分岐はどう変わるか？",
+      "rationale": "時間を与えること自体が重要か、quench速度が重要かを切り分ける",
       "experiment_type": "slow_quench",
       "provenance_class": "DRIVEN_EXPLORATORY",
       "parameters": {
@@ -300,21 +716,21 @@
       },
       "abstract_factor": "quench_timescale",
       "strict_transfer_question": "strictな一様開始のままquench時定数だけを変えた時にも同じ遷移が残るか",
-      "source": "science-bridge:kzm-2026-superfluid-disk:10.1038/s41467-026-69940-w",
+      "source": "evidence-aware-auto",
       "runs": [
         {
           "finite": true,
-          "seed": 651858008,
+          "seed": 831649743,
           "raw_reference_level": 0,
-          "reference_score": 0.3357,
-          "final_mean_amplitude": 1.9518376712879635e-07,
+          "reference_score": 0.3131,
+          "final_mean_amplitude": 2.082582019165692e-07,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.99998549785786,
-          "final_quench_independent_energy": 9.748148259676771e-17,
-          "spectral_complexity": 0.15733248168635566,
-          "checksum": "2a8e669525c9dc3b",
+          "final_structure_prominence": 27.99996391172325,
+          "final_quench_independent_energy": 4.39512805004326e-17,
+          "spectral_complexity": 0.14830897714757946,
+          "checksum": "49542fb277408b0a",
           "measured_by": {
-            "mean_amplitude_growth": 0.0021,
+            "mean_amplitude_growth": 0.0023,
             "structure_factor_prominence": 28.0,
             "defect_count": 0,
             "persistent_defects": false
@@ -322,103 +738,104 @@
         },
         {
           "finite": true,
-          "seed": 649019250,
+          "seed": 754661969,
           "raw_reference_level": 0,
-          "reference_score": 0.3772,
-          "final_mean_amplitude": 2.471405970702598e-07,
+          "reference_score": 0.3081,
+          "final_mean_amplitude": 2.1367999895451908e-07,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.999991167954377,
-          "final_quench_independent_energy": 1.1963192009072007e-16,
-          "spectral_complexity": 0.17290863023078196,
-          "checksum": "bf5624fb55d9558a",
-          "measured_by": {
-            "mean_amplitude_growth": 0.0027,
-            "structure_factor_prominence": 28.0,
-            "defect_count": 0,
-            "persistent_defects": false
-          }
-        },
-        {
-          "finite": true,
-          "seed": 110984656,
-          "raw_reference_level": 0,
-          "reference_score": 0.3243,
-          "final_mean_amplitude": 2.198239404032359e-07,
-          "final_defect_count": 0,
-          "final_structure_prominence": 27.999981781184818,
-          "final_quench_independent_energy": 6.46521613252568e-17,
-          "spectral_complexity": 0.15285750807452025,
-          "checksum": "372a56cbf514c93c",
+          "final_structure_prominence": 27.999966089620823,
+          "final_quench_independent_energy": 5.511664331929052e-17,
+          "spectral_complexity": 0.1462041331773549,
+          "checksum": "66256f8cd0bc615c",
           "measured_by": {
             "mean_amplitude_growth": 0.0024,
             "structure_factor_prominence": 28.0,
             "defect_count": 0,
             "persistent_defects": false
           }
+        },
+        {
+          "finite": true,
+          "seed": 603797312,
+          "raw_reference_level": 0,
+          "reference_score": 0.4096,
+          "final_mean_amplitude": 2.0325172745080212e-07,
+          "final_defect_count": 0,
+          "final_structure_prominence": 27.99998926290835,
+          "final_quench_independent_energy": 4.466255032180495e-17,
+          "spectral_complexity": 0.18448217836746486,
+          "checksum": "0c5d37ba21cbded1",
+          "measured_by": {
+            "mean_amplitude_growth": 0.0023,
+            "structure_factor_prominence": 28.0,
+            "defect_count": 0,
+            "persistent_defects": false
+          }
         }
       ],
       "finite_runs": 3,
       "mean_metrics": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.3457333333333333,
-        "final_mean_amplitude": 2.2071610153409736e-07,
+        "reference_score": 0.34359999999999996,
+        "final_mean_amplitude": 2.0839664277396345e-07,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.999986148999017,
-        "final_quench_independent_energy": 9.392185467091486e-17,
-        "spectral_complexity": 0.16103287333055263
+        "final_structure_prominence": 27.999973088084136,
+        "final_quench_independent_energy": 4.7910158047176025e-17,
+        "spectral_complexity": 0.15966509623079972
       },
       "control_mean_metrics": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.3751333333333333,
-        "final_mean_amplitude": 3.294031999796871e-05,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.999986513559094,
-        "final_quench_independent_energy": 1.7575275003743583e-12,
-        "spectral_complexity": 0.1715035914311626
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
       },
       "delta_vs_unmodified_control": {
         "raw_reference_level": 0.0,
-        "reference_score": -0.0294,
-        "final_mean_amplitude": -3.3e-05,
+        "reference_score": -0.0253,
+        "final_mean_amplitude": -2.7e-05,
         "final_defect_count": 0.0,
-        "final_structure_prominence": -0.0,
+        "final_structure_prominence": -7e-06,
         "final_quench_independent_energy": -0.0,
-        "spectral_complexity": -0.010471
+        "spectral_complexity": -0.009709
       },
-      "orientation_priority_only": 0.039871,
+      "orientation_priority_only": 0.035009,
       "counts_as_strict_zero_evidence": false,
       "may_change_room_or_official_level": false,
       "may_seed_new_strict_target": false,
       "interpretation": "探索用の介入実験。差が出ても、その介入自体が自然創発したとは主張しない。抽象的な機構仮説だけをstrict側で再検証する。"
     },
     {
-      "hypothesis_id": "science-active-droplet-local-supply-analogy",
-      "title": "Science Bridge: Growth and division of active droplets provides a model for protocells",
-      "question": "Does a localized supply of field amplitude create a later growth-to-instability sequence rather than merely a larger static structure?",
-      "rationale": "Literature mechanism: A chemically driven material supply can make droplets grow until shape instabilities produce division-like daughter droplets.  Translation warning: A local energy pulse in g001 is not a chemically active droplet metabolism. It is an exploratory analogy used only to ask whether localized supply changes later instability.",
-      "experiment_type": "central_energy_pulse",
+      "hypothesis_id": "direction-energy-shell-001",
+      "title": "リング状のエネルギー界面は関係網の形成や分岐を変えるか",
+      "question": "同じ平均エネルギーでも、曲率を持つエネルギー界面を置いた場合に欠陥・関係・分岐の統計は変わるか？",
+      "rationale": "局所エネルギー偏りと幾何崩壊の時間順序が一定していないため、総量と空間配置を大胆に分離してみる。",
+      "experiment_type": "annular_energy_shell",
       "provenance_class": "GEOMETRY_SCAFFOLDED_EXPLORATORY",
       "parameters": {
-        "radius": 0.28,
-        "factor": 6.0
+        "radius": 0.5,
+        "width": 0.09,
+        "factor": 4.0
       },
-      "abstract_factor": "localized_energy_concentration",
-      "strict_transfer_question": "中心位置を指定せずランダムな局所エネルギー集中でも同じ機構が現れるか",
-      "source": "science-bridge:zwicker-2017-active-droplets:10.1038/nphys3984",
+      "abstract_factor": "curved_energy_interface",
+      "strict_transfer_question": "リング形状を置かず、曲率を持つ界面が自発形成した場合にも同じ変化が起きるか",
+      "source": "AI Scientist",
       "runs": [
         {
           "finite": true,
-          "seed": 466284583,
+          "seed": 976635408,
           "raw_reference_level": 0,
-          "reference_score": 0.4268,
-          "final_mean_amplitude": 3.218277548116354e-05,
+          "reference_score": 0.3414,
+          "final_mean_amplitude": 0.00010357080055750409,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.999967304704516,
-          "final_quench_independent_energy": 1.0094437215304058e-11,
-          "spectral_complexity": 0.19050323360705151,
-          "checksum": "131116b396f30884",
+          "final_structure_prominence": 27.99999038892725,
+          "final_quench_independent_energy": 1.3441831472781593e-11,
+          "spectral_complexity": 0.15956649621263824,
+          "checksum": "205a08acb1e45372",
           "measured_by": {
-            "mean_amplitude_growth": 0.2564,
+            "mean_amplitude_growth": 0.7073,
             "structure_factor_prominence": 28.0,
             "defect_count": 0,
             "persistent_defects": false
@@ -426,17 +843,17 @@
         },
         {
           "finite": true,
-          "seed": 598691747,
+          "seed": 33358136,
           "raw_reference_level": 0,
-          "reference_score": 0.3492,
-          "final_mean_amplitude": 3.846690444062869e-05,
+          "reference_score": 0.4167,
+          "final_mean_amplitude": 0.0001183300329417653,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.999978338109123,
-          "final_quench_independent_energy": 1.1131111470777324e-11,
-          "spectral_complexity": 0.16254027107096244,
-          "checksum": "5236a8d5f90ee299",
+          "final_structure_prominence": 27.999995120765416,
+          "final_quench_independent_energy": 1.538449654215916e-11,
+          "spectral_complexity": 0.18697595611882797,
+          "checksum": "03deb8ee922d6888",
           "measured_by": {
-            "mean_amplitude_growth": 0.3112,
+            "mean_amplitude_growth": 0.7898,
             "structure_factor_prominence": 28.0,
             "defect_count": 0,
             "persistent_defects": false
@@ -444,17 +861,17 @@
         },
         {
           "finite": true,
-          "seed": 810317750,
+          "seed": 91131745,
           "raw_reference_level": 0,
-          "reference_score": 0.385,
-          "final_mean_amplitude": 3.8742249988469564e-05,
+          "reference_score": 0.3958,
+          "final_mean_amplitude": 0.00010363519237804124,
           "final_defect_count": 0,
-          "final_structure_prominence": 27.999979504122006,
-          "final_quench_independent_energy": 9.617254445409983e-12,
-          "spectral_complexity": 0.17573341155034644,
-          "checksum": "8d9245e0810ab7a2",
+          "final_structure_prominence": 27.999991188528515,
+          "final_quench_independent_energy": 1.408124287354779e-11,
+          "spectral_complexity": 0.17958727278022107,
+          "checksum": "631c2f153d049939",
           "measured_by": {
-            "mean_amplitude_growth": 0.3252,
+            "mean_amplitude_growth": 0.7035,
             "structure_factor_prominence": 28.0,
             "defect_count": 0,
             "persistent_defects": false
@@ -464,32 +881,32 @@
       "finite_runs": 3,
       "mean_metrics": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.387,
-        "final_mean_amplitude": 3.646397663675393e-05,
+        "reference_score": 0.3846333333333333,
+        "final_mean_amplitude": 0.0001085120086257702,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.999975048978552,
-        "final_quench_independent_energy": 1.0280934377163786e-11,
-        "spectral_complexity": 0.17625897207612015
+        "final_structure_prominence": 27.999992232740393,
+        "final_quench_independent_energy": 1.4302523629496181e-11,
+        "spectral_complexity": 0.17537657503722906
       },
       "control_mean_metrics": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.3751333333333333,
-        "final_mean_amplitude": 3.294031999796871e-05,
+        "reference_score": 0.3689,
+        "final_mean_amplitude": 2.7412951138999932e-05,
         "final_defect_count": 0.0,
-        "final_structure_prominence": 27.999986513559094,
-        "final_quench_independent_energy": 1.7575275003743583e-12,
-        "spectral_complexity": 0.1715035914311626
+        "final_structure_prominence": 27.999979763455684,
+        "final_quench_independent_energy": 2.0180125469030354e-12,
+        "spectral_complexity": 0.16937424643115526
       },
       "delta_vs_unmodified_control": {
         "raw_reference_level": 0.0,
-        "reference_score": 0.011867,
-        "final_mean_amplitude": 4e-06,
+        "reference_score": 0.015733,
+        "final_mean_amplitude": 8.1e-05,
         "final_defect_count": 0.0,
-        "final_structure_prominence": -1.1e-05,
+        "final_structure_prominence": 1.2e-05,
         "final_quench_independent_energy": 0.0,
-        "spectral_complexity": 0.004755
+        "spectral_complexity": 0.006002
       },
-      "orientation_priority_only": 0.016622,
+      "orientation_priority_only": 0.021735,
       "counts_as_strict_zero_evidence": false,
       "may_change_room_or_official_level": false,
       "may_seed_new_strict_target": false,
@@ -497,32 +914,50 @@
     }
   ],
   "top_hypothesis_for_next_question": {
-    "hypothesis_id": "science-kzm-fast-quench-analogy",
-    "title": "Science Bridge: Kibble-Zurek mechanism and beyond in a holographic superfluid disk",
-    "question": "Do faster environmental changes alter defect and anonymous-transition statistics in the opposite regime?",
-    "rationale": "Literature mechanism: Crossing a continuous transition at finite rate connects quench timescales to spontaneous symmetry breaking and topological-defect production.  Translation warning: Matching a quench-rate trend would not establish Kibble-Zurek universality in g001. The bridge only imports the falsifiable idea that transition rate may control defect statistics.",
+    "hypothesis_id": "direction-fast-quench-holdout-001",
+    "title": "急冷速度だけで探索統計は再現可能に変わるか",
+    "question": "Free Hypothesis Lab の同じ source context で quench duration だけを短縮したとき、unmodified matched control に対して defect・spectral・amplitude 系の探索統計は fresh seed をまたいで同じ向きに変わるか？",
+    "rationale": "fast_quench runner は一般的な exploratory quench 比較を実行し、X fingerprint 判定や slow-side paired X holdout は行わない。したがって以前の X-c41277c11b 固有の問いをこの lane の結果で検証したとは扱わず、ここでは quench-timescale の抽象的 stress test に限定する。X 固有の future-seed paired holdout は X-mechanism lane に残す。",
     "experiment_type": "fast_quench",
     "provenance_class": "DRIVEN_EXPLORATORY",
     "parameters": {
-      "duration_factor": 0.35
+      "duration_factor": 0.6
     },
     "abstract_factor": "quench_timescale",
     "strict_transfer_question": "strictな一様開始のまま急冷速度だけで未知遷移の頻度が変わるか",
-    "source": "science-bridge:kzm-2026-superfluid-disk:10.1038/s41467-026-69940-w",
+    "source": "AI Scientist",
     "runs": [
       {
         "finite": true,
-        "seed": 282050323,
+        "seed": 262577523,
         "raw_reference_level": 1,
-        "reference_score": 1.4172,
-        "final_mean_amplitude": 0.005039591716839198,
+        "reference_score": 1.4281,
+        "final_mean_amplitude": 0.0008187027706758011,
         "final_defect_count": 0,
-        "final_structure_prominence": 27.999981545710504,
-        "final_quench_independent_energy": 3.88388501396972e-08,
-        "spectral_complexity": 0.17328200232757843,
-        "checksum": "3f3e5d83274467c1",
+        "final_structure_prominence": 27.99992937884277,
+        "final_quench_independent_energy": 4.833578805147448e-10,
+        "spectral_complexity": 0.18357518751411447,
+        "checksum": "f04e7d650bc18950",
         "measured_by": {
-          "mean_amplitude_growth": 56.6644,
+          "mean_amplitude_growth": 8.8121,
+          "structure_factor_prominence": 27.9999,
+          "defect_count": 0,
+          "persistent_defects": false
+        }
+      },
+      {
+        "finite": true,
+        "seed": 906026018,
+        "raw_reference_level": 1,
+        "reference_score": 1.354,
+        "final_mean_amplitude": 0.0007967545741656345,
+        "final_defect_count": 0,
+        "final_structure_prominence": 27.99999556806047,
+        "final_quench_independent_energy": 1.2294508753883307e-09,
+        "spectral_complexity": 0.15637725838986685,
+        "checksum": "11475b7ce3c5146b",
+        "measured_by": {
+          "mean_amplitude_growth": 8.6077,
           "structure_factor_prominence": 28.0,
           "defect_count": 0,
           "persistent_defects": false
@@ -530,35 +965,17 @@
       },
       {
         "finite": true,
-        "seed": 392915617,
+        "seed": 962949568,
         "raw_reference_level": 1,
-        "reference_score": 1.2779,
-        "final_mean_amplitude": 0.00508937769946308,
+        "reference_score": 1.3862,
+        "final_mean_amplitude": 0.0006882045571547849,
         "final_defect_count": 0,
-        "final_structure_prominence": 27.999965790891903,
-        "final_quench_independent_energy": 3.75646780062783e-08,
-        "spectral_complexity": 0.11294563455343494,
-        "checksum": "251ea8b7395bd461",
+        "final_structure_prominence": 27.999988131785813,
+        "final_quench_independent_energy": 1.1652407385665094e-09,
+        "spectral_complexity": 0.16902071256360252,
+        "checksum": "fed31e4dad00e12e",
         "measured_by": {
-          "mean_amplitude_growth": 56.6352,
-          "structure_factor_prominence": 28.0,
-          "defect_count": 0,
-          "persistent_defects": false
-        }
-      },
-      {
-        "finite": true,
-        "seed": 592195666,
-        "raw_reference_level": 1,
-        "reference_score": 1.4455,
-        "final_mean_amplitude": 0.00523343157458914,
-        "final_defect_count": 0,
-        "final_structure_prominence": 27.999994485800215,
-        "final_quench_independent_energy": 6.491435150668482e-08,
-        "spectral_complexity": 0.1832695728076605,
-        "checksum": "505ca3e62deb7f08",
-        "measured_by": {
-          "mean_amplitude_growth": 58.355,
+          "mean_amplitude_growth": 7.6414,
           "structure_factor_prominence": 28.0,
           "defect_count": 0,
           "persistent_defects": false
@@ -568,32 +985,32 @@
     "finite_runs": 3,
     "mean_metrics": {
       "raw_reference_level": 1.0,
-      "reference_score": 1.3802,
-      "final_mean_amplitude": 0.0051208003302971395,
+      "reference_score": 1.3894333333333335,
+      "final_mean_amplitude": 0.0007678873006654068,
       "final_defect_count": 0.0,
-      "final_structure_prominence": 27.99998060746754,
-      "final_quench_independent_energy": 4.7105959884220104e-08,
-      "spectral_complexity": 0.15649906989622464
+      "final_structure_prominence": 27.999971026229684,
+      "final_quench_independent_energy": 9.593498314898615e-10,
+      "spectral_complexity": 0.1696577194891946
     },
     "control_mean_metrics": {
       "raw_reference_level": 0.0,
-      "reference_score": 0.3751333333333333,
-      "final_mean_amplitude": 3.294031999796871e-05,
+      "reference_score": 0.3689,
+      "final_mean_amplitude": 2.7412951138999932e-05,
       "final_defect_count": 0.0,
-      "final_structure_prominence": 27.999986513559094,
-      "final_quench_independent_energy": 1.7575275003743583e-12,
-      "spectral_complexity": 0.1715035914311626
+      "final_structure_prominence": 27.999979763455684,
+      "final_quench_independent_energy": 2.0180125469030354e-12,
+      "spectral_complexity": 0.16937424643115526
     },
     "delta_vs_unmodified_control": {
       "raw_reference_level": 1.0,
-      "reference_score": 1.005067,
-      "final_mean_amplitude": 0.005088,
+      "reference_score": 1.020533,
+      "final_mean_amplitude": 0.00074,
       "final_defect_count": 0.0,
-      "final_structure_prominence": -6e-06,
+      "final_structure_prominence": -9e-06,
       "final_quench_independent_energy": 0.0,
-      "spectral_complexity": -0.015005
+      "spectral_complexity": 0.000283
     },
-    "orientation_priority_only": 2.020072,
+    "orientation_priority_only": 2.020816,
     "counts_as_strict_zero_evidence": false,
     "may_change_room_or_official_level": false,
     "may_seed_new_strict_target": false,
