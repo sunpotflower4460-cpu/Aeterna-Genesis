@@ -3,12 +3,12 @@
   "patterns": {
     "X-b991d59a4d": {
       "pattern_id": "X-b991d59a4d",
-      "latest_observations": 5045,
-      "bursts": 61,
-      "experiments": 290,
+      "latest_observations": 5099,
+      "bursts": 62,
+      "experiments": 294,
       "intervention_stats": {
         "baseline": {
-          "n": 122,
+          "n": 124,
           "hit": 82
         },
         "drive-weaker": {
@@ -78,17 +78,17 @@
         "correlation-shorter": {
           "knob": "correlation_length",
           "factor": 0.65,
-          "n": 16,
+          "n": 17,
           "hit": 9,
-          "paired_n": 16,
+          "paired_n": 17,
           "paired_hit_delta_sum": -1.0
         },
         "correlation-longer": {
           "knob": "correlation_length",
           "factor": 1.55,
-          "n": 16,
+          "n": 17,
           "hit": 9,
-          "paired_n": 16,
+          "paired_n": 17,
           "paired_hit_delta_sum": 0.0
         }
       },
@@ -141,6 +141,7 @@
         310273450,
         319289077,
         326064722,
+        338041430,
         346184237,
         347813360,
         349668170,
@@ -166,6 +167,7 @@
         515169694,
         542912982,
         555232347,
+        567175264,
         579741306,
         586172211,
         596919005,
@@ -227,7 +229,7 @@
         994414885,
         998014561
       ],
-      "unique_fresh_seed_groups": 122,
+      "unique_fresh_seed_groups": 124,
       "recent_events": [
         {
           "burst_id": "dream-20260901-0593",
@@ -1574,7 +1576,7 @@
           "known_context": []
         }
       ],
-      "intervention_cursor": 8,
+      "intervention_cursor": 0,
       "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
       "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは drive-weaker が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
       "leading_sensitivity_candidate": {
@@ -1584,7 +1586,7 @@
         "paired_n": 17,
         "paired_hit_rate_delta": -0.3529
       },
-      "last_burst": "dream-20260907-0733",
+      "last_burst": "dream-20260907-0740",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -8195,21 +8197,6 @@
   },
   "history": [
     {
-      "burst_id": "dream-20260826-0484",
-      "pattern_id": "X-c41277c11b",
-      "observations_seen": 1112,
-      "experiments": 4,
-      "target_events": 2,
-      "status": "UNRESOLVED",
-      "sensitivity": {
-        "intervention": "quench-faster",
-        "knob": "quench_duration",
-        "factor": 0.6,
-        "paired_n": 11,
-        "paired_hit_rate_delta": -0.3636
-      }
-    },
-    {
       "burst_id": "dream-20260827-0485",
       "pattern_id": "X-c41277c11b",
       "observations_seen": 1112,
@@ -12033,21 +12020,36 @@
         "paired_n": 51,
         "paired_hit_rate_delta": -0.4118
       }
+    },
+    {
+      "burst_id": "dream-20260907-0740",
+      "pattern_id": "X-b991d59a4d",
+      "observations_seen": 5099,
+      "experiments": 4,
+      "target_events": 0,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "sensitivity": {
+        "intervention": "drive-weaker",
+        "knob": "drive_strength",
+        "factor": 0.55,
+        "paired_n": 17,
+        "paired_hit_rate_delta": -0.3529
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260907-0739",
-    "pattern_id": "X-c41277c11b",
-    "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
-    "leading_explanation": "amp_std増加の多くが平均振幅増加と一緒に起き、amp_cvは比較的安定しています。単純な振幅スケール効果かをpaired controlで反証中です。",
+    "burst_id": "dream-20260907-0740",
+    "pattern_id": "X-b991d59a4d",
+    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは drive-weaker が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
     "leading_sensitivity_candidate": {
-      "intervention": "noise-lower",
-      "knob": "noise_amplitude",
-      "factor": 0.35,
-      "paired_n": 51,
-      "paired_hit_rate_delta": -0.4118
+      "intervention": "drive-weaker",
+      "knob": "drive_strength",
+      "factor": 0.55,
+      "paired_n": 17,
+      "paired_hit_rate_delta": -0.3529
     },
-    "next_question": "平均振幅で正規化したときXの特徴が消えるかを別seed・別介入で反証し、単純な増幅を未知構造と誤認していないか確認する。",
+    "next_question": "drive-weaker のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
