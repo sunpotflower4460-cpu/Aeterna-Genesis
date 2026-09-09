@@ -3332,13 +3332,13 @@
     },
     "X-87c10fb560": {
       "pattern_id": "X-87c10fb560",
-      "latest_observations": 1455,
-      "bursts": 58,
-      "experiments": 262,
+      "latest_observations": 1459,
+      "bursts": 59,
+      "experiments": 266,
       "intervention_stats": {
         "baseline": {
-          "n": 116,
-          "hit": 82
+          "n": 118,
+          "hit": 83
         },
         "drive-weaker": {
           "knob": "drive_strength",
@@ -3391,18 +3391,18 @@
         "noise-lower": {
           "knob": "noise_amplitude",
           "factor": 0.35,
-          "n": 14,
+          "n": 15,
           "hit": 9,
-          "paired_n": 14,
+          "paired_n": 15,
           "paired_hit_delta_sum": -1.0
         },
         "noise-higher": {
           "knob": "noise_amplitude",
           "factor": 2.4,
-          "n": 14,
+          "n": 15,
           "hit": 5,
-          "paired_n": 14,
-          "paired_hit_delta_sum": -5.0
+          "paired_n": 15,
+          "paired_hit_delta_sum": -6.0
         },
         "correlation-shorter": {
           "knob": "correlation_length",
@@ -3423,13 +3423,13 @@
       },
       "event_classes": {
         "AMPLITUDE_SCALE_TRACKING": 160,
-        "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION": 10
+        "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION": 11
       },
       "quench_phase_counts": {
-        "POST_QUENCH": 170
+        "POST_QUENCH": 171
       },
-      "target_events": 170,
-      "sum_amp_cv_log_gain": -14.441225999999997,
+      "target_events": 171,
+      "sum_amp_cv_log_gain": -14.585643999999997,
       "defect_change_events": 0,
       "fresh_seed_groups": [
         9412124,
@@ -3463,6 +3463,7 @@
         260173774,
         262580528,
         263131401,
+        271883971,
         271981825,
         278198933,
         283074800,
@@ -3498,6 +3499,7 @@
         607964323,
         608800026,
         609233153,
+        613926974,
         626086566,
         632266909,
         642897941,
@@ -3549,29 +3551,8 @@
         993182903,
         994762486
       ],
-      "unique_fresh_seed_groups": 116,
+      "unique_fresh_seed_groups": 118,
       "recent_events": [
-        {
-          "burst_id": "dream-20260831-0577",
-          "seed": 163372031,
-          "intervention": "baseline-1",
-          "explanation_class": "AMPLITUDE_SCALE_TRACKING",
-          "event_time": 25.7,
-          "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 0.5273,
-          "amp_std_log_gain": 0.523109,
-          "amp_cv_before": 1.20504248,
-          "amp_cv_after": 1.20000262,
-          "amp_cv_log_gain": -0.004191,
-          "high_amp_fraction_delta": 0.0,
-          "spectral_k_rms_delta": -0.000257,
-          "spectral_entropy_delta": -0.001856,
-          "gradient_rms_log_gain": 0.515697,
-          "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
-        },
         {
           "burst_id": "dream-20260831-0577",
           "seed": 163372031,
@@ -4894,11 +4875,32 @@
           "defect_count_after": 0.0,
           "defect_count_changed": false,
           "known_context": []
+        },
+        {
+          "burst_id": "dream-20260909-0791",
+          "seed": 613926974,
+          "intervention": "baseline-1",
+          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
+          "event_time": 25.72857143,
+          "quench_phase": "POST_QUENCH",
+          "mean_amp_log_gain": 0.748037,
+          "amp_std_log_gain": 0.60362,
+          "amp_cv_before": 0.02389635,
+          "amp_cv_after": 0.02068291,
+          "amp_cv_log_gain": -0.144418,
+          "high_amp_fraction_delta": 0.000434,
+          "spectral_k_rms_delta": -1e-06,
+          "spectral_entropy_delta": -8.1e-05,
+          "gradient_rms_log_gain": 0.632856,
+          "defect_count_before": 0.0,
+          "defect_count_after": 0.0,
+          "defect_count_changed": false,
+          "known_context": []
         }
       ],
-      "intervention_cursor": 6,
-      "status": "WEAKENED_SIMULATOR_EXPLANATION",
-      "leading_explanation": "以前支持された説明に対し、最近のholdoutでは同じ特徴が十分残っていません。失敗を消さず、説明を再び未解決側へ戻します。",
+      "intervention_cursor": 8,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
       "leading_sensitivity_candidate": {
         "intervention": "quench-faster",
         "knob": "quench_duration",
@@ -4906,12 +4908,12 @@
         "paired_n": 15,
         "paired_hit_rate_delta": -0.8667
       },
-      "last_burst": "dream-20260909-0788",
+      "last_burst": "dream-20260909-0791",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
       "historical_x_identity_changed": false,
-      "next_question": "holdoutで弱まった理由を残し、以前の支持を固定観念にせず、別説明と介入方向を再比較する。"
+      "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。"
     },
     "X-dcc459d23a": {
       "pattern_id": "X-dcc459d23a",
@@ -8234,21 +8236,6 @@
     }
   },
   "history": [
-    {
-      "burst_id": "dream-20260829-0535",
-      "pattern_id": "X-87c10fb560",
-      "observations_seen": 996,
-      "experiments": 4,
-      "target_events": 1,
-      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-      "sensitivity": {
-        "intervention": "quench-faster",
-        "knob": "quench_duration",
-        "factor": 0.6,
-        "paired_n": 7,
-        "paired_hit_rate_delta": -0.8571
-      }
-    },
     {
       "burst_id": "dream-20260829-0536",
       "pattern_id": "X-c41277c11b",
@@ -12073,21 +12060,36 @@
         "paired_n": 18,
         "paired_hit_rate_delta": -0.7222
       }
+    },
+    {
+      "burst_id": "dream-20260909-0791",
+      "pattern_id": "X-87c10fb560",
+      "observations_seen": 1459,
+      "experiments": 4,
+      "target_events": 1,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "sensitivity": {
+        "intervention": "quench-faster",
+        "knob": "quench_duration",
+        "factor": 0.6,
+        "paired_n": 15,
+        "paired_hit_rate_delta": -0.8667
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260909-0790",
-    "pattern_id": "X-dcc459d23a",
+    "burst_id": "dream-20260909-0791",
+    "pattern_id": "X-87c10fb560",
     "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
-    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは drive-stronger が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
+    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
     "leading_sensitivity_candidate": {
-      "intervention": "drive-stronger",
-      "knob": "drive_strength",
-      "factor": 1.55,
-      "paired_n": 18,
-      "paired_hit_rate_delta": -0.7222
+      "intervention": "quench-faster",
+      "knob": "quench_duration",
+      "factor": 0.6,
+      "paired_n": 15,
+      "paired_hit_rate_delta": -0.8667
     },
-    "next_question": "drive-stronger のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
+    "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
