@@ -1,7 +1,7 @@
 # Research Continuity — read before changing direction
 
 latest strict burst: `dream-20260909-0780`
-continuity digest: `07c8bc26cbb429f227a1`
+continuity digest: `4d693b31f37c0ad8fedc`
 
 過去の重要点を次の研究へ渡す handoff です。元の証拠を置き換えません。
 
