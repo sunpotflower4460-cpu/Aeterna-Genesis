@@ -3,12 +3,12 @@
   "patterns": {
     "X-b991d59a4d": {
       "pattern_id": "X-b991d59a4d",
-      "latest_observations": 6200,
-      "bursts": 78,
-      "experiments": 368,
+      "latest_observations": 6260,
+      "bursts": 79,
+      "experiments": 372,
       "intervention_stats": {
         "baseline": {
-          "n": 156,
+          "n": 158,
           "hit": 104
         },
         "drive-weaker": {
@@ -30,17 +30,17 @@
         "diffusion-weaker": {
           "knob": "diffusion_ratio",
           "factor": 0.55,
-          "n": 21,
+          "n": 22,
           "hit": 14,
-          "paired_n": 21,
+          "paired_n": 22,
           "paired_hit_delta_sum": -2.0
         },
         "diffusion-stronger": {
           "knob": "diffusion_ratio",
           "factor": 1.65,
-          "n": 21,
+          "n": 22,
           "hit": 18,
-          "paired_n": 21,
+          "paired_n": 22,
           "paired_hit_delta_sum": 3.0
         },
         "quench-faster": {
@@ -221,8 +221,10 @@
         820640743,
         825639206,
         827863374,
+        831559778,
         840085553,
         840131307,
+        841524474,
         842112714,
         845828798,
         845906571,
@@ -261,7 +263,7 @@
         994414885,
         998014561
       ],
-      "unique_fresh_seed_groups": 156,
+      "unique_fresh_seed_groups": 158,
       "recent_events": [
         {
           "burst_id": "dream-20260905-0698",
@@ -1608,7 +1610,7 @@
           "known_context": []
         }
       ],
-      "intervention_cursor": 2,
+      "intervention_cursor": 4,
       "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
       "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは drive-weaker が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
       "leading_sensitivity_candidate": {
@@ -1618,7 +1620,7 @@
         "paired_n": 22,
         "paired_hit_rate_delta": -0.4091
       },
-      "last_burst": "dream-20260912-0852",
+      "last_burst": "dream-20260912-0859",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
@@ -8350,21 +8352,6 @@
   },
   "history": [
     {
-      "burst_id": "dream-20260901-0603",
-      "pattern_id": "X-c41277c11b",
-      "observations_seen": 1420,
-      "experiments": 4,
-      "target_events": 1,
-      "status": "UNRESOLVED",
-      "sensitivity": {
-        "intervention": "noise-lower",
-        "knob": "noise_amplitude",
-        "factor": 0.35,
-        "paired_n": 29,
-        "paired_hit_rate_delta": -0.3103
-      }
-    },
-    {
       "burst_id": "dream-20260901-0604",
       "pattern_id": "X-c41277c11b",
       "observations_seen": 1423,
@@ -12188,21 +12175,36 @@
         "paired_n": 20,
         "paired_hit_rate_delta": -0.3
       }
+    },
+    {
+      "burst_id": "dream-20260912-0859",
+      "pattern_id": "X-b991d59a4d",
+      "observations_seen": 6260,
+      "experiments": 4,
+      "target_events": 0,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "sensitivity": {
+        "intervention": "drive-weaker",
+        "knob": "drive_strength",
+        "factor": 0.55,
+        "paired_n": 22,
+        "paired_hit_rate_delta": -0.4091
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260912-0858",
-    "pattern_id": "X-28f62e46f9",
-    "status": "UNRESOLVED",
-    "leading_explanation": "振幅スケール成長、相対的不均一化、複数機構の混在をまだ十分に切り分けられていません。",
+    "burst_id": "dream-20260912-0859",
+    "pattern_id": "X-b991d59a4d",
+    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは drive-weaker が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
     "leading_sensitivity_candidate": {
       "intervention": "drive-weaker",
       "knob": "drive_strength",
       "factor": 0.55,
-      "paired_n": 20,
-      "paired_hit_rate_delta": -0.3
+      "paired_n": 22,
+      "paired_hit_rate_delta": -0.4091
     },
-    "next_question": "paired fresh-seed controlsと回転する一因子介入を続け、amp_std増加がamp_cv増加を伴うかを切り分ける。",
+    "next_question": "drive-weaker のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {
