@@ -5,7 +5,7 @@
 - curated sources: 4
 - executable literature-inspired directions: 4
 - live literature candidates: 10
-- online metadata/search errors: 0
+- online metadata/search errors: 1
 
 ## The Chemical Basis of Morphogenesis
 - DOI: `10.1098/rstb.1952.0012`
