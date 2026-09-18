@@ -3391,27 +3391,27 @@
     "X-87c10fb560": {
       "pattern_id": "X-87c10fb560",
       "latest_observations": 1801,
-      "bursts": 88,
-      "experiments": 396,
+      "bursts": 89,
+      "experiments": 400,
       "intervention_stats": {
         "baseline": {
-          "n": 176,
+          "n": 178,
           "hit": 136
         },
         "drive-weaker": {
           "knob": "drive_strength",
           "factor": 0.55,
-          "n": 22,
+          "n": 23,
           "hit": 6,
-          "paired_n": 22,
+          "paired_n": 23,
           "paired_hit_delta_sum": -14.0
         },
         "drive-stronger": {
           "knob": "drive_strength",
           "factor": 1.55,
-          "n": 22,
+          "n": 23,
           "hit": 12,
-          "paired_n": 22,
+          "paired_n": 23,
           "paired_hit_delta_sum": -6.0
         },
         "diffusion-weaker": {
@@ -3583,6 +3583,7 @@
         552777998,
         552821716,
         559318860,
+        563365317,
         564465811,
         565012491,
         566181367,
@@ -3636,6 +3637,7 @@
         811381745,
         818447816,
         831186266,
+        835247757,
         851177673,
         857728789,
         865866788,
@@ -3667,7 +3669,7 @@
         993182903,
         994762486
       ],
-      "unique_fresh_seed_groups": 176,
+      "unique_fresh_seed_groups": 178,
       "recent_events": [
         {
           "burst_id": "dream-20260912-0868",
@@ -5014,9 +5016,9 @@
           "known_context": []
         }
       ],
-      "intervention_cursor": 0,
-      "status": "WEAKENED_SIMULATOR_EXPLANATION",
-      "leading_explanation": "以前支持された説明に対し、最近のholdoutでは同じ特徴が十分残っていません。失敗を消さず、説明を再び未解決側へ戻します。",
+      "intervention_cursor": 2,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
       "leading_sensitivity_candidate": {
         "intervention": "quench-faster",
         "knob": "quench_duration",
@@ -5024,12 +5026,12 @@
         "paired_n": 22,
         "paired_hit_rate_delta": -0.8182
       },
-      "last_burst": "dream-20260918-0994",
+      "last_burst": "dream-20260918-0995",
       "counts_as_strict_zero_evidence": false,
       "fundamental_physical_law_claim": false,
       "causal_claim_about_nature": false,
       "historical_x_identity_changed": false,
-      "next_question": "holdoutで弱まった理由を残し、以前の支持を固定観念にせず、別説明と介入方向を再比較する。"
+      "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。"
     },
     "X-dcc459d23a": {
       "pattern_id": "X-dcc459d23a",
@@ -8575,21 +8577,6 @@
     }
   },
   "history": [
-    {
-      "burst_id": "dream-20260907-0739",
-      "pattern_id": "X-c41277c11b",
-      "observations_seen": 1864,
-      "experiments": 4,
-      "target_events": 1,
-      "status": "AMPLITUDE_SCALE_EFFECT_CANDIDATE",
-      "sensitivity": {
-        "intervention": "noise-lower",
-        "knob": "noise_amplitude",
-        "factor": 0.35,
-        "paired_n": 51,
-        "paired_hit_rate_delta": -0.4118
-      }
-    },
     {
       "burst_id": "dream-20260907-0740",
       "pattern_id": "X-b991d59a4d",
@@ -12414,13 +12401,28 @@
         "paired_n": 22,
         "paired_hit_rate_delta": -0.8182
       }
+    },
+    {
+      "burst_id": "dream-20260918-0995",
+      "pattern_id": "X-87c10fb560",
+      "observations_seen": 1801,
+      "experiments": 4,
+      "target_events": 0,
+      "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+      "sensitivity": {
+        "intervention": "quench-faster",
+        "knob": "quench_duration",
+        "factor": 0.6,
+        "paired_n": 22,
+        "paired_hit_rate_delta": -0.8182
+      }
     }
   ],
   "latest": {
-    "burst_id": "dream-20260918-0994",
+    "burst_id": "dream-20260918-0995",
     "pattern_id": "X-87c10fb560",
-    "status": "WEAKENED_SIMULATOR_EXPLANATION",
-    "leading_explanation": "以前支持された説明に対し、最近のholdoutでは同じ特徴が十分残っていません。失敗を消さず、説明を再び未解決側へ戻します。",
+    "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+    "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
     "leading_sensitivity_candidate": {
       "intervention": "quench-faster",
       "knob": "quench_duration",
@@ -12428,7 +12430,7 @@
       "paired_n": 22,
       "paired_hit_rate_delta": -0.8182
     },
-    "next_question": "holdoutで弱まった理由を残し、以前の支持を固定観念にせず、別説明と介入方向を再比較する。",
+    "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
     "counts_as_strict_zero_evidence": false
   },
   "policy": {

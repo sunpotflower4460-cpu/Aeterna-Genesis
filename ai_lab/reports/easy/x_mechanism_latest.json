@@ -1,18 +1,18 @@
 {
   "version": 2,
   "mode": "persistent-x-mechanism-dissection",
-  "burst_id": "dream-20260918-0994",
+  "burst_id": "dream-20260918-0995",
   "ran": true,
   "pattern_id": "X-87c10fb560",
   "source_recurrence_status": "REPEATED_NONSPECIFIC",
   "observations_seen": 1801,
-  "experiments": 6,
-  "target_events_this_burst": 4,
+  "experiments": 4,
+  "target_events_this_burst": 0,
   "cumulative": {
-    "bursts": 88,
-    "experiments": 396,
+    "bursts": 89,
+    "experiments": 400,
     "target_events": 276,
-    "unique_fresh_seed_groups": 176,
+    "unique_fresh_seed_groups": 178,
     "event_classes": {
       "AMPLITUDE_SCALE_TRACKING": 258,
       "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION": 18
@@ -22,23 +22,23 @@
     },
     "intervention_stats": {
       "baseline": {
-        "n": 176,
+        "n": 178,
         "hit": 136
       },
       "drive-weaker": {
         "knob": "drive_strength",
         "factor": 0.55,
-        "n": 22,
+        "n": 23,
         "hit": 6,
-        "paired_n": 22,
+        "paired_n": 23,
         "paired_hit_delta_sum": -14.0
       },
       "drive-stronger": {
         "knob": "drive_strength",
         "factor": 1.55,
-        "n": 22,
+        "n": 23,
         "hit": 12,
-        "paired_n": 22,
+        "paired_n": 23,
         "paired_hit_delta_sum": -6.0
       },
       "diffusion-weaker": {
@@ -108,8 +108,8 @@
     },
     "defect_change_events": 0
   },
-  "status": "WEAKENED_SIMULATOR_EXPLANATION",
-  "leading_explanation": "以前支持された説明に対し、最近のholdoutでは同じ特徴が十分残っていません。失敗を消さず、説明を再び未解決側へ戻します。",
+  "status": "SUPPORTED_SIMULATOR_SENSITIVITY_CANDIDATE",
+  "leading_explanation": "amp_std増加の大半は平均振幅の増加に追随し、尺度で割ったamp_cvはほぼ増えていません。空間的不均一化より、シミュレータの全体振幅成長を検出器が拾う説明が強い候補です。 paired-controlでは quench-faster が出現率を動かす感度候補です。これはモデル内の候補であり、自然界の因果法則という意味ではありません。",
   "leading_sensitivity_candidate": {
     "intervention": "quench-faster",
     "knob": "quench_duration",
@@ -117,157 +117,60 @@
     "paired_n": 22,
     "paired_hit_rate_delta": -0.8182
   },
-  "next_question": "holdoutで弱まった理由を残し、以前の支持を固定観念にせず、別説明と介入方向を再比較する。",
+  "next_question": "quench-faster のpaired効果を将来のholdout seedで再検証し、感度の向きと大きさが残るか壊しに行く。",
   "results": [
     {
-      "seed": 314510204,
-      "paired_control_seed": 314510204,
+      "seed": 563365317,
+      "paired_control_seed": 563365317,
       "intervention": "baseline-0",
       "intervened_knob": null,
       "factor": 1.0,
-      "same_pattern_seen": true,
-      "target_event_metrics": [
-        {
-          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
-          "event_time": 20.58571429,
-          "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 2.898587,
-          "amp_std_log_gain": 1.080121,
-          "amp_cv_before": 0.07540169,
-          "amp_cv_after": 0.01223577,
-          "amp_cv_log_gain": -1.818466,
-          "high_amp_fraction_delta": -0.001736,
-          "spectral_k_rms_delta": 0.000128,
-          "spectral_entropy_delta": 0.005861,
-          "gradient_rms_log_gain": 2.129391,
-          "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
-        }
-      ],
-      "other_pattern_ids": [],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
-    },
-    {
-      "seed": 431884270,
-      "paired_control_seed": 431884270,
-      "intervention": "baseline-1",
-      "intervened_knob": null,
-      "factor": 1.0,
-      "same_pattern_seen": true,
-      "target_event_metrics": [
-        {
-          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
-          "event_time": 20.58571429,
-          "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 2.897745,
-          "amp_std_log_gain": 1.068211,
-          "amp_cv_before": 0.04585176,
-          "amp_cv_after": 0.00735867,
-          "amp_cv_log_gain": -1.829534,
-          "high_amp_fraction_delta": -0.006076,
-          "spectral_k_rms_delta": 3.3e-05,
-          "spectral_entropy_delta": 0.003154,
-          "gradient_rms_log_gain": 2.646433,
-          "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
-        }
-      ],
-      "other_pattern_ids": [
-        "X-b991d59a4d"
-      ],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
-    },
-    {
-      "seed": 314510204,
-      "paired_control_seed": 314510204,
-      "intervention": "noise-lower",
-      "intervened_knob": "noise_amplitude",
-      "factor": 0.35,
-      "same_pattern_seen": false,
-      "target_event_metrics": [],
-      "other_pattern_ids": [
-        "X-fa3969eebd",
-        "X-6c8f8e7ed7"
-      ],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
-    },
-    {
-      "seed": 431884270,
-      "paired_control_seed": 431884270,
-      "intervention": "noise-higher",
-      "intervened_knob": "noise_amplitude",
-      "factor": 2.4,
       "same_pattern_seen": false,
       "target_event_metrics": [],
       "other_pattern_ids": [
         "X-b991d59a4d",
-        "X-74451b8708"
+        "X-f9c9693c62"
       ],
       "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
     },
     {
-      "seed": 314510204,
-      "paired_control_seed": 314510204,
-      "intervention": "correlation-shorter",
-      "intervened_knob": "correlation_length",
-      "factor": 0.65,
-      "same_pattern_seen": true,
-      "target_event_metrics": [
-        {
-          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
-          "event_time": 20.58571429,
-          "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 2.898587,
-          "amp_std_log_gain": 1.080121,
-          "amp_cv_before": 0.07540169,
-          "amp_cv_after": 0.01223577,
-          "amp_cv_log_gain": -1.818466,
-          "high_amp_fraction_delta": -0.001736,
-          "spectral_k_rms_delta": 0.000128,
-          "spectral_entropy_delta": 0.005861,
-          "gradient_rms_log_gain": 2.129391,
-          "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
-        }
-      ],
-      "other_pattern_ids": [],
-      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
-    },
-    {
-      "seed": 431884270,
-      "paired_control_seed": 431884270,
-      "intervention": "correlation-longer",
-      "intervened_knob": "correlation_length",
-      "factor": 1.55,
-      "same_pattern_seen": true,
-      "target_event_metrics": [
-        {
-          "explanation_class": "ABSOLUTE_GROWTH_WITH_RELATIVE_HOMOGENIZATION",
-          "event_time": 20.58571429,
-          "quench_phase": "POST_QUENCH",
-          "mean_amp_log_gain": 2.897745,
-          "amp_std_log_gain": 1.068211,
-          "amp_cv_before": 0.04585176,
-          "amp_cv_after": 0.00735867,
-          "amp_cv_log_gain": -1.829534,
-          "high_amp_fraction_delta": -0.006076,
-          "spectral_k_rms_delta": 3.3e-05,
-          "spectral_entropy_delta": 0.003154,
-          "gradient_rms_log_gain": 2.646433,
-          "defect_count_before": 0.0,
-          "defect_count_after": 0.0,
-          "defect_count_changed": false,
-          "known_context": []
-        }
-      ],
+      "seed": 835247757,
+      "paired_control_seed": 835247757,
+      "intervention": "baseline-1",
+      "intervened_knob": null,
+      "factor": 1.0,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
       "other_pattern_ids": [
-        "X-b991d59a4d"
+        "X-471f3249b3"
+      ],
+      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
+    },
+    {
+      "seed": 563365317,
+      "paired_control_seed": 563365317,
+      "intervention": "drive-weaker",
+      "intervened_knob": "drive_strength",
+      "factor": 0.55,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-598bba8da1",
+        "X-f9c9693c62"
+      ],
+      "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
+    },
+    {
+      "seed": 835247757,
+      "paired_control_seed": 835247757,
+      "intervention": "drive-stronger",
+      "intervened_knob": "drive_strength",
+      "factor": 1.55,
+      "same_pattern_seen": false,
+      "target_event_metrics": [],
+      "other_pattern_ids": [
+        "X-f023a067af",
+        "X-230269371a"
       ],
       "zero_purity": "Z-B:random-field-no-objects-with-declared-scale"
     }
