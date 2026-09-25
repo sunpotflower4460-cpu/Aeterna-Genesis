@@ -49,6 +49,7 @@ CI（`.github/workflows/*-ci.yml`）はファイルを明示して実行する�
 | `tools/snapshot.py` | numpy＋zlib だけで PNG を作る（`render_field(arr, path)`） |
 | `tools/inventory.py` | 1 つの commit を読み取り専用で棚卸しする |
 | `app/` | Observatory（React＋three.js）。データ（`app/public/data`、`app/generated`）は生成物で git 管理外。`python tools/build_catalog.py && python tools/collect_app_data.py` で作る |
+| `app/src/aquarium/`、`app/public/aquarium/` | 水槽ビュー（アプリの最初の画面）。白ごとのテンプレートを t=0 から回した記録を 3D の水槽で見る。データは `python tools/export_aquarium.py` で作り、commit する（合計 150 MB 以下） |
 | `audit/`、`archive/` | P2 の監査結果（Room と X の要約・キーフレーム）と、P3 で作業ツリーから外したデータの目録（`python tools/archive.py restore <path>` で戻せる） |
 | `ai_lab/dream/` | 停止した自動研究の実装（P5 で整理予定。新しい作業の足場にしない） |
 

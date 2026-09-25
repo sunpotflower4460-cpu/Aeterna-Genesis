@@ -100,3 +100,44 @@ button{font-family:inherit; cursor:pointer; color:inherit}
 }
 
 @media (prefers-reduced-motion: reduce){*{animation:none!important; transition:none!important}}
+
+/* ---------------- Aquarium (水槽) ---------------- */
+.aq-root{position:relative; height:100%; width:100%; overflow:hidden; background:radial-gradient(120% 90% at 50% 20%, #0b1626 0%, var(--ground) 60%)}
+.aq-canvas{position:absolute; inset:0}
+.aq-center{height:100%; display:grid; place-items:center; text-align:center; padding:24px}
+.aq-overlay{position:absolute; inset:0; pointer-events:none}
+.aq-top{position:absolute; top:16px; left:16px; max-width:min(560px, calc(100% - 32px)); padding:12px 16px}
+.aq-title{margin:6px 0 8px; font-size:20px; font-weight:600; line-height:1.3}
+.aq-badges{display:flex; flex-wrap:wrap; gap:6px}
+.aq-carousel{position:absolute; left:16px; right:16px; bottom:84px; display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin}
+.aq-chip{flex:0 0 auto; border:1px solid var(--line-2); background:var(--panel); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-radius:999px; padding:8px 14px; font-size:13px; white-space:nowrap}
+.aq-chip.on{border-color:var(--accent); background:var(--accent-dim); color:var(--ink)}
+.aq-chip-d{color:var(--accent); font-size:11px; margin-right:4px}
+.aq-obs{color:var(--candidate)}
+.aq-card{position:absolute; top:16px; right:16px; width:min(380px, calc(100% - 32px)); padding:14px 16px 12px; font-size:13.5px; line-height:1.6;
+  max-height:calc(100% - 200px); overflow:auto}
+.aq-card ul{margin:6px 0 10px; padding-left:18px}
+.aq-caption{margin:0 22px 10px 0}
+.aq-cols{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.aq-put{color:var(--warn)}
+.aq-src{font-size:10.5px; margin-top:4px; word-break:break-all}
+.aq-x{position:absolute; top:8px; right:8px; min-width:26px; height:26px}
+.aq-reopen{position:absolute; top:16px; right:16px}
+.aq-controls{position:absolute; left:16px; right:16px; bottom:16px; display:flex; align-items:center; gap:10px; padding:10px 12px; flex-wrap:wrap}
+.aq-range{flex:1 1 180px; accent-color:var(--accent)}
+.aq-time{min-width:64px; font-size:12px}
+.aq-select{background:var(--panel-solid); color:var(--ink); border:1px solid var(--line-2); border-radius:8px; padding:6px 8px}
+.aq-knob{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted)}
+.aq-knob input{width:84px; accent-color:var(--accent)}
+.aq-back{position:fixed; right:16px; bottom:16px; z-index:50}
+@media (max-width: 720px){
+  .aq-top{top:10px; left:10px; right:10px; max-width:none; padding:10px 12px}
+  .aq-title{font-size:16px}
+  .aq-card{top:auto; bottom:190px; right:10px; left:10px; width:auto; max-height:34%}
+  .aq-reopen{top:auto; bottom:190px; right:10px}
+  .aq-carousel{left:10px; right:10px; bottom:128px}
+  .aq-controls{left:10px; right:10px; bottom:10px}
+  .aq-knob input{width:64px}
+  .aq-cols{grid-template-columns:1fr}
+}
