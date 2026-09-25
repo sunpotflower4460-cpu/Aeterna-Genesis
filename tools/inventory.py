@@ -129,7 +129,7 @@ def workflow_triggers(commit: str) -> list[tuple[str, str]]:
     return rows
 
 
-def render(commit: str, confirmed: bool) -> str:
+def render(commit: str, confirmed: bool, drain_note: str | None = None) -> str:
     files = tracked_files(commit)
     total = sum(s for _, s in files)
     by_top: dict[str, list[int]] = collections.defaultdict(lambda: [0, 0])
@@ -157,6 +157,8 @@ def render(commit: str, confirmed: bool) -> str:
     L.append(f"- 測定 commit: `{commit}`（tree `{tree}`、{when}）")
     if confirmed:
         L.append("- **凍結点として確定**：bot の自動 trigger 停止と、実行中・待機中 run の排出を確認した後の `main` 先頭。")
+        if drain_note:
+            L.append(f"- 排出の確認: {drain_note}")
         L.append(f"- 復元手順: `git restore --source={commit} -- <path>`（SHA は不変。タグ作成後はタグ名でも可）")
     else:
         L.append("- ⚠ **凍結点は未確定（スナップショット）**：この時点では bot がまだ動きうるため、この commit の後にも")
@@ -220,7 +222,7 @@ def render(commit: str, confirmed: bool) -> str:
         mark = " ⏸" if name in _BOT_WORKFLOWS else ""
         L.append(f"| `{name}`{mark} | {trig} |")
     L.append("\n⏸ = P0（2026-09 再始動）で自動 trigger を外し、手動（`workflow_dispatch`）のみにする bot。")
-    L.append("上の表は測定 commit 時点の元の trigger を示す（停止後の状態は各 `.yml` 先頭の注記を参照）。")
+    L.append("上の表は測定 commit 時点の trigger をそのまま示す。停止前の trigger は、P0 より前の commit の各 `.yml` に残っている。")
     return "\n".join(L) + "\n"
 
 
@@ -229,11 +231,12 @@ def main() -> None:
     ap.add_argument("--commit", required=True, help="commit to measure (every number comes from this object)")
     ap.add_argument("--confirmed-freeze", action="store_true",
                     help="mark the commit as the confirmed freeze point (bots stopped, in-flight runs drained)")
+    ap.add_argument("--drain-note", help="how the drain was verified (time, method); printed with --confirmed-freeze")
     ap.add_argument("--out", default="docs/INVENTORY_2026-09.md")
     a = ap.parse_args()
     sha = _git("rev-parse", "--verify", a.commit + "^{commit}").strip()
     out = _REPO / a.out
-    out.write_text(render(sha, a.confirmed_freeze), encoding="utf-8")
+    out.write_text(render(sha, a.confirmed_freeze, a.drain_note), encoding="utf-8")
     print(f"wrote {out}")
 
 
