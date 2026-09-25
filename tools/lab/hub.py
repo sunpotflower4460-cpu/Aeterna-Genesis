@@ -5,6 +5,7 @@ latest frame. Frames are "latest wins": a slow viewer skips frames, the simulati
 """
 from __future__ import annotations
 
+import collections
 import itertools
 import multiprocessing as mp
 import os
@@ -18,6 +19,8 @@ from tools.lab.journal import Journal
 from tools.lab.universe import Universe
 
 MAX_FPS = 12.0
+HISTORY = 2000        # measured samples kept per universe (for the observation layer)
+KEYFRAMES = 64        # key frames kept per universe; spacing doubles when full
 
 
 # ---------------------------------------------------------------------------------------- worker side
@@ -80,6 +83,50 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
             return
 
 
+# ---------------------------------------------------------------------------------------- observation
+class ObservationBuffer:
+    """Measured time series + a thinned set of key frames of one universe. The frame right before and right
+    after every intervention is always kept (tagged), so the observation layer can show what changed."""
+
+    def __init__(self, history: int = HISTORY, keyframes: int = KEYFRAMES):
+        self.samples: collections.deque = collections.deque(maxlen=history)
+        self.keyframes: list[dict[str, Any]] = []
+        self.max_kf = keyframes
+        self._every = 1
+        self._count = 0
+        self._tag: str | None = None
+
+    @staticmethod
+    def _kf(seq: int, f: dict[str, Any], tag: str | None) -> dict[str, Any]:
+        return {"seq": seq, "step": f["step"], "t": f["t"], "tag": tag, "lenses": f["lenses"], "metrics": f["metrics"]}
+
+    def add(self, seq: int, f: dict[str, Any]) -> None:
+        if f.get("diverged"):
+            return
+        self.samples.append({"seq": seq, "step": f["step"], "t": f["t"], "metrics": f["metrics"]})
+        tag, self._tag = self._tag, None
+        self._count += 1
+        if tag or not self.keyframes or self._count % self._every == 0:
+            self.keyframes.append(self._kf(seq, f, tag))
+            if len(self.keyframes) > self.max_kf:        # thin untagged frames; keep first, last and tagged
+                n = len(self.keyframes)
+                keep = [k for i, k in enumerate(self.keyframes) if k["tag"] or i in (0, n - 1) or i % 2 == 0]
+                self.keyframes = keep[-self.max_kf:]
+                self._every *= 2
+
+    def mark(self, seq: int, current: dict[str, Any] | None, tag: str) -> None:
+        """Keep the current frame as 'before <tag>' and the next frame as 'after <tag>'."""
+        if current and not current.get("diverged"):
+            if self.keyframes and self.keyframes[-1]["seq"] == seq:
+                self.keyframes[-1]["tag"] = "before " + tag
+            else:
+                self.keyframes.append(self._kf(seq, current, "before " + tag))
+        self._tag = "after " + tag
+
+    def snapshot(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        return list(self.samples), list(self.keyframes)
+
+
 # ---------------------------------------------------------------------------------------- hub side
 def _label(i: int) -> str:
     """A, B, ..., Z, AA, AB, ... -- never reused within a session."""
@@ -102,6 +149,7 @@ class _Handle:
         self.recipe = universe.recipe()
         self.frame: dict[str, Any] | None = None
         self.seq = 0
+        self.obs = ObservationBuffer()        # read by tools/lab/observe.py
         self._replies: dict[int, tuple[bool, Any]] = {}
         self._cv = threading.Condition()
         self._req = itertools.count(1)
@@ -124,6 +172,7 @@ class _Handle:
                 if msg[0] == "frame":
                     self.frame = msg[1]
                     self.seq += 1
+                    self.obs.add(self.seq, msg[1])
                     Hub.bump()
                 else:
                     self._replies[msg[1]] = (msg[2], msg[3])
@@ -260,6 +309,8 @@ class Hub:
     def _intervene(self, uid: str, kind: str, **args: Any) -> dict[str, Any]:
         h = self._get(uid)
         with h.cmd_lock:                        # worker order == recipe order, even for concurrent requests
+            with h._cv:
+                h.obs.mark(h.seq, h.frame, kind if kind != "perturb" else f"perturb:{args.get('name')}")
             out = h.call(kind, **args)
             h.recipe = out["recipe"]
             h.step = out["event"]["step"]
@@ -309,6 +360,11 @@ class Hub:
     def list(self) -> list[dict[str, Any]]:
         return [self.info(uid) for uid in self.ids()]
 
+    def observation(self, uid: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        h = self._get(uid)
+        with h._cv:
+            return h.obs.snapshot()
+
     def latest(self, uid: str) -> tuple[int, dict[str, Any] | None]:
         h = self._get(uid)
         with h._cv:
@@ -329,3 +385,76 @@ class Hub:
                 self.journal.log(kind, universe=uid, **data)
             except OSError:
                 traceback.print_exc()
+
+
+# ---------------------------------------------------------------------------------------- in-process stand-in
+class LocalHub:
+    """Same info()/observation() surface as Hub, without worker processes: for tests and for building an
+    observation packet from the command line (tools/lab/observe.py --white …)."""
+
+    def __init__(self):
+        self._u: dict[str, Universe] = {}
+        self._meta: dict[str, dict[str, Any]] = {}
+        self._obs: dict[str, ObservationBuffer] = {}
+        self._last: dict[str, dict[str, Any]] = {}
+        self._seq = itertools.count(1)
+        self._ids = itertools.count(1)
+        self._labels = (_label(i) for i in itertools.count())
+
+    def _emit(self, uid: str) -> None:
+        f = _frame_msg(self._u[uid], False, 1.0)
+        self._last[uid] = f
+        self._meta[uid]["seq"] = next(self._seq)
+        self._obs[uid].add(self._meta[uid]["seq"], f)
+
+    def _add(self, u: Universe, parent: str | None = None, fork_index: int | None = None) -> str:
+        uid = f"u{next(self._ids)}"
+        self._u[uid], self._obs[uid] = u, ObservationBuffer()
+        self._meta[uid] = {"label": next(self._labels), "parent": parent, "fork_index": fork_index,
+                           "branch_step": u.step_index if parent else None}
+        self._emit(uid)
+        return uid
+
+    def create(self, white_id: str, seed: int = 0, knobs: dict[str, Any] | None = None) -> str:
+        return self._add(Universe(white_id, seed, knobs))
+
+    def run(self, uid: str, frames: int) -> None:
+        u = self._u[uid]
+        for _ in range(frames):
+            u.advance(u.white.steps_per_frame)
+            self._emit(uid)
+
+    def _intervene(self, uid: str, tag: str, fn) -> dict[str, Any]:
+        self._obs[uid].mark(self._meta[uid]["seq"], self._last.get(uid), tag)
+        ev = fn(self._u[uid])
+        self._emit(uid)
+        return ev
+
+    def set_law(self, uid: str, values: dict[str, Any]) -> dict[str, Any]:
+        return self._intervene(uid, "set", lambda u: u.set_law(values))
+
+    def perturb(self, uid: str, name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
+        return self._intervene(uid, f"perturb:{name}", lambda u: u.perturb(name, args))
+
+    def branch(self, uid: str, set_values: dict[str, Any] | None = None, perturb: dict[str, Any] | None = None) -> str:
+        child = self._u[uid].clone()
+        fork = len(child.events)
+        if set_values:
+            child.set_law(set_values)
+        if perturb:
+            child.perturb(perturb["name"], perturb.get("args"))
+        return self._add(child, uid, fork)
+
+    def ids(self) -> list[str]:
+        return list(self._u)
+
+    def info(self, uid: str) -> dict[str, Any]:
+        u, m = self._u[uid], self._meta[uid]
+        w = u.white
+        return {"id": uid, "label": m["label"], "white": w.id, "title": w.title, "dimension": w.dimension,
+                "parent": m["parent"], "branch_step": m["branch_step"], "fork_index": m["fork_index"],
+                "recipe": u.recipe(), "put_in": w.put_in, "step": u.step_index, "t": u.t, "playing": False,
+                "speed": 1.0, "metrics": self._last[uid]["metrics"], "diverged": not u.finite(), "alive": True}
+
+    def observation(self, uid: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        return self._obs[uid].snapshot()

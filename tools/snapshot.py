@@ -22,8 +22,8 @@ _VIRIDIS = np.array([[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], 
 _DIVERG = np.array([[33, 102, 172], [103, 169, 207], [247, 247, 247], [239, 138, 98], [178, 24, 43]], float)
 
 
-def write_png(rgb, path):
-    """Write an (H, W, 3) uint8 array to a PNG file (pure zlib/struct, no image libs)."""
+def encode_png(rgb):
+    """Encode an (H, W, 3) uint8 array as PNG bytes (pure zlib/struct, no image libs)."""
     rgb = np.ascontiguousarray(rgb, dtype=np.uint8)
     H, W, _ = rgb.shape
     raw = b"".join(b"\x00" + rgb[y].tobytes() for y in range(H))
@@ -32,11 +32,14 @@ def write_png(rgb, path):
         c = tag + data
         return struct.pack(">I", len(data)) + c + struct.pack(">I", zlib.crc32(c) & 0xffffffff)
 
+    return (b"\x89PNG\r\n\x1a\n" + _chunk(b"IHDR", struct.pack(">IIBBBBB", W, H, 8, 2, 0, 0, 0))
+            + _chunk(b"IDAT", zlib.compress(raw, 9)) + _chunk(b"IEND", b""))
+
+
+def write_png(rgb, path):
+    """Write an (H, W, 3) uint8 array to a PNG file."""
     with open(path, "wb") as f:
-        f.write(b"\x89PNG\r\n\x1a\n")
-        f.write(_chunk(b"IHDR", struct.pack(">IIBBBBB", W, H, 8, 2, 0, 0, 0)))
-        f.write(_chunk(b"IDAT", zlib.compress(raw, 9)))
-        f.write(_chunk(b"IEND", b""))
+        f.write(encode_png(rgb))
     return path
 
 

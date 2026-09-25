@@ -67,8 +67,10 @@ class White:
     perturbs: list[Perturb]
     put_in: list[str]
     source: str
-    ceiling_ref: str
+    ceiling_ref: str | None          # id in research/index.json "whites" (None: no entry; see `source`)
     defaults: dict[str, Any]
+    # blob tracking for the observation layer: (lens, threshold, "above"|"below"), or None (3D / no blobs)
+    track: tuple[str, float, str] | None = None
     _init: Callable = field(repr=False, default=None)
     _step: Callable = field(repr=False, default=None)
     _lens: Callable = field(repr=False, default=None)
@@ -206,7 +208,7 @@ def _tdgl():
                 Lens("phase", "位相（向き）", "cyclic", -np.pi, np.pi, True)],
         perturbs=[PERTURB_CUT, PERTURB_KICK],
         put_in=["一様な場＋ごく小さなノイズ", "冷却（クエンチ）の強さと速さ"],
-        source="rooms/official/room-g001-a", ceiling_ref="g001", defaults=dict(gl.DEFAULTS),
+        source="rooms/official/room-g001-a", ceiling_ref="g001-tdgl", defaults=dict(gl.DEFAULTS),
         _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
@@ -262,7 +264,7 @@ def _gpe_ring():
         perturbs=[PERTURB_CUT, PERTURB_KICK],
         put_in=["渦の輪（半径 R の形を置いた）", "輪の芯を整える準備（t=0 より前・虚時間 120 ステップ）",
                 "円板状の影＝輪を置いたときの位相の継ぎ目（手法の作り物）"],
-        source="experiments/e003_gpe_vortex_ring", ceiling_ref="gpe", defaults=defaults,
+        source="experiments/e003_gpe_vortex_ring", ceiling_ref=None, defaults=defaults,
         _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb, _cache=cache)
 
 
@@ -308,7 +310,7 @@ def _gray_scott():
                Knob("seed_radius", "種の半径", "start", 3.0, 1.0, 8.0, 0.5)],
         lenses=[Lens("V", "V の濃さ", "high", 0.0, 0.5), Lens("U", "U の濃さ", "low", 0.0, 1.0)],
         perturbs=[PERTURB_SEED, PERTURB_CUT, PERTURB_KICK],
-        put_in=["小さな点（種）をいくつか"], source="docs/WHITE_CEILINGS.md", ceiling_ref="gray_scott",
+        put_in=["小さな点（種）をいくつか"], source="docs/WHITE_CEILINGS.md", ceiling_ref="gray-scott", track=("V", 0.25, "above"),
         defaults=dict(gs.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
@@ -362,7 +364,7 @@ def _three_component():
         lenses=[Lens("u", "u（活性）", "high", -1.0, 1.5), Lens("w", "w（遅い抑制＝航跡）", "high", -0.1, 0.1),
                 Lens("v", "v（速い抑制）", "high", -0.5, 0.5)],
         perturbs=[PERTURB_SEED, PERTURB_CUT, PERTURB_KICK],
-        put_in=["対称なふくらみ一つ＋ノイズ"], source="docs/ANGULAR_MODES.md", ceiling_ref="three_component_rd",
+        put_in=["対称なふくらみ一つ＋ノイズ"], source="docs/ANGULAR_MODES.md", ceiling_ref="three-component-rd", track=("u", 0.4, "above"),
         defaults=dict(t3.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb,
         _cache=cache)
 
@@ -407,7 +409,7 @@ def _cgl():
         lenses=[Lens("phase", "位相", "cyclic", -np.pi, np.pi, True),
                 Lens("amplitude", "|A|（穴が芯）", "high", 0.0, 1.4)],
         perturbs=[PERTURB_SEED, PERTURB_CUT, PERTURB_KICK],
-        put_in=["一様な振動＋ノイズ"], source="docs/WHITE_CEILINGS.md", ceiling_ref="cgl",
+        put_in=["一様な振動＋ノイズ"], source="docs/WHITE_CEILINGS.md", ceiling_ref="cgl", track=("amplitude", 0.5, "below"),
         defaults=dict(cgl.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb,
         _cache=cache)
 
@@ -455,7 +457,7 @@ def _swift_hohenberg():
         lenses=[Lens("u", "u", "diverging", -0.3, 1.45)],
         perturbs=[PERTURB_CUT, PERTURB_SEED, PERTURB_KICK],
         put_in=["対称なふくらみ一つ（局在の種は置いた）"], source="docs/WHITE_CEILINGS.md · tests/test_lawclass.py",
-        ceiling_ref="swift_hohenberg", defaults=dict(sh.DEFAULTS), _init=init, _step=step, _lens=lens,
+        ceiling_ref="swift-hohenberg", track=("u", 0.3, "above"), defaults=dict(sh.DEFAULTS), _init=init, _step=step, _lens=lens,
         _metrics=metrics, _perturb=perturb, _cache=cache)
 
 
