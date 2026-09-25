@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "updated": "2026-09-25",
+  "north_star": "完成形を置かず、一様＋ノイズと局所法則だけを t=0 から回し、どこまで育つかを白ごとに正直に測る。届かなくてよい。どこで天井か・なぜかを地図にする。",
+  "whites": [
+    {"id": "g001-tdgl", "name": "g001 TDGL（緩和 GL クエンチ）", "reached": "L2", "tier": "measured",
+     "ceiling_reason": "運動量/移流が無いので動けない", "aquarium": "tdgl-quench-3d",
+     "note": "2026-08〜09 の自動研究が約 7,000 run 回したが L2 を越えない（docs/TREASURE_AUDIT.md）"},
+    {"id": "damped-gpe", "name": "damped GPE（超流体）", "reached": "L3", "tier": "measured",
+     "ceiling_reason": "散逸で長く持たない", "aquarium": "gpe-dipole-2d"},
+    {"id": "g002-boussinesq", "name": "g002 Boussinesq 対流", "reached": "L3（大域）", "tier": "measured",
+     "ceiling_reason": "大域ロールで局在しない", "aquarium": "convection-2d"},
+    {"id": "cgl", "name": "CGL（振動 GL）", "reached": "L2＋乱流運動", "tier": "measured",
+     "ceiling_reason": "乱流は coherent でなく個体化しない", "aquarium": "cgl-spirals"},
+    {"id": "swift-hohenberg", "name": "Swift-Hohenberg", "reached": "L4-static", "tier": "measured",
+     "ceiling_reason": "変分なので動かない（局在の種は置いている）", "aquarium": "sh-localized"},
+    {"id": "gray-scott", "name": "Gray-Scott", "reached": "L7-partial", "tier": "measured",
+     "ceiling_reason": "遺伝する内部自由度が無い", "aquarium": "gray-scott-split"},
+    {"id": "three-component-rd", "name": "三成分反応拡散", "reached": "frontier", "tier": "frontier",
+     "ceiling_reason": "閉じ込めと自走が拮抗（codimension≥2 の可能性）", "aquarium": "three-component-frontier"},
+    {"id": "g003-model-h", "name": "g003 Model H", "reached": "L2（L5 は frontier）", "tier": "frontier",
+     "ceiling_reason": "共分化の測定器が未収束", "aquarium": null}
+  ],
+  "open_questions": [
+    {"id": "Q1", "question": "「局在（個体）」と「自発運動」を一つの白で同時に得る最小の材料は何か？", "where": "三成分反応拡散・docs/ANGULAR_MODES.md（M2 結合固有値解）", "priority": 1},
+    {"id": "Q2", "question": "X-0a3002e1aa / X-29d79aabf4：平坦値付近で渦数を変えずに amp_std が揃う出来事は緩和か？（位置追跡と自由エネルギーで測る）", "where": "docs/X_PATTERN_AUDIT.md", "priority": 2},
+    {"id": "Q3", "question": "もともと内部状態を持つ白から、受け継がれる違い（遺伝）が育つか？", "where": "docs/WHITE_CEILINGS.md「うえきの最深の問い」", "priority": 3}
+  ],
+  "audits": [
+    {"id": "inventory-2026-09", "doc": "docs/INVENTORY_2026-09.md", "summary": "凍結点 faac01d。bot 停止前の棚卸し。"},
+    {"id": "treasure-2026-09", "doc": "docs/TREASURE_AUDIT.md", "summary": "候補 6,940 Room は 37 条件の TDGL の繰り返し。60/60 決定的。"},
+    {"id": "xpattern-2026-09", "doc": "docs/X_PATTERN_AUDIT.md", "summary": "再実行 567 回中 565 回が通常のクエンチ物理。未説明 2 回。"}
+  ]
+}

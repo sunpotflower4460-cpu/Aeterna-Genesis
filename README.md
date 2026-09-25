@@ -2,15 +2,14 @@
 
 **本物の場から、最小条件で、構造が勝手に出るのを、掟つきで一個ずつ積む。**
 
-> 🧭 **いま大事な発見・前進だけを先に見る → [`CURRENT_RESEARCH.md`](CURRENT_RESEARCH.md)**  
-> 生の失敗・quarantine・全試行は削除せず証拠庫に残し、Current Research Frontでは重要な発見と次の問いを優先表示します。
-
-> **【三層移行 進行中】** 個別実験の研究庫から、**0 から立ち上がる 3D 物理・Genesis Room・
-> AI 始原条件探索**の三層研究環境へ段階移行している。
-> **AI が最初に読むもの → [`AGENTS.md`](AGENTS.md)**。現在地は [`docs/GENESIS_MAP.md`](docs/GENESIS_MAP.md)、
-> 誠実さの憲法は [`docs/PHYSICS_INTEGRITY.md`](docs/PHYSICS_INTEGRITY.md)、創発の深さは
-> [`docs/EMERGENCE_LEVELS.md`](docs/EMERGENCE_LEVELS.md)、移行記録は [`docs/MIGRATION.md`](docs/MIGRATION.md)。
-> 既存 `experiments/e001–e045` は**削除せず** Evidence Library（物理辞書）として保存する。
+> 🧭 **いまの現在地 → [`RESEARCH_COMPASS.md`](RESEARCH_COMPASS.md)**（白ごとの天井・開いている問い・監査）
+> 🐠 **見る → アプリ（`app/`）の水槽**：有望な白を t=0 から 3D の水槽で再生する（`cd app && npm install && npm run dev`）
+> 🤝 **AI と進める → [`AGENTS.md`](AGENTS.md)（規則）・[`CLAUDE.md`](CLAUDE.md)（実務）**・文書の目次は [`docs/README.md`](docs/README.md)
+>
+> **2026-09 再始動**：2026-08〜09 の自動研究 bot は停止し（凍結点 `faac01d`）、成果を監査した
+> （[`docs/TREASURE_AUDIT.md`](docs/TREASURE_AUDIT.md)）。以後は人と AI の対話で進める。
+> bot が生成した大量のデータは作業ツリーから外し、[`archive/`](archive/README.md) の目録から復元できる。
+> 既存 `experiments/` は**削除せず** Evidence Library（物理辞書）として保存する。
 
 宇宙が始まるとき、おそらく最小条件しかない。その条件から、意図せずに——石が
 水に作る波紋、雨が降り雷が鳴るのと同じように——構造が "勝手に" 生まれた。
@@ -74,46 +73,32 @@
 
 ```
 Aeterna-Genesis/
-├── README.md              # マニフェスト + 掟の要約 + モジュール一覧
-├── LAW.md                 # 掟の全文（7監査・claim tier・忠実な場の規則）
-├── core/                  # 共有の数値道具（再利用。実験ごとに再実装しない）
-│   ├── fft.py             # 2D FFT・波数格子（split-step 用）
-│   ├── field.py           # 複素場の初期化・規格化・トラップ・split-step 伝播
-│   ├── vortex.py          # 渦検出（位相巻き数＋密度極小）、循環の量子化チェック
-│   └── measure.py         # 保存量・累積回転・（後で）次元/相関/スペクトル
-├── experiments/
-│   ├── e001_gpe_vortex_precession/
-│   │   ├── run.py         # 監査ヘッダ＋測定を表示、result.json を保存
-│   │   ├── robustness.py  # 監査6：R0×Ω スイープ
-│   │   ├── AUDIT.md       # 7監査の結果（人間可読）
-│   │   ├── result.json    # 基準測定値（再現確認用）
-│   │   └── robustness.json
-│   └── e002_gpe_two_vortex/
-│       ├── run.py         # 同符号＝共回転／逆符号＝並進、result.json を保存
-│       ├── robustness.py  # 監査6：間隔 d スイープ
-│       ├── AUDIT.md       # 7監査＋正直な注記（クリーン窓）
-│       ├── result.json
-│       └── robustness.json
-├── docs/
-│   ├── 00_grand_map.md    # 全体地図（背骨と剥がす順番）
-│   └── claim_ledger.md    # 全主張の claim tier 台帳
-├── tests/                 # core 単体テスト＋e001 回帰テスト
-└── .github/workflows/ci.yml
+├── AGENTS.md / CLAUDE.md   # AI と人の共通規則 / Claude Code の実務メモ
+├── LAW.md                  # 掟の全文（7監査・claim tier・忠実な場の規則）
+├── RESEARCH_COMPASS.md     # 現在地（research/index.json から自動生成）
+├── research/               # 正本の索引 index.json・提案 inbox/・決定 decisions/
+├── core/                   # 共有の数値道具（fft・field・vortex・measure …）
+├── genesis/                # 場の法則（models/）・測定器（diagnostics/）・ランナー・記録
+├── experiments/            # Evidence Library（e001–e059・各 AUDIT.md）
+├── rooms/                  # 公式 Room（official/）と監査で残した候補（candidates/）
+├── app/                    # 水槽ビュー＋Observatory（React / three.js）
+├── audit/  archive/        # P2 監査の結果 / P3 で外したデータの目録
+├── tools/                  # 監査・書き出し・棚卸しの道具（export_aquarium・archive・audit/ …）
+├── ai_lab/                 # AI の始原条件探索（dream/ は停止した bot 期の実装・記録）
+├── docs/                   # 文書（目次は docs/README.md）
+└── tests/                  # pytest（-m "not slow" が日常の確認）
 ```
 
 ## 使い方
 
 ```bash
 pip install -r requirements.txt
+pytest -m "not slow" -q                       # 速い一式（約 3 分）
 
-# e001 を基準パラメータで再現（result.json を生成）
-python experiments/e001_gpe_vortex_precession/run.py
-
-# 監査6（頑健性スイープ）
-python experiments/e001_gpe_vortex_precession/robustness.py
-
-# core 単体テスト＋e001 回帰テスト
-pytest tests/
+python experiments/e001_gpe_vortex_precession/run.py   # 実験を再現（例：e001）
+python tools/export_aquarium.py                         # 水槽テンプレートを t=0 から書き出す
+python tools/build_compass.py                           # 羅針盤を再生成
+(cd app && npm install && npm run dev)                  # 水槽を見る
 ```
 
 **期待される結果（e001）**：渦が中心の周りを半径ほぼ一定（≈10）で回り、累積
