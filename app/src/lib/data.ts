@@ -1,10 +1,30 @@
-import type { Catalog, FieldDoc, RenderManifest, DecodedLens, LensDoc } from './types'
+import type {
+  Catalog,
+  FieldDoc,
+  RenderManifest,
+  DecodedLens,
+  LensDoc,
+  AquariumRegistry,
+  AquariumNotebook,
+} from './types'
 
 const BASE = import.meta.env.BASE_URL + 'data/'
 
 export async function loadCatalog(): Promise<Catalog> {
   const r = await fetch(BASE + 'catalog.json')
   if (!r.ok) throw new Error('catalog fetch failed: ' + r.status)
+  return r.json()
+}
+
+export async function loadAquariumRegistry(): Promise<AquariumRegistry | null> {
+  const r = await fetch(BASE + 'aquaria/registry.json')
+  if (!r.ok) return null
+  return r.json()
+}
+
+export async function loadAquariumNotebook(): Promise<AquariumNotebook | null> {
+  const r = await fetch(BASE + 'aquaria/notebook.json')
+  if (!r.ok) return null
   return r.json()
 }
 

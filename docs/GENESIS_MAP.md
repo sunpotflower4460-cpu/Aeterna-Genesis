@@ -1,19 +1,50 @@
-# GENESIS_MAP.md — 現在地と三層の地図
+# GENESIS_MAP.md — 現在地と研究地図
 
 Aeterna-Genesis の現在地。**旧地図（`docs/history/00_grand_map_legacy.md`）は歴史資料として残し、現在地はここで管理する。**
 
-**中心定義：** 未分化な始原条件から 3D 物理を毎回 0 から立ち上げ、差・構造・運動・全体性がどこまで自然に育つかを観測する研究環境。より深い創発を目指すときも、途中へ部品を追加せず、始原条件の何を変えれば最初からそこまで発展するかを探索する。
+**中心定義：** Aeterna-Genesis は、無数の**宇宙水槽（Universe Aquarium）**へ異なる前提条件を与え、世界自身が何を始めるかを観察し、その条件地図を人間とAIが共同で学び続ける研究環境。人間もAIも「こんな系を見たい」と意図してよい。意図は探索計画に使うが、見たい結果そのものを物理へ書き込まない。詳細は [`docs/UNIVERSE_AQUARIUM.md`](UNIVERSE_AQUARIUM.md)。
+
+より深い創発を目指すときも、途中へ完成機能を追加して結果を作るのではなく、**Aquarium の Recipe（法則・初期状態・境界・持続入力などの前提条件）を変え、t=0 から新しい Run として試す。**
 
 ---
 
-## 三層
+## 全体構造
 
-```
+```text
 Aeterna-Genesis
-├─ Evidence Library   … 既存 e001–e036（物理辞書・測定器・負の結果）
-├─ Genesis Rooms      … 一つの始原条件から t=0 中断なく育った宇宙（候補: G001–G003）
-└─ AI Genesis Lab     … 始原条件を探索する自動実験者
+├─ Universe Aquaria    … 「何を見たい／何を試したい」という人間・AI共有の研究系列
+│   └─ Recipe → Run → Observation → Discovery → Next Recipe
+├─ Evidence Library    … 既存 e001–e036（物理辞書・測定器・負の結果）
+├─ Genesis Rooms       … 実際に t=0 から走り、保存・再現可能になった宇宙
+└─ AI Genesis Lab      … Aquaria と研究記憶を読み、前提条件を探索する自動実験者
 ```
+
+**Aquarium は科学的成功状態ではない。** planning layer であり、Goal-directed / Open-ended、Minimal / Seeded / Driven など問いの異なる研究列を並列に持てる。Room は実際に走った宇宙の証拠側に属する。
+
+---
+
+## 0. Universe Aquaria — 人間とAIの研究系列
+
+台帳は `aquaria/registry.json`、共有メモは `aquaria/notebook.json`。
+
+Aquarium は次を持つ。
+
+- **Intent**：何を見たいか。人間・AI・共同のどれでもよい。
+- **Recipe Space**：何を前提条件として変えてよいか。
+- **Observation Focus**：何を測れば前進と言えるか。
+- **Human Note / AI Direction Note**：次のアイディア・問い・判断。
+- **Evidence refs**：過去のどの証拠を参照しているか。
+
+重要な境界：
+
+```text
+planning may read intent = true
+physics may read intent text = false
+intent is scientific evidence = false
+goal-directed == target-encoded = false
+```
+
+つまり「分裂を見たい」「トーラス形成を見たい」と目的を持って探索してよいが、分裂命令・分裂位置・トーラス形状を結果として物理へ埋め込まない。
 
 ---
 
@@ -64,11 +95,30 @@ e004 ／ e009 の一部 ／ e027 のエージェントモデル部分。→ 本�
 
 ## 3. AI Genesis Lab
 
-始原条件を探索する自動実験者（`docs/AI_EXPERIMENT_POLICY.md`）。**役割分担：** サンドボックス＝2D 探索＋事前計算（Claude）／正式 3D＝リポジトリ（Codex/Claude Code）。
+前提条件を探索する自動実験者（`docs/AI_EXPERIMENT_POLICY.md`）。
+
+AI は人間のAquariumを探索してよいし、人間の入力がなくても新しいAquariumを提案・探索してよい。必ずResearch Memoryを参照し、同じ失敗を惰性反復しない。過去Evidenceから関連する成立条件・失敗条件をAquarium Compassへ戻し、人間が現在地を確認できるようにする。
+
+`ai_lab/aquarium/compass.py` は planning-only の共有地図を作る。**compute allocation・physics・Room promotion・scientific truth gateは変更しない。**
+
+**役割分担：** サンドボックス＝2D 探索＋事前計算（Claude）／正式 3D＝リポジトリ（Codex/Claude Code）。
 
 ---
 
-## 4. 移行完了の最低条件（第一段階）
+## 4. Observatory App
+
+`app/` は最終的に、人間とAIが同じ研究状態を見る場所。
+
+- Universe Lobby：実際に走ったRoomを見る
+- Universe Aquarium Lab：研究系列、Intent、Recipe Space、Human Note、AI Direction Noteを見る
+- Room Workspace：実測fieldを美しく再生する
+- Discovery Inbox：AI候補とジョブを確認する
+
+人間がアプリで作ったAquarium ideaはまずplanning data。Runner接続後もintegrity checkを通し、**新しいRunとしてt=0から実行**する。
+
+---
+
+## 5. 移行完了の最低条件（更新）
 
 - e001–e036 が一つも削除されていない。
 - 既存結果へのリンクが壊れていない。
@@ -84,12 +134,17 @@ e004 ／ e009 の一部 ／ e027 のエージェントモデル部分。→ 本�
 - アプリがハードコードでなく catalog を読む。
 - 可視化の各要素が実際の物理量へ対応している。
 - AI 発見候補が正式 Room と混同されない。
+- **Aquarium Intent と科学Evidenceが機械的に分離される。**
+- **Human Note と AI Direction Note を同じ研究地図で確認できる。**
+- **Goal-directed と target-encoded を同一視しない。**
 - **CI が保存済み JSON の存在確認だけでなく、実際の再計算を行う。**
 
 ---
 
-## 5. 移行 PR の順（参照）
+## 6. 移行 PR の順（歴史参照）
 
-PR1 思想と用語（本 docs 群＋AGENTS）→ PR2 Schema と Registry → PR3 既存 e001–e036 へ metadata → PR4 共通 Runner と Manifest → PR5 Dimension Transfer Harness → PR6 最初の正式 Genesis Room（G001/G002）→ PR7 AI Genesis Lab 最小版 → PR8 Observatory App。
+PR1 思想と用語 → PR2 Schema と Registry → PR3 既存実験 metadata → PR4 共通 Runner と Manifest → PR5 Dimension Transfer Harness → PR6 正式 Genesis Room → PR7 AI Genesis Lab → PR8 Observatory App。
 
-**実装上の注意：** 既存コードを大規模に移動しない。既存実験を「間違い」として削除しない。新思想に合わせて過去の文章を無断で書き換えない。まず metadata 層を追加し、その後に物理コードを整理。一度に全実験を共通化しない。PR ごとに「何を残し、何を追加し、何を変更しなかったか」を明記。
+現在はこれらの上に **Universe Aquarium collaboration layer** を追加している。
+
+**実装上の注意：** 既存コードを大規模に移動しない。既存実験を「間違い」として削除しない。過去の文章を歴史ごと消さない。Aquarium は既存Evidence/Room/AI Labの上に加えるmetadata・planning層であり、科学証拠の意味を後付けで変更しない。
