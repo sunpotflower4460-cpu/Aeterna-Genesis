@@ -67,8 +67,40 @@ app/src/lab/           ライブ画面（drei <View> で 1 つの WebGL に複�
 - 追跡は表示用フレーム（2D は間引きなし・uint8 量子化）で行う。証拠にするなら `/audit` で元の場から測り直す。
 - サーバーなしでも作れる：`python -m tools.lab.observe --white sh --frames 40 --out /tmp/pk`（Claude Code が読むときなど）。
 
+## AI の会議（「AI と話す」タブ）
+
+「見てもらう」を押すと、並んでいる宇宙の観測パケットを AI たちに渡す（`tools/lab/council.py`）。
+
+| 役 | 既定 | 渡すもの | 書くこと |
+|---|---|---|---|
+| 見る係 | Gemini（動画も）／GPT（画像） | 事件簿＋画像＋動き | 何が起きているように**見えるか**。すべて「見た目（未測定）」のラベル付き（付け忘れてもラボが付ける） |
+| 別の視点 | DeepSeek（OpenAI 互換） | 事件簿（画像を読めない model なら文章だけ） | 同じ事件簿の別の説明（数値の作り物・閾値・置いたもの）と、見分ける試し方 |
+| 中心 | Opus 5.5（`claude-opus-5-5`） | 全部＋上の 2 つの報告＋あなたの言葉 | 測定・見た目・別の見方の照合を 1 行ずつ示し、あなたと話し、**提案カード**を出す |
+
+- 見る係と別の視点は並行して呼ばれ、中心はそのあとに答える。「話す」で中心との会話を続けられる（中心は必要なら `ask_colleague` で他の係にもう一度聞き、`look_again` で最新の事件簿を取り直す）。
+- **提案カードは実行されない**。カードの「分岐して試す」を人が押したときだけ、親の宇宙のいまの状態から分岐する。つまみは場の法則（law）のものと範囲の中だけ（ラボが検証し、範囲外や始め方のつまみは中心に差し戻す）。
+- 費用は AI ごとに表示し（使用量 × `lab/config.toml` の単価）、1 日の上限（既定 3 ドル）を超えたらその日は呼ばない。
+
+### 設定
+
+```bash
+pip install -r requirements-lab.txt                  # anthropic / openai / google-genai（使うものだけでよい）
+cp tools/lab/config.example.toml lab/config.toml     # model ID と単価を書く（DeepSeek・Gemini・GPT は各社の資料で確認）
+export ANTHROPIC_API_KEY=…  DEEPSEEK_API_KEY=…  GEMINI_API_KEY=…   # キーは環境変数だけ。ファイルに書かない
+python -m tools.lab.server                           # 起動時に、どの役が使えるかを表示する
+```
+
+- キーが無い役は飛ばす（1 つだけでも動く）。キーはサーバーの中だけで使い、画面や記録には出さない。
+- 外部に送るのは**シミュレーションの画像と数値と、あなたが書いた言葉だけ**。個人の情報は入れないこと。DeepSeek・Google・OpenAI・Anthropic のサーバー（国外を含む）で処理される。
+- 確認の範囲：Anthropic（anthropic 1.8.0）と OpenAI 互換（openai 3.19.2）は、本物の SDK を、API を真似たローカルのサーバーに向けて通した（ストリーム・ツール呼び出し・使用量）。**Gemini（google-genai）はまだ通していない**。実際のキーで初めて使うときは、短い会話で動作を確かめる。CI は偽の provider で役の順序・ラベル・提案カード・上限・キーの秘匿を確かめる。
+
+### キーが無いとき：Claude Code が相棒
+
+中心の AI が使えないと、「見てもらう」はパケットを `lab/state/latest/`（`packet.md`・画像・`request.md`）に置く。
+このリポジトリで Claude Code を開き **`/guide`** と打つと、Claude Code が同じパケットを読み（画像も見て）、チャットで話し、
+`python -m tools.lab.propose --parent A --set F=0.04 --why "…"` で提案カードをアプリに出す（`--say "…"` で会議に発言も残せる）。
+
 ## これから（P6 の残り）
 
-- **L3b AI の会議**：Opus 5.5（中心）、DeepSeek（別の視点）、Gemini / GPT（見る係・「見た目（未測定）」と明記）が、上の観測パケットを見て話し合う。キーがない AI は飛ばし、Claude Code を相棒にする橋渡しもつける。
-- **L4**：研究記録への書き出し、replay コマンド、`/guide`。
+- **L4**：研究記録への書き出し（`research/sessions/`）、replay コマンド。
 - **L5**：2D の白をブラウザ GPU で動かす「下見」版（スマホだけで完結）。
