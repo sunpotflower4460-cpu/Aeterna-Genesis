@@ -33,7 +33,7 @@ def test_colormap_range_and_shape():
 def test_decode_recorded_lens_matches_grid():
     """A recorded official-room lens decodes to (nframes, H, W) in physical units within [vmin, vmax]."""
     import json
-    p = "app/public/data/rooms/room-g002-a/field.json"
+    p = "rooms/official/room-g002-a/runs/seed-0000/field.json"  # source of app/public/data (generated)
     d = json.load(open(p))
     H, W = d["grid"]
     frames = snapshot.decode_lens(p, "temperature")

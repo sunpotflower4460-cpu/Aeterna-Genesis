@@ -212,6 +212,12 @@ def main() -> None:
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=_REPO, capture_output=True, text=True).stdout.strip()
 
     rows = [room_row(p) for p in sorted(_CAND.iterdir()) if p.is_dir()]
+    previous = _OUT / "candidates.jsonl"
+    if (_REPO / "archive" / "MANIFEST.jsonl.gz").exists() and previous.exists():
+        # After tools/archive.py the index-only rooms are no longer on disk; rebuilding from disk would
+        # silently drop their rows. The committed audit/ files are the record -- restore rooms first.
+        sys.exit("rooms were archived (archive/MANIFEST.jsonl.gz); audit/candidates.jsonl is the record. "
+                 "Run `python tools/archive.py restore rooms/candidates` first to re-audit the full set.")
     refs = human_references()
     classify(rows, refs)
     with (_OUT / "candidates.jsonl").open("w", encoding="utf-8") as fh:
