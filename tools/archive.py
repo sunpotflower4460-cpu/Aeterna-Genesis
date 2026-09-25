@@ -99,7 +99,8 @@ def apply() -> None:
         subprocess.run(["git", "rm", "-q", "--cached", "--", *paths[i:i + 2000]], cwd=_REPO, check=True)
         for p in paths[i:i + 2000]:
             (_REPO / p).unlink(missing_ok=True)
-    for d in sorted({str(Path(p).parent) for p in paths}, key=len, reverse=True):  # prune empty dirs
+    dirs = {str(parent) for p in paths for parent in Path(p).parents if str(parent) != "."}
+    for d in sorted(dirs, key=lambda x: x.count("/"), reverse=True):  # prune now-empty dirs, deepest first
         try:
             (_REPO / d).rmdir()
         except OSError:

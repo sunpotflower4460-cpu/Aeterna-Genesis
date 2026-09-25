@@ -44,11 +44,12 @@ CI（`.github/workflows/*-ci.yml`）はファイルを明示して実行する�
 | `genesis/diagnostics/` | 測定器（`measures.py` の `assess_level` など）。**測定器は結論を知らない** |
 | `genesis/runners/runner.py` | Room の共通ランナー（現状 TDGL のみ）。`--mode 2d-screen|local-3d|…` |
 | `experiments/eNNN/` | 証拠庫。削除・番号変更しない。各 `AUDIT.md` に7監査の結果 |
-| `rooms/official/` | 正式 Room（g001/g002/g003）。`rooms/candidates/` は bot が生成した候補（P2 で監査予定） |
+| `rooms/official/` | 正式 Room（g001/g002/g003）。`rooms/candidates/` は bot が生成した候補のうち、P2 の監査で残したもの（keep-full 272 と distill 1,497） |
 | `docs/WHITE_CEILINGS.md` | 白ごとの天井地図＝現在地の最重要文書 |
 | `tools/snapshot.py` | numpy＋zlib だけで PNG を作る（`render_field(arr, path)`） |
 | `tools/inventory.py` | 1 つの commit を読み取り専用で棚卸しする |
-| `app/` | Observatory（React＋three.js）。データは `tools/build_catalog.py` → `tools/collect_app_data.py` で作る |
+| `app/` | Observatory（React＋three.js）。データ（`app/public/data`、`app/generated`）は生成物で git 管理外。`python tools/build_catalog.py && python tools/collect_app_data.py` で作る |
+| `audit/`、`archive/` | P2 の監査結果（Room と X の要約・キーフレーム）と、P3 で作業ツリーから外したデータの目録（`python tools/archive.py restore <path>` で戻せる） |
 | `ai_lab/dream/` | 停止した自動研究の実装（P5 で整理予定。新しい作業の足場にしない） |
 
 ## コマンド（`.claude/commands/`）
@@ -70,5 +71,5 @@ CI（`.github/workflows/*-ci.yml`）はファイルを明示して実行する�
 ## 作業の約束
 
 - ブランチを切って PR にする。main への直接 push や bot 的な連投はしない。
-- 研究データ（`rooms/`、`experiments/`、`ai_lab/discoveries/`）は削除しない。整理は「別の棚へ移す＋マニフェストで復元可能」にする（P3）。
-- `rooms/candidates/` と `ai_lab/discoveries/` の数値を見出しにするときは、P2 の監査結果（`audit/`）を通してからにする。
+- 研究データ（`rooms/`、`experiments/`、`ai_lab/discoveries/`）は削除しない。作業ツリーから外すときは `tools/archive.py` でマニフェストに記録し、復元できるようにする。
+- `rooms/candidates/` と `ai_lab/discoveries/` の数値を見出しにするときは、P2 の監査結果（`docs/TREASURE_AUDIT.md`、`audit/`）を通してからにする。
