@@ -23,12 +23,24 @@ def test_static_class_reads_fingerprint_shape():
 
 
 def test_labels_follow_defect_and_amplitude_changes():
-    base = {"defect_count": 6.0, "net_topological_charge": 0.0, "mean_amp": 0.2}
+    base = {"defect_count": 6.0, "net_topological_charge": 0.0, "mean_amp": 0.2, "gradient_rms": 0.5, "amp_std": 0.1}
     assert xa._label(base, {**base, "defect_count": 4.0}, 1.0) == "H1_pair_annihilation"
     assert xa._label(base, {**base, "defect_count": 0.0}, 1.0) == "H4_last_defects_vanish"
     assert xa._label(base, {**base, "defect_count": 5.0}, 1.0) == "H2_defect_count_change"
     assert xa._label(base, {**base, "mean_amp": 0.3}, 1.0) == "H3_amplitude_ordering"
-    assert xa._label({**base, "mean_amp": 0.99}, {**base, "mean_amp": 1.0}, 1.0) == "H3b_amplitude_relaxation"
+    late = {**base, "mean_amp": 0.99}
+    assert xa._label(late, {**late, "mean_amp": 1.0, "gradient_rms": 0.4}, 1.0) == "H3b_amplitude_relaxation"
+    # a late no-defect change WITHOUT relaxation evidence must stay unexplained
+    assert xa._label(late, {**late, "gradient_rms": 0.9}, 1.0) == "UNEXPLAINED"
+    # a run that ends while still growing has no plateau: rising amplitude there is ordering, not relaxation
+    assert xa._label(late, {**late, "mean_amp": 1.5, "gradient_rms": 0.9}, 0.99, plateau_reached=False) == "H3_amplitude_ordering"
+
+
+def test_plateau_requires_levelling_off():
+    grow = [{"mean_amp": a} for a in (0.01, 0.02, 0.04)]
+    flat = [{"mean_amp": a} for a in (0.99, 1.0, 1.0)]
+    assert xa.plateau(grow) == (0.04, False)
+    assert xa.plateau(flat)[1] is True
 
 
 def _row(i, level, seed, drift=0.2, auto=True):

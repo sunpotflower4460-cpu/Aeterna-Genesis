@@ -16,9 +16,11 @@ occurrence of the target pattern:
     H1 pair_annihilation    defect count falls by an even number, net topological charge unchanged
     H4 last_defects_vanish  defect count reaches 0 (finite-box end of coarsening)
     H2 defect_count_change  other change in defect count (odd steps: detection noise / boundary)
-    H3 amplitude_ordering   no defect change; mean |psi| rises while still below 95% of its final plateau
-    H3b amplitude_relaxation no defect change; amplitude already saturated (smoothing / relaxation)
-    UNEXPLAINED             none of the above
+    H3 amplitude_ordering   no defect change; mean |psi| rises and has not yet reached a plateau (the run
+                            either ends while still growing, or the event is below 95% of the plateau)
+    H3b amplitude_relaxation no defect change; amplitude on its plateau AND measurably relaxing
+                            (gradient_rms and amp_std do not grow: the field is smoothing, not doing something new)
+    UNEXPLAINED             none of the above (including late no-defect events without relaxation evidence)
 
 and H6 (binning sensitivity): whether the pattern ID survives moving the fingerprint thresholds by +-10%.
 A pattern gets the label that explains >=80% of its reproduced occurrences, otherwise MIXED;
@@ -103,7 +105,14 @@ def _seed(pid: str, i: int) -> int:
     return int(hashlib.sha256(f"p2-audit|{pid}|{i}".encode()).hexdigest()[:8], 16) % 1_000_000
 
 
-def _label(before: dict, after: dict, final_amp: float) -> str:
+def plateau(snaps: list[dict]) -> tuple[float, bool]:
+    """(final mean |psi|, whether the run actually levelled off: last 3 snapshots within 5%)."""
+    last = [float(s["mean_amp"]) for s in snaps[-3:]]
+    final = last[-1]
+    return final, bool(final > 0 and (max(last) - min(last)) / final < 0.05)
+
+
+def _label(before: dict, after: dict, final_amp: float, plateau_reached: bool = True) -> str:
     d0, d1 = before["defect_count"], after["defect_count"]
     q0, q1 = before["net_topological_charge"], after["net_topological_charge"]
     if d1 != d0:
@@ -112,9 +121,11 @@ def _label(before: dict, after: dict, final_amp: float) -> str:
         if d0 - d1 >= 2 and (d0 - d1) % 2 == 0 and q0 == q1:
             return "H1_pair_annihilation"
         return "H2_defect_count_change"
-    if after["mean_amp"] > before["mean_amp"] and before["mean_amp"] < 0.95 * final_amp:
+    saturated = plateau_reached and before["mean_amp"] >= 0.95 * final_amp
+    if after["mean_amp"] > before["mean_amp"] and not saturated:
         return "H3_amplitude_ordering"
-    if before["mean_amp"] >= 0.95 * final_amp:
+    relaxing = after["gradient_rms"] <= before["gradient_rms"] and after["amp_std"] <= before["amp_std"]
+    if saturated and relaxing:
         return "H3b_amplitude_relaxation"
     return "UNEXPLAINED"
 
@@ -130,7 +141,7 @@ def probe_pattern(job: dict) -> dict:
             continue
         matrix = np.asarray([[float(s[k]) for k in oe._FEATURES] for s in snaps])
         delta = np.diff(matrix, axis=0) / oe._robust_scales(matrix)
-        final_amp = float(np.median([s["mean_amp"] for s in snaps[-3:]]))
+        final_amp, plateau_reached = plateau(snaps)
         for ep in oe.detect_episodes(probe, max_episodes=5):
             if ep["pattern_id"] != pid:
                 continue
@@ -141,7 +152,8 @@ def probe_pattern(job: dict) -> dict:
                 "seed": rec["seed"],
                 "time": ep["physical_time"],
                 "quench_duration": float(focus["knobs"].get("quench_duration", 0.0)),
-                "label": _label(snaps[j], snaps[j + 1], final_amp),
+                "label": _label(snaps[j], snaps[j + 1], final_amp, plateau_reached),
+                "plateau_reached": plateau_reached,
                 "defects": [snaps[j]["defect_count"], snaps[j + 1]["defect_count"]],
                 "mean_amp": [round(snaps[j]["mean_amp"], 6), round(snaps[j + 1]["mean_amp"], 6)],
                 "final_mean_amp": round(final_amp, 6),
@@ -215,7 +227,15 @@ def main() -> None:
         "stage_b_tested": len(tested),
         "stage_b_seeds_per_pattern": a.seeds,
         "verdict_counts": dict(collections.Counter(r["verdict"] for r in tested)),
-        "unexplained": sorted(r["pattern_id"] for r in tested if r["verdict"] in ("UNEXPLAINED", "MIXED")),
+        # Measured evidence: every freshly re-run occurrence, labelled individually.
+        "rerun_occurrence_labels": dict(collections.Counter(o["label"] for r in tested for o in r.get("occurrences", []))),
+        # Pattern-level extrapolation only: historical observation totals grouped by each pattern's verdict.
+        "historical_observations_by_verdict_extrapolated": dict(collections.Counter(
+            {v: sum(r["observations"] or 0 for r in tested if r["verdict"] == v) for v in {r["verdict"] for r in tested}})),
+        "unexplained": sorted(r["pattern_id"] for r in tested if r["verdict"] == "UNEXPLAINED"),
+        "patterns_with_any_unexplained_occurrence": sorted(
+            r["pattern_id"] for r in tested if any(o["label"] == "UNEXPLAINED" for o in r.get("occurrences", []))),
+        "mixed": sorted(r["pattern_id"] for r in tested if r["verdict"] == "MIXED"),
         "binning_unstable_patterns": sorted(r["pattern_id"] for r in tested if (r.get("binning_unstable_share") or 0) >= 0.5),
     }
     (_OUT / "xpatterns_summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
