@@ -1,7 +1,7 @@
 """The AI council of the live lab: several models look at the SAME observation packet, each in its role.
 
     vision       (Gemini / GPT)   writes what the images and motion LOOK like -- always labelled 見た目（未測定）
-    second_view  (DeepSeek)       reads the 事件簿 and offers other explanations (numerics, what was put in, …)
+    second_view  (DeepSeek, direct) reads the 事件簿 and offers other explanations (numerics, what was put in, …)
     core         (Opus 5.5)       reconciles everything with the measurements, talks with the person, and may
                                   put proposals on the table (cards). It never runs anything: a person presses 試す.
 
@@ -33,7 +33,7 @@ UNMEASURED = "【見た目（未測定）】"
 DEFAULT_CONFIG: dict[str, Any] = {
     "core": {"provider": "anthropic", "model": "claude-opus-5-5", "effort": "medium",
              "api_key_env": "ANTHROPIC_API_KEY", "price_in": 4.0, "price_out": 20.0},
-    "second_view": {"provider": "openai_compat", "base_url": "https://api.deepseek.com", "model": "",
+    "second_view": {"provider": "deepseek", "base_url": "https://api.deepseek.com", "model": "",
                     "api_key_env": "DEEPSEEK_API_KEY", "images": False},
     "vision": {"provider": "gemini", "model": "", "api_key_env": "GEMINI_API_KEY", "video": True},
     "limits": {"max_usd_per_day": 3.0},
@@ -230,8 +230,54 @@ class AnthropicProvider(Provider):
         return total
 
 
+class DeepSeekProvider(Provider):
+    """DeepSeek's own API, called DIRECTLY with the standard library (urllib): no OpenAI package, and nothing
+    is sent anywhere but `base_url` (default https://api.deepseek.com). Streams the reply; DeepSeek's
+    `reasoning_content` (thinking of reasoning models) is not shown, only the answer `content`."""
+
+    DEFAULT_BASE = "https://api.deepseek.com"
+
+    def endpoint(self) -> str:
+        return (self.cfg.get("base_url") or self.DEFAULT_BASE).rstrip("/") + "/chat/completions"
+
+    def ask(self, system, parts, on_text) -> Usage:
+        import urllib.error
+        import urllib.request
+        if self.cfg.get("images", False):
+            content: Any = [{"type": "text", "text": p["text"]} if p["type"] == "text" else
+                            {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.standard_b64encode(p["png"]).decode()}}
+                            for p in parts if p["type"] in ("text", "image")]
+        else:
+            content = "\n\n".join(p["text"] for p in parts if p["type"] == "text")
+        body = {"model": self.model, "stream": True, "stream_options": {"include_usage": True},
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}]}
+        req = urllib.request.Request(self.endpoint(), data=json.dumps(body).encode(), method="POST", headers={
+            "Content-Type": "application/json", "Accept": "text/event-stream", "Authorization": f"Bearer {self.key()}"})
+        u = Usage()
+        try:
+            with urllib.request.urlopen(req, timeout=300) as r:
+                for raw in r:
+                    line = raw.decode("utf-8", "replace").strip()
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        break
+                    ch = json.loads(data)
+                    for c in ch.get("choices") or []:
+                        text = (c.get("delta") or {}).get("content")
+                        if text:
+                            on_text(text)
+                    if ch.get("usage"):
+                        u = Usage(ch["usage"].get("prompt_tokens") or 0, ch["usage"].get("completion_tokens") or 0)
+        except urllib.error.HTTPError as e:        # show DeepSeek's message, never the key
+            raise RuntimeError(f"DeepSeek {e.code}: {e.read().decode('utf-8', 'replace')[:300]}") from None
+        return u
+
+
 class OpenAICompatProvider(Provider):
-    """OpenAI-compatible chat completions (DeepSeek, OpenAI GPT). Unverified against live keys in CI."""
+    """Other OpenAI-compatible chat completions (e.g. OpenAI GPT as the vision role), via the openai package.
+    Unverified against live keys in CI."""
 
     def available(self) -> tuple[bool, str]:
         try:
@@ -297,7 +343,8 @@ class GeminiProvider(Provider):
         return u
 
 
-PROVIDERS = {"anthropic": AnthropicProvider, "openai_compat": OpenAICompatProvider, "gemini": GeminiProvider}
+PROVIDERS = {"anthropic": AnthropicProvider, "deepseek": DeepSeekProvider, "openai_compat": OpenAICompatProvider,
+             "gemini": GeminiProvider}
 
 
 def make_providers(cfg: dict[str, Any]) -> dict[str, Provider]:

@@ -157,3 +157,56 @@ def test_claude_code_bridge_cli_puts_cards_into_the_running_lab(tmp_path):
         srv.shutdown()
         srv.hub.close()
         srv.server_close()
+
+
+def test_deepseek_is_called_directly_without_the_openai_package(lab, monkeypatch):
+    """The DeepSeek role talks to DeepSeek's own endpoint with the standard library only."""
+    import builtins
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    seen = []
+
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            seen.append((self.path, self.headers.get("Authorization"), body))
+            chunks = [{"choices": [{"index": 0, "delta": {"reasoning_content": "（考え中）"}}]},
+                      {"choices": [{"index": 0, "delta": {"content": "閾値の"}}]},
+                      {"choices": [{"index": 0, "delta": {"content": "効果かも。"}}]},
+                      {"choices": [], "usage": {"prompt_tokens": 700, "completion_tokens": 30}}]
+            data = "".join(f"data: {json.dumps(c)}\n\n" for c in chunks).encode() + b"data: [DONE]\n\n"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    real_import = builtins.__import__
+
+    def no_openai(name, *a, **k):
+        if name == "openai" or name.startswith("openai."):
+            raise AssertionError("DeepSeek must not use the openai package")
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", no_openai)
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-ds-test")
+    hub, uid, tmp = lab
+    try:
+        ds = C.DeepSeekProvider("second_view", {**C.DEFAULT_CONFIG["second_view"], "model": "deepseek-test",
+                                                "base_url": f"http://127.0.0.1:{srv.server_address[1]}"})
+        assert ds.available() == (True, "")
+        c = _council(hub, tmp, {"second_view": ds, "core": FakeCore([])})
+        c.look([uid], wait=True)
+    finally:
+        srv.shutdown()
+    msg = next(m for m in c.messages if m["who"] == "second_view")
+    assert msg["text"] == "閾値の効果かも。" and msg["usage"] == {"input_tokens": 700, "output_tokens": 30}
+    path, auth, body = seen[0]
+    assert path == "/chat/completions" and auth == "Bearer sk-ds-test"
+    assert body["model"] == "deepseek-test" and isinstance(body["messages"][1]["content"], str)   # text only
+    assert C.make_providers(C.DEFAULT_CONFIG)["second_view"].__class__ is C.DeepSeekProvider
