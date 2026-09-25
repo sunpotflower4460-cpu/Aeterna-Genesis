@@ -4,7 +4,10 @@ Counts what is tracked in git (sizes, file counts, largest files) and what the a
 Dream candidates actually are (which white / genesis_model, which Emergence Level).
 It never modifies research data; it only writes the Markdown report given by --out.
 
-    python tools/inventory.py --out docs/INVENTORY_2026-09.md
+    python tools/inventory.py --freeze-sha <commit> --out docs/INVENTORY_2026-09.md
+
+Counts always come from the current checkout (HEAD); --freeze-sha only names the evidence
+baseline, and the report prints both commits so they are never conflated.
 
 Standard library only (no numpy / PyYAML), so it runs in a bare container.
 """
@@ -41,6 +44,17 @@ def _git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=_REPO, check=True, capture_output=True, text=True).stdout
 
 
+def _remote_tag_commit(tag: str) -> str | None:
+    """Commit an annotated/lightweight tag points to on origin (not the local tag), or None."""
+    try:
+        out = subprocess.run(["git", "ls-remote", "--tags", "origin", f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"],
+                             cwd=_REPO, capture_output=True, text=True, timeout=30).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    refs = dict(reversed(line.split("\t")) for line in out.splitlines() if "\t" in line)
+    return refs.get(f"refs/tags/{tag}^{{}}") or refs.get(f"refs/tags/{tag}")
+
+
 def _human(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024 or unit == "GB":
@@ -72,7 +86,7 @@ def candidate_rooms() -> dict[str, collections.Counter]:
     base = _REPO / "rooms" / "candidates"
     if not base.is_dir():
         return stats
-    for room in sorted(base.iterdir()):
+    for room in sorted(x for x in base.iterdir() if x.is_dir()):  # skip README.md etc.
         stats["prefix"][re.sub(r"-\d{8}-.*", "", room.name) if "dream" in room.name else "other"] += 1
         f = room / "room.yaml"
         if not f.is_file():
@@ -99,7 +113,7 @@ def workflow_triggers() -> list[tuple[str, str]]:
     return rows
 
 
-def render(freeze_sha: str) -> str:
+def render(freeze_sha: str, inventory_sha: str) -> str:
     files = tracked_files()
     total = sum(s for _, s in files)
     by_top: dict[str, list[int]] = collections.defaultdict(lambda: [0, 0])
@@ -120,9 +134,17 @@ def render(freeze_sha: str) -> str:
     L.append("# INVENTORY 2026-09 — 再始動前の棚卸し（P0）\n")
     L.append(f"生成: `python tools/inventory.py` · {today} · 読み取りのみ（研究データは変更しない）。\n")
     L.append("## 凍結点\n")
-    L.append(f"- 凍結 commit: `{freeze_sha}`（bot を止める直前の `main`）")
-    L.append("- 凍結タグ: `evidence-freeze-2026-09`（この commit を指す）。ここに全バイトが残るので、")
-    L.append("  以降の整理で作業ツリーから外すものは `git restore --source=evidence-freeze-2026-09 -- <path>` で復元できる。\n")
+    L.append(f"- 凍結 commit（**正本・不変**）: `{freeze_sha}`（bot を止める直前の `main`）")
+    L.append(f"- 棚卸し対象 commit: `{inventory_sha}`（下の数値はこの checkout の git index から数えた。凍結 commit とは")
+    L.append("  P0 自身の変更分だけ異なりうる）")
+    tag = _remote_tag_commit("evidence-freeze-2026-09")
+    if tag == freeze_sha:
+        L.append("- 凍結タグ `evidence-freeze-2026-09`: origin に作成済み（上の凍結 commit を指すことを確認）")
+    elif tag:
+        L.append(f"- 凍結タグ `evidence-freeze-2026-09`: ⚠ origin では別 commit `{tag}` を指す。SHA を正本とする。")
+    else:
+        L.append("- 凍結タグ `evidence-freeze-2026-09`: **origin に未作成（pending）**。作成されるまでは SHA を使う。")
+    L.append(f"- 復元手順: `git restore --source={freeze_sha} -- <path>`（SHA は常に有効。タグ作成後はタグ名でも可）\n")
     L.append("## 全体\n")
     L.append(f"- 追跡ファイル数: **{len(files):,}**")
     L.append(f"- 追跡ファイル合計サイズ: **{_human(total)}**\n")
@@ -172,11 +194,13 @@ def render(freeze_sha: str) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default="docs/INVENTORY_2026-09.md")
-    ap.add_argument("--freeze-sha", default=None, help="commit the freeze tag points to (default: HEAD)")
+    ap.add_argument("--freeze-sha", required=True,
+                    help="immutable freeze-point commit (the evidence baseline); counts always come from HEAD")
     a = ap.parse_args()
-    sha = a.freeze_sha or _git("rev-parse", "HEAD").strip()
+    sha = _git("rev-parse", "--verify", a.freeze_sha + "^{commit}").strip()
+    head = _git("rev-parse", "HEAD").strip()
     out = _REPO / a.out
-    out.write_text(render(sha), encoding="utf-8")
+    out.write_text(render(sha, head), encoding="utf-8")
     print(f"wrote {out.relative_to(_REPO)}")
 
 

@@ -4,13 +4,15 @@
 
 ## 凍結点
 
-- 凍結 commit: `5a6691b8dc7be1bcc9a5e1c6617493d5d0d3beec`（bot を止める直前の `main`）
-- 凍結タグ: `evidence-freeze-2026-09`（この commit を指す）。ここに全バイトが残るので、
-  以降の整理で作業ツリーから外すものは `git restore --source=evidence-freeze-2026-09 -- <path>` で復元できる。
+- 凍結 commit（**正本・不変**）: `5a6691b8dc7be1bcc9a5e1c6617493d5d0d3beec`（bot を止める直前の `main`）
+- 棚卸し対象 commit: `23ddbc1e9782067df34eaa7528a4427bb4468fc2`（下の数値はこの checkout の git index から数えた。凍結 commit とは
+  P0 自身の変更分だけ異なりうる）
+- 凍結タグ `evidence-freeze-2026-09`: **origin に未作成（pending）**。作成されるまでは SHA を使う。
+- 復元手順: `git restore --source=5a6691b8dc7be1bcc9a5e1c6617493d5d0d3beec -- <path>`（SHA は常に有効。タグ作成後はタグ名でも可）
 
 ## 全体
 
-- 追跡ファイル数: **110,364**
+- 追跡ファイル数: **110,366**
 - 追跡ファイル合計サイズ: **5.0 GB**
 
 | 最上位 | ファイル数 | サイズ |
@@ -19,10 +21,10 @@
 | `rooms/` | 84,291 | 2.2 GB |
 | `ai_lab/` | 10,900 | 589.2 MB |
 | `experiments/` | 394 | 1.8 MB |
-| `docs/` | 79 | 664.3 KB |
+| `docs/` | 80 | 669.9 KB |
 | `tests/` | 151 | 512.0 KB |
 | `genesis/` | 61 | 380.4 KB |
-| `tools/` | 15 | 179.2 KB |
+| `tools/` | 16 | 189.0 KB |
 | `.github/` | 14 | 66.7 KB |
 | `core/` | 8 | 45.5 KB |
 | `(root files)` | 8 | 36.6 KB |
@@ -78,12 +80,11 @@
 
 ## 自動生成の候補部屋（`rooms/candidates/`）
 
-- 部屋数: **6,888**
+- 部屋数: **6,887**
 
 | genesis_model（白） | 部屋数 |
 |---|---:|
 | `g001_ginzburg_landau_quench` | 6,886 |
-| `(no room.yaml)` | 1 |
 | `g002c3_boussinesq_flux_heated` | 1 |
 
 | reached_level | 部屋数 |
