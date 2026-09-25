@@ -77,9 +77,23 @@ def decode_lens(field_json_path, lens):
     return L["vmin"] + (L["vmax"] - L["vmin"]) * arr / 255.0
 
 
+def _room_field_json(room_id, base):
+    """The recorded field.json of a room: the generated app copy if present, else the room's own run."""
+    import glob
+    import os
+    app_copy = f"{base}/{room_id}/field.json"
+    if os.path.exists(app_copy):
+        return app_copy
+    for root in ("rooms/official", "rooms/candidates"):
+        found = sorted(glob.glob(f"{root}/{room_id}/runs/*/field.json"))
+        if found:
+            return found[0]
+    raise FileNotFoundError(f"no recorded field.json for {room_id} (app data is generated: tools/collect_app_data.py)")
+
+
 def render_room_lens(room_id, lens, path, frame=-1, base="app/public/data/rooms"):
-    """Render one recorded lens frame of an official room (as the Observatory App shows it)."""
-    field = decode_lens(f"{base}/{room_id}/field.json", lens)[frame]
+    """Render one recorded lens frame of a room (as the Observatory App shows it)."""
+    field = decode_lens(_room_field_json(room_id, base), lens)[frame]
     return render_field(field, path, diverging=True, symmetric=True)
 
 

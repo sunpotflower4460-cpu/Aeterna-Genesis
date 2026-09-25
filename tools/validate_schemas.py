@@ -256,6 +256,24 @@ def main():
     #    finished job's result_room must actually exist as a candidate room (no phantom self-promotion).
     n_jobs = 0
     jobs_dir = os.path.join(_REPO, "rooms", "jobs")
+    # A result_room "exists" if it is on disk (candidates or rejected_in_3d) or was moved out of the working
+    # tree by tools/archive.py (recorded, with its git blob, in archive/MANIFEST.jsonl.gz and restorable).
+    archived_rooms = set()
+    manifest = os.path.join(_REPO, "archive", "MANIFEST.jsonl.gz")
+    if os.path.exists(manifest):
+        import gzip
+        with gzip.open(manifest, "rt", encoding="utf-8") as fh:
+            next(fh, None)  # header
+            for line in fh:
+                parts = json.loads(line)["path"].split("/")
+                if len(parts) > 2 and parts[0] == "rooms" and parts[1] == "candidates":
+                    archived_rooms.add(parts[2])
+
+    def _room_exists(rr):
+        return (rr in archived_rooms
+                or os.path.isdir(os.path.join(_REPO, "rooms", "candidates", rr))
+                or os.path.isdir(os.path.join(_REPO, "rooms", "rejected_in_3d", rr)))
+
     job_schema_path = os.path.join(_SCHEMAS, "job.schema.json")
     if os.path.isdir(jobs_dir) and os.path.exists(job_schema_path):
         jv = Draft202012Validator(_load_json(job_schema_path))
@@ -264,7 +282,7 @@ def main():
             for err in jv.iter_errors(doc):
                 errors.append("rooms/jobs/%s: %s at %s" % (fn, err.message, list(err.absolute_path)))
             rr = doc.get("result_room")
-            if rr and not os.path.isdir(os.path.join(_REPO, "rooms", "candidates", rr)):
+            if rr and not _room_exists(rr):
                 errors.append("rooms/jobs/%s: result_room %r has no candidate room (a job cannot self-promote)"
                               % (fn, rr))
             n_jobs += 1
@@ -276,7 +294,7 @@ def main():
             else:
                 for j in led["jobs"]:
                     rr = j.get("result_room")
-                    if rr and not os.path.isdir(os.path.join(_REPO, "rooms", "candidates", rr)):
+                    if rr and not _room_exists(rr):
                         errors.append("rooms/jobs/ledger.json: job %r result_room %r missing"
                                       % (j.get("job_id"), rr))
     if n_jobs:
