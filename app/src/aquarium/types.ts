@@ -44,3 +44,21 @@ export interface TankField {
   times: number[]
   lenses: Record<string, TankLens>
 }
+
+/** Where a tank reads its frames from: a recorded run (all frames) or a live universe (the last two).
+ *  `affine(i)` maps the stored uint8/255 value v to the display value a*v + b (both display-only). */
+export interface FrameSource {
+  grid: number[]
+  count: number
+  key(i: number): number
+  data(i: number): Uint8Array
+  affine(i: number): [number, number]
+}
+
+export function recordedSource(lens: TankLens): FrameSource {
+  const stride = lens.grid.reduce((a, b) => a * b, 1)
+  return {
+    grid: lens.grid, count: lens.nframes, key: (i) => i,
+    data: (i) => lens.frames.subarray(i * stride, (i + 1) * stride), affine: () => [1, 0],
+  }
+}
