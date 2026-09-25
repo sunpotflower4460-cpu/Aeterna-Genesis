@@ -70,7 +70,7 @@
 4. `docs/ROOM_MODEL.md` — Genesis Room とは、schema
 5. `docs/DIMENSION_POLICY.md` — 2D 探索 / 3D 正式 / 次元移行監査
 6. `docs/AI_EXPERIMENT_POLICY.md` — AI の変更可能範囲・昇格段階
-7. `docs/GENESIS_MAP.md` — 現在地（三層の中身）
+7. `RESEARCH_COMPASS.md` — 現在地（`research/index.json` から自動生成）。文書の目次は `docs/README.md`（`docs/GENESIS_MAP.md` は移行期の記録）
 
 Claude 固有の手順が要る場合のみ `CLAUDE.md`。原則は本ファイルへ集約。
 

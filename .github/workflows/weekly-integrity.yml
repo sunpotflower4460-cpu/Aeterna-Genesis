@@ -1,0 +1,37 @@
+name: Weekly integrity
+
+# Small, read-only automation for the dialogue-led restart (plan P5). Once a week (and on demand):
+# the slow tests that the per-PR fast loop skips, the archive manifest against full history, and
+# the compass-vs-index check. It never commits or pushes; a red run is the signal.
+on:
+  schedule:
+    - cron: '41 3 * * 1'   # Mondays 12:41 JST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the archive source commit must be in history
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Archived files still resolve to their recorded blobs
+        run: python tools/archive.py verify --sample 200
+      - name: Compass matches the canonical index
+        run: python tools/build_compass.py --check
+      - name: Slow tests
+        run: python -m pytest -q -m slow

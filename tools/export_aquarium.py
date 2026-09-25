@@ -77,24 +77,6 @@ def gpe_vortex_ring_3d():
                  "steps": n_real}
 
 
-def mass_conserved_ball_3d():
-    from genesis.models import mass_conserved_3d as mc
-    edge, steps, seed = 24, 2400, 0
-    p = dict(mc.DEFAULTS)
-    dt = mc.stable_dt(p)
-    rng = np.random.default_rng(seed)
-    a, b = mc.make_initial((edge,) * 3, p["b0"], rng)
-    rec = FieldRecorder(3, (edge,) * 3).declare("a", "a", "1")
-    marks = _schedule(steps)
-    for s in range(steps + 1):
-        if s in marks:
-            rec.add(s * dt, {"a": a})
-        if s < steps:
-            a, b = mc.step(a, b, dt, p)
-    return rec, {"model": "genesis.models.mass_conserved_3d", "grid": [edge] * 3, "steps": steps, "dt": round(dt, 6),
-                 "seed": seed}
-
-
 def sh_localized():
     from genesis.models import swift_hohenberg as sh
     N, settle, regrow, seed = 64, 2500, 2500, 0
@@ -219,13 +201,6 @@ TEMPLATES = [
          level="L3（運動・置いた輪）", tier="measured / analogy", source="experiments/e003_gpe_vortex_ring/AUDIT.md",
          lenses=[{"name": "density", "label": "渦の芯（|ψ|² が小さい所）", "transfer": "low"},
                  {"name": "phase", "label": "位相", "transfer": "cyclic"}], default_lens="density"),
-    dict(id="mass-conserved-ball-3d", recipe=mass_conserved_ball_3d, dimension=3, white="質量保存反応拡散",
-         title="保存則のもとで玉がまとまる（3D）",
-         caption="全体の量（a+b）がきっちり保存される反応拡散で、ふくらみの種から一つのまとまった「玉」ができて落ち着きます。動きはしません。",
-         put_in=["ガウス型のふくらみ（種）", "一様な b とノイズ"],
-         emerged=["一つのまとまった 3D の玉（存在ゲートを通過）", "a+b の厳密な保存"],
-         level="局在（静止）", tier="measured", source="tests/test_mass_conserved_3d.py",
-         lenses=[{"name": "a", "label": "a の濃さ", "transfer": "high"}], default_lens="a"),
     dict(id="gpe-dipole-2d", recipe=gpe_dipole, dimension=2, white="damped GPE",
          title="渦のペアが泳ぎだす（2D）",
          caption="ノイズだけの場を冷やすと渦がたくさん生まれ、打ち消し合って減っていき、最後に残った ＋と− の渦のペアが並んで泳ぎだします。ペアは置いていません。",
