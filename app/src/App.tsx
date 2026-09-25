@@ -1,29 +1,44 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from './store'
 import { loadCatalog } from './lib/data'
 import Lobby from './components/Lobby'
 import RoomWorkspace from './components/RoomWorkspace'
 import CompareView from './components/CompareView'
 import Inbox from './components/Inbox'
+import AquariumView from './aquarium/AquariumView'
 
 export default function App() {
   const catalog = useStore((s) => s.catalog)
   const setCatalog = useStore((s) => s.setCatalog)
   const view = useStore((s) => s.view)
+  const toLobby = useStore((s) => s.toLobby)
+  const toAquarium = useStore((s) => s.toAquarium)
+  const [catalogError, setCatalogError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadCatalog().then(setCatalog).catch((e) => console.error('catalog load failed', e))
+    // The catalog is generated data (tools/build_catalog.py); the aquarium works without it.
+    loadCatalog().then(setCatalog).catch((e) => setCatalogError(String(e)))
   }, [setCatalog])
+
+  if (view === 'aquarium') return <AquariumView onOpenObservatory={catalog ? toLobby : undefined} />
 
   if (!catalog) {
     return (
-      <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>
-        <div className="mono muted" style={{ letterSpacing: '.15em' }}>◈ loading observatory…</div>
+      <div style={{ height: '100%', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 24 }}>
+        <div className="mono muted" style={{ letterSpacing: '.1em' }}>
+          {catalogError
+            ? <>Observatory のデータが未生成です（python tools/build_catalog.py && python tools/collect_app_data.py）</>
+            : <>◈ loading observatory…</>}
+          <div style={{ marginTop: 16 }}><button className="tbtn" onClick={toAquarium}>← 水槽へ</button></div>
+        </div>
       </div>
     )
   }
-  if (view === 'room') return <RoomWorkspace />
-  if (view === 'compare') return <CompareView />
-  if (view === 'inbox') return <Inbox />
-  return <Lobby />
+  const body = view === 'room' ? <RoomWorkspace /> : view === 'compare' ? <CompareView /> : view === 'inbox' ? <Inbox /> : <Lobby />
+  return (
+    <>
+      {body}
+      <button className="tbtn aq-back" onClick={toAquarium} title="水槽へ戻る">◈ 水槽</button>
+    </>
+  )
 }

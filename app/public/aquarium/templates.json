@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "tdgl-quench-3d",
+      "dimension": 3,
+      "white": "g001 TDGL",
+      "title": "渦の糸が生まれる（冷やした場・3D）",
+      "caption": "一様な場にごく小さなノイズだけを入れて冷やすと、場所ごとに違う向きがそろい始め、そろい切れない所に「渦の糸」が残ります。明るい糸が渦の芯（|ψ| が小さい所）です。",
+      "put_in": [
+        "一様な場＋ごく小さなノイズ",
+        "冷却（クエンチ）の強さと速さ"
+      ],
+      "emerged": [
+        "向きのそろった領域（対称性の破れ・L1）",
+        "渦の糸（位相の巻き・L2）"
+      ],
+      "level": "L2",
+      "tier": "measured",
+      "source": "rooms/official/room-g001-a · docs/WHITE_CEILINGS.md",
+      "lenses": [
+        {
+          "name": "density",
+          "label": "渦の芯（|ψ|² が小さい所）",
+          "transfer": "low"
+        },
+        {
+          "name": "phase",
+          "label": "位相（向き）",
+          "transfer": "cyclic"
+        }
+      ],
+      "default_lens": "density",
+      "recipe": {
+        "model": "genesis.models.ginzburg_landau",
+        "grid": [
+          48,
+          48,
+          48
+        ],
+        "steps": 420,
+        "dt": 0.1,
+        "seed": 0,
+        "noise_amplitude": 0.01,
+        "quench_duration": 8.0
+      }
+    },
+    {
+      "id": "gpe-vortex-ring-3d",
+      "dimension": 3,
+      "white": "GPE（超流体）",
+      "title": "渦の輪が自分で進む（3D）",
+      "caption": "超流体の中に置いた渦の輪は、誰にも押されずに自分の軸の方向へ進みます。輪そのものは置いたもの、進むことは方程式から出てきたものです。",
+      "put_in": [
+        "渦の輪（半径 7 の形を置いた）",
+        "輪の芯の形を整える準備（t=0 より前）",
+        "円板状の影＝輪を置いたときの位相の継ぎ目（手法の作り物・e003 AUDIT）"
+      ],
+      "emerged": [
+        "輪がほぼ一定の半径で軸方向に進む（自己伝播）"
+      ],
+      "level": "L3（運動・置いた輪）",
+      "tier": "measured / analogy",
+      "source": "experiments/e003_gpe_vortex_ring/AUDIT.md",
+      "lenses": [
+        {
+          "name": "density",
+          "label": "渦の芯（|ψ|² が小さい所）",
+          "transfer": "low"
+        },
+        {
+          "name": "phase",
+          "label": "位相",
+          "transfer": "cyclic"
+        }
+      ],
+      "default_lens": "density",
+      "recipe": {
+        "source": "experiments/e003_gpe_vortex_ring (QUICK)",
+        "L": 48,
+        "R": 7,
+        "n_imag": 120,
+        "dt": 0.1,
+        "steps": 800
+      }
+    },
+    {
+      "id": "mass-conserved-ball-3d",
+      "dimension": 3,
+      "white": "質量保存反応拡散",
+      "title": "保存則のもとで玉がまとまる（3D）",
+      "caption": "全体の量（a+b）がきっちり保存される反応拡散で、ふくらみの種から一つのまとまった「玉」ができて落ち着きます。動きはしません。",
+      "put_in": [
+        "ガウス型のふくらみ（種）",
+        "一様な b とノイズ"
+      ],
+      "emerged": [
+        "一つのまとまった 3D の玉（存在ゲートを通過）",
+        "a+b の厳密な保存"
+      ],
+      "level": "局在（静止）",
+      "tier": "measured",
+      "source": "tests/test_mass_conserved_3d.py",
+      "lenses": [
+        {
+          "name": "a",
+          "label": "a の濃さ",
+          "transfer": "high"
+        }
+      ],
+      "default_lens": "a",
+      "recipe": {
+        "model": "genesis.models.mass_conserved_3d",
+        "grid": [
+          24,
+          24,
+          24
+        ],
+        "steps": 2400,
+        "dt": 0.020833,
+        "seed": 0
+      }
+    },
+    {
+      "id": "gpe-dipole-2d",
+      "dimension": 2,
+      "white": "damped GPE",
+      "title": "渦のペアが泳ぎだす（2D）",
+      "caption": "ノイズだけの場を冷やすと渦がたくさん生まれ、打ち消し合って減っていき、最後に残った ＋と− の渦のペアが並んで泳ぎだします。ペアは置いていません。",
+      "put_in": [
+        "ノイズだけの場",
+        "冷却のしかた（μ の変化）"
+      ],
+      "emerged": [
+        "たくさんの渦（L2）",
+        "対消滅で数が減る",
+        "± の渦ペアの自己推進（L3・seed 1）"
+      ],
+      "level": "L3",
+      "tier": "measured",
+      "source": "experiments/e052_dipole_self_propulsion/AUDIT.md",
+      "lenses": [
+        {
+          "name": "amplitude",
+          "label": "|ψ|（穴が渦）",
+          "transfer": "high"
+        },
+        {
+          "name": "phase",
+          "label": "位相",
+          "transfer": "cyclic"
+        }
+      ],
+      "default_lens": "phase",
+      "recipe": {
+        "source": "experiments/e052_dipole_self_propulsion (run_one_seed recipe)",
+        "L": 96,
+        "tauQ": 200,
+        "hold": 150,
+        "post_steps": 1600,
+        "seed": 1
+      }
+    },
+    {
+      "id": "convection-2d",
+      "dimension": 2,
+      "white": "g002 Boussinesq",
+      "title": "温度差から対流がはじまる（2D）",
+      "caption": "静かな流体に下から温度差をかけると、ゆらぎが育って対流の渦（ロール）ができ、熱を運び始めます。",
+      "put_in": [
+        "静止した流体＋ノイズ",
+        "上下の温度差（Ra=1000）"
+      ],
+      "emerged": [
+        "対流ロール（循環・L3）",
+        "熱輸送の増加"
+      ],
+      "level": "L3（大域）",
+      "tier": "measured",
+      "source": "rooms/official/room-g002-a",
+      "lenses": [
+        {
+          "name": "temperature",
+          "label": "温度",
+          "transfer": "diverging"
+        },
+        {
+          "name": "vorticity",
+          "label": "渦度",
+          "transfer": "diverging"
+        }
+      ],
+      "default_lens": "temperature",
+      "recipe": {
+        "room": "rooms/official/room-g002-a",
+        "run": "seed-0000",
+        "Ra": 1000,
+        "N": 48
+      }
+    },
+    {
+      "id": "sh-localized",
+      "dimension": 2,
+      "white": "Swift-Hohenberg",
+      "title": "半分に切られても治る個体（2D）",
+      "caption": "一つのふくらみから、境界と模様をもった「個体」が育ちます。途中で上半分を消しても、同じ形に治ります。ただし自分では動きません。",
+      "put_in": [
+        "対称なふくらみ一つ（局在の種は置いた）",
+        "途中で上半分を消す（修復テストの摂動）"
+      ],
+      "emerged": [
+        "内外の差・持続・サイズに依存しない形",
+        "自己修復（L4-static）"
+      ],
+      "level": "L4-static",
+      "tier": "measured",
+      "source": "docs/WHITE_CEILINGS.md · tests/test_lawclass.py",
+      "lenses": [
+        {
+          "name": "u",
+          "label": "u",
+          "transfer": "diverging"
+        }
+      ],
+      "default_lens": "u",
+      "recipe": {
+        "model": "genesis.models.swift_hohenberg",
+        "N": 64,
+        "settle": 2500,
+        "cut_half_at_step": 2500,
+        "regrow": 2500,
+        "seed": 0
+      }
+    },
+    {
+      "id": "gray-scott-split",
+      "dimension": 2,
+      "white": "Gray-Scott",
+      "title": "点が分かれて増える（2D）",
+      "caption": "いくつかの小さな点が、育っては二つに分かれて増えていきます。ただし分かれた点は中身（受け継ぐ違い）を持たないので、「遺伝」ではありません。",
+      "put_in": [
+        "8 つの小さな点（種）"
+      ],
+      "emerged": [
+        "点の成長と分裂（自己複製・L7-partial）"
+      ],
+      "level": "L7-partial",
+      "tier": "measured",
+      "source": "docs/WHITE_CEILINGS.md",
+      "lenses": [
+        {
+          "name": "V",
+          "label": "V の濃さ",
+          "transfer": "high"
+        }
+      ],
+      "default_lens": "V",
+      "recipe": {
+        "model": "genesis.models.gray_scott",
+        "N": 96,
+        "steps": 12000,
+        "seed": 0,
+        "F": 0.035,
+        "k": 0.062
+      }
+    },
+    {
+      "id": "cgl-spirals",
+      "dimension": 2,
+      "white": "CGL",
+      "title": "らせんが回り、乱れる（2D）",
+      "caption": "振動する場にノイズを入れると、らせん状の波とその中心（穴）が生まれて動き回り、乱流になります。動くけれど、まとまった個体にはなりません。",
+      "put_in": [
+        "一様な振動＋ノイズ"
+      ],
+      "emerged": [
+        "らせんの芯（L2）",
+        "芯が動き回る乱流（< L4）"
+      ],
+      "level": "L2＋乱流運動",
+      "tier": "measured",
+      "source": "docs/WHITE_CEILINGS.md",
+      "lenses": [
+        {
+          "name": "phase",
+          "label": "位相",
+          "transfer": "cyclic"
+        },
+        {
+          "name": "amplitude",
+          "label": "|A|（穴が芯）",
+          "transfer": "high"
+        }
+      ],
+      "default_lens": "phase",
+      "recipe": {
+        "model": "genesis.models.complex_ginzburg_landau",
+        "N": 96,
+        "steps": 5000,
+        "seed": 0,
+        "b": 2.0,
+        "c": -1.0
+      }
+    },
+    {
+      "id": "three-component-frontier",
+      "dimension": 2,
+      "white": "三成分反応拡散",
+      "title": "最前線：自分で動く個体は出るか（2D）",
+      "caption": "「まとまり」と「自分で動く」を一つの白で同時に得られるかを試す場です。この条件では、点は分かれて増えてしまい、一つの個体が泳ぐところまでは届いていません（未達・frontier）。",
+      "put_in": [
+        "対称なふくらみ一つ＋ノイズ"
+      ],
+      "emerged": [
+        "点の形成と分裂（この条件）",
+        "単一個体の自走は未確認"
+      ],
+      "level": "frontier",
+      "tier": "frontier",
+      "source": "docs/WHITE_CEILINGS.md · docs/ANGULAR_MODES.md",
+      "lenses": [
+        {
+          "name": "u",
+          "label": "u（活性）",
+          "transfer": "high"
+        },
+        {
+          "name": "w",
+          "label": "w（遅い抑制＝航跡）",
+          "transfer": "high"
+        }
+      ],
+      "default_lens": "u",
+      "recipe": {
+        "model": "genesis.models.three_component_rd",
+        "N": 96,
+        "steps": 8000,
+        "seed": 1
+      }
+    }
+  ]
+}
