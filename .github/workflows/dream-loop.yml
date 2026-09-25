@@ -1,29 +1,11 @@
 name: Genesis Dream Loop
 
+# ⏸ PAUSED 2026-09 (research restart, plan phase P0): automatic triggers removed.
+# Only manual `workflow_dispatch` remains. The original push/schedule/workflow_run triggers are
+# preserved in git history (freeze point: tag evidence-freeze-2026-09 / docs/INVENTORY_2026-09.md).
+# Do not re-enable without the human owner's decision; the restart plan replaces these with one
+# small daily digest that never writes to main.
 on:
-  # Run once when research implementation/workflow changes land on main.
-  # Generated evidence never touches these code paths, so evidence commits do not recurse.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/dream-loop.yml'
-      - 'ai_lab/dream/**'
-      - 'ai_lab/missions/**'
-      - 'genesis/worlds/**'
-      - 'genesis/models/vector_o3.py'
-      - 'genesis/models/q_tensor_nematic.py'
-      - 'genesis/diagnostics/**'
-  schedule:
-    # Primary evidence burst every hour at :17.
-    - cron: '17 * * * *'
-    # Six additional specialist swarms per day. These are serialized by the same concurrency group
-    # and deliberately rotate different scientific questions instead of duplicating the broad sweep.
-    # JST: novelty 09:07/21:07, native3d 01:07/13:07, mechanism 05:07/17:07.
-    - cron: '7 0,12 * * *'
-    - cron: '7 4,16 * * *'
-    - cron: '7 8,20 * * *'
-    # Safety-net check at :47. It only runs a burst when the latest completed report is >70 min old.
-    - cron: '47 * * * *'
   workflow_dispatch:
     inputs:
       research_profile:
