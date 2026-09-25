@@ -26,7 +26,7 @@ _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from tools.lab import whites  # noqa: E402
+from tools.lab import observe, whites  # noqa: E402
 from tools.lab.hub import Hub  # noqa: E402
 from tools.lab.journal import Journal  # noqa: E402
 
@@ -129,6 +129,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"whites": [w.public() for w in whites.registry().values()]})
         if parts == ["stream"]:
             return self._stream(q)
+        if parts == ["observe"] and method == "POST":
+            return self._json(self._observe(self._body()))
         if parts == ["universes"] and method == "GET":
             return self._json({"universes": hub.list()})
         if parts == ["universes"] and method == "POST":
@@ -160,6 +162,21 @@ class Handler(BaseHTTPRequestHandler):
                         hub.control(child, "play")
                     return self._json(hub.info(child), 201)
         return self._error(404, "unknown endpoint")
+
+    def _observe(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Build the observation packet for the given universes (all, if none given), save it with the
+        session, and return it in the same form the AI council receives (images as data URLs)."""
+        hub = self.server.hub
+        ids = [i for i in (body.get("ids") or hub.ids()) if i in hub.ids()]
+        if not ids:
+            raise ValueError("宇宙がありません")
+        packet = observe.build(hub, ids)
+        saved = None
+        if hub.journal:
+            n = len(list((hub.journal.dir / "packets").glob("*"))) if (hub.journal.dir / "packets").exists() else 0
+            saved = observe.save(packet, hub.journal.dir / "packets" / f"{n + 1:03d}")
+            hub.journal.log("observe", universes=ids, packet=str(saved.relative_to(hub.journal.dir)))
+        return {**observe.to_public(packet), "saved": str(saved) if saved else None}
 
     def _stream(self, q: dict[str, list[str]]) -> None:
         """SSE: `u=<id>:<lens>,<id>:<lens>` -> event "frame" per new frame, "universes" when the set changes."""

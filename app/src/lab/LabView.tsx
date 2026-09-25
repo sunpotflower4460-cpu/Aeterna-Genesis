@@ -7,6 +7,7 @@ import SurfaceTank from '../aquarium/SurfaceTank'
 import { api, lab, type KnobSpec, type LabEvent, type UniverseInfo, type WhiteSpec } from './api'
 import { useLabStream, type LiveSource, type LiveState } from './live'
 import ComparePanel, { seriesColor } from './ComparePanel'
+import ObservePanel from './ObservePanel'
 
 // Live lab: several universes side by side, each running its white from t=0 in a worker process on the
 // lab server. Everything a person changes is sent as an explicit, recorded intervention (law change or
@@ -238,7 +239,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [lenses, setLenses] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<'ctl' | 'cmp' | 'tree'>('ctl')
+  const [tab, setTab] = useState<'ctl' | 'cmp' | 'tree' | 'obs'>('ctl')
   const [panel, setPanel] = useState(() => typeof innerWidth === 'undefined' || innerWidth > 720)
   const [range, setRange] = useState<'fixed' | 'frame'>('fixed')
   const [threshold, setThreshold] = useState(0.35)
@@ -330,6 +331,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
               <button className={tab === 'ctl' ? 'on' : ''} onClick={() => setTab('ctl')}>操作</button>
               <button className={tab === 'cmp' ? 'on' : ''} onClick={() => setTab('cmp')}>比べる</button>
               <button className={tab === 'tree' ? 'on' : ''} onClick={() => setTab('tree')}>系譜</button>
+              <button className={tab === 'obs' ? 'on' : ''} onClick={() => setTab('obs')}>AI に渡すもの</button>
             </nav>
             {error && <div className="lab-error" onClick={() => setError(null)}>{error}（クリックで閉じる）</div>}
             {tab === 'ctl' && (
@@ -358,6 +360,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
               </>
             )}
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
+            {tab === 'obs' && <ObservePanel ids={universes.map((u) => u.id)} onError={onError} />}
             {tab === 'tree' && <Lineage universes={merged} whites={whites} selected={selected} onSelect={setSelected} />}
           </aside>
         )}

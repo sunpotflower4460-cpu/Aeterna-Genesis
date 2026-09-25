@@ -124,3 +124,13 @@ def test_fork_index_journal_steps_and_concurrent_order(server):
     uni = json.loads((hub.journal.dir / "universes.json").read_text())[uid]
     assert uni["closed"] and replay(uni["recipe"], uni["step"]).sha256() == uni["sha256"]
     assert any(e["kind"] == "delete" and e.get("sha256") for e in hub.journal.entries())
+
+
+def test_observe_endpoint_saves_the_packet(server):
+    srv, base = server
+    st, u = _call(base, "POST", "/api/universes", {"white": "cgl", "seed": 0})
+    _frames(base, f"{u['id']}:phase", 3)
+    st, p = _call(base, "POST", "/api/observe", {"ids": [u["id"]]})
+    assert st == 200 and p["universes"][0]["images"][0]["src"].startswith("data:image/png;base64,")
+    assert "観測パケット" in p["text"] and p["saved"]
+    assert any(e["kind"] == "observe" for e in srv.hub.journal.entries())

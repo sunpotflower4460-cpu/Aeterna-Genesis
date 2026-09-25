@@ -67,8 +67,10 @@ class White:
     perturbs: list[Perturb]
     put_in: list[str]
     source: str
-    ceiling_ref: str
+    ceiling_ref: str | None          # id in research/index.json "whites" (None: no entry; see `source`)
     defaults: dict[str, Any]
+    # blob tracking for the observation layer: (lens, threshold, "above"|"below"), or None (3D / no blobs)
+    track: tuple[str, float, str] | None = None
     _init: Callable = field(repr=False, default=None)
     _step: Callable = field(repr=False, default=None)
     _lens: Callable = field(repr=False, default=None)
@@ -206,7 +208,7 @@ def _tdgl():
                 Lens("phase", "位相（向き）", "cyclic", -np.pi, np.pi, True)],
         perturbs=[PERTURB_CUT, PERTURB_KICK],
         put_in=["一様な場＋ごく小さなノイズ", "冷却（クエンチ）の強さと速さ"],
-        source="rooms/official/room-g001-a", ceiling_ref="g001", defaults=dict(gl.DEFAULTS),
+        source="rooms/official/room-g001-a", ceiling_ref="g001-tdgl", defaults=dict(gl.DEFAULTS),
         _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
@@ -262,7 +264,7 @@ def _gpe_ring():
         perturbs=[PERTURB_CUT, PERTURB_KICK],
         put_in=["渦の輪（半径 R の形を置いた）", "輪の芯を整える準備（t=0 より前・虚時間 120 ステップ）",
                 "円板状の影＝輪を置いたときの位相の継ぎ目（手法の作り物）"],
-        source="experiments/e003_gpe_vortex_ring", ceiling_ref="gpe", defaults=defaults,
+        source="experiments/e003_gpe_vortex_ring", ceiling_ref=None, defaults=defaults,
         _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb, _cache=cache)
 
 
@@ -308,7 +310,7 @@ def _gray_scott():
                Knob("seed_radius", "種の半径", "start", 3.0, 1.0, 8.0, 0.5)],
         lenses=[Lens("V", "V の濃さ", "high", 0.0, 0.5), Lens("U", "U の濃さ", "low", 0.0, 1.0)],
         perturbs=[PERTURB_SEED, PERTURB_CUT, PERTURB_KICK],
-        put_in=["小さな点（種）をいくつか"], source="docs/WHITE_CEILINGS.md", ceiling_ref="gray_scott",
+        put_in=["小さな点（種）をいくつか"], source="docs/WHITE_CEILINGS.md", ceiling_ref="gray-scott", track=("V", 0.25, "above"),
         defaults=dict(gs.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
@@ -362,7 +364,7 @@ def _three_component():
         lenses=[Lens("u", "u（活性）", "high", -1.0, 1.5), Lens("w", "w（遅い抑制＝航跡）", "high", -0.1, 0.1),
                 Lens("v", "v（速い抑制）", "high", -0.5, 0.5)],
         perturbs=[PERTURB_SEED, PERTURB_CUT, PERTURB_KICK],
-        put_in=["対称なふくらみ一つ＋ノイズ"], source="docs/ANGULAR_MODES.md", ceiling_ref="three_component_rd",
+        put_in=["対称なふくらみ一つ＋ノイズ"], source="docs/ANGULAR_MODES.md", ceiling_ref="three-component-rd", track=("u", 0.4, "above"),
         defaults=dict(t3.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb,
         _cache=cache)
 
@@ -401,13 +403,15 @@ def _cgl():
     return White(
         id="cgl", title="らせんが回り、乱れる（CGL・2D）", family="CGL",
         model="genesis.models.complex_ginzburg_landau", dimension=2, grid=(N, N), steps_per_frame=25,
-        knobs=[Knob("b", "分散 b", "law", 2.0, -3.0, 3.0, 0.05),
-               Knob("c", "非線形の回り c", "law", -1.0, -3.0, 3.0, 0.05),
+        # |b|,|c| <= 2: at (b,c)=(-3,3) or (3,-3) the explicit cubic term blows up within ~100 frames
+        # (measured sweep); inside ±2.5 every grid corner stayed finite, ±2 keeps a margin
+        knobs=[Knob("b", "分散 b", "law", 2.0, -2.0, 2.0, 0.05),
+               Knob("c", "非線形の回り c", "law", -1.0, -2.0, 2.0, 0.05),
                Knob("noise", "はじめのノイズ", "start", 1e-2, 1e-4, 0.2, 1e-4)],
         lenses=[Lens("phase", "位相", "cyclic", -np.pi, np.pi, True),
                 Lens("amplitude", "|A|（穴が芯）", "high", 0.0, 1.4)],
         perturbs=[PERTURB_SEED, PERTURB_CUT, PERTURB_KICK],
-        put_in=["一様な振動＋ノイズ"], source="docs/WHITE_CEILINGS.md", ceiling_ref="cgl",
+        put_in=["一様な振動＋ノイズ"], source="docs/WHITE_CEILINGS.md", ceiling_ref="cgl", track=("amplitude", 0.5, "below"),
         defaults=dict(cgl.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb,
         _cache=cache)
 
@@ -447,15 +451,17 @@ def _swift_hohenberg():
     return White(
         id="sh", title="半分に切られても治る個体（Swift-Hohenberg・2D）", family="Swift-Hohenberg",
         model="genesis.models.swift_hohenberg", dimension=2, grid=(N, N), steps_per_frame=40,
-        knobs=[Knob("r", "背景の安定さ r", "law", -0.4, -1.0, 0.2, 0.01),
-               Knob("b", "非線形 b", "law", 2.0, 0.5, 3.0, 0.05),
+        # the quintic term is explicit (dt=0.2): near the saturated amplitude A^2=(b+sqrt(b^2+4r))/2 the
+        # step needs dt*|3bA^2-5A^4| < 2, which holds for r<=0 and b<=2.1 (not a physics limit)
+        knobs=[Knob("r", "背景の安定さ r", "law", -0.4, -1.0, 0.0, 0.01),
+               Knob("b", "非線形 b", "law", 2.0, 0.5, 2.1, 0.05),
                Knob("noise", "はじめのノイズ", "start", 1e-3, 0.0, 0.05, 1e-4),
                Knob("seed_amp", "ふくらみの高さ", "start", 1.2, 0.2, 2.5, 0.1),
                Knob("seed_width", "ふくらみの幅", "start", 3.0, 1.0, 8.0, 0.25)],
         lenses=[Lens("u", "u", "diverging", -0.3, 1.45)],
         perturbs=[PERTURB_CUT, PERTURB_SEED, PERTURB_KICK],
         put_in=["対称なふくらみ一つ（局在の種は置いた）"], source="docs/WHITE_CEILINGS.md · tests/test_lawclass.py",
-        ceiling_ref="swift_hohenberg", defaults=dict(sh.DEFAULTS), _init=init, _step=step, _lens=lens,
+        ceiling_ref="swift-hohenberg", track=("u", 0.3, "above"), defaults=dict(sh.DEFAULTS), _init=init, _step=step, _lens=lens,
         _metrics=metrics, _perturb=perturb, _cache=cache)
 
 
