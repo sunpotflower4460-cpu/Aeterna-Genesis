@@ -403,8 +403,10 @@ def _cgl():
     return White(
         id="cgl", title="らせんが回り、乱れる（CGL・2D）", family="CGL",
         model="genesis.models.complex_ginzburg_landau", dimension=2, grid=(N, N), steps_per_frame=25,
-        knobs=[Knob("b", "分散 b", "law", 2.0, -3.0, 3.0, 0.05),
-               Knob("c", "非線形の回り c", "law", -1.0, -3.0, 3.0, 0.05),
+        # |b|,|c| <= 2: at (b,c)=(-3,3) or (3,-3) the explicit cubic term blows up within ~100 frames
+        # (measured sweep); inside ±2.5 every grid corner stayed finite, ±2 keeps a margin
+        knobs=[Knob("b", "分散 b", "law", 2.0, -2.0, 2.0, 0.05),
+               Knob("c", "非線形の回り c", "law", -1.0, -2.0, 2.0, 0.05),
                Knob("noise", "はじめのノイズ", "start", 1e-2, 1e-4, 0.2, 1e-4)],
         lenses=[Lens("phase", "位相", "cyclic", -np.pi, np.pi, True),
                 Lens("amplitude", "|A|（穴が芯）", "high", 0.0, 1.4)],
@@ -449,8 +451,10 @@ def _swift_hohenberg():
     return White(
         id="sh", title="半分に切られても治る個体（Swift-Hohenberg・2D）", family="Swift-Hohenberg",
         model="genesis.models.swift_hohenberg", dimension=2, grid=(N, N), steps_per_frame=40,
-        knobs=[Knob("r", "背景の安定さ r", "law", -0.4, -1.0, 0.2, 0.01),
-               Knob("b", "非線形 b", "law", 2.0, 0.5, 3.0, 0.05),
+        # the quintic term is explicit (dt=0.2): near the saturated amplitude A^2=(b+sqrt(b^2+4r))/2 the
+        # step needs dt*|3bA^2-5A^4| < 2, which holds for r<=0 and b<=2.1 (not a physics limit)
+        knobs=[Knob("r", "背景の安定さ r", "law", -0.4, -1.0, 0.0, 0.01),
+               Knob("b", "非線形 b", "law", 2.0, 0.5, 2.1, 0.05),
                Knob("noise", "はじめのノイズ", "start", 1e-3, 0.0, 0.05, 1e-4),
                Knob("seed_amp", "ふくらみの高さ", "start", 1.2, 0.2, 2.5, 0.1),
                Knob("seed_width", "ふくらみの幅", "start", 3.0, 1.0, 8.0, 0.25)],
