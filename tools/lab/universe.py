@@ -120,6 +120,9 @@ class Universe:
         self.__dict__.update(d)
 
     # ------------------------------------------------------------------ observation (read-only)
+    def finite(self) -> bool:
+        return all(bool(np.isfinite(a).all()) for a in self.state.values())
+
     def metrics(self) -> dict[str, float]:
         return self.white.metrics(self.state)
 

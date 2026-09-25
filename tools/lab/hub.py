@@ -22,9 +22,10 @@ MAX_FPS = 12.0
 
 # ---------------------------------------------------------------------------------------- worker side
 def _frame_msg(u: Universe, playing: bool, speed: float) -> dict[str, Any]:
-    return {"step": u.step_index, "t": u.t, "playing": playing, "speed": speed,
-            "lenses": {L.name: u.frame(L.name) for L in u.white.lenses},
-            "metrics": u.metrics(), "sha256": None}
+    finite = u.finite()
+    return {"step": u.step_index, "t": u.t, "playing": playing, "speed": speed, "diverged": not finite,
+            "lenses": {L.name: u.frame(L.name) for L in u.white.lenses} if finite else {},
+            "metrics": u.metrics() if finite else {}}
 
 
 def _worker(conn, universe: Universe, max_fps: float) -> None:
@@ -37,7 +38,7 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
                 try:
                     out: Any = None
                     if cmd == "play":
-                        playing = True
+                        playing = u.finite()
                     elif cmd == "pause":
                         playing = False
                     elif cmd == "step":
@@ -45,9 +46,11 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
                     elif cmd == "speed":
                         speed = float(min(max(args.get("value", 1.0), 0.1), 10.0))
                     elif cmd == "set":
-                        out = u.set_law(args["values"])
+                        out = {"event": u.set_law(args["values"]), "recipe": u.recipe()}
                     elif cmd == "perturb":
-                        out = u.perturb(args["name"], args.get("args"))
+                        out = {"event": u.perturb(args["name"], args.get("args")), "recipe": u.recipe()}
+                    elif cmd == "info":
+                        out = {"step": u.step_index, "t": u.t, "sha256": u.sha256(), "recipe": u.recipe()}
                     elif cmd == "snapshot":
                         out = u
                     elif cmd == "sha256":
@@ -57,6 +60,8 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
                         return
                     else:
                         raise ValueError(f"unknown command {cmd!r}")
+                    if cmd in ("play", "pause", "step", "speed"):
+                        out = {"step": u.step_index, "t": u.t}
                     conn.send(("reply", req, True, out))
                 except Exception as e:  # report to the caller, keep the universe alive
                     conn.send(("reply", req, False, str(e)))
@@ -65,6 +70,8 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
             if playing:
                 t0 = time.monotonic()
                 u.advance(max(1, int(round(u.white.steps_per_frame * speed))))
+                if not u.finite():          # numerical blow-up is not physics: stop and say so
+                    playing = False
                 conn.send(("frame", _frame_msg(u, playing, speed)))
                 rest = 1.0 / max_fps - (time.monotonic() - t0)
                 if rest > 0:
@@ -74,10 +81,23 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
 
 
 # ---------------------------------------------------------------------------------------- hub side
+def _label(i: int) -> str:
+    """A, B, ..., Z, AA, AB, ... -- never reused within a session."""
+    out = ""
+    i += 1
+    while i:
+        i, r = divmod(i - 1, 26)
+        out = chr(65 + r) + out
+    return out
+
+
 class _Handle:
     def __init__(self, uid: str, universe: Universe, parent: str | None, branch_step: int | None,
-                 label: str, ctx, max_fps: float):
+                 label: str, ctx, max_fps: float, fork_index: int | None = None):
         self.uid, self.parent, self.branch_step, self.label = uid, parent, branch_step, label
+        self.fork_index = fork_index          # recipe events from this index on were added by the branch
+        self.step = universe.step_index
+        self.cmd_lock = threading.Lock()      # recipe updates follow the worker's command order
         self.white = universe.white.id
         self.recipe = universe.recipe()
         self.frame: dict[str, Any] | None = None
@@ -162,15 +182,16 @@ class Hub:
         self._lock = threading.RLock()
         self._handles: dict[str, _Handle] = {}
         self._ids = itertools.count(1)
-        self._labels = itertools.cycle("ABCDEFGHJKLMNPQRSTUVWXYZ")
+        self._labels = (_label(i) for i in itertools.count())
 
     # ------------------------------------------------------------------ lifecycle
-    def _spawn(self, universe: Universe, parent: str | None, branch_step: int | None) -> str:
+    def _spawn(self, universe: Universe, parent: str | None, branch_step: int | None,
+               fork_index: int | None = None) -> str:
         with self._lock:
             if len(self._handles) >= self.max_universes:
                 raise ValueError(f"同時に動かせる宇宙は {self.max_universes} 個までです（CPU コア数）。どれかを閉じてください")
             uid = f"u{next(self._ids)}"
-            h = _Handle(uid, universe, parent, branch_step, next(self._labels), self._ctx, self.max_fps)
+            h = _Handle(uid, universe, parent, branch_step, next(self._labels), self._ctx, self.max_fps, fork_index)
             self._handles[uid] = h
         self._remember(h)
         Hub.bump()
@@ -188,12 +209,14 @@ class Hub:
         if not set_values and not perturb:
             raise ValueError("分岐では、つまみか摂動のどちらかを 1 つ変えてください")
         parent = self._get(parent_id)
-        snap: Universe = parent.call("snapshot")
+        with parent.cmd_lock:
+            snap: Universe = parent.call("snapshot")
+        fork_index = len(snap.events)
         if set_values:
             snap.set_law(set_values)
         if perturb:
             snap.perturb(perturb["name"], perturb.get("args"))
-        uid = self._spawn(snap, parent_id, snap.step_index)
+        uid = self._spawn(snap, parent_id, snap.step_index, fork_index)
         self._log("branch", uid, parent=parent_id, at_step=snap.step_index, set=set_values, perturb=perturb,
                   recipe=snap.recipe())
         return uid
@@ -203,8 +226,17 @@ class Hub:
             h = self._handles.pop(uid, None)
         if h is None:
             raise KeyError(uid)
+        final = None
+        try:                                   # the journal keeps where the universe ended (replayable)
+            with h.cmd_lock:
+                final = h.call("info", timeout=10)
+        except Exception:
+            pass
         h.stop()
-        self._log("delete", uid)
+        if final:
+            h.step = final["step"]
+            self._remember(h, final=final)
+        self._log("delete", uid, **({"step": final["step"], "sha256": final["sha256"]} if final else {}))
         Hub.bump()
 
     def close(self) -> None:
@@ -217,26 +249,36 @@ class Hub:
     def control(self, uid: str, action: str, **args: Any) -> Any:
         if action not in ("play", "pause", "step", "speed"):
             raise ValueError(f"unknown action {action!r}")
-        return self._get(uid).call(action, **args)
+        h = self._get(uid)
+        out = h.call(action, **args)
+        h.step = out["step"]
+        if action in ("pause", "step"):        # where the person stopped to look: replay(recipe, step)
+            self._remember(h)
+            self._log(action, uid, step=out["step"], **({"n": args["n"]} if "n" in args else {}))
+        return out
+
+    def _intervene(self, uid: str, kind: str, **args: Any) -> dict[str, Any]:
+        h = self._get(uid)
+        with h.cmd_lock:                        # worker order == recipe order, even for concurrent requests
+            out = h.call(kind, **args)
+            h.recipe = out["recipe"]
+            h.step = out["event"]["step"]
+        self._remember(h)
+        self._log(kind, uid, event=out["event"])
+        return out["event"]
 
     def set_law(self, uid: str, values: dict[str, Any]) -> dict[str, Any]:
-        h = self._get(uid)
-        ev = h.call("set", values=values)
-        h.recipe["events"].append(ev)
-        self._remember(h)
-        self._log("set", uid, event=ev)
-        return ev
+        return self._intervene(uid, "set", values=values)
 
     def perturb(self, uid: str, name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
-        h = self._get(uid)
-        ev = h.call("perturb", name=name, args=args or {})
-        h.recipe["events"].append(ev)
-        self._remember(h)
-        self._log("perturb", uid, event=ev)
-        return ev
+        return self._intervene(uid, "perturb", name=name, args=args or {})
 
     def sha256(self, uid: str) -> str:
         return self._get(uid).call("sha256")
+
+    def final_info(self, uid: str) -> dict[str, Any]:
+        """step, t, sha256 and the authoritative recipe, straight from the worker."""
+        return self._get(uid).call("info")
 
     def snapshot(self, uid: str) -> Universe:
         return self._get(uid).call("snapshot")
@@ -258,9 +300,11 @@ class Hub:
         f = h.frame or {}
         w = whites.get(h.white)
         return {"id": uid, "label": h.label, "white": h.white, "title": w.title, "dimension": w.dimension,
-                "parent": h.parent, "branch_step": h.branch_step, "recipe": h.recipe, "put_in": w.put_in,
+                "parent": h.parent, "branch_step": h.branch_step, "fork_index": h.fork_index,
+                "recipe": h.recipe, "put_in": w.put_in,
                 "step": f.get("step", 0), "t": f.get("t", 0.0), "playing": f.get("playing", False),
-                "speed": f.get("speed", 1.0), "metrics": f.get("metrics", {}), "alive": h.alive}
+                "speed": f.get("speed", 1.0), "metrics": f.get("metrics", {}), "diverged": f.get("diverged", False),
+                "alive": h.alive}
 
     def list(self) -> list[dict[str, Any]]:
         return [self.info(uid) for uid in self.ids()]
@@ -271,10 +315,13 @@ class Hub:
             return h.seq, h.frame
 
     # ------------------------------------------------------------------ journal
-    def _remember(self, h: _Handle) -> None:
+    def _remember(self, h: _Handle, final: dict[str, Any] | None = None) -> None:
         if self.journal:
-            self.journal.remember(h.uid, {"label": h.label, "white": h.white, "parent": h.parent,
-                                          "branch_step": h.branch_step, "recipe": h.recipe})
+            info = {"label": h.label, "white": h.white, "parent": h.parent, "branch_step": h.branch_step,
+                    "fork_index": h.fork_index, "recipe": h.recipe, "step": h.step}
+            if final:
+                info.update(recipe=final["recipe"], step=final["step"], sha256=final["sha256"], closed=True)
+            self.journal.remember(h.uid, info)
 
     def _log(self, kind: str, uid: str, **data: Any) -> None:
         if self.journal:

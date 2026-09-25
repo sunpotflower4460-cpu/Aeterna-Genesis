@@ -190,13 +190,21 @@ class Handler(BaseHTTPRequestHandler):
                         seq, frame = hub.latest(uid)
                     except KeyError:
                         continue
-                    if frame is None or seen.get(uid) == seq or lens not in frame["lenses"]:
+                    if frame is None or seen.get(uid) == seq:
+                        continue
+                    if frame.get("diverged"):
+                        seen[uid] = seq
+                        self._send("frame", {"id": uid, "seq": seq, "step": frame["step"], "t": frame["t"],
+                                             "playing": False, "speed": frame["speed"], "metrics": {},
+                                             "diverged": True, "lens": lens})
+                        continue
+                    if lens not in frame["lenses"]:
                         continue
                     seen[uid] = seq
                     L = frame["lenses"][lens]
                     self._send("frame", {"id": uid, "seq": seq, "step": frame["step"], "t": frame["t"],
                                          "playing": frame["playing"], "speed": frame["speed"],
-                                         "metrics": frame["metrics"], "lens": lens, "grid": L["grid"],
+                                         "metrics": frame["metrics"], "diverged": False, "lens": lens, "grid": L["grid"],
                                          "lo": L["lo"], "hi": L["hi"],
                                          "b64": base64.b64encode(L["data"]).decode("ascii")})
                 if time.monotonic() - last_beat > 10:

@@ -19,12 +19,12 @@ export interface LabEvent { step: number; kind: 'set' | 'perturb'; values?: Reco
 export interface Recipe { white: string; seed: number; knobs: Record<string, number>; events: LabEvent[] }
 export interface UniverseInfo {
   id: string; label: string; white: string; title: string; dimension: 2 | 3
-  parent: string | null; branch_step: number | null; recipe: Recipe; put_in: string[]
-  step: number; t: number; playing: boolean; speed: number; metrics: Record<string, number>; alive: boolean
+  parent: string | null; branch_step: number | null; fork_index: number | null; recipe: Recipe; put_in: string[]
+  step: number; t: number; playing: boolean; speed: number; metrics: Record<string, number>; diverged: boolean; alive: boolean
 }
 export interface FrameMsg {
-  id: string; seq: number; step: number; t: number; playing: boolean; speed: number
-  metrics: Record<string, number>; lens: string; grid: number[]; lo: number; hi: number; b64: string
+  id: string; seq: number; step: number; t: number; playing: boolean; speed: number; diverged: boolean
+  metrics: Record<string, number>; lens: string; grid?: number[]; lo?: number; hi?: number; b64?: string
 }
 
 function token(): string | null {

@@ -200,7 +200,7 @@ function Controls({ u, w, lens, setLens, onError, refresh }: {
           <li>t=0  {u.put_in.join(' / ')}（seed {u.recipe.seed}）</li>
           {Object.entries(u.recipe.knobs).filter(([k, v]) => w.knobs.find((x) => x.name === k)?.default !== v)
             .map(([k, v]) => <li key={k}>t=0  {w.knobs.find((x) => x.name === k)?.label ?? k}={v}</li>)}
-          {u.recipe.events.map((ev, i) => <li key={i} className={u.branch_step !== null && ev.step >= u.branch_step ? 'fork' : ''}>{describeEvent(ev, w)}</li>)}
+          {u.recipe.events.map((ev, i) => <li key={i} className={u.fork_index !== null && i >= u.fork_index ? 'fork' : ''}>{describeEvent(ev, w)}</li>)}
         </ul>
         <button className="tbtn" onClick={() => lab.remove(u.id).then(refresh).catch(onError)}>この宇宙を閉じる</button>
       </div>
@@ -218,7 +218,7 @@ function Lineage({ universes, whites, selected, onSelect }: {
   }
   const node = (u: UniverseInfo, depth: number): JSX.Element => {
     const w = whites.find((x) => x.id === u.white)
-    const fork = u.branch_step !== null ? u.recipe.events.filter((e) => e.step === u.branch_step) : []
+    const fork = u.fork_index !== null ? u.recipe.events.slice(u.fork_index) : []
     return (
       <div key={u.id}>
         <button className={'lab-node' + (u.id === selected ? ' on' : '')} style={{ marginLeft: depth * 16 }} onClick={() => onSelect(u.id)}>
@@ -303,7 +303,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
             const l = lensOf(u)
             const src = sources.get(u.id)
             const w = whites.find((x) => x.id === u.white)
-            const fork = u.branch_step !== null ? u.recipe.events.filter((e) => e.step === u.branch_step) : []
+            const fork = u.fork_index !== null ? u.recipe.events.slice(u.fork_index) : []
             return (
               <div key={u.id} className={'lab-cell' + (u.id === selected ? ' on' : '')} onPointerDown={() => setSelected(u.id)}
                 style={{ borderColor: u.id === selected ? seriesColor(u.label) : undefined }}>
@@ -316,6 +316,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
                 <div className="lab-cell-head">
                   <b style={{ color: seriesColor(u.label) }}>{u.label}</b> <span>{w?.title ?? u.white}</span>
                   <span className="mono muted"> t={u.t.toFixed(1)}{u.playing ? '' : ' ❚❚'}</span>
+                  {u.diverged && <div className="lab-diverged">数値が発散したので止めました（物理ではなく計算の限界）。つまみを戻して分岐し直してください。</div>}
                   {u.parent && <div className="mono muted lab-fork">{universes.find((x) => x.id === u.parent)?.label ?? u.parent} から分岐: {fork.map((e) => describeEvent(e, w)).join('; ')}</div>}
                 </div>
               </div>

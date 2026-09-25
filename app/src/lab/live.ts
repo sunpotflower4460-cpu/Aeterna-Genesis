@@ -34,9 +34,10 @@ export class LiveSource implements FrameSource {
   }
 
   push(m: FrameMsg) {
+    if (m.diverged || !m.grid || m.b64 === undefined) return
     if (this.slots.length && this.slots[this.slots.length - 1].seq === m.seq) return
     if (m.grid.join('x') !== this.grid.join('x')) return   // the tank's textures are sized for this.grid
-    this.slots.push({ seq: m.seq, data: b64ToBytes(m.b64), lo: m.lo, hi: m.hi, at: performance.now() })
+    this.slots.push({ seq: m.seq, data: b64ToBytes(m.b64), lo: m.lo ?? 0, hi: m.hi ?? 1, at: performance.now() })
     if (this.slots.length > 2) this.slots.shift()
   }
 
@@ -49,8 +50,8 @@ export class LiveSource implements FrameSource {
   }
 }
 
-export interface Sample { t: number; step: number; metrics: Record<string, number> }
-export interface LiveState { step: number; t: number; playing: boolean; speed: number; metrics: Record<string, number> }
+export interface Sample { seq: number; t: number; step: number; metrics: Record<string, number> }
+export interface LiveState { step: number; t: number; playing: boolean; speed: number; diverged: boolean; metrics: Record<string, number> }
 
 const HISTORY = 480
 
@@ -82,12 +83,14 @@ export function useLabStream(subs: { id: string; lens: string; vmin: number; vma
       const m = JSON.parse((ev as MessageEvent).data) as FrameMsg
       map.get(m.id)?.push(m)
       const h = history.current.get(m.id) ?? []
-      if (!h.length || h[h.length - 1].step !== m.step) {
-        h.push({ t: m.t, step: m.step, metrics: m.metrics })
+      // keyed by frame sequence, not step: a perturbation changes the state without advancing the step
+      if (!m.diverged && (!h.length || h[h.length - 1].seq !== m.seq)) {
+        h.push({ seq: m.seq, t: m.t, step: m.step, metrics: m.metrics })
         if (h.length > HISTORY) h.splice(0, h.length - HISTORY)
         history.current.set(m.id, h)
       }
-      pending.current[m.id] = { step: m.step, t: m.t, playing: m.playing, speed: m.speed, metrics: m.metrics }
+      pending.current[m.id] = { step: m.step, t: m.t, playing: m.playing, speed: m.speed, diverged: m.diverged,
+        ...(m.diverged ? {} : { metrics: m.metrics }) } as LiveState
     })
     es.addEventListener('universes', () => rosterCb.current())
     const timer = setInterval(() => {

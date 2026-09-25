@@ -87,3 +87,40 @@ def test_lan_requires_token(tmp_path):
         srv.shutdown()
         srv.hub.close()
         srv.server_close()
+
+
+def test_labels_never_repeat():
+    from tools.lab.hub import _label
+    labels = [_label(i) for i in range(80)]
+    assert labels[:3] == ["A", "B", "C"] and labels[25:28] == ["Z", "AA", "AB"]
+    assert len(set(labels)) == len(labels)
+
+
+def test_fork_index_journal_steps_and_concurrent_order(server):
+    srv, base = server
+    hub = srv.hub
+    st, u = _call(base, "POST", "/api/universes", {"white": "sh", "seed": 3, "play": False})
+    uid = u["id"]
+    _call(base, "POST", f"/api/universes/{uid}/control", {"action": "step", "n": 2})
+    _call(base, "POST", f"/api/universes/{uid}/set", {"values": {"r": -0.35}})        # parent event at step N
+    st, child = _call(base, "POST", f"/api/universes/{uid}/branch", {"set": {"b": 1.8}})
+    assert child["fork_index"] == 1                                                  # only b=1.8 is the fork
+    assert [e.get("values") for e in child["recipe"]["events"][child["fork_index"]:]] == [{"b": 1.8}]
+
+    # two interventions sent at the same time: the recipe must follow the worker's order
+    results = []
+    ts = [threading.Thread(target=lambda a=a: results.append(_call(base, "POST", f"/api/universes/{uid}/perturb",
+                                                                   {"name": "kick", "args": {"amp": a}})))
+          for a in (0.01, 0.02)]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    info = hub.final_info(uid)
+    assert hub.info(uid)["recipe"] == info["recipe"]
+    from tools.lab.universe import replay
+    assert replay(info["recipe"], info["step"]).sha256() == info["sha256"]
+
+    _call(base, "POST", f"/api/universes/{uid}/control", {"action": "pause"})
+    st, _ = _call(base, "DELETE", f"/api/universes/{uid}")
+    uni = json.loads((hub.journal.dir / "universes.json").read_text())[uid]
+    assert uni["closed"] and replay(uni["recipe"], uni["step"]).sha256() == uni["sha256"]
+    assert any(e["kind"] == "delete" and e.get("sha256") for e in hub.journal.entries())

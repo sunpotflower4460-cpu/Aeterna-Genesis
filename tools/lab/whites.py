@@ -196,7 +196,9 @@ def _tdgl():
     return White(
         id="tdgl-3d", title="冷やした場に渦の糸が生まれる（TDGL・3D）", family="g001 TDGL",
         model="genesis.models.ginzburg_landau", dimension=3, grid=(48, 48, 48), steps_per_frame=6,
-        knobs=[Knob("Du", "拡散（なめらかさ）", "law", 1.0, 0.2, 2.4, 0.05),
+        # explicit Euler, dt=0.1, 7-point Laplacian: the fastest mode needs dt*(12*Du + eps_final) <= 2,
+        # so Du <= 1.4 with eps_final <= 2 keeps every allowed setting numerically stable (not a physics limit).
+        knobs=[Knob("Du", "拡散（なめらかさ）", "law", 1.0, 0.2, 1.4, 0.05),
                Knob("eps_final", "冷却後の強さ ε", "law", 1.0, 0.2, 2.0, 0.05),
                Knob("quench_duration", "冷やす時間", "law", 8.0, 0.0, 40.0, 1.0),
                Knob("noise_amplitude", "はじめのノイズ", "start", 0.01, 1e-4, 0.1, 1e-4)],
@@ -299,7 +301,8 @@ def _gray_scott():
         model="genesis.models.gray_scott", dimension=2, grid=(N, N), steps_per_frame=120,
         knobs=[Knob("F", "補給 F", "law", 0.035, 0.01, 0.08, 0.001),
                Knob("k", "消える速さ k", "law", 0.062, 0.04, 0.075, 0.0005),
-               Knob("Du", "U の拡散", "law", 0.16, 0.05, 0.25, 0.005),
+               # explicit Euler, dt=1, 5-point Laplacian: stable while 8*D*dt < 2 -> keep D <= 0.2
+               Knob("Du", "U の拡散", "law", 0.16, 0.05, 0.2, 0.005),
                Knob("Dv", "V の拡散", "law", 0.08, 0.02, 0.15, 0.005),
                Knob("n_seeds", "はじめの種の数", "start", 8, 1, 30, 1, True),
                Knob("seed_radius", "種の半径", "start", 3.0, 1.0, 8.0, 0.5)],
