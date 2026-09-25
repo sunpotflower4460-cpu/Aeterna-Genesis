@@ -14,6 +14,6 @@ API キーが無いとき、ラボは観測パケットを `lab/state/latest/` �
    摂動なら `--perturb cut_half` や `--perturb drop_seed --arg y=0.3 --arg x=0.7`。
    つまみは場の法則（law）のものだけ。範囲外はラボが断るので、そのエラーを読んで直す。
 4. 短い要約を会議にも残す：`python -m tools.lab.propose --say "…"`。
-5. 「育ったのか、置いたのか？」を守る（skill `physics-integrity`）。ラボで見えたことは下見。主張にするなら `/audit` を通す。
+5. 「育ったのか、置いたのか？」を守る（skill `physics-integrity`）。ラボで見えたことは下見。残すならアプリの「研究記録にする」で `research/sessions/` に書き出し、`python -m tools.lab.replay research/sessions/<id>` で t=0 から同じになるか確かめ、主張にするなら `/audit` を通す。
 
 `--lan` で動かしているときは `LAB_TOKEN`（起動時に表示）を環境変数に入れる。

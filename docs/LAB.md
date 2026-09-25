@@ -101,7 +101,15 @@ python -m tools.lab.server                           # 起動時に、どの役�
 このリポジトリで Claude Code を開き **`/guide`** と打つと、Claude Code が同じパケットを読み（画像も見て）、チャットで話し、
 `python -m tools.lab.propose --parent A --set F=0.04 --why "…"` で提案カードをアプリに出す（`--say "…"` で会議に発言も残せる）。
 
+## 研究記録にする・再現する
+
+「系譜」タブの「研究記録にする」（または `POST /api/journal/export`）で、いま並んでいる宇宙を `research/sessions/<日時>-<メモ>/` に書き出す（`tools/lab/record.py`）。
+
+- `summary.md`（人が読む）・`recipes.json`（再現用）・`thumbs/`（最後のキーフレーム）。合計 1 MB 以下。API キーなどの秘密は入らない（テスト済み）。
+- 会議があれば、誰が何を言ったか（要約）と、提案カードが「試した／見送った／未決」のどれになったかも残る。
+- `python -m tools.lab.replay research/sessions/<id>`：レシピを t=0 から回して sha256 を比べる（一致しなければ終了コード 1）。`--packet <dir>` で観測パケットも作り直せる。
+- 書き出しただけでは git に入らない。残すセッションは、うえきさんが選んで PR にする。**ここまでは「見たこと」。主張は replay と `/audit` を通してから。**
+
 ## これから（P6 の残り）
 
-- **L4**：研究記録への書き出し（`research/sessions/`）、replay コマンド。
 - **L5**：2D の白をブラウザ GPU で動かす「下見」版（スマホだけで完結）。

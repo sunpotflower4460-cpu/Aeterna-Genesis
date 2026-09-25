@@ -246,6 +246,30 @@ function Lineage({ universes, whites, selected, onSelect }: {
   return <div>{(byParent.get(null) ?? []).map((u) => node(u, 0))}</div>
 }
 
+/** 「研究記録にする」: write summary + recipes + thumbnails to research/sessions/ (then replay to check). */
+function ExportBox({ ids, onError }: { ids: string[]; onError: (e: unknown) => void }) {
+  const [note, setNote] = useState('')
+  const [done, setDone] = useState<{ dir: string; name: string; bytes: number; universes: string[] } | null>(null)
+  return (
+    <div className="lab-section">
+      <div className="eyebrow">研究記録にする</div>
+      <textarea className="lab-note-input" rows={3} value={note} onChange={(e) => setNote(e.target.value)}
+        placeholder="メモ（何を確かめたかったか、気づいたこと）" />
+      <div className="lab-row">
+        <button className="tbtn pri" disabled={!ids.length}
+          onClick={() => api<{ dir: string; name: string; bytes: number; universes: string[] }>('journal/export', { method: 'POST', body: { ids, note } })
+            .then((r) => { setDone(r); setNote('') }).catch(onError)}>いまの宇宙 {ids.length} 個を書き出す</button>
+      </div>
+      {done && (
+        <p className="lab-note">書き出しました：<code>research/sessions/{done.name}</code>（{(done.bytes / 1024).toFixed(0)} KB・宇宙 {done.universes.join(', ')}）。
+          t=0 から同じになるかは <code>python -m tools.lab.replay research/sessions/{done.name}</code> で確かめられます。
+          commit するかどうかは、うえきさんが決めてください。</p>
+      )}
+      <p className="muted lab-note">要約（summary.md）・レシピ（recipes.json）・最後のキーフレームだけ（1 MB 以下）。見たことの記録で、主張ではありません。</p>
+    </div>
+  )
+}
+
 export default function LabView({ onExit }: { onExit: () => void }) {
   const [whites, setWhites] = useState<WhiteSpec[]>([])
   const [universes, setUniverses] = useState<UniverseInfo[]>([])
@@ -376,7 +400,12 @@ export default function LabView({ onExit }: { onExit: () => void }) {
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
             {tab === 'ai' && <GuidePanel ids={universes.map((u) => u.id)} onError={onError} onBranched={refresh} />}
             {tab === 'obs' && <ObservePanel ids={universes.map((u) => u.id)} onError={onError} />}
-            {tab === 'tree' && <Lineage universes={merged} whites={whites} selected={selected} onSelect={setSelected} />}
+            {tab === 'tree' && (
+              <>
+                <Lineage universes={merged} whites={whites} selected={selected} onSelect={setSelected} />
+                <ExportBox ids={universes.map((u) => u.id)} onError={onError} />
+              </>
+            )}
           </aside>
         )}
       </div>
