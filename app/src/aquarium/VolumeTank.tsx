@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import type { TankLens, Transfer } from './types'
+import type { FrameSource, Transfer } from './types'
 
 // Volume raymarcher: the recorded 3D field is uploaded as uint8 Data3DTextures (two neighbouring
 // frames, blended in the shader for smooth playback). Display only -- it reads the measured values
@@ -22,6 +22,8 @@ const FRAG = /* glsl */ `
   uniform sampler3D uA;
   uniform sampler3D uB;
   uniform float uMix;
+  uniform vec2 uAffA;      // display affine per frame: v -> a*v + b
+  uniform vec2 uAffB;
   uniform vec3 uCam;        // camera position in object space
   uniform int uMode;        // 0 high, 1 low, 2 cyclic, 3 diverging
   uniform float uThr;       // [0,1] where the glow starts
@@ -61,7 +63,7 @@ const FRAG = /* glsl */ `
       float s = t.x + (float(i) + 0.5) * dt;
       if (s > t.y || acc.a > 0.97) break;
       vec3 q = uCam + rd * s + 0.5;
-      float v = mix(texture(uA, q).r, texture(uB, q).r, uMix);
+      float v = clamp(mix(texture(uA, q).r * uAffA.x + uAffA.y, texture(uB, q).r * uAffB.x + uAffB.y, uMix), 0.0, 1.0);
       float w; vec3 col;
       if (uMode == 0) { w = smoothstep(uThr, 1.0, v); col = ramp(v); }
       else if (uMode == 1) { w = 1.0 - smoothstep(0.0, uThr, v); col = mix(vec3(1.0, 0.85, 0.45), vec3(0.3, 0.9, 1.0), v / max(uThr, 1e-3)); }
@@ -89,8 +91,8 @@ function makeTexture(grid: number[]): THREE.Data3DTexture {
   return tex
 }
 
-export default function VolumeTank({ lens, transfer, clock, threshold, density }: {
-  lens: TankLens
+export default function VolumeTank({ src, transfer, clock, threshold, density }: {
+  src: FrameSource
   transfer: Transfer
   clock: React.MutableRefObject<number>   // continuous frame position, driven by the parent
   threshold: number
@@ -98,8 +100,8 @@ export default function VolumeTank({ lens, transfer, clock, threshold, density }
 }) {
   const mesh = useRef<THREE.Mesh>(null)
   const { camera } = useThree()
-  const stride = lens.grid.reduce((a, b) => a * b, 1)
-  const tex = useMemo(() => [makeTexture(lens.grid), makeTexture(lens.grid)] as const, [lens])
+  const gridKey = src.grid.join('x')
+  const tex = useMemo(() => [makeTexture(src.grid), makeTexture(src.grid)] as const, [gridKey])
   const loaded = useRef<[number, number]>([-1, -1])
   const material = useMemo(() => new THREE.ShaderMaterial({
     glslVersion: THREE.GLSL3,
@@ -110,24 +112,29 @@ export default function VolumeTank({ lens, transfer, clock, threshold, density }
     side: THREE.BackSide,
     uniforms: {
       uA: { value: tex[0] }, uB: { value: tex[1] }, uMix: { value: 0 }, uCam: { value: new THREE.Vector3() },
+      uAffA: { value: new THREE.Vector2(1, 0) }, uAffB: { value: new THREE.Vector2(1, 0) },
       uMode: { value: MODE[transfer] }, uThr: { value: threshold }, uDensity: { value: density },
-      uSteps: { value: Math.max(64, Math.min(320, lens.grid[0] * 3)) },
+      uSteps: { value: Math.max(64, Math.min(320, src.grid[0] * 3)) },
     },
-  }), [tex, lens.grid])
+  }), [tex])
 
+  useEffect(() => { loaded.current = [-1, -1] }, [src])
   useEffect(() => () => { tex[0].dispose(); tex[1].dispose(); material.dispose() }, [tex, material])
 
   const upload = (slot: 0 | 1, frame: number) => {
-    if (loaded.current[slot] === frame) return
+    const k = src.key(frame)
+    if (loaded.current[slot] === k) return
+    const d = src.data(frame)
+    if (d.length !== (tex[slot].image.data as Uint8Array).length) return   // grid changed; new textures follow
     const t = tex[slot]
-    ;(t.image.data as Uint8Array).set(lens.frames.subarray(frame * stride, (frame + 1) * stride))
+    ;(t.image.data as Uint8Array).set(d)
     t.needsUpdate = true
-    loaded.current[slot] = frame
+    loaded.current[slot] = k
   }
 
   useFrame(() => {
-    if (!mesh.current) return
-    const n = lens.nframes
+    if (!mesh.current || src.count < 1) return
+    const n = src.count
     const pos = Math.min(Math.max(clock.current, 0), n - 1)
     const f0 = Math.floor(pos)
     const f1 = Math.min(f0 + 1, n - 1)
@@ -135,6 +142,8 @@ export default function VolumeTank({ lens, transfer, clock, threshold, density }
     upload(1, f1)
     const u = material.uniforms
     u.uMix.value = pos - f0
+    u.uAffA.value.set(...src.affine(f0))
+    u.uAffB.value.set(...src.affine(f1))
     u.uMode.value = MODE[transfer]
     u.uThr.value = threshold
     u.uDensity.value = density

@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import type { TankLens, Transfer } from './types'
+import type { FrameSource, Transfer } from './types'
 
 // 2D whites are shown as a water surface inside the tank: colour = the measured lens, height = the same
 // normalized value (flat for cyclic phase, which has no height). Two neighbouring frames are blended on the GPU.
 // Display only: the surface is a view of recorded values, not extra physics.
 
 const VERT = /* glsl */ `
-  uniform sampler2D uA; uniform sampler2D uB; uniform float uMix; uniform float uHeight; uniform int uMode;
+  uniform sampler2D uA; uniform sampler2D uB; uniform float uMix; uniform vec2 uAffA; uniform vec2 uAffB; uniform float uHeight; uniform int uMode;
   out float vVal; out vec2 vUv;
   float h(float v) { return uMode == 2 ? 0.5 : v; }  // cyclic phase has no meaningful height
   void main() {
     vUv = uv;
-    float v = mix(texture(uA, uv).r, texture(uB, uv).r, uMix);
+    float v = clamp(mix(texture(uA, uv).r * uAffA.x + uAffA.y, texture(uB, uv).r * uAffB.x + uAffB.y, uMix), 0.0, 1.0);
     vVal = v;
     vec3 p = position;
     p.z += (h(v) - 0.5) * uHeight;
@@ -53,40 +53,50 @@ function makeTexture(grid: number[]): THREE.DataTexture {
   return tex
 }
 
-export default function SurfaceTank({ lens, transfer, clock, relief }: {
-  lens: TankLens
+export default function SurfaceTank({ src, transfer, clock, relief }: {
+  src: FrameSource
   transfer: Transfer
   clock: React.MutableRefObject<number>
   relief: number
 }) {
-  const stride = lens.grid[0] * lens.grid[1]
-  const tex = useMemo(() => [makeTexture(lens.grid), makeTexture(lens.grid)] as const, [lens])
+  const gridKey = src.grid.join('x')
+  const tex = useMemo(() => [makeTexture(src.grid), makeTexture(src.grid)] as const, [gridKey])
   const loaded = useRef<[number, number]>([-1, -1])
-  const segs = Math.min(255, Math.max(lens.grid[0], lens.grid[1]) * 2)
+  const segs = Math.min(255, Math.max(src.grid[0], src.grid[1]) * 2)
   const material = useMemo(() => new THREE.ShaderMaterial({
     glslVersion: THREE.GLSL3, vertexShader: VERT, fragmentShader: FRAG, transparent: true,
     side: THREE.DoubleSide,
     uniforms: { uA: { value: tex[0] }, uB: { value: tex[1] }, uMix: { value: 0 }, uHeight: { value: relief },
+      uAffA: { value: new THREE.Vector2(1, 0) }, uAffB: { value: new THREE.Vector2(1, 0) },
       uMode: { value: MODE[transfer] } },
   }), [tex])
 
+  useEffect(() => { loaded.current = [-1, -1] }, [src])
   useEffect(() => () => { tex[0].dispose(); tex[1].dispose(); material.dispose() }, [tex, material])
 
   const upload = (slot: 0 | 1, frame: number) => {
-    if (loaded.current[slot] === frame) return
-    ;(tex[slot].image.data as Uint8Array).set(lens.frames.subarray(frame * stride, (frame + 1) * stride))
+    const k = src.key(frame)
+    if (loaded.current[slot] === k) return
+    const d = src.data(frame)
+    if (d.length !== (tex[slot].image.data as Uint8Array).length) return   // grid changed; new textures follow
+    ;(tex[slot].image.data as Uint8Array).set(d)
     tex[slot].needsUpdate = true
-    loaded.current[slot] = frame
+    loaded.current[slot] = k
   }
 
   useFrame(() => {
-    const pos = Math.min(Math.max(clock.current, 0), lens.nframes - 1)
+    if (src.count < 1) return
+    const pos = Math.min(Math.max(clock.current, 0), src.count - 1)
     const f0 = Math.floor(pos)
+    const f1 = Math.min(f0 + 1, src.count - 1)
     upload(0, f0)
-    upload(1, Math.min(f0 + 1, lens.nframes - 1))
-    material.uniforms.uMix.value = pos - f0
-    material.uniforms.uHeight.value = relief
-    material.uniforms.uMode.value = MODE[transfer]
+    upload(1, f1)
+    const u = material.uniforms
+    u.uMix.value = pos - f0
+    u.uAffA.value.set(...src.affine(f0))
+    u.uAffB.value.set(...src.affine(f1))
+    u.uHeight.value = relief
+    u.uMode.value = MODE[transfer]
   })
 
   return (

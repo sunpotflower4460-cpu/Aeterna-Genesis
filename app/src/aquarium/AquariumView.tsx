@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { loadTank, loadTemplates } from './data'
+import { recordedSource } from './types'
 import type { AquariumTemplate, TankField } from './types'
 import VolumeTank from './VolumeTank'
 import SurfaceTank from './SurfaceTank'
@@ -39,7 +40,7 @@ function Clock({ clock, playing, fps, nframes, onFrame }: {
   return null
 }
 
-export default function AquariumView({ onOpenObservatory }: { onOpenObservatory?: () => void }) {
+export default function AquariumView({ onOpenObservatory, onOpenLab }: { onOpenObservatory?: () => void; onOpenLab?: () => void }) {
   const [templates, setTemplates] = useState<AquariumTemplate[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -88,6 +89,7 @@ export default function AquariumView({ onOpenObservatory }: { onOpenObservatory?
 
   const lensMeta = active?.lenses.find((l) => l.name === lensName) ?? active?.lenses[0]
   const lens = tank && lensMeta ? tank.lenses[lensMeta.name] : null
+  const src = useMemo(() => (lens ? recordedSource(lens) : null), [lens])
   const t = tank && tank.times.length ? tank.times[Math.min(frame, tank.times.length - 1)] : 0
 
   if (error) {
@@ -106,9 +108,9 @@ export default function AquariumView({ onOpenObservatory }: { onOpenObservatory?
           <Canvas camera={{ position: [1.25, 0.85, 1.35], fov: 42, near: 0.01, far: 20 }} dpr={[1, 2]}>
             <color attach="background" args={['#05080f']} />
             <Glass />
-            {lens && tank && lensMeta && (tank.dimension === 3
-              ? <VolumeTank lens={lens} transfer={lensMeta.transfer} clock={clock} threshold={threshold} density={density} />
-              : <SurfaceTank lens={lens} transfer={lensMeta.transfer} clock={clock} relief={relief} />)}
+            {src && tank && lensMeta && (tank.dimension === 3
+              ? <VolumeTank src={src} transfer={lensMeta.transfer} clock={clock} threshold={threshold} density={density} />
+              : <SurfaceTank src={src} transfer={lensMeta.transfer} clock={clock} relief={relief} />)}
             {tank && <Clock clock={clock} playing={playing} fps={fps} nframes={tank.nframes} onFrame={setFrame} />}
             <OrbitControls enablePan={false} autoRotate={!REDUCED && playing} autoRotateSpeed={0.35} minDistance={0.8} maxDistance={4} />
           </Canvas>
@@ -133,6 +135,7 @@ export default function AquariumView({ onOpenObservatory }: { onOpenObservatory?
             <span className="mono aq-chip-d">{tp.dimension}D</span> {tp.title}
           </button>
         ))}
+        {onOpenLab && <button className="aq-chip aq-lab" onClick={onOpenLab}>● ライブで動かす →</button>}
         {onOpenObservatory && <button className="aq-chip aq-obs" onClick={onOpenObservatory}>Observatory →</button>}
       </nav>
 

@@ -141,3 +141,50 @@ button{font-family:inherit; cursor:pointer; color:inherit}
   .aq-knob input{width:64px}
   .aq-cols{grid-template-columns:1fr}
 }
+
+/* ---------------------------------------------------------------- live lab (tools/lab/server.py) */
+.aq-lab{color:var(--official); border-color:rgba(74,222,128,.4)}
+.lab-root{position:relative; height:100%; width:100%; display:flex; flex-direction:column; overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 20%, #0b1626 0%, var(--ground) 60%)}
+.lab-canvas{position:absolute !important; inset:0; pointer-events:none}
+.lab-top{display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; z-index:2}
+.lab-top-note{font-size:11px}
+.lab-body{flex:1; min-height:0; display:grid; grid-template-columns:1fr; z-index:1}
+.lab-body.with-panel{grid-template-columns:1fr minmax(300px, 360px)}
+.lab-grid{display:grid; gap:8px; padding:8px; min-height:0; grid-auto-rows:1fr}
+.lab-cell{position:relative; border:1px solid var(--line-2); border-radius:12px; overflow:hidden; min-height:180px}
+.lab-cell.on{border-width:2px}
+.lab-view{position:absolute; inset:0}
+.lab-cell-head{position:absolute; left:8px; top:6px; right:8px; font-size:12.5px; pointer-events:none; text-shadow:0 1px 3px #000}
+.lab-fork{font-size:10.5px; margin-top:2px}
+.lab-panel{margin:8px 8px 8px 0; padding:10px 12px; overflow-y:auto; font-size:13px; line-height:1.5}
+.lab-tabs{display:flex; gap:4px; margin-bottom:8px}
+.lab-tabs button{flex:1; background:transparent; border:1px solid var(--line-2); color:var(--muted); border-radius:8px; padding:6px}
+.lab-tabs button.on{color:var(--ink); border-color:var(--accent); background:var(--accent-dim)}
+.lab-section{border-top:1px solid var(--line); padding:8px 0}
+.lab-section summary{cursor:pointer; color:var(--accent)}
+.lab-sel{font-size:14px; margin-bottom:6px}
+.lab-row{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:6px 0}
+.lab-knob{display:grid; grid-template-columns:1fr 110px 54px; gap:6px; align-items:center; font-size:12px; margin:3px 0}
+.lab-knob input[type=range]{width:100%; accent-color:var(--accent)}
+.lab-knob input[type=number]{width:100%; background:var(--panel-solid); color:var(--ink); border:1px solid var(--line-2); border-radius:6px; padding:2px 6px}
+.lab-knob.changed span:first-child{color:var(--warn)}
+.lab-perturb{padding:4px 0 6px; border-bottom:1px dashed var(--line)}
+.lab-events{margin:4px 0 8px; padding-left:16px; font-family:var(--mono); font-size:11.5px}
+.lab-events li.fork{color:var(--warn)}
+.lab-note{font-size:11px; margin:4px 0}
+.lab-error{background:rgba(229,104,107,.15); border:1px solid var(--fail); border-radius:8px; padding:6px 8px; margin-bottom:8px; cursor:pointer}
+.lab-node{display:block; width:100%; text-align:left; background:transparent; border:0; color:var(--ink); padding:4px 6px; border-radius:6px; font-size:12.5px}
+.lab-node.on{background:var(--accent-dim)}
+.lab-node i, .lab-legend i, .lab-spark-tip i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px}
+.lab-legend{display:flex; flex-wrap:wrap; gap:10px; font-size:12px; margin-bottom:6px}
+.lab-spark{margin:6px 0 10px}
+.lab-group{border-top:1px solid var(--line); padding-top:6px; margin-top:6px}
+.lab-spark-head{display:flex; justify-content:space-between; font-size:11.5px}
+.lab-spark-tip{display:flex; flex-wrap:wrap; gap:10px; font-size:11px}
+@media (max-width:720px){
+  .lab-body.with-panel{grid-template-columns:1fr; grid-template-rows:1fr 46%}
+  .lab-panel{margin:0 8px 8px}
+  .lab-knob{grid-template-columns:1fr 90px 48px}
+  .lab-top-note{display:none}
+}
