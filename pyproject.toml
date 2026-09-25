@@ -1,0 +1,29 @@
+[project]
+name = "aeterna-genesis"
+version = "0.1.0"
+description = "Emergence research environment: minimal start conditions + local physical laws, measured from t=0."
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "jsonschema>=4.18",
+]
+
+# Packages are imported from the repository root (core, genesis, ai_lab, experiments, ...);
+# this file is for tooling configuration, not for building a wheel.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: measured >5 s on a developer container (see tests/slow_tests.txt); skip with -m 'not slow'",
+    "network: needs outbound network access",
+    "archived: belongs to the paused 2026 autonomous-research bots (ai_lab/dream); kept for evidence",
+]
+# No `-m` filter in addopts on purpose: CI workflows run explicit test files and must not
+# silently deselect anything. Use `pytest -m "not slow"` for the quick local loop.
