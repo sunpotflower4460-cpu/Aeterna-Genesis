@@ -1,9 +1,11 @@
 name: Research Postflight Integrity
 
+# ⏸ PAUSED 2026-09 (research restart, plan phase P0): automatic triggers removed.
+# Only manual `workflow_dispatch` remains. The original push/schedule/workflow_run triggers are
+# preserved in git history (freeze point: tag evidence-freeze-2026-09 / docs/INVENTORY_2026-09.md).
+# Do not re-enable without the human owner's decision; the restart plan replaces these with one
+# small daily digest that never writes to main.
 on:
-  workflow_run:
-    workflows: ["Genesis Dream Loop"]
-    types: [completed]
   workflow_dispatch:
 
 permissions:

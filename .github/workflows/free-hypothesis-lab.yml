@@ -1,17 +1,11 @@
 name: Free Hypothesis Lab
 
+# ⏸ PAUSED 2026-09 (research restart, plan phase P0): automatic triggers removed.
+# Only manual `workflow_dispatch` remains. The original push/schedule/workflow_run triggers are
+# preserved in git history (freeze point: tag evidence-freeze-2026-09 / docs/INVENTORY_2026-09.md).
+# Do not re-enable without the human owner's decision; the restart plan replaces these with one
+# small daily digest that never writes to main.
 on:
-  # Four independent idea/provocation windows per day. They are intentionally offset from the
-  # primary Dream burst and share the same concurrency group so evidence writes never race.
-  schedule:
-    - cron: '37 2,8,14,20 * * *'
-  push:
-    branches: [main]
-    paths:
-      - 'ai_lab/dream/free_hypothesis_lab.py'
-      - 'ai_lab/dream/free_hypothesis_entrypoint.py'
-      - 'ai_lab/discoveries/ai_scientist_directions.json'
-      - '.github/workflows/free-hypothesis-lab.yml'
   workflow_dispatch:
 
 permissions:
