@@ -246,10 +246,12 @@ def test_install_changes_planning_layer_only(monkeypatch):
         assert frontier_expander._f_frontier_study is progress_ratchet._f_frontier_study
         assert frontier_expander._root_ablation_study is progress_ratchet._root_ablation_study
     finally:
-        monkeypatch.setattr(frontier_expander, "run_frontier_expansion", old_router)
-        monkeypatch.setattr(research_optimizer, "rank_x_focuses", old_rank)
-        monkeypatch.setattr(research_optimizer, "_lane_plan", old_plan)
-        monkeypatch.setattr(research_optimizer, "_balanced_x_specs", old_specs)
-        monkeypatch.setattr(research_optimizer, "_study_one_x", old_study)
-        monkeypatch.setattr(frontier_expander, "_f_frontier_study", old_f)
-        monkeypatch.setattr(frontier_expander, "_root_ablation_study", old_root)
+        # Plain assignment: monkeypatch.setattr here would record the *installed* functions as the
+        # originals and put them back at teardown, leaking the ratchet into later tests.
+        frontier_expander.run_frontier_expansion = old_router
+        research_optimizer.rank_x_focuses = old_rank
+        research_optimizer._lane_plan = old_plan
+        research_optimizer._balanced_x_specs = old_specs
+        research_optimizer._study_one_x = old_study
+        frontier_expander._f_frontier_study = old_f
+        frontier_expander._root_ablation_study = old_root

@@ -193,4 +193,5 @@ def test_install_changes_planning_router_only(monkeypatch):
         research_optimizer.install()
         assert frontier_expander.run_frontier_expansion is research_optimizer.run_optimized_frontier_expansion
     finally:
-        monkeypatch.setattr(frontier_expander, "run_frontier_expansion", old)
+        # Plain assignment (see test_progress_ratchet): monkeypatch would restore the installed router.
+        frontier_expander.run_frontier_expansion = old
