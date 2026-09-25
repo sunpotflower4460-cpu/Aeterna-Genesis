@@ -8,6 +8,7 @@ import { api, lab, type KnobSpec, type LabEvent, type UniverseInfo, type WhiteSp
 import { useLabStream, type LiveSource, type LiveState } from './live'
 import ComparePanel, { seriesColor } from './ComparePanel'
 import ObservePanel from './ObservePanel'
+import GuidePanel from './GuidePanel'
 
 // Live lab: several universes side by side, each running its white from t=0 in a worker process on the
 // lab server. Everything a person changes is sent as an explicit, recorded intervention (law change or
@@ -52,6 +53,18 @@ function LinkedControls({ id, shared }: { id: string; shared: React.MutableRefOb
         seen.current = s.version
       }} />
   )
+}
+
+/** Clear the whole canvas before the views draw: when the grid re-flows (a universe is added or closed),
+ *  areas no longer covered by any view would otherwise keep stale pixels. Negative priority runs first and
+ *  does not take over rendering. */
+function ClearAll() {
+  useFrame(({ gl }) => {
+    gl.setScissorTest(false)
+    gl.setClearColor('#05080f', 1)
+    gl.clear(true, true, true)
+  }, -1)
+  return null
 }
 
 /** Tall, narrow views (phones) widen the field of view so the whole tank stays in frame. */
@@ -239,7 +252,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [lenses, setLenses] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<'ctl' | 'cmp' | 'tree' | 'obs'>('ctl')
+  const [tab, setTab] = useState<'ctl' | 'ai' | 'cmp' | 'tree' | 'obs'>('ctl')
   const [panel, setPanel] = useState(() => typeof innerWidth === 'undefined' || innerWidth > 720)
   const [range, setRange] = useState<'fixed' | 'frame'>('fixed')
   const [threshold, setThreshold] = useState(0.35)
@@ -329,6 +342,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
           <aside className="lab-panel glass">
             <nav className="lab-tabs">
               <button className={tab === 'ctl' ? 'on' : ''} onClick={() => setTab('ctl')}>操作</button>
+              <button className={tab === 'ai' ? 'on' : ''} onClick={() => setTab('ai')}>AI と話す</button>
               <button className={tab === 'cmp' ? 'on' : ''} onClick={() => setTab('cmp')}>比べる</button>
               <button className={tab === 'tree' ? 'on' : ''} onClick={() => setTab('tree')}>系譜</button>
               <button className={tab === 'obs' ? 'on' : ''} onClick={() => setTab('obs')}>AI に渡すもの</button>
@@ -360,6 +374,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
               </>
             )}
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
+            {tab === 'ai' && <GuidePanel ids={universes.map((u) => u.id)} onError={onError} onBranched={refresh} />}
             {tab === 'obs' && <ObservePanel ids={universes.map((u) => u.id)} onError={onError} />}
             {tab === 'tree' && <Lineage universes={merged} whites={whites} selected={selected} onSelect={setSelected} />}
           </aside>
@@ -367,6 +382,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
       </div>
 
       <Canvas className="lab-canvas" eventSource={root} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }}>
+        <ClearAll />
         <View.Port />
       </Canvas>
     </div>

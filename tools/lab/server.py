@@ -27,6 +27,7 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from tools.lab import observe, whites  # noqa: E402
+from tools.lab.council import Council  # noqa: E402
 from tools.lab.hub import Hub  # noqa: E402
 from tools.lab.journal import Journal  # noqa: E402
 
@@ -53,9 +54,10 @@ class LabServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, addr, hub: Hub, token: str | None, dist: Path = DIST):
+    def __init__(self, addr, hub: Hub, token: str | None, dist: Path = DIST, council=None):
         super().__init__(addr, Handler)
         self.hub, self.token, self.dist = hub, token, dist
+        self.council = council if council is not None else Council(hub, hub.journal)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -124,13 +126,44 @@ class Handler(BaseHTTPRequestHandler):
         hub = self.server.hub
         if parts == ["health"]:
             return self._json({"ok": True, "version": VERSION, "max_universes": hub.max_universes,
-                               "session": hub.journal.session_id if hub.journal else None})
+                               "session": hub.journal.session_id if hub.journal else None,
+                               "council": self.server.council.status()})
         if parts == ["whites"]:
             return self._json({"whites": [w.public() for w in whites.registry().values()]})
         if parts == ["stream"]:
             return self._stream(q)
         if parts == ["observe"] and method == "POST":
             return self._json(self._observe(self._body()))
+        council = self.server.council
+        if parts == ["council"] and method == "GET":
+            return self._json(council.snapshot(int((q.get("since") or ["0"])[0])))
+        if parts == ["council", "look"] and method == "POST":
+            b = self._body()
+            ids = [i for i in (b.get("ids") or hub.ids()) if i in hub.ids()]
+            if not ids:
+                raise ValueError("宇宙がありません")
+            council.look(ids, (b.get("text") or "").strip() or None)
+            return self._json(council.status(), 202)
+        if parts == ["council", "chat"] and method == "POST":
+            text = (self._body().get("text") or "").strip()
+            if not text:
+                raise ValueError("言葉が空です")
+            council.chat(text)
+            return self._json(council.status(), 202)
+        if parts == ["council", "external"] and method == "POST":
+            b = self._body()
+            return self._json(council.external(b.get("who", "claude-code"), str(b.get("text", ""))[:8000]), 201)
+        if parts == ["proposals"] and method == "POST":
+            b = self._body()
+            return self._json(council.add_proposal(
+                b.get("source", "claude-code"), str(b["parent"]), b.get("set") or {}, b.get("perturb"),
+                b.get("why", ""), b.get("predict", ""), b.get("put_in", "")), 201)
+        if len(parts) == 3 and parts[0] == "proposals" and method == "POST":
+            pid = int(parts[1])
+            if parts[2] == "try":
+                return self._json(council.try_proposal(pid))
+            if parts[2] == "dismiss":
+                return self._json(council.dismiss(pid))
         if parts == ["universes"] and method == "GET":
             return self._json({"universes": hub.list()})
         if parts == ["universes"] and method == "POST":
@@ -262,12 +295,12 @@ def _lan_ip() -> str:
 
 
 def make_server(host: str = "127.0.0.1", port: int = 8765, lan: bool = False, max_universes: int | None = None,
-                journal: Journal | None = None, token: str | None = None) -> LabServer:
+                journal: Journal | None = None, token: str | None = None, council=None) -> LabServer:
     if lan:
         host = "0.0.0.0"
         token = token or secrets.token_urlsafe(12)
     hub = Hub(max_universes=max_universes, journal=journal)
-    return LabServer((host, port), hub, token)
+    return LabServer((host, port), hub, token, council=council)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -281,6 +314,8 @@ def main(argv: list[str] | None = None) -> int:
     url = f"http://{host}:{a.port}/" + (f"?token={srv.token}#lab" if srv.token else "#lab")
     print(f"水槽ラボ: {url}")
     print(f"  記録: {srv.hub.journal.dir}")
+    for r in srv.council.status()["roles"]:
+        print(f"  AI {r['label']}: {r['model'] or '—'} {'（使える）' if r['available'] else '（' + r['reason'] + '）'}")
     if not DIST.joinpath("index.html").exists():
         print("  （画面が未ビルドです: cd app && npm install && npm run build）")
     try:

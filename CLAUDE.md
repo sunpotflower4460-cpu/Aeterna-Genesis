@@ -61,6 +61,7 @@ CI（`.github/workflows/*-ci.yml`）はファイルを明示して実行する�
 - `/audit <room|X-id|experiment>`：7監査、第8監査、決定性を確認する。
 - `/report`：うえきさん向けのやさしい説明と監査用報告を**別々のファイル**で出す。
 - `/propose`：次の実験提案を `research/inbox/` に置く（採否は人が決める）。
+- `/guide`：水槽ラボの相棒になる（`lab/state/latest/` の観測パケットを読み、話し、提案カードを出す）。
 
 「育ったのか、置いたのか」の自己点検は skill `physics-integrity` を使う。
 
