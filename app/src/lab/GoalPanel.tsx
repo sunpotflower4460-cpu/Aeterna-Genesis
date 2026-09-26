@@ -15,17 +15,125 @@ interface MapNode { id: string; parent: string | null; kind: string; text: strin
 interface Goal {
   id: string; title: string; question: string; whites: string[]; criteria: Criterion[]
   budget: Record<string, number>; researchers: Researcher[]; status: string; nodes: MapNode[]
-  spent: Record<string, number>
+  spent: Record<string, number>; hypothesis?: string | null
+}
+interface Hypothesis {
+  id: string; title: string; idea: string; question: string; measure: string; falsify: string; put_in: string
+  status: 'ready' | 'needs'; needs: string
 }
 interface EvalRow { metric: string; op: string; value: number; hold: number; met: boolean; longest: number; holding_now: number | null; last: number | null }
+interface ResearcherState {
+  name: string; model: string; focus: string; state: string; reason: string; owned: string[]; usd: number
+  tokens: { input: number; output: number }; transcript: { at: string; kind: string; text: string }[]
+}
 interface GoalView {
   goal: Goal; evaluation: { met: boolean; universes: { universe: string; label: string; white: string; t: number; criteria: EvalRow[]; all_met: boolean }[] }
   now: { at: string; actor: string; what: string; universe: string | null }[]; over_budget: string | null
+  researchers: ResearcherState[]
+}
+
+const R_STATE: Record<string, string> = {
+  starting: '準備中', running: '研究中', finished: '終えた', stopped: '止めた', over_budget: '上限で停止', error: 'エラー',
+}
+const T_KIND: Record<string, string> = { text: '', tool: '▶ ', result: '　↳ ', system: '' }
+
+function Researchers({ view, onStop }: { view: GoalView; onStop: (name: string) => void }) {
+  const [open, setOpen] = useState<string | null>(null)
+  const configured = view.goal.researchers.length ? view.goal.researchers.map((r) => r.name) : ['研究員1']
+  const live = new Map(view.researchers.map((r) => [r.name, r]))
+  return (
+    <div className="lab-section">
+      <div className="eyebrow" title="ゴールの範囲・予算の中だけで、自分で宇宙を作って試す">AI の研究員</div>
+      {configured.map((name) => {
+        const r = live.get(name)
+        return (
+          <div key={name} className="lab-researcher">
+            <div className="lab-row">
+              <b>{name}</b>
+              <span className={'lab-badge rs-' + (r?.state ?? 'idle')} title={r?.reason}>{r ? R_STATE[r.state] ?? r.state : 'まだ'}</span>
+              <span style={{ flex: 1 }} />
+              {r?.state === 'running' && <button className="lab-mini" onClick={() => onStop(name)}>■ 止める</button>}
+              {r && <button className="lab-mini" onClick={() => setOpen(open === name ? null : name)}>{open === name ? '閉じる' : 'やりとり'}</button>}
+            </div>
+            {open === name && r && (
+              <>
+                <div className="mono muted lab-note">{r.model || '中心の model'}・${r.usd.toFixed(3)}・{r.tokens.input + r.tokens.output} tok・宇宙 {r.owned.length}{r.reason ? `・${r.reason}` : ''}</div>
+                <div className="lab-transcript">
+                  {r.transcript.slice(-60).map((e, i) => (
+                    <div key={i} className={'lab-tr tr-' + e.kind}><span className="mono muted">{e.at}</span> {T_KIND[e.kind]}{e.text}</div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 const STATUS_LABEL: Record<string, string> = { draft: '下書き', running: '進行中', paused: '止めている', done: '終了', met: '条件を満たした（測定）' }
 const NODE_LABEL: Record<string, string> = { todo: '未着手', doing: '進行中', met: '満たした', not_met: '満たさない', ceiling: '天井', info: '' }
 const KIND_LABEL: Record<string, string> = { question: '問い', attempt: '試した', note: 'メモ', result: '結果' }
+
+/** How many criteria the closest universe meets (for the one-line verdict). */
+function best(view: GoalView): number {
+  return Math.max(0, ...view.evaluation.universes.map((u) => u.criteria.filter((c) => c.met).length))
+}
+
+const BUDGET: [string, string, string][] = [['universes', 'max_universes', '宇宙'], ['steps', 'max_steps', 'ステップ'], ['usd', 'max_usd', 'USD'], ['minutes', 'max_minutes', '分']]
+
+/** One bar for the budget (the most used of the four); the numbers are folded away. */
+function Budget({ goal }: { goal: Goal }) {
+  const parts = BUDGET.map(([k, lim, label]) => ({ label, used: goal.spent[k] ?? 0, max: goal.budget[lim] ?? 0 }))
+  const frac = Math.min(1, Math.max(0, ...parts.map((p) => (p.max ? p.used / p.max : 0))))
+  return (
+    <details className="lab-fold lab-budget">
+      <summary>予算 <span className="lab-bar"><i style={{ width: `${Math.round(frac * 100)}%` }} className={frac > 0.85 ? 'hi' : ''} /></span> {Math.round(frac * 100)}%</summary>
+      <div className="mono muted lab-note">
+        {parts.map((p) => `${p.label} ${p.label === 'USD' ? p.used.toFixed(3) : p.label === '分' ? p.used.toFixed(1) : Math.round(p.used)}/${p.max}`).join('・')}
+        {goal.whites.length ? `　白: ${goal.whites.join(', ')}` : '　白: すべて'}
+      </div>
+    </details>
+  )
+}
+
+function HypothesisBody({ h }: { h: Hypothesis }) {
+  return (
+    <div className="lab-hyp-body">
+      <p>{h.idea}</p>
+      <p><b>問い</b> {h.question}</p>
+      <p><b>測り方</b> {h.measure}</p>
+      <p><b>反証になること</b> {h.falsify}</p>
+      <p><b className="aq-put">置いたもの</b> {h.put_in}</p>
+      {h.needs && <p><b>まだ足りないもの</b> {h.needs}</p>}
+    </div>
+  )
+}
+
+/** 「仮説から選ぶ」: research/hypotheses.json. A ready hypothesis becomes a goal with one press. */
+function Hypotheses({ list, open, onPick }: { list: Hypothesis[]; open: boolean; onPick: (id: string) => void }) {
+  if (!list.length) return null
+  return (
+    <details className="lab-section" open={open || undefined}>
+      <summary>仮説から選ぶ（{list.filter((h) => h.status === 'ready').length} 件すぐ始められる）</summary>
+      {list.map((h) => (
+        <div key={h.id} className={'lab-hyp' + (h.status === 'ready' ? '' : ' off')}>
+          <div className="lab-row">
+            <b className="mono">{h.id}</b> <span className="lab-grow">{h.title}</span>
+            {h.status === 'ready'
+              ? <button className="lab-mini" onClick={() => onPick(h.id)}>ゴールにする</button>
+              : <span className="lab-badge" title={h.needs}>準備中</span>}
+          </div>
+          <details className="lab-fold">
+            <summary>中身</summary>
+            <HypothesisBody h={h} />
+          </details>
+        </div>
+      ))}
+    </details>
+  )
+}
 
 function NewGoal({ whites, models, onCreated, onError }: {
   whites: { id: string; title: string }[]; models: ModelEntry[]; onCreated: (g: Goal) => void; onError: (e: unknown) => void
@@ -107,24 +215,32 @@ function MapTree({ view, onAdd, onStatus }: {
   const [parent, setParent] = useState<string | null>(null)
   const nodes = view.goal.nodes
   const kids = (p: string | null) => nodes.filter((n) => n.parent === p)
+  const [edit, setEdit] = useState<string | null>(null)
   const node = (n: MapNode, depth: number): JSX.Element => (
     <div key={n.id}>
-      <div className={'lab-mapnode st-' + n.status} style={{ marginLeft: depth * 14 }}>
+      <div className={'lab-mapnode st-' + n.status} style={{ marginLeft: depth * 14 }}
+        title={NODE_LABEL[n.status] || undefined} onClick={() => setEdit(edit === n.id ? null : n.id)}>
         <span className="mono muted">{KIND_LABEL[n.kind]}</span> {n.text}
-        <span className="mono muted"> — {n.by === 'you' ? 'うえきさん' : n.by}{NODE_LABEL[n.status] ? `・${NODE_LABEL[n.status]}` : ''}</span>
-        <select className="lab-mini" value={n.status} onChange={(e) => onStatus(n.id, e.target.value)} aria-label="状態">
-          {Object.keys(NODE_LABEL).map((s) => <option key={s} value={s}>{NODE_LABEL[s] || '—'}</option>)}
-        </select>
-        <button className="lab-mini" onClick={() => setParent(n.id)}>↳</button>
+        <span className="mono muted lab-by"> — {n.by === 'you' ? 'うえきさん' : n.by}</span>
+        {edit === n.id && (
+          <span className="lab-node-edit" onClick={(e) => e.stopPropagation()}>
+            <select className="lab-mini" value={n.status} onChange={(e) => onStatus(n.id, e.target.value)} aria-label="状態">
+              {Object.keys(NODE_LABEL).map((s) => <option key={s} value={s}>{NODE_LABEL[s] || '—'}</option>)}
+            </select>
+            <button className="lab-mini" onClick={() => setParent(n.id)}>↳ この下に書く</button>
+          </span>
+        )}
       </div>
       {kids(n.id).map((c) => node(c, depth + 1))}
     </div>
   )
   return (
     <div className="lab-section">
-      <div className="eyebrow">マップ（ゴール → 問い → 試したこと → 結果）</div>
+      <div className="eyebrow" title="ゴール → 問い → 試したこと → 結果">マップ</div>
       <div className="lab-mapnode root"><b>◎ {view.goal.title}</b></div>
       {kids(null).map((n) => node(n, 1))}
+      <details className="lab-fold" open={parent ? true : undefined}>
+        <summary>＋ マップに書く</summary>
       <div className="lab-row">
         <select className="aq-select" value={kind} onChange={(e) => setKind(e.target.value)}>
           {['question', 'note', 'result'].map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
@@ -133,6 +249,7 @@ function MapTree({ view, onAdd, onStatus }: {
           placeholder={parent ? `${parent} の下に` : 'ゴールの下に'} />
         <button className="tbtn" disabled={!text.trim()} onClick={() => { onAdd(kind, text, parent); setText(''); setParent(null) }}>足す</button>
       </div>
+      </details>
     </div>
   )
 }
@@ -142,6 +259,10 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
   activeGoal: string | null; setActiveGoal: (id: string | null) => void; onError: (e: unknown) => void
 }) {
   const [list, setList] = useState<Goal[]>([])
+  const [hyps, setHyps] = useState<Hypothesis[]>([])
+  useEffect(() => { api<{ hypotheses: Hypothesis[] }>('goals/hypotheses').then((d) => setHyps(d.hypotheses)).catch(() => {}) }, [])
+  const fromHypothesis = (id: string) => api<Goal>('goals', { method: 'POST', body: { hypothesis: id } })
+    .then((g) => { loadList(); setActiveGoal(g.id) }).catch(onError)
   const [view, setView] = useState<GoalView | null>(null)
   const loadList = useCallback(() => api<{ goals: Goal[] }>('goals').then((d) => setList(d.goals)).catch(onError), [onError])
   const load = useCallback(() => {
@@ -151,7 +272,14 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
   useEffect(() => { loadList() }, [loadList])
   useEffect(() => { load(); const id = setInterval(load, 3000); return () => clearInterval(id) }, [load])
 
-  const setStatus = (status: string) => api('goals/' + activeGoal, { method: 'POST', body: { status } }).then(() => { load(); loadList() }).catch(onError)
+  const [startNote, setStartNote] = useState<string | null>(null)
+  const setStatus = (status: string) => api<{ started?: { name: string; state: string; reason: string }[] }>('goals/' + activeGoal, { method: 'POST', body: { status } })
+    .then((r) => {
+      const bad = (r.started ?? []).filter((x) => x.state === 'error')
+      setStartNote(bad.length ? bad.map((x) => `${x.name}: ${x.reason}`).join(' / ') : null)
+      load(); loadList()
+    }).catch(onError)
+  const stopOne = (name: string) => api(`goals/${activeGoal}/researchers/${encodeURIComponent(name)}/stop`, { method: 'POST', body: {} }).then(load).catch(onError)
   const addNode = (kind: string, text: string, parent: string | null) =>
     api(`goals/${activeGoal}/nodes`, { method: 'POST', body: { kind, text, parent } }).then(load).catch(onError)
   const nodeStatus = (nid: string, status: string) =>
@@ -160,31 +288,44 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
   return (
     <div>
       <div className="lab-row">
-        <select className="aq-select lab-grow" value={activeGoal ?? ''} onChange={(e) => setActiveGoal(e.target.value || null)}>
+        <select className="aq-select lab-grow" value={activeGoal ?? ''} onChange={(e) => setActiveGoal(e.target.value || null)}
+          title="ゴールを選んでいる間に作った宇宙・分岐は、マップに「試した」として入ります">
           <option value="">（ゴールなしで自由に）</option>
           {list.map((g) => <option key={g.id} value={g.id}>{g.title}（{STATUS_LABEL[g.status] ?? g.status}）</option>)}
         </select>
       </div>
-      {activeGoal && <p className="muted lab-note">このゴールを選んでいる間に作った宇宙・分岐は、マップに「試した」として入ります。</p>}
+
       {view && (
         <>
           <div className="lab-section">
             <div className="lab-goal-head"><b>{view.goal.title}</b> <span className={'lab-badge st-' + view.goal.status}>{STATUS_LABEL[view.goal.status] ?? view.goal.status}</span></div>
             {view.goal.question && <p className="lab-note">{view.goal.question}</p>}
-            <div className="mono muted lab-note">白: {view.goal.whites.join(', ') || 'すべて'} ・ 使った量: 宇宙 {view.goal.spent.universes ?? 0}/{view.goal.budget.max_universes}・
-              ステップ {Math.round(view.goal.spent.steps ?? 0)}/{view.goal.budget.max_steps}・${(view.goal.spent.usd ?? 0).toFixed(3)}/{view.goal.budget.max_usd}・
-              {(view.goal.spent.minutes ?? 0).toFixed(1)}/{view.goal.budget.max_minutes} 分</div>
+            {view.goal.hypothesis && hyps.find((h) => h.id === view.goal.hypothesis) && (
+              <details className="lab-fold">
+                <summary>仮説 {view.goal.hypothesis} の中身（反証・置いたもの）</summary>
+                <HypothesisBody h={hyps.find((h) => h.id === view.goal.hypothesis)!} />
+              </details>
+            )}
+            <Budget goal={view.goal} />
             {view.over_budget && <div className="lab-error">{view.over_budget}</div>}
             <div className="lab-row">
               {view.goal.status !== 'running'
-                ? <button className="tbtn pri" onClick={() => setStatus('running')}>始める</button>
-                : <button className="tbtn" onClick={() => setStatus('paused')}>■ 止める</button>}
+                ? <button className="tbtn pri" onClick={() => setStatus('running')}>始める（研究員が動き出す）</button>
+                : <button className="tbtn" onClick={() => setStatus('paused')}>■ 全員止める</button>}
               <button className="tbtn" onClick={() => setStatus('done')}>終える</button>
             </div>
+            {startNote && <div className="lab-error">始められなかった研究員: {startNote}</div>}
           </div>
           <div className="lab-section">
-            <div className="eyebrow">判定（測定値だけで・{view.evaluation.met ? '条件を満たした宇宙がある' : 'まだ満たしていない'}）</div>
-            {!view.goal.criteria.length && <p className="muted lab-note">条件がありません。</p>}
+            <div className="eyebrow" title="測定値だけで判定する">判定</div>
+            <div className={'lab-verdict' + (view.evaluation.met ? ' ok' : '')}>
+              {!view.goal.criteria.length ? '条件がありません'
+                : view.evaluation.met ? `✓ 条件を満たした宇宙: ${view.evaluation.universes.filter((u) => u.all_met).map((u) => u.label).join(', ')}`
+                  : view.evaluation.universes.length ? `まだ（いちばん近い宇宙で ${best(view)} / ${view.goal.criteria.length} 条件）` : 'まだ宇宙がありません'}
+            </div>
+            {view.goal.criteria.length > 0 && view.evaluation.universes.length > 0 && (
+            <details className="lab-fold">
+              <summary>宇宙ごとの数字</summary>
             {view.evaluation.universes.map((u) => (
               <div key={u.universe} className="lab-evalrow">
                 <b>{u.label}</b> <span className="mono muted">{u.white} t={u.t.toFixed(1)}</span> {u.all_met ? '✓ 全部' : ''}
@@ -195,6 +336,8 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
                 ))}
               </div>
             ))}
+            </details>
+            )}
           </div>
           <div className="lab-section">
             <div className="eyebrow">いまやっていること</div>
@@ -203,9 +346,11 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
               <div key={a.actor} className="lab-now"><b>{a.actor === 'you' ? 'うえきさん' : a.actor}</b> <span className="mono muted">{a.at.slice(11)}</span> {a.what}</div>
             ))}
           </div>
+          <Researchers view={view} onStop={stopOne} />
           <MapTree view={view} onAdd={addNode} onStatus={nodeStatus} />
         </>
       )}
+      <Hypotheses list={hyps} open={!activeGoal} onPick={fromHypothesis} />
       <NewGoal whites={whites} models={models} onCreated={(g) => { loadList(); setActiveGoal(g.id) }} onError={onError} />
     </div>
   )

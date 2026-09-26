@@ -103,3 +103,29 @@ def test_catalog_selection_and_goal_endpoints(tmp_path, monkeypatch):
         srv.shutdown()
         srv.hub.close()
         srv.server_close()
+
+
+def test_hypotheses_catalog_is_well_formed_and_ready_ones_become_goals(tmp_path):
+    """research/hypotheses.json: every entry says what it claims, how it could fail and what is put in;
+    ready ones validate as goals against the registry, the others say what is missing and refuse."""
+    from tools.lab.researcher import goal_sheet
+    hs = goals.load_hypotheses()
+    assert len(hs) >= 6 and len({h["id"] for h in hs}) == len(hs)
+    book = goals.GoalBook(tmp_path)
+    for h in hs:
+        for k in ("title", "idea", "question", "measure", "falsify", "put_in"):
+            assert h[k].strip(), (h["id"], k)
+        assert h["status"] in ("ready", "needs")
+        if h["status"] == "ready":
+            g = book.create({"hypothesis": h["id"]})
+            assert g["hypothesis"] == h["id"] and g["title"].startswith(h["id"])
+            sheet = goal_sheet(g)
+            assert h["falsify"] in sheet and h["put_in"] in sheet          # researchers are told both
+        else:
+            assert h["needs"].strip() and h["goal"] is None
+            with pytest.raises(ValueError, match="始められません"):
+                book.create({"hypothesis": h["id"]})
+    g = book.create({"hypothesis": "H1", "budget": {"max_usd": 0.3}})    # overrides on top of the template
+    assert g["budget"]["max_usd"] == 0.3 and g["budget"]["max_universes"] == 4 and g["whites"] == ["three-component"]
+    with pytest.raises(KeyError):
+        book.create({"hypothesis": "H99"})

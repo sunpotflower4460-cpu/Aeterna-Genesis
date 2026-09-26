@@ -116,7 +116,10 @@ export default function ComparePanel({ universes, history, tick }: {
           {g.metrics.map((m) => <Spark key={m} metric={m} universes={g.members} history={history} />)}
         </section>
       ))}
-      <p className="muted lab-note">測定値そのもの（tools/lab・genesis/diagnostics）。縦軸は各グラフで自動。白ごとに分けて描く（時間の単位も量の意味も白ごとに違うため）。この画面を開いてからの記録だけを描く。</p>
+      <details className="lab-fold">
+        <summary>このグラフについて</summary>
+        <p className="muted lab-note">測定値そのもの（tools/lab・genesis/diagnostics）。縦軸は各グラフで自動。白ごとに分けて描く（時間の単位も量の意味も白ごとに違うため）。この画面を開いてからの記録だけを描く。</p>
+      </details>
     </div>
   )
 }

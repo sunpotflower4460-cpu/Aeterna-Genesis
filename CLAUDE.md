@@ -50,7 +50,7 @@ CI（`.github/workflows/*-ci.yml`）はファイルを明示して実行する�
 | `tools/inventory.py` | 1 つの commit を読み取り専用で棚卸しする |
 | `app/` | Observatory（React＋three.js）。データ（`app/public/data`、`app/generated`）は生成物で git 管理外。`python tools/build_catalog.py && python tools/collect_app_data.py` で作る |
 | `app/src/aquarium/`、`app/public/aquarium/` | 水槽ビュー（アプリの最初の画面）。白ごとのテンプレートを t=0 から回した記録を 3D の水槽で見る。データは `python tools/export_aquarium.py` で作り、commit する（合計 150 MB 以下） |
-| `tools/lab/`、`app/src/lab/` | 水槽ラボ（ライブ）。`python -m tools.lab.server` → `http://127.0.0.1:8765/#lab`。白を t=0 から動かし、つまみ・摂動で分岐した宇宙を並べて見比べる。使い方と約束は [`docs/LAB.md`](docs/LAB.md) |
+| `tools/lab/`、`app/src/lab/` | 水槽ラボ（ライブ）。`python -m tools.lab.server` → `http://127.0.0.1:8765/#lab`。白を t=0 から動かし、つまみ・摂動で分岐した宇宙を並べて見比べる。ゴール（測定で判定）と、その範囲で自分で試す AI の研究員（`tools/lab/researcher.py`）もここ。使い方と約束は [`docs/LAB.md`](docs/LAB.md) |
 | `audit/`、`archive/` | P2 の監査結果（Room と X の要約・キーフレーム）と、P3 で作業ツリーから外したデータの目録（`python tools/archive.py restore <path>` で戻せる） |
 | `ai_lab/dream/` | 停止した自動研究の実装（P5 で整理予定。新しい作業の足場にしない） |
 
