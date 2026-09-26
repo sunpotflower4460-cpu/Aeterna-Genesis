@@ -489,6 +489,10 @@ class LocalHub:
         with self._lock:
             return list(self._u)
 
+    def snapshot(self, uid: str) -> Universe:
+        with self._lock:
+            return self._u[uid].clone()
+
     def final_info(self, uid: str) -> dict[str, Any]:
         u = self._u[uid]
         return {"step": u.step_index, "t": u.t, "sha256": u.sha256(), "recipe": u.recipe()}

@@ -295,3 +295,21 @@ def test_deepseek_researcher_loop_uses_function_calling(tmp_path, monkeypatch):
     roles = [m["role"] for m in sent[-1]["messages"]]
     assert roles == ["system", "user", "assistant", "tool", "assistant", "tool"]
     assert "sk-test-secret" not in json.dumps(sent) and "sk-test-secret" not in json.dumps(runner.status(gid))
+
+
+def test_influence_tool_reads_without_changing_the_universe(tmp_path):
+    book = goals.GoalBook(tmp_path)
+    g = book.create({"title": "光円錐", "whites": ["wave-phi4", "gray-scott"]})
+    book.update(g["id"], {"status": "running"})
+    p = Scripted([[create(white="wave-phi4"), run("A", 2), ("influence", {"universe": "A", "frames": 6}),
+                   ("influence", {"universe": "A", "frames": 100})]])
+    hub = LocalHub()
+    runner = GoalRunner(hub, book, None, provider_factory=lambda s: p)
+    runner.start(g["id"])
+    runner.join(g["id"], 60)
+    out = p.results[2][1]
+    assert "一定の速さ" in out and "置いたもの" in out
+    assert "frames は 4〜60" in p.results[3][1]
+    uid = hub.ids()[0]
+    assert hub.info(uid)["step"] == 2 * 10                          # the measured universe itself did not move
+    assert book.get(g["id"])["spent"]["steps"] == 2 * 10 + 2 * 6 * 4 * 2
