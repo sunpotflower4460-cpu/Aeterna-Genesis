@@ -465,7 +465,81 @@ def _swift_hohenberg():
         _metrics=metrics, _perturb=perturb, _cache=cache)
 
 
-_BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg]
+def _wave(potential: str, dim: int):
+    """Wave white (P7-3): nonlinear Klein-Gordon, light-like and reversible. `potential` phi4 | sine_gordon."""
+    from genesis.models import wave_klein_gordon as kg
+    N = 128 if dim == 2 else 48
+    shape = (N,) * dim
+    defaults = dict(kg.DEFAULTS, potential=potential)
+
+    def hill(p):
+        return 2.0 * p["lam"] if potential == "sine_gordon" else 0.25 * p["lam"]
+
+    def cache(p):
+        return {"mask": kg.damping_mask(shape, int(p["absorb_width"])), "hill": hill(p)}
+
+    def params_of(s):                              # λ travels with the state (a law knob may change mid-run)
+        return {**defaults, "lam": float(s["lam"])}
+
+    def init(seed, knobs, p):
+        rng = np.random.default_rng(seed)
+        phi, pi = kg.make_initial(shape, rng, p)
+        return {"phi": phi, "pi": pi, "lam": np.array(float(p["lam"]))}
+
+    def step(s, t, p, cache):
+        phi, pi = kg.step(s["phi"], s["pi"], p, cache["mask"])
+        return {"phi": phi, "pi": pi, "lam": np.array(float(p["lam"]))}
+
+    def lens(name, s):
+        p = params_of(s)
+        if name == "energy":                      # in units of the hill height (grid- and λ-independent)
+            return kg.energy_density(s["phi"], s["pi"], p) / hill(p)
+        if potential == "sine_gordon":
+            return np.angle(np.exp(1j * s["phi"]))   # valley at 0, hill at ±π
+        return s["phi"]
+
+    def metrics(s):
+        p = params_of(s)
+        n, size = kg.lumps(s["phi"], s["pi"], p)
+        return {"energy": kg.energy(s["phi"], s["pi"], p), "mean_phi": float(np.mean(s["phi"])),
+                "walls": kg.wall_density(s["phi"], p), "lumps": n, "lump_size": size}
+
+    def perturb(name, a, s, p, rng):
+        phi, pi = s["phi"].copy(), s["pi"].copy()
+        if name == "cut_half":                     # back to the hill, at rest (half of the box)
+            phi[_half(phi)] = kg.hilltop(p)
+            pi[_half(pi)] = 0.0
+        elif name == "drop_seed" and dim == 2:
+            phi = phi + 0.5 * _gauss(shape, a["y"] * N, a["x"] * N, 3.0)
+        else:
+            phi = phi + a["amp"] * rng.standard_normal(phi.shape)
+        return {"phi": phi, "pi": pi, "lam": s["lam"]}
+
+    sg = potential == "sine_gordon"
+    name = "サイン–ゴルドン" if sg else "φ⁴"
+    return White(
+        id=("wave-sine-gordon" if sg else "wave-phi4") + ("-3d" if dim == 3 else ""),
+        title=f"光のように伝わる場：山の上から谷へ（波・{name}・{dim}D）", family="波（Klein–Gordon）",
+        model="genesis.models.wave_klein_gordon", dimension=dim, grid=shape, steps_per_frame=10 if dim == 2 else 5,
+        # dt = 0.2 is fixed: leapfrog with the nearest-neighbour stencil is stable for dt < 1/sqrt(ndim)
+        knobs=[Knob("lam", "谷の深さ λ", "law", 1.0, 0.2, 3.0, 0.05),
+               Knob("absorb", "端で吸い込む強さ（0＝閉じた宇宙。置いたもの）", "law", 0.0, 0.0, 0.5, 0.01),
+               Knob("noise", "はじめのノイズ", "start", 0.01, 1e-4, 0.1, 1e-4),
+               Knob("bias", "はじめの片寄り（0＝左右対称）", "start", 0.0, -0.2, 0.2, 0.005)],
+        lenses=([Lens("phi", "φ（谷は 0、山は ±π）", "cyclic", -np.pi, np.pi, True)] if sg else
+                [Lens("phi", "φ（谷は ±1、山は 0）", "diverging", -1.5, 1.5)])
+               + [Lens("energy", "エネルギーの濃さ（山の高さ＝1）", "high", 0.0, 2.0)],
+        perturbs=[PERTURB_CUT, PERTURB_KICK] + ([PERTURB_SEED] if dim == 2 else []),
+        put_in=["山の頂上で止まっている一様な場＋ごく小さなノイズ",
+                "谷の形（" + ("2πごとに谷があるサイン–ゴルドン" if sg else "±1 の 2 つの谷を持つ φ⁴") + "）",
+                "端で吸い込むとき（absorb > 0）は、その吸い込み（時間の矢を端に置く）"],
+        source="genesis/models/wave_klein_gordon.py", ceiling_ref=None,
+        track=("energy", 0.5, "above") if dim == 2 else None,
+        defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb, _cache=cache)
+
+
+_BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
+             lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3)]
 _REGISTRY: dict[str, White] | None = None
 
 
