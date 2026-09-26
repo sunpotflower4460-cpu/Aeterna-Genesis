@@ -871,9 +871,59 @@ def _gs_two_3d():
         defaults=dict(g2.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _protocell_3d():
+    """Replicators that build their own container (P15, ladder R4): closed containers, one spot each, dividing."""
+    from genesis.models import protocell as pc
+    N = 40
+
+    def init(seed, knobs, p):
+        c, U, V1, V2 = pc.make_initial((N, N, N), np.random.default_rng(seed), p)
+        return {"c": c, "U": U, "V1": V1, "V2": V2}
+
+    def step(s, t, p, cache):
+        c, U, V1, V2 = pc.step(s["c"], s["U"], s["V1"], s["V2"], p)
+        return {"c": c, "U": U, "V1": V1, "V2": V2}
+
+    def lens(name, s):
+        if name == "kind":
+            return s["V1"] - s["V2"]
+        return s["c"]
+
+    def metrics(s):
+        _, cs = pc.containers(s["c"], s["V1"], s["V2"])
+        return {"containers": len(cs), "occupied": sum(1 for x in cs if x["spots"] > 0),
+                "box_share": float((s["c"] > 0).mean())}
+
+    def perturb(name, a, s, p, rng):
+        if name == "remove_replicators":
+            return {**s, "V1": np.zeros_like(s["V1"]), "V2": np.zeros_like(s["V2"])}
+        if name == "cut_half":
+            out = {k: v.copy() for k, v in s.items()}
+            h = _half(out["c"])
+            out["c"][h], out["U"][h], out["V1"][h], out["V2"][h] = -1.0, 1.0, 0.0, 0.0
+            return out
+        return _kick(s, ["V1", "V2"], a["amp"], rng)
+
+    return White(
+        id="protocell-3d", title="自分の入れ物を作る自己複製：閉じた境界が生まれ、中身ごと分かれるか（3D）",
+        family="Gray-Scott", model="genesis.models.protocell", dimension=3, grid=(N, N, N),
+        steps_per_frame=100,
+        knobs=[Knob("alpha", "入れ物の材料を作る速さ α（0＝作れない）", "law", 1.0, 0.0, 2.0, 0.05),
+               Knob("beta", "入れ物の材料が壊れる速さ β", "law", 0.1, 0.02, 0.4, 0.01),
+               Knob("g0", "入れ物の外での増えやすさ g0（1＝中と同じ）", "law", 0.9, 0.7, 1.0, 0.01),
+               Knob("n_seeds", "はじめの種の数（V1 と V2 のランダムな混ざり）", "start", 12, 1, 30, 1, True)],
+        lenses=[Lens("c", "入れ物（＋1＝中、－1＝外）", "high", -1.0, 1.0),
+                Lens("kind", "中身の種類（V1 − V2：＋は V1、−は V2）", "diverging", -0.4, 0.4)],
+        perturbs=[Perturb("remove_replicators", "中身（自己複製）を全部取り除く"), PERTURB_CUT, PERTURB_KICK],
+        put_in=["法則：自己複製が入れ物の材料を作る（α）、材料は壊れる（β）、入れ物の中の方が増えやすい（g0）",
+                "t=0：入れ物はどこにもない。種は V1 と V2 のランダムな混ざり"],
+        source="genesis/models/protocell.py · tools/protocell_run.py", ceiling_ref=None, track=None,
+        defaults=dict(pc.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d]
+             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d]
 _REGISTRY: dict[str, White] | None = None
 
 
