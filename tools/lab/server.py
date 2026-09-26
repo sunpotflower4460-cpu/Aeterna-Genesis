@@ -26,7 +26,7 @@ _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from tools.lab import observe, whites  # noqa: E402
+from tools.lab import observe, record, whites  # noqa: E402
 from tools.lab.council import Council  # noqa: E402
 from tools.lab.hub import Hub  # noqa: E402
 from tools.lab.journal import Journal  # noqa: E402
@@ -58,6 +58,7 @@ class LabServer(ThreadingHTTPServer):
         super().__init__(addr, Handler)
         self.hub, self.token, self.dist = hub, token, dist
         self.council = council if council is not None else Council(hub, hub.journal)
+        self.record_root = None          # research/sessions (tests point this elsewhere)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -132,6 +133,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"whites": [w.public() for w in whites.registry().values()]})
         if parts == ["stream"]:
             return self._stream(q)
+        if parts == ["journal", "export"] and method == "POST":
+            b = self._body()
+            res = record.export(hub, self.server.council, b.get("ids") or None, str(b.get("note") or "")[:4000],
+                                out_root=self.server.record_root,
+                                session=hub.journal.session_id if hub.journal else None)
+            if hub.journal:
+                hub.journal.log("export", **res)
+            return self._json(res, 201)
         if parts == ["observe"] and method == "POST":
             return self._json(self._observe(self._body()))
         council = self.server.council

@@ -448,6 +448,33 @@ class LocalHub:
     def ids(self) -> list[str]:
         return list(self._u)
 
+    def final_info(self, uid: str) -> dict[str, Any]:
+        u = self._u[uid]
+        return {"step": u.step_index, "t": u.t, "sha256": u.sha256(), "recipe": u.recipe()}
+
+    def replay_into(self, recipe: dict[str, Any], steps: int, label: str | None = None) -> str:
+        """Re-run a recipe from t=0 up to `steps`, emitting a frame every steps_per_frame and bracketing each
+        recorded event with tagged key frames -- so an observation packet can be rebuilt from a recipe alone."""
+        u = Universe(recipe["white"], recipe["seed"], recipe.get("knobs"))
+        uid = self._add(u)
+        if label:
+            self._meta[uid]["label"] = label
+        spf = u.white.steps_per_frame
+        events = sorted(recipe.get("events", []), key=lambda e: e["step"])
+        i = 0
+        while u.step_index < steps or (i < len(events) and events[i]["step"] <= steps):
+            while i < len(events) and events[i]["step"] == u.step_index:
+                ev = events[i]
+                tag = "set" if ev["kind"] == "set" else f"perturb:{ev['name']}"
+                self._intervene(uid, tag, lambda x, ev=ev: x.apply_event(ev))
+                i += 1
+            if u.step_index >= steps:
+                break
+            nxt = min([steps, u.step_index + spf] + [e["step"] for e in events[i:] if e["step"] > u.step_index])
+            u.advance(nxt - u.step_index)
+            self._emit(uid)
+        return uid
+
     def info(self, uid: str) -> dict[str, Any]:
         u, m = self._u[uid], self._meta[uid]
         w = u.white
