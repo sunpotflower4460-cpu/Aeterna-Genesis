@@ -29,7 +29,7 @@ import time
 from typing import Any, Callable
 
 from tools.lab import goals as goalmod
-from tools.lab import observe, whites
+from tools.lab import observe, sweep, whites
 from tools.lab.council import (RULES, TOOL_CAPABLE, Usage, _entry_key, check_branch, model_catalog,
                                provider_for, uid_of)
 
@@ -61,6 +61,19 @@ RESEARCHER_TOOLS = [
           {"parent": {"type": "string", "description": "宇宙のラベル（A, B, …）"}, "changes": _CHANGES,
            "perturb": {"type": "string", "description": "摂動の名前。無ければ空文字"}, "perturb_args": _PARGS,
            "why": {"type": "string"}, "under": {"type": "string", "description": "マップの親ノード id か空文字"}}),
+    _tool("sweep", f"まとめて試す：画面に出さずに、つまみ（と seed）の組み合わせを最大 {sweep.MAX_VARIANTS} 通り t=0 から回し、"
+          "ゴールの条件にどれだけ近いかの順に並べて返す。たくさんのパターンを安く試すときに使う。"
+          "見込みのある組み合わせは create_universe で水槽に出して見る。",
+          {"white": {"type": "string"},
+           "base": {**_CHANGES, "description": "全部に共通のつまみ（無ければ空）"},
+           "vary": {"type": "array", "description": "振るつまみと、その値の一覧",
+                    "items": {"type": "object", "additionalProperties": False, "required": ["knob", "values"],
+                              "properties": {"knob": {"type": "string"},
+                                             "values": {"type": "array", "items": {"type": "number"}}}}},
+           "seeds": {"type": "array", "items": {"type": "integer"}, "description": "seed の一覧（空なら 0 だけ）"},
+           "frames": {"type": "integer", "description": f"1 通りあたりのコマ数（1〜{sweep.MAX_FRAMES}）"},
+           "why": {"type": "string"},
+           "plain": {"type": "string", "description": "超初心者向けに、何を試すのかを 1 文で"}}),
     _tool("run", f"自分が作った宇宙を frames コマ進める（1〜{MAX_FRAMES}）。コマごとに測定される。",
           {"universe": {"type": "string"}, "frames": {"type": "integer"}}),
     _tool("observe", "宇宙の事件簿（測定の時系列と、規則で検出した出来事）を文章で読む。",
@@ -68,6 +81,7 @@ RESEARCHER_TOOLS = [
     _tool("evaluate_goal", "ゴールの条件を、測定だけで判定する（宇宙ごとに、どの条件を満たしたか）。", {}),
     _tool("note", "ゴールのマップに書く。kind は question（小さな問い）/ note（気づき）/ result（結果）。",
           {"kind": {"type": "string", "enum": ["question", "note", "result"]}, "text": {"type": "string"},
+           "plain": {"type": "string", "description": "超初心者向けの言いかえ（専門用語なし・1〜2 文）"},
            "status": {"type": "string", "enum": ["todo", "doing", "met", "not_met", "ceiling", "info"]},
            "under": {"type": "string", "description": "親ノード id か空文字"},
            "universe": {"type": "string", "description": "関係する宇宙のラベルか空文字"}}),
@@ -77,6 +91,7 @@ RESEARCHER_TOOLS = [
     _tool("close_universe", "自分が作った宇宙を閉じる（CPU を空ける）。記録は残る。", {"universe": {"type": "string"}}),
     _tool("finish", "研究を終える。summary に、試したこと・測定で分かったこと・分からなかったことを書く。",
           {"summary": {"type": "string"},
+           "plain": {"type": "string", "description": "超初心者向けのまとめ（専門用語なし・2〜3 文）"},
            "outcome": {"type": "string", "enum": ["met", "not_met", "ceiling", "info"]}}),
 ]
 
@@ -86,7 +101,9 @@ BRIEF = RULES + """
 - 使えるのは渡された道具だけ。許された白・つまみの範囲・予算の外には出られません（道具が断ります）。
 - あなたが作った宇宙・分岐・摂動は、すべて「あなたが置いたもの」として記録されます。
 - 条件を満たしたかどうかは evaluate_goal（測定）だけが決めます。見た目や期待で「できた」と言わないこと。
-- 小さく試す：短く run → observe で事件簿を読む → 次の一手。分かったことはこまめに note でマップに書く。
+- たくさんのパターンは sweep（まとめて試す）で安く試し、見込みのあるものだけ create_universe で水槽に出して run → observe する。
+- 分かったことはこまめに note でマップに書く。note と finish の plain には、専門用語を使わず、中学生にも分かる言葉で書く
+  （例：「点が 1 つのまま動き続ける宇宙を探して、24 通り試しました。θ を小さくすると、点が割れにくくなりました」）。
 - 他の研究員もいます。マップと「いまやっていること」を見て、同じことを重ねないようにしてください。
 - 条件を満たした、予算が尽きそう、この白の天井だと判断した、のどれかで finish。天井や失敗も立派な結果です。
 - 書くことはすべて観察の記録であって主張ではありません（主張は人が replay と /audit を通してから）。"""
@@ -307,6 +324,52 @@ class Researcher:
         self.runner.book.spend(self.gid, universes=1)
         return node["id"]
 
+    def _sweep(self, a: dict[str, Any]) -> str:
+        book = self.runner.book
+        self._allowed(a["white"])
+        g = book.get(self.gid)
+        if g["status"] == "met":
+            raise ValueError("ゴールはもう達成されています（finish でまとめてください）")
+        base = {k["knob"]: k["value"] for k in a.get("base", [])}
+        vary = {v["knob"]: list(v["values"]) for v in a.get("vary", [])}
+        variants = sweep.plan(a["white"], base, vary, [int(x) for x in a.get("seeds") or []])
+        frames = int(a["frames"])
+        if not 1 <= frames <= sweep.MAX_FRAMES:
+            raise ValueError(f"frames は 1〜{sweep.MAX_FRAMES} です")
+        spf = whites.get(a["white"]).steps_per_frame
+        cost = len(variants) * frames * spf
+        left = g["budget"]["max_steps"] - g["spent"]["steps"]
+        if cost > left:
+            fit = int(left // (len(variants) * spf))
+            raise ValueError(f"計算の予算が足りません（{len(variants)} 通り × {frames} コマ = {cost:g} step、残り {left:g}）。"
+                             + (f"frames を {fit} 以下にするか、組み合わせを減らしてください" if fit >= 1 else "組み合わせを減らしてください"))
+        plain = a.get("plain") or ""
+        book.log(self.gid, self.name, f"まとめて {len(variants)} 通り試している" + (f"：{plain}" if plain else ""))
+        results = sweep.run(variants, frames, g["criteria"], workers=self.runner.sweep_workers,
+                            should_stop=self._stop.is_set)
+        book.spend(self.gid, steps=sum(r["steps"] for r in results))
+        rec = book.add_sweep(self.gid, {"by": self.name, "white": a["white"], "why": a.get("why", ""), "plain": plain,
+                                        "frames": frames, "base": base, "vary": vary,
+                                        "variants": [{**{k: r[k] for k in ("seed", "knobs", "met", "all_met", "score",
+                                                                             "diverged", "sha256", "steps", "t", "first", "last")},
+                                                      "label": sweep.label(r)} for r in results]})
+        n_c = len(g["criteria"])
+        best = results[0] if results else None
+        summary = (f"まとめて {len(results)} 通り試した（{rec['id']}）。" +
+                   (f"いちばん近いのは {sweep.label(best)}：目安 {n_c} つのうち {best['met']} つ" if best and n_c else ""))
+        book.add_node(self.gid, "result", summary + (f"。{a.get('why')}" if a.get("why") else ""), self.name,
+                      status="met" if any(r["all_met"] for r in results) else "info",
+                      plain=plain or summary)
+        rows = []
+        for r in results[:12]:
+            cs = "; ".join(f"{c['metric']}{c['op']}{c['value']:g}: {'○' if c['met'] else '×'}（最長 {c['longest']:g}/{c['hold']:g}）"
+                           for c in r["criteria"])
+            rows.append(f"  {sweep.label(r)}: {'発散' if r['diverged'] else ''} 満たした {r['met']}/{n_c} {cs} 最後 {r['last']}")
+        stopped = "（途中で止められました）" if len(results) < len(variants) else ""
+        return (f"まとめて試した {rec['id']}: {len(results)}/{len(variants)} 通り{stopped}。近い順:\n" + "\n".join(rows)
+                + ("\n★ 条件をぜんぶ満たした組み合わせがあります。create_universe で水槽に出して確かめてください。"
+                   if any(r["all_met"] for r in results) else ""))
+
     def _do(self, name: str, a: dict[str, Any]) -> str:
         hub, book = self.runner.hub, self.runner.book
         if name == "create_universe":
@@ -334,6 +397,8 @@ class Researcher:
             what = f"{hub.info(puid)['label']} から分岐（{change}）: {a.get('why', '')}"
             nid = self._attempt(uid, what, a.get("under", ""))
             return f"宇宙 {hub.info(uid)['label']} を作りました（{hub.info(puid)['label']} の t={hub.info(uid)['t']:.4g} から、一時停止）。マップ {nid}。"
+        if name == "sweep":
+            return self._sweep(a)
         if name == "run":
             uid = self._own(a["universe"])
             frames = int(a["frames"])
@@ -383,8 +448,8 @@ class Researcher:
         if name == "note":
             uid = uid_of(hub, a["universe"]) if a.get("universe") else None
             n = book.add_node(self.gid, a["kind"], a["text"], self.name, parent=a.get("under") or None,
-                              universe=uid, status=a.get("status") or "info")
-            book.log(self.gid, self.name, f"マップに書いた: {a['text'][:80]}", uid)
+                              universe=uid, status=a.get("status") or "info", plain=a.get("plain") or "")
+            book.log(self.gid, self.name, f"マップに書いた: {(a.get('plain') or a['text'])[:80]}", uid)
             return f"マップに {n['id']} を書きました。"
         if name == "propose":
             if self.runner.council is None:
@@ -404,7 +469,7 @@ class Researcher:
             return f"宇宙 {label} を閉じました（記録は残っています）。"
         if name == "finish":
             outcome = a.get("outcome") or "info"
-            book.add_node(self.gid, "result", a.get("summary", ""), self.name, status=outcome)
+            book.add_node(self.gid, "result", a.get("summary", ""), self.name, status=outcome, plain=a.get("plain") or "")
             self._finished = True
             self.state = "finished"
             return "終了を受け付けました。ありがとうございました。"
@@ -419,6 +484,7 @@ class GoalRunner:
         self.hub, self.book, self.council = hub, book, council
         self.provider_factory = provider_factory or self._provider
         self.create_lock = threading.Lock()
+        self.sweep_workers: int | None = None        # None: CPU count - 1 (tests use 1: in-process)
         self._lock = threading.RLock()
         self._teams: dict[str, list[Researcher]] = {}
         self._clock: dict[str, float] = {}           # goal -> monotonic time of the last minutes accounting

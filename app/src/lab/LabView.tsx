@@ -417,7 +417,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
               </>
             )}
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
-            {tab === 'goal' && <GoalPanel whites={whites} models={models} activeGoal={activeGoal} setActiveGoal={setActiveGoal} onError={onError} />}
+            {tab === 'goal' && <GoalPanel whites={whites} models={models} activeGoal={activeGoal} setActiveGoal={setActiveGoal} onError={onError} onUniverse={refresh} />}
             {tab === 'ai' && (
               <>
                 <GuidePanel ids={universes.map((u) => u.id)} models={models} onError={onError} onBranched={refresh} />
