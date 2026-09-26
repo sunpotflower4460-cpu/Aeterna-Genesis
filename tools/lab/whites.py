@@ -538,8 +538,64 @@ def _wave(potential: str, dim: int):
         defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb, _cache=cache)
 
 
+def _higgs():
+    """Light-and-phase white (P7-4): lattice Abelian Higgs, temporal gauge, Gauss's law kept exactly."""
+    from genesis.models import abelian_higgs as ah
+    N = 96
+    defaults = dict(ah.DEFAULTS)
+
+    def params_of(s):                              # the law travels with the state (λ, e may change mid-run)
+        return {**defaults, "lam": float(s["lam"]), "e": float(s["e"])}
+
+    def init(seed, knobs, p):
+        phi, pi, th, E = ah.make_initial((N, N), np.random.default_rng(seed), p)
+        return {"phi": phi, "pi": pi, "th": th, "E": E, "lam": np.array(float(p["lam"])), "e": np.array(float(p["e"]))}
+
+    def step(s, t, p, cache):
+        phi, pi, th, E = ah.step(s["phi"], s["pi"], s["th"], s["E"], p)
+        return {"phi": phi, "pi": pi, "th": th, "E": E, "lam": np.array(float(p["lam"])), "e": np.array(float(p["e"]))}
+
+    def lens(name, s):
+        if name == "amp":
+            return np.abs(s["phi"])
+        if name == "phase":
+            return np.angle(s["phi"])
+        return ah.flux(s["th"])
+
+    def metrics(s):
+        p = params_of(s)
+        w = ah.winding(s["phi"], s["th"])
+        n = int((w != 0).sum())
+        return {"energy": ah.energy(s["phi"], s["pi"], s["th"], s["E"], p),
+                "gauss": float(np.abs(ah.gauss_residual(s["phi"], s["pi"], s["E"])).max()),
+                "vortices": n, "net_winding": int(w.sum()), "mean_amp": float(np.abs(s["phi"]).mean()),
+                "flux_per_vortex": float(np.abs(ah.flux(s["th"])).sum() / (2 * np.pi) / n) if n else 0.0}
+
+    def perturb(name, a, s, p, rng):
+        # only the magnetic side is touched: Gauss's law (div E = 2 Im φ*π) does not involve θ, so it stays exact.
+        # Kicking φ or π would break it, and repairing it needs a global (Poisson) solve -- not offered.
+        return {**s, "th": s["th"] + a["amp"] * rng.standard_normal(s["th"].shape)}
+
+    return White(
+        id="higgs-2d", title="光と位相：渦に磁束が量子化されて宿るか（アーベル・ヒッグス・2D）", family="ゲージ場（アーベル・ヒッグス）",
+        model="genesis.models.abelian_higgs", dimension=2, grid=(N, N), steps_per_frame=10,
+        # resolution: the core 1/√λ and the flux tube 1/(√2 e) must span cells (else the compact link unwinds a
+        # vortex -- measured); dt = 0.2 is fixed (CFL 1/√2)
+        knobs=[Knob("lam", "ヒッグスの強さ λ（β = λ/2e²）", "law", 0.36, 0.02, 1.0, 0.01),
+               Knob("e", "電荷 e（光との結びつき）", "law", 0.3, 0.15, 0.5, 0.01),
+               Knob("gamma", "全体を冷やす摩擦 γ（0＝閉じた宇宙。置いたもの）", "law", 0.0, 0.0, 0.1, 0.001),
+               Knob("noise", "はじめのノイズ", "start", 0.01, 1e-3, 0.1, 1e-3)],
+        lenses=[Lens("amp", "|φ|（渦の芯は穴）", "low", 0.0, 1.3), Lens("phase", "φ の位相", "cyclic", -np.pi, np.pi, True),
+                Lens("flux", "磁束（プラケットの角度）", "diverging", -0.3, 0.3)],
+        perturbs=[Perturb("kick", "磁場（リンクの角度）をノイズで揺らす", (Knob("amp", "強さ", "arg", 0.02, 0.0, 0.2, 0.005),))],
+        put_in=["山の上（φ≈0）で止まっている場＋ごく小さなノイズ（ゲージ場も電場も 0）",
+                "法則（λ・e・v）", "冷やすとき（γ > 0）は、その摩擦"],
+        source="genesis/models/abelian_higgs.py", ceiling_ref=None, track=("amp", 0.5, "below"),
+        defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
-             lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3)]
+             lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs]
 _REGISTRY: dict[str, White] | None = None
 
 
