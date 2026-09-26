@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
+import type { ModelEntry } from './GoalPanel'
 
 // The AI council: 見る係 (images/video, always "見た目（未測定）"), 別の視点, and the 中心 (Opus 5.5) who talks with
 // you and puts proposal cards on the table. Nothing runs until you press 分岐して試す on a card.
@@ -24,8 +25,8 @@ const WHO_COLOR: Record<string, string> = {
   'claude-code': 'var(--official)', system: 'var(--muted)',
 }
 
-export default function GuidePanel({ ids, onError, onBranched }: {
-  ids: string[]; onError: (e: unknown) => void; onBranched: () => void
+export default function GuidePanel({ ids, models, onError, onBranched }: {
+  ids: string[]; models: ModelEntry[]; onError: (e: unknown) => void; onBranched: () => void
 }) {
   const [state, setState] = useState<CouncilState | null>(null)
   const [msgs, setMsgs] = useState<Msg[]>([])
@@ -65,9 +66,17 @@ export default function GuidePanel({ ids, onError, onBranched }: {
     <div className="lab-guide">
       <div className="lab-roles">
         {state?.roles.map((r) => (
-          <span key={r.role} className={'lab-role' + (r.available ? ' on' : '')} title={r.reason || r.model}>
-            <i style={{ background: WHO_COLOR[r.role] }} />{r.label} <span className="mono">{r.available ? r.model : '—'}</span>
-          </span>
+          <label key={r.role} className={'lab-role' + (r.available ? ' on' : '')} title={r.reason || r.model}>
+            <i style={{ background: WHO_COLOR[r.role] }} />{r.label}
+            <select className="lab-mini" value={models.find((m) => m.provider === r.provider && m.model === r.model)?.key ?? ''}
+              onChange={(e) => api('council/select', { method: 'POST', body: { role: r.role, key: e.target.value } }).then(poll).catch(onError)}>
+              <option value="">（なし）</option>
+              {models.filter((m) => r.role !== 'vision' || m.images).map((m) => (
+                <option key={m.key} value={m.key}>{m.label}{m.available ? '' : '（未設定）'}</option>
+              ))}
+            </select>
+            {!r.available && r.reason && <span className="mono muted"> {r.reason}</span>}
+          </label>
         ))}
         {state && <span className="mono muted lab-cost">今日 ${state.spent_today.toFixed(3)} / 上限 ${state.limit_usd.toFixed(2)}</span>}
       </div>

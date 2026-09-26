@@ -4,11 +4,12 @@ import { OrbitControls, PerspectiveCamera, View } from '@react-three/drei'
 import * as THREE from 'three'
 import VolumeTank from '../aquarium/VolumeTank'
 import SurfaceTank from '../aquarium/SurfaceTank'
-import { api, lab, type KnobSpec, type LabEvent, type UniverseInfo, type WhiteSpec } from './api'
+import { api, lab, setActiveGoalId, getActiveGoalId, type KnobSpec, type LabEvent, type UniverseInfo, type WhiteSpec } from './api'
 import { useLabStream, type LiveSource, type LiveState } from './live'
 import ComparePanel, { seriesColor } from './ComparePanel'
 import ObservePanel from './ObservePanel'
 import GuidePanel from './GuidePanel'
+import GoalPanel, { type ModelEntry } from './GoalPanel'
 
 // Live lab: several universes side by side, each running its white from t=0 in a worker process on the
 // lab server. Everything a person changes is sent as an explicit, recorded intervention (law change or
@@ -276,7 +277,10 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [lenses, setLenses] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<'ctl' | 'ai' | 'cmp' | 'tree' | 'obs'>('ctl')
+  const [tab, setTab] = useState<'ctl' | 'goal' | 'ai' | 'cmp' | 'tree' | 'obs'>('ctl')
+  const [activeGoal, setActiveGoalState] = useState<string | null>(getActiveGoalId())
+  const [models, setModels] = useState<ModelEntry[]>([])
+  const setActiveGoal = (id: string | null) => { setActiveGoalId(id); setActiveGoalState(id) }
   const [panel, setPanel] = useState(() => typeof innerWidth === 'undefined' || innerWidth > 720)
   const [range, setRange] = useState<'fixed' | 'frame'>('fixed')
   const [threshold, setThreshold] = useState(0.35)
@@ -291,6 +295,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     lab.whites().then(setWhites).catch(onError)
+    api<{ models: ModelEntry[] }>('models').then((d) => setModels(d.models)).catch(() => {})
     api<{ max_universes: number }>('health').then((h) => h.max_universes && setMaxU(h.max_universes)).catch(() => {})
     refresh()
   }, [refresh, onError])
@@ -320,7 +325,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   const cols = merged.length <= 1 ? 1 : 2
 
   const create = (w: string, seed: number, knobs: Record<string, number>) =>
-    lab.create(w, seed, knobs).then((u) => { setSelected(u.id); refresh() }).catch(onError)
+    lab.create(w, seed, knobs, activeGoal).then((u) => { setSelected(u.id); refresh() }).catch(onError)
 
   return (
     <div className="lab-root" ref={root}>
@@ -366,10 +371,11 @@ export default function LabView({ onExit }: { onExit: () => void }) {
           <aside className="lab-panel glass">
             <nav className="lab-tabs">
               <button className={tab === 'ctl' ? 'on' : ''} onClick={() => setTab('ctl')}>操作</button>
-              <button className={tab === 'ai' ? 'on' : ''} onClick={() => setTab('ai')}>AI と話す</button>
+              <button className={tab === 'goal' ? 'on' : ''} onClick={() => setTab('goal')}>ゴール</button>
+              <button className={tab === 'ai' ? 'on' : ''} onClick={() => setTab('ai')}>AI 会議</button>
               <button className={tab === 'cmp' ? 'on' : ''} onClick={() => setTab('cmp')}>比べる</button>
               <button className={tab === 'tree' ? 'on' : ''} onClick={() => setTab('tree')}>系譜</button>
-              <button className={tab === 'obs' ? 'on' : ''} onClick={() => setTab('obs')}>AI に渡すもの</button>
+              <button className={tab === 'obs' ? 'on' : ''} onClick={() => setTab('obs')}>AI に渡す</button>
             </nav>
             {error && <div className="lab-error" onClick={() => setError(null)}>{error}（クリックで閉じる）</div>}
             {tab === 'ctl' && (
@@ -398,7 +404,8 @@ export default function LabView({ onExit }: { onExit: () => void }) {
               </>
             )}
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
-            {tab === 'ai' && <GuidePanel ids={universes.map((u) => u.id)} onError={onError} onBranched={refresh} />}
+            {tab === 'goal' && <GoalPanel whites={whites} models={models} activeGoal={activeGoal} setActiveGoal={setActiveGoal} onError={onError} />}
+            {tab === 'ai' && <GuidePanel ids={universes.map((u) => u.id)} models={models} onError={onError} onBranched={refresh} />}
             {tab === 'obs' && <ObservePanel ids={universes.map((u) => u.id)} onError={onError} />}
             {tab === 'tree' && (
               <>

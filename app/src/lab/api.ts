@@ -66,18 +66,23 @@ export async function labAvailable(): Promise<boolean> {
   }
 }
 
+/** The goal selected in the Goal tab; universes and branches made meanwhile are attached to it. */
+let activeGoalId: string | null = null
+export function setActiveGoalId(id: string | null) { activeGoalId = id }
+export function getActiveGoalId() { return activeGoalId }
+
 export const lab = {
   whites: () => api<{ whites: WhiteSpec[] }>('whites').then((d) => d.whites),
   universes: () => api<{ universes: UniverseInfo[] }>('universes').then((d) => d.universes),
-  create: (white: string, seed: number, knobs: Record<string, number>) =>
-    api<UniverseInfo>('universes', { method: 'POST', body: { white, seed, knobs } }),
+  create: (white: string, seed: number, knobs: Record<string, number>, goal?: string | null) =>
+    api<UniverseInfo>('universes', { method: 'POST', body: { white, seed, knobs, goal } }),
   control: (id: string, action: 'play' | 'pause' | 'step' | 'speed', extra: Record<string, number> = {}) =>
     api<UniverseInfo>(`universes/${id}/control`, { method: 'POST', body: { action, ...extra } }),
   set: (id: string, values: Record<string, number>) =>
     api<{ event: LabEvent; universe: UniverseInfo }>(`universes/${id}/set`, { method: 'POST', body: { values } }),
   perturb: (id: string, name: string, args: Record<string, number>) =>
     api<{ event: LabEvent; universe: UniverseInfo }>(`universes/${id}/perturb`, { method: 'POST', body: { name, args } }),
-  branch: (id: string, body: { set?: Record<string, number>; perturb?: { name: string; args: Record<string, number> } }) =>
-    api<UniverseInfo>(`universes/${id}/branch`, { method: 'POST', body }),
+  branch: (id: string, body: { set?: Record<string, number>; perturb?: { name: string; args: Record<string, number> }; goal?: string | null }) =>
+    api<UniverseInfo>(`universes/${id}/branch`, { method: 'POST', body: { ...body, goal: activeGoalId } }),
   remove: (id: string) => api<{ ok: boolean }>(`universes/${id}`, { method: 'DELETE' }),
 }
