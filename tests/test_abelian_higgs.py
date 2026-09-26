@@ -137,3 +137,17 @@ def test_deterministic():
     p = dict(ah.DEFAULTS)
     a, b = _run(p, steps=50), _run(p, steps=50)
     assert all(np.array_equal(x, y) for x, y in zip(a, b))
+
+
+def test_like_vortices_attract_in_type_one_and_repel_in_type_two():
+    """Known physics the white must carry: β < 1 like vortices come together, β > 1 they push apart."""
+    from tools.higgs_pair_force import pair_state, plus_distance
+    n, out = 48, {}
+    for beta in (0.5, 2.0):
+        lam = 2 * 0.09 * beta
+        p = dict(ah.DEFAULTS, lam=lam, gamma=0.5)
+        s = pair_state(n, 6.0, lam, 0.3)
+        for _ in range(900):
+            s = ah.step(*s, p)
+        out[beta] = plus_distance(s[0], s[2], n)
+    assert out[0.5] < 6.0 - 1.5 and out[2.0] > 6.0 + 2.0

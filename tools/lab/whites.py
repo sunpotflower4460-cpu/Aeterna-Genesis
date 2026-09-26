@@ -599,8 +599,53 @@ def _higgs():
         defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _higgs3d():
+    """Light-and-phase white in 3D (P8-B): vortices become flux STRINGS."""
+    from genesis.models import abelian_higgs_nd as an
+    N = 32
+    defaults = dict(an.DEFAULTS)
+
+    def params_of(s):
+        return {**defaults, "lam": float(s["lam"]), "e": float(s["e"])}
+
+    def init(seed, knobs, p):
+        phi, pi, th, E = an.make_initial((N, N, N), np.random.default_rng(seed), p)
+        return {"phi": phi, "pi": pi, "th": th, "E": E, "lam": np.array(float(p["lam"])), "e": np.array(float(p["e"]))}
+
+    def step(s, t, p, cache):
+        phi, pi, th, E = an.step(s["phi"], s["pi"], s["th"], s["E"], p)
+        return {"phi": phi, "pi": pi, "th": th, "E": E, "lam": np.array(float(p["lam"])), "e": np.array(float(p["e"]))}
+
+    def lens(name, s):
+        return np.abs(s["phi"]) if name == "amp" else an.flux_magnitude(s["th"])
+
+    def metrics(s):
+        p = params_of(s)
+        return {"energy": an.energy(s["phi"], s["pi"], s["th"], s["E"], p),
+                "gauss": float(np.abs(an.gauss_residual(s["phi"], s["pi"], s["E"])).max()),
+                "string_length": an.string_length(s["phi"], s["th"]), "mean_amp": float(np.abs(s["phi"]).mean()),
+                "wrapped_axes": len(an.wrapped_axes(s["phi"], s["th"]))}
+
+    def perturb(name, a, s, p, rng):
+        return {**s, "th": s["th"] + a["amp"] * rng.standard_normal(s["th"].shape)}
+
+    return White(
+        id="higgs-3d", title="光と位相の 3D：磁束の糸が生まれて残るか（アーベル・ヒッグス・3D）", family="ゲージ場（アーベル・ヒッグス）",
+        model="genesis.models.abelian_higgs_nd", dimension=3, grid=(N, N, N), steps_per_frame=5,
+        knobs=[Knob("lam", "ヒッグスの強さ λ（β = λ/2e²）", "law", 0.36, 0.02, 1.0, 0.01),
+               Knob("e", "電荷 e（光との結びつき）", "law", 0.3, 0.15, 0.5, 0.01),
+               Knob("gamma", "全体を冷やす摩擦 γ（0＝閉じた宇宙。置いたもの）", "law", 0.0, 0.0, 0.1, 0.001),
+               Knob("noise", "はじめのノイズ", "start", 0.01, 1e-3, 0.1, 1e-3)],
+        lenses=[Lens("amp", "|φ|（糸の芯は穴）", "low", 0.0, 1.3), Lens("flux", "磁束の大きさ", "high", 0.0, 0.3)],
+        perturbs=[Perturb("kick", "磁場（リンクの角度）をノイズで揺らす", (Knob("amp", "強さ", "arg", 0.02, 0.0, 0.2, 0.005),))],
+        put_in=["山の上（φ≈0）で止まっている場＋ごく小さなノイズ（ゲージ場も電場も 0）",
+                "法則（λ・e・v）", "冷やすとき（γ > 0）は、その摩擦"],
+        source="genesis/models/abelian_higgs_nd.py", ceiling_ref=None, track=None,
+        defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
-             lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs]
+             lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d]
 _REGISTRY: dict[str, White] | None = None
 
 
