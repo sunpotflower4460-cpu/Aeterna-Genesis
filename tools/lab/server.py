@@ -163,6 +163,8 @@ class Handler(BaseHTTPRequestHandler):
         if parts == ["goals", "metrics"]:
             ws = [w for w in ",".join(q.get("whites", [])).split(",") if w] or list(whites.registry())
             return self._json({"metrics": {w: goalmod.metrics_of(w) for w in ws}, "ops": list(goalmod.OPS)})
+        if parts == ["goals", "hypotheses"]:
+            return self._json({"hypotheses": goalmod.load_hypotheses()})
         if parts == ["goals"] and method == "GET":
             return self._json({"goals": book.all()})
         if parts == ["goals"] and method == "POST":

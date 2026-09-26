@@ -29,6 +29,32 @@ OPS = {">": lambda a, b: a > b, ">=": lambda a, b: a >= b, "<": lambda a, b: a <
 NODE_KINDS = ("question", "attempt", "note", "result")
 NODE_STATUS = ("todo", "doing", "met", "not_met", "ceiling", "info")
 DEFAULT_BUDGET = {"max_universes": 3, "max_steps": 2_000_000, "max_usd": 1.0, "max_minutes": 30}
+HYPOTHESES = Path(__file__).resolve().parents[2] / "research" / "hypotheses.json"
+
+
+# ------------------------------------------------------------------------------------------ hypotheses
+def load_hypotheses(path: Path | None = None) -> list[dict[str, Any]]:
+    """The hypotheses a person can pick as a goal (research/hypotheses.json). `ready` ones carry a goal
+    template; `needs` ones say what is missing (a new white, a new measuring instrument)."""
+    try:
+        return json.loads((path or HYPOTHESES).read_text(encoding="utf-8"))["hypotheses"]
+    except (OSError, ValueError, KeyError):
+        return []
+
+
+def hypothesis(hid: str, path: Path | None = None) -> dict[str, Any]:
+    h = next((x for x in load_hypotheses(path) if x["id"] == hid), None)
+    if h is None:
+        raise KeyError(f"no hypothesis {hid!r}")
+    return h
+
+
+def goal_from_hypothesis(hid: str, path: Path | None = None) -> dict[str, Any]:
+    """A goal body (for GoalBook.create) from a ready hypothesis."""
+    h = hypothesis(hid, path)
+    if h["status"] != "ready" or not h.get("goal"):
+        raise ValueError(f"{hid} はまだ始められません（足りないもの: {h.get('needs') or '—'}）")
+    return {"title": f"{h['id']}：{h['title']}", "question": h["question"], "hypothesis": h["id"], **h["goal"]}
 
 
 def _now() -> str:
@@ -157,9 +183,13 @@ class GoalBook:
         if len(researchers) > 3:
             raise ValueError("研究員は 3 人までです")
         return {"title": title, "question": str(body.get("question") or ""), "whites": ws, "criteria": crit,
-                "budget": budget, "researchers": researchers}
+                "budget": budget, "researchers": researchers, "hypothesis": str(body.get("hypothesis") or "") or None}
 
     def create(self, body: dict[str, Any], by: str = "you") -> dict[str, Any]:
+        if body.get("hypothesis") and not body.get("title"):          # "仮説から選ぶ": the template, then overrides
+            base = goal_from_hypothesis(body["hypothesis"])
+            over = {k: v for k, v in body.items() if v not in (None, "")}
+            body = {**base, **over, "budget": {**base.get("budget", {}), **(over.get("budget") or {})}}
         v = self.validate(body)
         with self._lock:
             gid = f"g{next(self._ids)}"
@@ -172,8 +202,8 @@ class GoalBook:
     def update(self, gid: str, body: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
             g = self.get(gid)
-            v = self.validate({**{k: g[k] for k in ("title", "question", "whites", "criteria", "budget", "researchers")},
-                               **body})
+            v = self.validate({**{k: g.get(k) for k in ("title", "question", "whites", "criteria", "budget", "researchers",
+                                                         "hypothesis")}, **body})
             g.update(v)
             if body.get("status") in ("draft", "running", "paused", "done", "met"):
                 g["status"] = body["status"]

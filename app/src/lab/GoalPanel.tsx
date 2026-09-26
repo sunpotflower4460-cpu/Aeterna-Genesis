@@ -15,7 +15,11 @@ interface MapNode { id: string; parent: string | null; kind: string; text: strin
 interface Goal {
   id: string; title: string; question: string; whites: string[]; criteria: Criterion[]
   budget: Record<string, number>; researchers: Researcher[]; status: string; nodes: MapNode[]
-  spent: Record<string, number>
+  spent: Record<string, number>; hypothesis?: string | null
+}
+interface Hypothesis {
+  id: string; title: string; idea: string; question: string; measure: string; falsify: string; put_in: string
+  status: 'ready' | 'needs'; needs: string
 }
 interface EvalRow { metric: string; op: string; value: number; hold: number; met: boolean; longest: number; holding_now: number | null; last: number | null }
 interface ResearcherState {
@@ -90,6 +94,43 @@ function Budget({ goal }: { goal: Goal }) {
         {parts.map((p) => `${p.label} ${p.label === 'USD' ? p.used.toFixed(3) : p.label === '分' ? p.used.toFixed(1) : Math.round(p.used)}/${p.max}`).join('・')}
         {goal.whites.length ? `　白: ${goal.whites.join(', ')}` : '　白: すべて'}
       </div>
+    </details>
+  )
+}
+
+function HypothesisBody({ h }: { h: Hypothesis }) {
+  return (
+    <div className="lab-hyp-body">
+      <p>{h.idea}</p>
+      <p><b>問い</b> {h.question}</p>
+      <p><b>測り方</b> {h.measure}</p>
+      <p><b>反証になること</b> {h.falsify}</p>
+      <p><b className="aq-put">置いたもの</b> {h.put_in}</p>
+      {h.needs && <p><b>まだ足りないもの</b> {h.needs}</p>}
+    </div>
+  )
+}
+
+/** 「仮説から選ぶ」: research/hypotheses.json. A ready hypothesis becomes a goal with one press. */
+function Hypotheses({ list, open, onPick }: { list: Hypothesis[]; open: boolean; onPick: (id: string) => void }) {
+  if (!list.length) return null
+  return (
+    <details className="lab-section" open={open || undefined}>
+      <summary>仮説から選ぶ（{list.filter((h) => h.status === 'ready').length} 件すぐ始められる）</summary>
+      {list.map((h) => (
+        <div key={h.id} className={'lab-hyp' + (h.status === 'ready' ? '' : ' off')}>
+          <div className="lab-row">
+            <b className="mono">{h.id}</b> <span className="lab-grow">{h.title}</span>
+            {h.status === 'ready'
+              ? <button className="lab-mini" onClick={() => onPick(h.id)}>ゴールにする</button>
+              : <span className="lab-badge" title={h.needs}>準備中</span>}
+          </div>
+          <details className="lab-fold">
+            <summary>中身</summary>
+            <HypothesisBody h={h} />
+          </details>
+        </div>
+      ))}
     </details>
   )
 }
@@ -218,6 +259,10 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
   activeGoal: string | null; setActiveGoal: (id: string | null) => void; onError: (e: unknown) => void
 }) {
   const [list, setList] = useState<Goal[]>([])
+  const [hyps, setHyps] = useState<Hypothesis[]>([])
+  useEffect(() => { api<{ hypotheses: Hypothesis[] }>('goals/hypotheses').then((d) => setHyps(d.hypotheses)).catch(() => {}) }, [])
+  const fromHypothesis = (id: string) => api<Goal>('goals', { method: 'POST', body: { hypothesis: id } })
+    .then((g) => { loadList(); setActiveGoal(g.id) }).catch(onError)
   const [view, setView] = useState<GoalView | null>(null)
   const loadList = useCallback(() => api<{ goals: Goal[] }>('goals').then((d) => setList(d.goals)).catch(onError), [onError])
   const load = useCallback(() => {
@@ -255,6 +300,12 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
           <div className="lab-section">
             <div className="lab-goal-head"><b>{view.goal.title}</b> <span className={'lab-badge st-' + view.goal.status}>{STATUS_LABEL[view.goal.status] ?? view.goal.status}</span></div>
             {view.goal.question && <p className="lab-note">{view.goal.question}</p>}
+            {view.goal.hypothesis && hyps.find((h) => h.id === view.goal.hypothesis) && (
+              <details className="lab-fold">
+                <summary>仮説 {view.goal.hypothesis} の中身（反証・置いたもの）</summary>
+                <HypothesisBody h={hyps.find((h) => h.id === view.goal.hypothesis)!} />
+              </details>
+            )}
             <Budget goal={view.goal} />
             {view.over_budget && <div className="lab-error">{view.over_budget}</div>}
             <div className="lab-row">
@@ -299,6 +350,7 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
           <MapTree view={view} onAdd={addNode} onStatus={nodeStatus} />
         </>
       )}
+      <Hypotheses list={hyps} open={!activeGoal} onPick={fromHypothesis} />
       <NewGoal whites={whites} models={models} onCreated={(g) => { loadList(); setActiveGoal(g.id) }} onError={onError} />
     </div>
   )

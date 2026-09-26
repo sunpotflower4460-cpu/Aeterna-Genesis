@@ -136,7 +136,15 @@ def goal_sheet(g: dict[str, Any]) -> str:
     crit = "\n".join(f"  - {c['metric']} {c['op']} {c['value']:g} を {c['hold']:g} 時間単位つづけて"
                      + (f"（{c['label']}）" if c.get("label") else "") for c in g["criteria"]) or "  （条件なし）"
     b = g["budget"]
-    return (f"ゴール {g['id']}: {g['title']}\n問い: {g['question'] or '（なし）'}\n条件（1 つの宇宙で全部を同時に）:\n{crit}\n"
+    hyp = ""
+    if g.get("hypothesis"):
+        try:
+            h = goalmod.hypothesis(g["hypothesis"])
+            hyp = (f"仮説 {h['id']}（{h['title']}）: {h['idea']}\n測り方: {h['measure']}\n反証になること: {h['falsify']}\n"
+                   f"置いたもの: {h['put_in']}\n" + (f"まだ足りないもの: {h['needs']}\n" if h.get("needs") else ""))
+        except KeyError:
+            pass
+    return (f"ゴール {g['id']}: {g['title']}\n{hyp}問い: {g['question'] or '（なし）'}\n条件（1 つの宇宙で全部を同時に）:\n{crit}\n"
             f"予算（研究員全員で共有）: 宇宙 {b['max_universes']:g} 個、計算 {b['max_steps']:g} step、"
             f"${b['max_usd']:g}、{b['max_minutes']:g} 分")
 
