@@ -34,6 +34,7 @@ DEFAULTS: dict[str, Any] = {
     "bias": 0.0,           # t = 0 mean offset from the hilltop (0 = exactly symmetric; put in)
     "absorb": 0.0,         # γ in the absorbing border (0 = closed universe)
     "absorb_width": 8,
+    "bath_T": 0.0,         # temperature of the border (0 = it only absorbs; > 0 it also kicks back; put in)
 }
 
 
@@ -81,14 +82,23 @@ def make_initial(shape: tuple[int, ...], rng: np.random.Generator, p: dict[str, 
     return phi, np.zeros(shape)
 
 
-def step(phi: np.ndarray, pi: np.ndarray, p: dict[str, Any], mask: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
-    """One velocity-Verlet step. With absorb > 0, the border's momentum is damped by exp(−γ dt) (split step)."""
+def step(phi: np.ndarray, pi: np.ndarray, p: dict[str, Any], mask: np.ndarray | None = None,
+         rng: np.random.Generator | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """One velocity-Verlet step. With absorb > 0, the border's momentum is damped by exp(−γ dt) (split step).
+
+    With bath_T > 0 as well (and an `rng`), the border is a heat bath: an exact Ornstein–Uhlenbeck update
+    π ← f·π + sqrt(T (1 − f²))·ξ, f = exp(−γ dt mask). Dissipation (f) and fluctuation (the kicks) are tied by
+    the same temperature T (fluctuation–dissipation), so the border both takes energy in and gives it back.
+    bath_T = 0 is exactly the plain absorbing border (bit for bit)."""
     dt = p["dt"]
     pi = pi + 0.5 * dt * (laplacian(phi) - dV(phi, p))
     phi = phi + dt * pi
     pi = pi + 0.5 * dt * (laplacian(phi) - dV(phi, p))
     if p.get("absorb", 0.0) > 0.0 and mask is not None:
-        pi = pi * np.exp(-p["absorb"] * dt * mask)
+        f = np.exp(-p["absorb"] * dt * mask)
+        pi = pi * f
+        if p.get("bath_T", 0.0) > 0.0 and rng is not None:
+            pi = pi + np.sqrt(p["bath_T"] * (1.0 - f * f)) * rng.standard_normal(pi.shape)
     return phi, pi
 
 
