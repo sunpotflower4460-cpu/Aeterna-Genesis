@@ -43,7 +43,7 @@ export default function ObservePanel({ ids, onError, onPacket }: {
       <div className="lab-row">
         <button className="tbtn pri" disabled={busy || !ids.length} onClick={run}>{busy ? 'まとめています…' : 'いまの様子をまとめる'}</button>
       </div>
-      <p className="muted lab-note">どの AI にも、ここに出るものと同じものを渡します（測定から機械的に作った事件簿・説明つきの画像・動き）。解釈は入っていません。</p>
+      <p className="muted lab-note">どの AI にも、これと同じものを渡します（解釈は入っていません）。</p>
       {packet && (
         <>
           {packet.saved && <div className="mono muted lab-note">保存: {packet.saved}</div>}

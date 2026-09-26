@@ -100,6 +100,10 @@ class Stopped(Exception):
     pass
 
 
+def _kv(d: dict[str, Any]) -> str:
+    return ", ".join(f"{k}={v:g}" if isinstance(v, (int, float)) else f"{k}={v}" for k, v in (d or {}).items())
+
+
 def _push_user(history: list[dict[str, Any]], text: str) -> None:
     """Add a user turn. If the tool loop ran out of rounds, the last turn is already the user's tool results
     (Anthropic format): the text joins that turn instead of making two user turns in a row."""
@@ -289,7 +293,7 @@ class Researcher:
 
     def _attempt(self, uid: str, what: str, under: str) -> str:
         info = self.runner.hub.info(uid)
-        node = self.runner.book.add_node(self.gid, "attempt", f"宇宙 {info['label']}（{info['white']}）: {what}", self.name,
+        node = self.runner.book.add_node(self.gid, "attempt", f"宇宙 {info['label']}: {what}", self.name,
                                          parent=under or None, universe=uid, status="doing")
         self.runner.book.log(self.gid, self.name, f"宇宙 {info['label']} を作った（{what[:80]}）", uid)
         self.runner.book.spend(self.gid, universes=1)
@@ -304,7 +308,7 @@ class Researcher:
             with self.runner.create_lock:
                 uid = hub.create(a["white"], int(a.get("seed", 0)), knobs)
             self.owned.append(uid)
-            nid = self._attempt(uid, (a.get("why") or "新しい宇宙") + (f" / つまみ {knobs}" if knobs else ""), a.get("under", ""))
+            nid = self._attempt(uid, (a.get("why") or "新しい宇宙") + (f"（{_kv(knobs)}）" if knobs else ""), a.get("under", ""))
             return f"宇宙 {hub.info(uid)['label']} を作りました（t=0、一時停止）。マップ {nid}。次は run で進めてください。"
         if name == "branch":
             parent = uid_of(hub, a["parent"])
@@ -318,7 +322,8 @@ class Researcher:
             with self.runner.create_lock:
                 uid = hub.branch(puid, body["set"] or None, body["perturb"])
             self.owned.append(uid)
-            what = f"{hub.info(puid)['label']} から分岐（{body['set'] or ''}{' 摂動 ' + body['perturb']['name'] if body['perturb'] else ''}）: {a.get('why', '')}"
+            change = ", ".join(x for x in (_kv(body["set"]), body["perturb"] and "摂動 " + body["perturb"]["name"]) if x)
+            what = f"{hub.info(puid)['label']} から分岐（{change}）: {a.get('why', '')}"
             nid = self._attempt(uid, what, a.get("under", ""))
             return f"宇宙 {hub.info(uid)['label']} を作りました（{hub.info(puid)['label']} の t={hub.info(uid)['t']:.4g} から、一時停止）。マップ {nid}。"
         if name == "run":

@@ -160,7 +160,7 @@ button{font-family:inherit; cursor:pointer; color:inherit}
 .lab-diverged{margin-top:4px; color:var(--fail); font-size:11.5px}
 .lab-panel{margin:8px 8px 8px 0; padding:10px 12px; overflow-y:auto; font-size:13px; line-height:1.5}
 .lab-tabs{display:flex; gap:4px; margin-bottom:8px}
-.lab-tabs button{flex:1; font-size:12px; background:transparent; border:1px solid var(--line-2); color:var(--muted); border-radius:8px; padding:6px}
+.lab-tabs button{flex:1; font-size:12.5px; white-space:nowrap; background:transparent; border:1px solid var(--line-2); color:var(--muted); border-radius:8px; padding:6px}
 .lab-tabs button.on{color:var(--ink); border-color:var(--accent); background:var(--accent-dim)}
 .lab-section{border-top:1px solid var(--line); padding:8px 0}
 .lab-section summary{cursor:pointer; color:var(--accent)}
@@ -219,6 +219,9 @@ button{font-family:inherit; cursor:pointer; color:inherit}
 .lab-crit-row.ok{color:var(--official)}
 .lab-now{font-size:12.5px; margin:3px 0}
 .lab-mapnode{font-size:12.5px; margin:3px 0; padding:2px 6px; border-left:2px solid var(--line-2)}
+.lab-mapnode{cursor:pointer}
+.lab-by{font-size:11px}
+.lab-node-edit{display:inline-flex; gap:4px; margin-left:6px}
 .lab-mapnode.root{border-color:var(--accent)}
 .lab-mapnode.st-met{border-color:var(--official)}
 .lab-mapnode.st-doing{border-color:var(--accent)}
@@ -233,6 +236,20 @@ button{font-family:inherit; cursor:pointer; color:inherit}
 .lab-tr.tr-tool{color:var(--accent)}
 .lab-tr.tr-result{color:var(--muted)}
 .lab-tr.tr-system{color:var(--warn)}
+/* folded details: small, quiet, open on demand */
+.lab-fold > summary{cursor:pointer; color:var(--muted); font-size:12px; list-style:none; margin:2px 0}
+.lab-fold > summary::-webkit-details-marker{display:none}
+.lab-fold > summary::before{content:'▸ '; color:var(--muted)}
+.lab-fold[open] > summary::before{content:'▾ '}
+.lab-section.lab-fold > summary{color:var(--accent); font-size:13px}
+.lab-off{font-size:10.5px; color:var(--warn); margin-left:4px}
+.lab-model{font-size:10.5px}
+.lab-verdict{font-size:13.5px; margin:4px 0}
+.lab-verdict.ok{color:var(--official)}
+.lab-budget > summary{display:flex; align-items:center; gap:8px}
+.lab-bar{flex:0 0 120px; height:6px; border-radius:3px; background:var(--line-2); overflow:hidden; display:inline-block}
+.lab-bar i{display:block; height:100%; background:var(--accent)}
+.lab-bar i.hi{background:var(--warn)}
 .lab-group{border-top:1px solid var(--line); padding-top:6px; margin-top:6px}
 .lab-spark-head{display:flex; justify-content:space-between; font-size:11.5px}
 .lab-spark-tip{display:flex; flex-wrap:wrap; gap:10px; font-size:11px}

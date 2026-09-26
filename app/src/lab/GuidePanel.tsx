@@ -75,27 +75,33 @@ export default function GuidePanel({ ids, models, onError, onBranched }: {
                 <option key={m.key} value={m.key}>{m.label}{m.available ? '' : '（未設定）'}</option>
               ))}
             </select>
-            {!r.available && r.reason && <span className="mono muted"> {r.reason}</span>}
+            {!r.available && <span className="lab-off">未設定</span>}
           </label>
         ))}
-        {state && <span className="mono muted lab-cost">今日 ${state.spent_today.toFixed(3)} / 上限 ${state.limit_usd.toFixed(2)}</span>}
       </div>
+      <details className="lab-fold">
+        <summary>くわしく（設定・費用・使い方）</summary>
+        {state?.roles.filter((r) => !r.available && r.reason).map((r) => (
+          <div key={r.role} className="mono muted lab-note">{r.label}: {r.reason}</div>
+        ))}
+        {state && <div className="mono muted lab-note">今日の費用 ${state.spent_today.toFixed(3)} / 上限 ${state.limit_usd.toFixed(2)}</div>}
+        <p className="muted lab-note">「見てもらう」と、いま並んでいる宇宙の観測パケット（下の「AI に渡すもの」と同じ）を AI たちに渡します。
+          見る係は画像と動き、別の視点は事件簿、中心はその全部を読んで、あなたと話します。提案カードは、押すまで何も起きません。</p>
+      </details>
       {state?.bridge && (
-        <p className="lab-note lab-bridge">中心の AI（API キー）が未設定なので、「見てもらう」は Claude Code に渡します。
-          このリポジトリで Claude Code を開き <code>/guide</code> と打つと、同じパケットを読んで助言し、提案カードをここに出します。</p>
+        <p className="lab-note lab-bridge" title="このリポジトリで Claude Code を開き /guide と打つと、同じパケットを読んで助言し、提案カードをここに出します">
+          API キーが無いので、Claude Code に渡します（<code>/guide</code>）。</p>
       )}
 
       <div className="lab-chat">
-        {msgs.length === 0 && <p className="muted lab-note">「見てもらう」と、いま並んでいる宇宙の観測パケット（「AI に渡すもの」と同じ）を AI たちに渡します。
-          見る係は画像と動き、別の視点は事件簿、中心はその全部を読んで、あなたと話します。</p>}
         {msgs.map((m) => (
           <div key={m.id} className={'lab-msg who-' + m.who}>
             <div className="lab-msg-head">
               <b style={{ color: WHO_COLOR[m.who] ?? 'var(--ink)' }}>{m.label}</b>
-              {m.model && <span className="mono muted"> {m.model}</span>}
+              {m.model && <span className="mono muted lab-model"> {m.model}</span>}
               {m.who === 'vision' && <span className="lab-unmeasured">見た目（未測定）</span>}
               <span className="mono muted"> {m.at}{m.done ? '' : ' …'}</span>
-              {m.usage && <span className="mono muted"> · {m.usage.input_tokens}+{m.usage.output_tokens} tok{m.usd ? ` · $${m.usd.toFixed(4)}` : ''}</span>}
+              {m.usage && <span className="mono muted" title={`${m.usage.input_tokens}+${m.usage.output_tokens} tok`}>{m.usd ? ` · $${m.usd.toFixed(3)}` : ''}</span>}
             </div>
             <div className="lab-msg-text">{m.text}</div>
           </div>
@@ -105,17 +111,22 @@ export default function GuidePanel({ ids, models, onError, onBranched }: {
 
       {state && state.proposals.length > 0 && (
         <div className="lab-section">
-          <div className="eyebrow">提案カード（押すまで何も起きない）</div>
+          <div className="eyebrow" title="押すまで何も起きない">提案カード</div>
           {state.proposals.map((p) => (
             <div key={p.id} className={'lab-card st-' + p.status}>
-              <div><b>#{p.id}</b> <span className="mono">{p.parent_label} から分岐</span> <span className="muted">（{p.source === 'core' ? '中心' : p.source}）</span></div>
+              <div><b>#{p.id}</b> <span className="mono">{p.parent_label} から分岐</span> <span className="muted">（{p.source === 'core' ? '中心' : p.source === 'claude-code' ? 'Claude Code' : p.source}）</span></div>
               <div className="mono lab-card-change">
                 {Object.entries(p.set).map(([k, v]) => `${k}=${v}`).join(', ')}
                 {p.perturb && ` 摂動 ${p.perturb.name} ${Object.entries(p.perturb.args).map(([k, v]) => `${k}=${v}`).join(' ')}`}
               </div>
-              {p.put_in && <div><span className="aq-put">置くもの:</span> {p.put_in}</div>}
-              {p.why && <div>なぜ: {p.why}</div>}
-              {p.predict && <div>予想（測定）: {p.predict}</div>}
+              {p.why && <div>{p.why}</div>}
+              {(p.put_in || p.predict) && (
+                <details className="lab-fold">
+                  <summary>置くもの・予想</summary>
+                  {p.put_in && <div><span className="aq-put">置くもの:</span> {p.put_in}</div>}
+                  {p.predict && <div>予想（測定）: {p.predict}</div>}
+                </details>
+              )}
               {p.status === 'open' ? (
                 <div className="lab-row">
                   <button className="tbtn pri" onClick={() => tryIt(p)}>分岐して試す</button>
@@ -129,9 +140,9 @@ export default function GuidePanel({ ids, models, onError, onBranched }: {
 
       <div className="lab-compose">
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
-          placeholder="あなたの考えや質問（例：F を少し上げたら分裂は速くなる？）" />
+          placeholder="考えや質問（例：F を少し上げたら分裂は速くなる？）" />
         <div className="lab-row">
-          <button className="tbtn pri" disabled={active || !ids.length} onClick={look}>見てもらう（いまの宇宙 {ids.length} 個）</button>
+          <button className="tbtn pri" disabled={active || !ids.length} onClick={look}>見てもらう</button>
           <button className="tbtn" disabled={active || !text.trim() || !msgs.length} onClick={chat}>話す</button>
         </div>
       </div>

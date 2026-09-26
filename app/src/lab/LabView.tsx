@@ -107,6 +107,13 @@ function currentKnobs(u: UniverseInfo): Record<string, number> {
   return k
 }
 
+/** Short name of a white for headers: the part in the last （…） of its title, if any. */
+export function shortTitle(w: WhiteSpec | undefined, fallback = ''): string {
+  if (!w) return fallback
+  const m = w.title.match(/（([^（）]+)）\s*$/)
+  return m ? m[1] : w.title
+}
+
 function describeEvent(ev: LabEvent, w: WhiteSpec | undefined): string {
   const t = (ev.step * (w?.dt ?? 1)).toFixed(1)
   if (ev.kind === 'set') {
@@ -119,8 +126,8 @@ function describeEvent(ev: LabEvent, w: WhiteSpec | undefined): string {
 
 function Slider({ k, value, onChange, changed }: { k: KnobSpec; value: number; onChange: (v: number) => void; changed?: boolean }) {
   return (
-    <label className={'lab-knob' + (changed ? ' changed' : '')}>
-      <span>{k.label}<span className="mono muted"> {k.name}</span></span>
+    <label className={'lab-knob' + (changed ? ' changed' : '')} title={`${k.name}（${k.lo}〜${k.hi}）`}>
+      <span>{k.label}</span>
       <input type="range" min={k.lo} max={k.hi} step={k.step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
       <span className="mono tnum">{k.integer ? value.toFixed(0) : Number(value.toPrecision(4))}</span>
     </label>
@@ -139,14 +146,17 @@ function NewUniverse({ whites, onCreate, disabled }: { whites: WhiteSpec[]; onCr
     <details className="lab-section" open={disabled ? false : undefined}>
       <summary>＋ 新しい宇宙（t=0 から）</summary>
       <select className="aq-select" value={wid} onChange={(e) => setWid(e.target.value)}>
-        {whites.map((x) => <option key={x.id} value={x.id}>{x.dimension}D · {x.title}</option>)}
+        {whites.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
       </select>
-      <div className="muted lab-note">置くもの: {w.put_in.join(' / ')}</div>
-      <label className="lab-knob"><span>seed</span>
-        <input type="number" min={0} max={9999} value={seed} onChange={(e) => setSeed(Number(e.target.value) || 0)} /></label>
-      {w.knobs.map((k) => <Slider key={k.name} k={k} value={val(k)} changed={knobs[k.name] !== undefined && knobs[k.name] !== k.default}
-        onChange={(v) => setKnobs((o) => ({ ...o, [k.name]: v }))} />)}
-      <button className="tbtn pri" disabled={disabled} onClick={() => onCreate(wid, seed, knobs)}>この条件で始める</button>
+      <div className="muted lab-note">t=0 に置くもの: {w.put_in.join(' / ')}</div>
+      <button className="tbtn pri" disabled={disabled} onClick={() => onCreate(wid, seed, knobs)}>始める</button>
+      <details className="lab-fold">
+        <summary>つまみと seed を変える</summary>
+        <label className="lab-knob"><span>seed</span>
+          <input type="number" min={0} max={9999} value={seed} onChange={(e) => setSeed(Number(e.target.value) || 0)} /></label>
+        {w.knobs.map((k) => <Slider key={k.name} k={k} value={val(k)} changed={knobs[k.name] !== undefined && knobs[k.name] !== k.default}
+          onChange={(v) => setKnobs((o) => ({ ...o, [k.name]: v }))} />)}
+      </details>
       {disabled && <div className="muted lab-note">同時に動かせる数の上限です。どれかを閉じてください。</div>}
     </details>
   )
@@ -180,7 +190,7 @@ function Controls({ u, w, lens, setLens, onError, refresh }: {
       </div>
 
       <div className="lab-section">
-        <div className="eyebrow">場の法則（途中で変えられる・置いたものとして記録）</div>
+        <div className="eyebrow" title="途中で変えられる。変えたことは「置いたもの」として記録される">つまみ（場の法則）</div>
         {law.map((k) => <Slider key={k.name} k={k} value={draft[k.name] ?? now[k.name] ?? k.default}
           changed={changes[k.name] !== undefined} onChange={(v) => setDraft((o) => ({ ...o, [k.name]: v }))} />)}
         <div className="lab-row">
@@ -191,8 +201,8 @@ function Controls({ u, w, lens, setLens, onError, refresh }: {
         </div>
       </div>
 
-      <div className="lab-section">
-        <div className="eyebrow">摂動（手で加える・置いたもの）</div>
+      <details className="lab-section lab-fold">
+        <summary>手で加える（摂動）</summary>
         {w.perturbs.map((p) => {
           const a = { ...Object.fromEntries(p.args.map((x) => [x.name, x.default])), ...(pargs[p.name] ?? {}) }
           return (
@@ -207,16 +217,18 @@ function Controls({ u, w, lens, setLens, onError, refresh }: {
             </div>
           )
         })}
-      </div>
+      </details>
 
-      <div className="lab-section">
-        <div className="eyebrow aq-put">置いたもの</div>
+      <details className="lab-section lab-fold">
+        <summary><span className="aq-put">置いたもの</span>（{1 + u.recipe.events.length} 件）</summary>
         <ul className="lab-events">
           <li>t=0  {u.put_in.join(' / ')}（seed {u.recipe.seed}）</li>
           {Object.entries(u.recipe.knobs).filter(([k, v]) => w.knobs.find((x) => x.name === k)?.default !== v)
             .map(([k, v]) => <li key={k}>t=0  {w.knobs.find((x) => x.name === k)?.label ?? k}={v}</li>)}
           {u.recipe.events.map((ev, i) => <li key={i} className={u.fork_index !== null && i >= u.fork_index ? 'fork' : ''}>{describeEvent(ev, w)}</li>)}
         </ul>
+      </details>
+      <div className="lab-row">
         <button className="tbtn" onClick={() => lab.remove(u.id).then(refresh).catch(onError)}>この宇宙を閉じる</button>
       </div>
     </>
@@ -237,7 +249,7 @@ function Lineage({ universes, whites, selected, onSelect }: {
     return (
       <div key={u.id}>
         <button className={'lab-node' + (u.id === selected ? ' on' : '')} style={{ marginLeft: depth * 16 }} onClick={() => onSelect(u.id)}>
-          <i style={{ background: seriesColor(u.label) }} /><b>{u.label}</b> {w?.title ?? u.white}
+          <i style={{ background: seriesColor(u.label) }} /><b>{u.label}</b> {shortTitle(w, u.white)}
           {fork.length > 0 && <span className="mono muted"> ← {fork.map((e) => describeEvent(e, w)).join('; ')}</span>}
         </button>
         {(byParent.get(u.id) ?? []).map((c) => node(c, depth + 1))}
@@ -254,19 +266,21 @@ function ExportBox({ ids, onError }: { ids: string[]; onError: (e: unknown) => v
   return (
     <div className="lab-section">
       <div className="eyebrow">研究記録にする</div>
-      <textarea className="lab-note-input" rows={3} value={note} onChange={(e) => setNote(e.target.value)}
+      <textarea className="lab-note-input" rows={2} value={note} onChange={(e) => setNote(e.target.value)}
         placeholder="メモ（何を確かめたかったか、気づいたこと）" />
       <div className="lab-row">
         <button className="tbtn pri" disabled={!ids.length}
           onClick={() => api<{ dir: string; name: string; bytes: number; universes: string[] }>('journal/export', { method: 'POST', body: { ids, note } })
             .then((r) => { setDone(r); setNote('') }).catch(onError)}>いまの宇宙 {ids.length} 個を書き出す</button>
       </div>
-      {done && (
-        <p className="lab-note">書き出しました：<code>research/sessions/{done.name}</code>（{(done.bytes / 1024).toFixed(0)} KB・宇宙 {done.universes.join(', ')}）。
-          t=0 から同じになるかは <code>python -m tools.lab.replay research/sessions/{done.name}</code> で確かめられます。
-          commit するかどうかは、うえきさんが決めてください。</p>
-      )}
-      <p className="muted lab-note">要約（summary.md）・レシピ（recipes.json）・最後のキーフレームだけ（1 MB 以下）。見たことの記録で、主張ではありません。</p>
+      {done && <p className="lab-note">書き出しました：<code>research/sessions/{done.name}</code></p>}
+      <details className="lab-fold">
+        <summary>くわしく</summary>
+        <p className="muted lab-note">要約（summary.md）・レシピ（recipes.json）・最後のキーフレームだけ（1 MB 以下）。見たことの記録で、主張ではありません。
+          t=0 から同じになるかは <code>python -m tools.lab.replay research/sessions/&lt;名前&gt;</code> で確かめられます。
+          commit するかどうかは、うえきさんが決めます。</p>
+        {done && <p className="mono muted lab-note">{(done.bytes / 1024).toFixed(0)} KB・宇宙 {done.universes.join(', ')}</p>}
+      </details>
     </div>
   )
 }
@@ -277,7 +291,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [lenses, setLenses] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<'ctl' | 'goal' | 'ai' | 'cmp' | 'tree' | 'obs'>('ctl')
+  const [tab, setTab] = useState<'ctl' | 'goal' | 'ai' | 'cmp' | 'tree'>('ctl')
   const [activeGoal, setActiveGoalState] = useState<string | null>(getActiveGoalId())
   const [models, setModels] = useState<ModelEntry[]>([])
   const setActiveGoal = (id: string | null) => { setActiveGoalId(id); setActiveGoalState(id) }
@@ -330,8 +344,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   return (
     <div className="lab-root" ref={root}>
       <header className="lab-top">
-        <span className="eyebrow">Aeterna · 水槽ラボ（ライブ）</span>
-        <span className="muted mono lab-top-note">物理は genesis/models のまま · 変えたことは全部「置いたもの」として記録</span>
+        <span className="eyebrow" title="物理は genesis/models のまま · 変えたことは全部「置いたもの」として記録">Aeterna · 水槽ラボ</span>
         <span style={{ flex: 1 }} />
         <button className="tbtn" onClick={() => setPanel((p) => !p)}>{panel ? 'パネルを隠す' : 'パネル'}</button>
         <button className="tbtn" onClick={onExit}>◈ 記録の水槽へ</button>
@@ -357,10 +370,11 @@ export default function LabView({ onExit }: { onExit: () => void }) {
                   </View>
                 )}
                 <div className="lab-cell-head">
-                  <b style={{ color: seriesColor(u.label) }}>{u.label}</b> <span>{w?.title ?? u.white}</span>
-                  <span className="mono muted"> t={u.t.toFixed(1)}{u.playing ? '' : ' ❚❚'}</span>
-                  {u.diverged && <div className="lab-diverged">数値が発散したので止めました（物理ではなく計算の限界）。つまみを戻して分岐し直してください。</div>}
-                  {u.parent && <div className="mono muted lab-fork">{universes.find((x) => x.id === u.parent)?.label ?? u.parent} から分岐: {fork.map((e) => describeEvent(e, w)).join('; ')}</div>}
+                  <b style={{ color: seriesColor(u.label) }}>{u.label}</b> <span title={w?.title}>{shortTitle(w, u.white)}</span>
+                  <span className="mono muted"> t={u.t.toFixed(0)}{u.playing ? '' : ' ❚❚'}</span>
+                  {u.parent && <span className="mono muted lab-fork" title={fork.map((e) => describeEvent(e, w)).join('; ')}>
+                    {' '}← {universes.find((x) => x.id === u.parent)?.label ?? u.parent}</span>}
+                  {u.diverged && <div className="lab-diverged" title="物理ではなく計算の限界。つまみを戻して分岐し直してください">数値が発散したので止めました</div>}
                 </div>
               </div>
             )
@@ -372,25 +386,24 @@ export default function LabView({ onExit }: { onExit: () => void }) {
             <nav className="lab-tabs">
               <button className={tab === 'ctl' ? 'on' : ''} onClick={() => setTab('ctl')}>操作</button>
               <button className={tab === 'goal' ? 'on' : ''} onClick={() => setTab('goal')}>ゴール</button>
-              <button className={tab === 'ai' ? 'on' : ''} onClick={() => setTab('ai')}>AI 会議</button>
-              <button className={tab === 'cmp' ? 'on' : ''} onClick={() => setTab('cmp')}>比べる</button>
-              <button className={tab === 'tree' ? 'on' : ''} onClick={() => setTab('tree')}>系譜</button>
-              <button className={tab === 'obs' ? 'on' : ''} onClick={() => setTab('obs')}>AI に渡す</button>
+              <button className={tab === 'ai' ? 'on' : ''} onClick={() => setTab('ai')}>AI</button>
+              <button className={tab === 'cmp' ? 'on' : ''} onClick={() => setTab('cmp')}>グラフ</button>
+              <button className={tab === 'tree' ? 'on' : ''} onClick={() => setTab('tree')}>記録</button>
             </nav>
             {error && <div className="lab-error" onClick={() => setError(null)}>{error}（クリックで閉じる）</div>}
             {tab === 'ctl' && (
               <>
                 {sel && selWhite && (
                   <div className="lab-section">
-                    <div className="lab-sel"><b style={{ color: seriesColor(sel.label) }}>{sel.label}</b> {selWhite.title}
-                      <span className="mono muted"> step {sel.step}</span></div>
+                    <div className="lab-sel" title={selWhite.title}><b style={{ color: seriesColor(sel.label) }}>{sel.label}</b> {shortTitle(selWhite)}
+                      <span className="mono muted"> t={sel.t.toFixed(0)}</span></div>
                     <Controls u={sel} w={selWhite} lens={lensOf(sel)?.name ?? ''} onError={onError} refresh={refresh}
                       setLens={(l) => setLenses((o) => ({ ...o, [sel.id]: l }))} />
                   </div>
                 )}
                 {whites.length > 0 && <NewUniverse whites={whites} onCreate={create} disabled={universes.length >= maxU} />}
-                <div className="lab-section">
-                  <div className="eyebrow">見え方（表示だけ）</div>
+                <details className="lab-section lab-fold">
+                  <summary>見え方（表示だけ）</summary>
                   <div className="lab-row">
                     <label className="aq-knob mono"><input type="radio" checked={range === 'fixed'} onChange={() => setRange('fixed')} />固定の範囲</label>
                     <label className="aq-knob mono"><input type="radio" checked={range === 'frame'} onChange={() => setRange('frame')} />コマごとに伸ばす</label>
@@ -400,13 +413,20 @@ export default function LabView({ onExit }: { onExit: () => void }) {
                     <label className="aq-knob mono">濃さ<input type="range" min={0.1} max={2} step={0.05} value={density} onChange={(e) => setDensity(Number(e.target.value))} /></label>
                     <label className="aq-knob mono">起伏<input type="range" min={0} max={0.8} step={0.01} value={relief} onChange={(e) => setRelief(Number(e.target.value))} /></label>
                   </div>
-                </div>
+                </details>
               </>
             )}
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
             {tab === 'goal' && <GoalPanel whites={whites} models={models} activeGoal={activeGoal} setActiveGoal={setActiveGoal} onError={onError} />}
-            {tab === 'ai' && <GuidePanel ids={universes.map((u) => u.id)} models={models} onError={onError} onBranched={refresh} />}
-            {tab === 'obs' && <ObservePanel ids={universes.map((u) => u.id)} onError={onError} />}
+            {tab === 'ai' && (
+              <>
+                <GuidePanel ids={universes.map((u) => u.id)} models={models} onError={onError} onBranched={refresh} />
+                <details className="lab-section lab-fold">
+                  <summary>AI に渡すもの（中身を見る）</summary>
+                  <ObservePanel ids={universes.map((u) => u.id)} onError={onError} />
+                </details>
+              </>
+            )}
             {tab === 'tree' && (
               <>
                 <Lineage universes={merged} whites={whites} selected={selected} onSelect={setSelected} />
