@@ -219,7 +219,7 @@ class GoalBook:
         return list(self._goals.values())
 
     def add_node(self, gid: str, kind: str, text: str, by: str, parent: str | None = None,
-                 universe: str | None = None, status: str = "info") -> dict[str, Any]:
+                 universe: str | None = None, status: str = "info", plain: str = "") -> dict[str, Any]:
         if kind not in NODE_KINDS:
             raise ValueError(f"kind {kind}")
         if status not in NODE_STATUS:
@@ -229,7 +229,7 @@ class GoalBook:
             if parent and not any(n["id"] == parent for n in g["nodes"]):
                 raise ValueError(f"親 {parent} が見つかりません")
             node = {"id": f"n{len(g['nodes']) + 1}", "parent": parent, "kind": kind, "text": text[:2000], "by": by,
-                    "universe": universe, "status": status, "at": _now()}
+                    "universe": universe, "status": status, "at": _now(), "plain": plain[:600]}
             g["nodes"].append(node)
             self._save(g)
             return node
@@ -248,6 +248,17 @@ class GoalBook:
                 n["text"] = text[:2000]
             self._save(g)
             return n
+
+    def add_sweep(self, gid: str, record: dict[str, Any]) -> dict[str, Any]:
+        """A 「まとめて試す」 run: its variants (recipes + judgement + sha256), kept so a person can put any of
+        them in a tank and replay it."""
+        with self._lock:
+            g = self.get(gid)
+            g.setdefault("sweeps", [])
+            rec = {"id": f"s{len(g['sweeps']) + 1}", "at": _now(), **record}
+            g["sweeps"].append(rec)
+            self._save(g)
+            return rec
 
     def log(self, gid: str, actor: str, what: str, universe: str | None = None) -> dict[str, Any]:
         """'いまやっていること': the newest entry per actor is what that actor is doing now."""

@@ -27,6 +27,7 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from tools.lab import goals as goalmod  # noqa: E402
+from tools.lab import plain  # noqa: E402
 from tools.lab import observe, record, whites  # noqa: E402
 from tools.lab.council import catalog_public  # noqa: E402
 from tools.lab.council import Council  # noqa: E402
@@ -175,8 +176,12 @@ class Handler(BaseHTTPRequestHandler):
                 g = book.get(gid)
                 ev = goalmod.evaluate(g, hub)
                 book.record_eval(gid, ev)
+                rs = runner.status(gid)
                 return self._json({"goal": book.get(gid), "evaluation": ev, "now": book.now_doing(gid),
-                                   "over_budget": book.over_budget(gid), "researchers": runner.status(gid)})
+                                   "over_budget": book.over_budget(gid), "researchers": rs,
+                                   "plain": self._plain(book.get(gid), ev, book.now_doing(gid), rs)})
+            if len(parts) == 3 and parts[2] == "explain" and method == "POST":
+                return self._json(self._explain(gid))
             if len(parts) == 2 and method == "POST":
                 b = self._body()
                 prev = book.get(gid)["status"]
@@ -266,6 +271,41 @@ class Handler(BaseHTTPRequestHandler):
                     self._attach(b.get("goal"), child, f"{hub.info(uid)['label']} から分岐")
                     return self._json(hub.info(child), 201)
         return self._error(404, "unknown endpoint")
+
+    @staticmethod
+    def _plain(g: dict[str, Any], ev: dict[str, Any], now: list, rs: list) -> list[str]:
+        try:
+            h = goalmod.hypothesis(g["hypothesis"]) if g.get("hypothesis") else None
+        except KeyError:
+            h = None
+        return plain.goal_plain(g, ev, now, rs, h)
+
+    def _explain(self, gid: str) -> dict[str, Any]:
+        """「AI にもっとやさしく」: the core model rephrases the mechanical explanation plus the map for a complete
+        beginner. Only the goal's own text and numbers are sent. Without a usable model: say so."""
+        council, book = self.server.council, self.server.goals
+        g = book.get(gid)
+        prov = council.usable("core") if hasattr(council, "usable") else None
+        if prov is None:
+            raise ValueError("説明役の AI が使えません（上の説明は、数字から機械的に作ったもので、いつでも読めます）")
+        if council.spent_today() >= council._limit():
+            raise ValueError("今日の AI の費用が上限に達しました")
+        ev = goalmod.evaluate(g, self.server.hub)
+        facts = "\n".join(self._plain(g, ev, book.now_doing(gid), self.server.runner.status(gid)))
+        nodes = "\n".join(f"- ({n['by']}) {n.get('plain') or n['text']}" for n in g["nodes"][-20:])
+        system = ("あなたは、科学の実験を、はじめての人（中学生くらい）に説明する係です。専門用語を使わず、たとえを 1 つ使い、"
+                  "5 文以内で話してください。書いてある事実だけを使い、数字の目安を満たしたことを「生きている」「脳ができた」などと"
+                  "言いかえないでください。分からないことは「まだ分からない」と言ってください。")
+        parts = [{"type": "text", "text": f"ゴール: {g['title']}\n{facts}\n\nマップ（新しい 20 件）:\n{nodes or '（まだなし）'}"}]
+        out: list[str] = []
+        try:
+            u = prov.ask(system, parts, out.append)
+        except Exception as e:           # a provider failure is reported, not a crash of the lab
+            raise ValueError(f"AI の呼び出しに失敗しました: {type(e).__name__}: {str(e)[:200]}") from None
+        usd = prov.cost(u)
+        council._charge(usd)
+        book.spend(gid, usd=usd)
+        return {"text": "".join(out), "model": prov.model, "usd": usd}
 
     def _attach(self, gid: str | None, uid: str, what: str) -> None:
         """A universe made by a person while a goal is selected becomes an attempt on that goal's map."""

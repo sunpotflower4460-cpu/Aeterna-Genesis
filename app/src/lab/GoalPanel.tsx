@@ -11,12 +11,17 @@ export interface ModelEntry {
 }
 interface Criterion { metric: string; op: string; value: number; hold: number; label?: string }
 interface Researcher { name: string; model: string; focus: string }
-interface MapNode { id: string; parent: string | null; kind: string; text: string; by: string; universe: string | null; status: string; at: string }
+interface MapNode { id: string; parent: string | null; kind: string; text: string; by: string; universe: string | null; status: string; at: string; plain?: string }
 interface Goal {
   id: string; title: string; question: string; whites: string[]; criteria: Criterion[]
   budget: Record<string, number>; researchers: Researcher[]; status: string; nodes: MapNode[]
-  spent: Record<string, number>; hypothesis?: string | null
+  spent: Record<string, number>; hypothesis?: string | null; sweeps?: Sweep[]
 }
+interface Variant {
+  seed: number; knobs: Record<string, number>; met: number; all_met: boolean; diverged: boolean; label: string
+  sha256: string | null; t: number; last: Record<string, number | null>
+}
+interface Sweep { id: string; at: string; by: string; white: string; why: string; plain: string; frames: number; variants: Variant[] }
 interface Hypothesis {
   id: string; title: string; idea: string; question: string; measure: string; falsify: string; put_in: string
   status: 'ready' | 'needs'; needs: string
@@ -29,7 +34,7 @@ interface ResearcherState {
 interface GoalView {
   goal: Goal; evaluation: { met: boolean; universes: { universe: string; label: string; white: string; t: number; criteria: EvalRow[]; all_met: boolean }[] }
   now: { at: string; actor: string; what: string; universe: string | null }[]; over_budget: string | null
-  researchers: ResearcherState[]
+  researchers: ResearcherState[]; plain: string[]
 }
 
 const R_STATE: Record<string, string> = {
@@ -94,6 +99,53 @@ function Budget({ goal }: { goal: Goal }) {
         {parts.map((p) => `${p.label} ${p.label === 'USD' ? p.used.toFixed(3) : p.label === '分' ? p.used.toFixed(1) : Math.round(p.used)}/${p.max}`).join('・')}
         {goal.whites.length ? `　白: ${goal.whites.join(', ')}` : '　白: すべて'}
       </div>
+    </details>
+  )
+}
+
+/** やさしい説明: sentences made from the lab's own numbers (always there), plus an optional AI rephrasing. */
+function PlainCard({ gid, lines, onError }: { gid: string; lines: string[]; onError: (e: unknown) => void }) {
+  const [ai, setAi] = useState<{ text: string; model: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { setAi(null) }, [gid])
+  const ask = () => {
+    setBusy(true)
+    api<{ text: string; model: string }>(`goals/${gid}/explain`, { method: 'POST', body: {} })
+      .then(setAi).catch(onError).finally(() => setBusy(false))
+  }
+  return (
+    <div className="lab-plain">
+      <div className="eyebrow">やさしい説明</div>
+      {lines.map((l, i) => <p key={i}>{l}</p>)}
+      {ai && <div className="lab-plain-ai"><p>{ai.text}</p><div className="mono muted lab-note">AI（{ai.model}）が上の説明を言いかえたもの</div></div>}
+      <button className="lab-mini" disabled={busy} onClick={ask}>{busy ? '考えています…' : 'AI にもっとやさしく説明してもらう'}</button>
+    </div>
+  )
+}
+
+/** 「まとめて試した」: each sweep, best first; any variant can be put in a tank (it runs the same from t=0). */
+function Sweeps({ goal, onTank }: { goal: Goal; onTank: (white: string, v: Variant) => void }) {
+  const list = goal.sweeps ?? []
+  if (!list.length) return null
+  const n = goal.criteria.length
+  return (
+    <details className="lab-section">
+      <summary>まとめて試した結果（{list.reduce((a, s) => a + s.variants.length, 0)} 通り）</summary>
+      {list.slice().reverse().map((s) => (
+        <div key={s.id} className="lab-sweep">
+          <div>{s.plain || s.why || `${s.white} を ${s.variants.length} 通り`} <span className="mono muted">— {s.by}・{s.id}</span></div>
+          <details className="lab-fold">
+            <summary>{n ? `近い順（いちばん近いもの：目安 ${n} つのうち ${s.variants[0]?.met ?? 0} つ）` : '一覧'}</summary>
+            {s.variants.slice(0, 12).map((v, i) => (
+              <div key={i} className={'lab-row lab-variant' + (v.all_met ? ' ok' : '')}>
+                <span className="mono lab-grow">{v.all_met ? '✓ ' : ''}{v.label}{v.diverged ? '（発散）' : ''}</span>
+                {n > 0 && <span className="mono muted">{v.met}/{n}</span>}
+                {!v.diverged && <button className="lab-mini" onClick={() => onTank(s.white, v)}>水槽に出す</button>}
+              </div>
+            ))}
+          </details>
+        </div>
+      ))}
     </details>
   )
 }
@@ -220,8 +272,9 @@ function MapTree({ view, onAdd, onStatus }: {
     <div key={n.id}>
       <div className={'lab-mapnode st-' + n.status} style={{ marginLeft: depth * 14 }}
         title={NODE_LABEL[n.status] || undefined} onClick={() => setEdit(edit === n.id ? null : n.id)}>
-        <span className="mono muted">{KIND_LABEL[n.kind]}</span> {n.text}
+        <span className="mono muted">{KIND_LABEL[n.kind]}</span> {n.plain || n.text}
         <span className="mono muted lab-by"> — {n.by === 'you' ? 'うえきさん' : n.by}</span>
+        {edit === n.id && n.plain && <div className="mono muted lab-note">くわしく：{n.text}</div>}
         {edit === n.id && (
           <span className="lab-node-edit" onClick={(e) => e.stopPropagation()}>
             <select className="lab-mini" value={n.status} onChange={(e) => onStatus(n.id, e.target.value)} aria-label="状態">
@@ -254,9 +307,10 @@ function MapTree({ view, onAdd, onStatus }: {
   )
 }
 
-export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, onError }: {
+export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, onError, onUniverse }: {
   whites: { id: string; title: string }[]; models: ModelEntry[]
   activeGoal: string | null; setActiveGoal: (id: string | null) => void; onError: (e: unknown) => void
+  onUniverse?: () => void
 }) {
   const [list, setList] = useState<Goal[]>([])
   const [hyps, setHyps] = useState<Hypothesis[]>([])
@@ -279,6 +333,9 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
       setStartNote(bad.length ? bad.map((x) => `${x.name}: ${x.reason}`).join(' / ') : null)
       load(); loadList()
     }).catch(onError)
+  const toTank = (white: string, v: Variant) =>
+    api('universes', { method: 'POST', body: { white, seed: v.seed, knobs: v.knobs, goal: activeGoal } })
+      .then(() => { onUniverse?.(); load() }).catch(onError)
   const stopOne = (name: string) => api(`goals/${activeGoal}/researchers/${encodeURIComponent(name)}/stop`, { method: 'POST', body: {} }).then(load).catch(onError)
   const addNode = (kind: string, text: string, parent: string | null) =>
     api(`goals/${activeGoal}/nodes`, { method: 'POST', body: { kind, text, parent } }).then(load).catch(onError)
@@ -297,6 +354,7 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
 
       {view && (
         <>
+          <PlainCard gid={view.goal.id} lines={view.plain ?? []} onError={onError} />
           <div className="lab-section">
             <div className="lab-goal-head"><b>{view.goal.title}</b> <span className={'lab-badge st-' + view.goal.status}>{STATUS_LABEL[view.goal.status] ?? view.goal.status}</span></div>
             {view.goal.question && <p className="lab-note">{view.goal.question}</p>}
@@ -347,6 +405,7 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
             ))}
           </div>
           <Researchers view={view} onStop={stopOne} />
+          <Sweeps goal={view.goal} onTank={toTank} />
           <MapTree view={view} onAdd={addNode} onStatus={nodeStatus} />
         </>
       )}
