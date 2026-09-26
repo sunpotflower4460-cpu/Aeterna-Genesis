@@ -12,12 +12,35 @@
       "status": "ready",
       "needs": "",
       "goal": {
-        "whites": ["three-component"],
-        "criteria": [{"metric": "spots", "op": "==", "value": 1, "hold": 100, "label": "点が 1 つのまま続く（代わりの指標）"}],
-        "budget": {"max_universes": 4, "max_steps": 300000, "max_usd": 1.0, "max_minutes": 20},
+        "whites": [
+          "three-component"
+        ],
+        "criteria": [
+          {
+            "metric": "spots",
+            "op": "==",
+            "value": 1,
+            "hold": 100,
+            "label": "点が 1 つのまま続く（代わりの指標）"
+          }
+        ],
+        "budget": {
+          "max_universes": 4,
+          "max_steps": 300000,
+          "max_usd": 1.0,
+          "max_minutes": 20
+        },
         "researchers": [
-          {"name": "研究員1", "model": "", "focus": "cut_half と kick のあと、同じ個体として戻るかを事件簿の追跡で比べる"},
-          {"name": "研究員2", "model": "", "focus": "θ と Dw を振って、壊しても戻りやすい場所を探す"}
+          {
+            "name": "研究員1",
+            "model": "",
+            "focus": "cut_half と kick のあと、同じ個体として戻るかを事件簿の追跡で比べる"
+          },
+          {
+            "name": "研究員2",
+            "model": "",
+            "focus": "θ と Dw を振って、壊しても戻りやすい場所を探す"
+          }
         ]
       }
     },
@@ -32,11 +55,22 @@
       "status": "ready",
       "needs": "",
       "goal": {
-        "whites": ["gray-scott"],
+        "whites": [
+          "gray-scott"
+        ],
         "criteria": [],
-        "budget": {"max_universes": 4, "max_steps": 2000000, "max_usd": 1.0, "max_minutes": 20},
+        "budget": {
+          "max_universes": 4,
+          "max_steps": 2000000,
+          "max_usd": 1.0,
+          "max_minutes": 20
+        },
         "researchers": [
-          {"name": "研究員1", "model": "", "focus": "F を下げる分岐と戻す分岐を並べ、spots と v_mass の変化を比べる"}
+          {
+            "name": "研究員1",
+            "model": "",
+            "focus": "F を下げる分岐と戻す分岐を並べ、spots と v_mass の変化を比べる"
+          }
         ]
       }
     },
@@ -63,12 +97,27 @@
       "status": "ready",
       "needs": "べき乗の判定には、なだれの大きさ・相関の距離の測定器が別に要る（いまは境目の地図まで）。",
       "goal": {
-        "whites": ["gray-scott"],
+        "whites": [
+          "gray-scott"
+        ],
         "criteria": [],
-        "budget": {"max_universes": 6, "max_steps": 3000000, "max_usd": 1.5, "max_minutes": 30},
+        "budget": {
+          "max_universes": 6,
+          "max_steps": 3000000,
+          "max_usd": 1.5,
+          "max_minutes": 30
+        },
         "researchers": [
-          {"name": "研究員1", "model": "", "focus": "F を振る（k は固定）"},
-          {"name": "研究員2", "model": "", "focus": "k を振る（F は固定）"}
+          {
+            "name": "研究員1",
+            "model": "",
+            "focus": "F を振る（k は固定）"
+          },
+          {
+            "name": "研究員2",
+            "model": "",
+            "focus": "k を振る（F は固定）"
+          }
         ]
       }
     },
@@ -76,13 +125,38 @@
       "id": "H5",
       "title": "光円錐：「内と外」には有限の速さが要るか",
       "idea": "拡散では影響が一瞬で（弱く）全体に届く。有限の速さ（光）があると「まだ届いていない外」ができ、そこで初めて個が独立していられる。",
-      "question": "波の白の塊（オシロン）と、拡散の白の点で、離れた 2 か所の相関が距離とともにどう消えるかを比べる。",
-      "measure": "2 点の相関の、距離と時間への依存。光円錐の外で相関が 0 のままか。",
+      "question": "波の白（光円錐がある）と拡散の白・全体を一度に計算する白で、ごく小さな一突きの影響がどう広がるかを比べる。「まだ届いていない外」がある白でだけ、塊が独立していられるか。",
+      "measure": "研究員の道具 influence（genesis/diagnostics/influence.py）：宇宙を 2 つに複製し、片方の中央をごく小さくつついて、違いの前線がどう広がるかを測る。一定の速さ（光）・だんだん遅く（拡散）・最初から遠く（FFT などの近道）に分ける。塊どうしの独立は、各白の塊（lumps／spots）の距離と、影響が届くまでの時間で比べる。",
       "falsify": "光円錐があっても、個の分かれ方が拡散と変わらないなら、有限の速さは個の条件ではない。",
       "put_in": "t=0 の小さなノイズ。吸収層を使うならそれも置いたもの。",
-      "status": "needs",
-      "needs": "波の白はできた（wave-phi4／wave-sine-gordon／wave-phi4-3d）。あとは 2 点相関（距離と時間）の測定器が要る。",
-      "goal": null
+      "status": "ready",
+      "needs": "",
+      "goal": {
+        "whites": [
+          "wave-phi4",
+          "gray-scott",
+          "three-component"
+        ],
+        "criteria": [],
+        "budget": {
+          "max_universes": 6,
+          "max_steps": 1500000,
+          "max_usd": 1.0,
+          "max_minutes": 20
+        },
+        "researchers": [
+          {
+            "name": "研究員1",
+            "model": "",
+            "focus": "3 つの白で influence を測って比べる"
+          },
+          {
+            "name": "研究員2",
+            "model": "",
+            "focus": "波の白で、局在塊どうしが影響の届かない距離にあるかを見る（端で吸い込む宇宙も）"
+          }
+        ]
+      }
     },
     {
       "id": "H6",

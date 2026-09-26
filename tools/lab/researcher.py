@@ -76,6 +76,9 @@ RESEARCHER_TOOLS = [
            "plain": {"type": "string", "description": "超初心者向けに、何を試すのかを 1 文で"}}),
     _tool("run", f"自分が作った宇宙を frames コマ進める（1〜{MAX_FRAMES}）。コマごとに測定される。",
           {"universe": {"type": "string"}, "frames": {"type": "integer"}}),
+    _tool("influence", "影響の広がりを測る：宇宙を 2 つに複製し、片方の真ん中をごく小さくつついて、違いがどこまで・どんな速さで"
+          "広がるかを比べる（元の宇宙は変えない）。一定の速さ（光のよう）／だんだん遅く（拡散）／1 ステップで隣より遠く（全体を一度に計算する近道）を返す。",
+          {"universe": {"type": "string"}, "frames": {"type": "integer", "description": "何コマ分追うか（4〜60）"}}),
     _tool("observe", "宇宙の事件簿（測定の時系列と、規則で検出した出来事）を文章で読む。",
           {"universe": {"type": "string"}}),
     _tool("evaluate_goal", "ゴールの条件を、測定だけで判定する（宇宙ごとに、どの条件を満たしたか）。", {}),
@@ -324,6 +327,41 @@ class Researcher:
         self.runner.book.spend(self.gid, universes=1)
         return node["id"]
 
+    def _influence(self, a: dict[str, Any]) -> str:
+        import numpy as np
+        from genesis.diagnostics import influence as inf
+        hub, book = self.runner.hub, self.runner.book
+        uid = uid_of(hub, a["universe"])
+        if not uid:
+            raise ValueError(f"宇宙 {a['universe']} はいません")
+        frames = int(a["frames"])
+        if not 4 <= frames <= 60:
+            raise ValueError("frames は 4〜60 です")
+        u = hub.snapshot(uid)
+        spf = max(2, u.white.steps_per_frame // 4)       # about 4 samples per frame: early spreading is visible
+        cost = 2 * frames * 4 * spf
+        g = book.get(self.gid)
+        if cost > g["budget"]["max_steps"] - g["spent"]["steps"]:
+            raise ValueError(f"計算の予算が足りません（{cost:g} step 必要）")
+        key = next(iter(u.state))
+
+        def adv(state, n):
+            v = u.clone()
+            v.state = {k: np.array(x, copy=True) for k, x in state.items()}
+            v.advance(n)
+            return v.state
+
+        point = tuple(s // 2 for s in u.state[key].shape)
+        res = inf.twin_influence(u.state, adv, key, point, 1e-6, frames * 4, spf, u.dt)
+        book.spend(self.gid, steps=cost)
+        k = inf.kind(res, spf)
+        label = hub.info(uid)["label"]
+        book.log(self.gid, self.name, f"宇宙 {label} で影響の広がりを測った：{inf.KIND_WORDS[k]}", uid)
+        rows = ", ".join(f"t={r['t']:g}:{r['front']:g}" for r in res["rows"][:: max(1, len(res["rows"]) // 8)])
+        return (f"宇宙 {label}（{u.white.id}）の影響の広がり：{inf.KIND_WORDS[k]}。前線の速さ {res['front_speed']}、"
+                f"直線/√t の当てはまりの比 {res['lin_over_sqrt']}（1.5 未満＝一定の速さ、2 超＝だんだん遅く）、t^α の α={res['alpha']}。前線（最大の 0.1% 以上）の半径: {rows}。"
+                f"最初の時刻で何かが変わった割合 {res['rows'][0]['touched']}。つついた量 1e-6・場所は中央（置いたもの）。")
+
     def _sweep(self, a: dict[str, Any]) -> str:
         book = self.runner.book
         self._allowed(a["white"])
@@ -425,6 +463,8 @@ class Researcher:
             info = hub.info(uid)
             tail = "（数値が発散しました。計算の限界で、物理ではありません）" if out.get("diverged") else ""
             return f"宇宙 {label} を {done} コマ進めました（t={info['t']:.4g}、step {info['step']}）{tail}。測定: {info['metrics']}"
+        if name == "influence":
+            return self._influence(a)
         if name == "observe":
             uid = uid_of(hub, a["universe"])
             if not uid:
