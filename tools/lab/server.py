@@ -166,6 +166,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"metrics": {w: goalmod.metrics_of(w) for w in ws}, "ops": list(goalmod.OPS)})
         if parts == ["goals", "hypotheses"]:
             return self._json({"hypotheses": goalmod.load_hypotheses()})
+        if parts == ["ladder"]:
+            from tools import ladder
+            d = ladder.load()
+            return self._json({"north_star": d.get("north_star", ""), "integrated": bool(d.get("integrated")),
+                               "rungs": d["rungs"], "summary": ladder.summary(d)[1]})
         if parts == ["goals"] and method == "GET":
             return self._json({"goals": book.all()})
         if parts == ["goals"] and method == "POST":
