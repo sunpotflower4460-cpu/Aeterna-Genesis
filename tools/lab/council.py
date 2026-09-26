@@ -357,6 +357,48 @@ def make_providers(cfg: dict[str, Any]) -> dict[str, Provider]:
     return out
 
 
+# ---------------------------------------------------------------------------- model catalog / selection
+TOOL_CAPABLE = {"anthropic", "deepseek", "openai_compat"}     # can act as a researcher (function calling)
+
+
+def _entry_key(c: dict[str, Any]) -> str:
+    return c.get("key") or f"{c.get('provider')}/{c.get('model') or '（model 未設定）'}"
+
+
+def model_catalog(cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    """Models a person can pick in the app: the [[models]] list of lab/config.toml plus whatever the three
+    role sections name (so the list is never empty). Keys only name environment variables, never secrets."""
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    entries = list(cfg.get("models") or []) + [dict(cfg.get(r) or {}) for r in ROLES]
+    for c in entries:
+        if c.get("provider") not in PROVIDERS:
+            continue
+        key = _entry_key(c)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({**c, "key": key, "label": c.get("label") or key,
+                    "tools": c.get("provider") in TOOL_CAPABLE})
+    return out
+
+
+def provider_for(role: str, entry: dict[str, Any]) -> Provider:
+    return PROVIDERS[entry["provider"]](role, {k: v for k, v in entry.items() if k not in ("key", "label")})
+
+
+def catalog_public(cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for e in model_catalog(cfg):
+        ok, why = provider_for("core", e).available()
+        out.append({"key": e["key"], "label": e["label"], "provider": e["provider"], "model": e.get("model", ""),
+                    "available": ok, "reason": why, "tools": e["tools"],
+                    "images": bool(e.get("images", e["provider"] in ("anthropic", "gemini"))),
+                    "video": bool(e.get("video", False)) and e["provider"] == "gemini",
+                    "price_in": e.get("price_in", 0), "price_out": e.get("price_out", 0)})
+    return out
+
+
 # ============================================================================ council
 def packet_parts(packet: dict[str, Any], motion: bool = False, video: bool = False) -> list[Part]:
     """Text first (the 事件簿), then each image preceded by its caption, then (optionally) the motion."""
@@ -386,6 +428,7 @@ class Council:
     def __post_init__(self):
         if self.providers is None:
             self.providers = make_providers(self.config)
+            self._apply_selection()
         self.messages: list[dict[str, Any]] = []
         self.proposals: list[dict[str, Any]] = []
         self.history: list[dict[str, Any]] = []     # the core's conversation (append-only)
@@ -436,6 +479,41 @@ class Council:
         self._charge(usd)
         if self.journal:
             self.journal.log("council", who=m["who"], model=m["model"], text=m["text"], usage=m["usage"], usd=usd)
+
+    # ------------------------------------------------------------------ choosing models in the app
+    def _selection_file(self) -> Path:
+        return self.state_dir / "selection.json"
+
+    def _apply_selection(self) -> None:
+        try:
+            sel = json.loads(self._selection_file().read_text(encoding="utf-8")).get("roles", {})
+        except (OSError, ValueError):
+            return
+        cat = {e["key"]: e for e in model_catalog(self.config)}
+        for role, key in sel.items():
+            if role in ROLES and key in cat:
+                self.providers[role] = provider_for(role, cat[key])
+
+    def select(self, role: str, key: str | None) -> dict[str, Any]:
+        """Pick which model plays a role (None / "" = nobody). Stored in lab/state/selection.json."""
+        if role not in ROLES:
+            raise ValueError(f"役 {role} はありません")
+        if key:
+            cat = {e["key"]: e for e in model_catalog(self.config)}
+            if key not in cat:
+                raise ValueError(f"model {key} は一覧にありません（lab/config.toml の [[models]]）")
+            self.providers[role] = provider_for(role, cat[key])
+        else:
+            self.providers.pop(role, None)
+        f = self._selection_file()
+        f.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            sel = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            sel = {}
+        sel.setdefault("roles", {})[role] = key or ""
+        f.write_text(json.dumps(sel, ensure_ascii=False), encoding="utf-8")
+        return self.status()
 
     def usable(self, role: str) -> Provider | None:
         p = (self.providers or {}).get(role)

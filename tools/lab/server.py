@@ -26,7 +26,9 @@ _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+from tools.lab import goals as goalmod  # noqa: E402
 from tools.lab import observe, record, whites  # noqa: E402
+from tools.lab.council import catalog_public  # noqa: E402
 from tools.lab.council import Council  # noqa: E402
 from tools.lab.hub import Hub  # noqa: E402
 from tools.lab.journal import Journal  # noqa: E402
@@ -54,11 +56,12 @@ class LabServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, addr, hub: Hub, token: str | None, dist: Path = DIST, council=None):
+    def __init__(self, addr, hub: Hub, token: str | None, dist: Path = DIST, council=None, goals_root=None):
         super().__init__(addr, Handler)
         self.hub, self.token, self.dist = hub, token, dist
         self.council = council if council is not None else Council(hub, hub.journal)
         self.record_root = None          # research/sessions (tests point this elsewhere)
+        self.goals = goalmod.GoalBook(goals_root) if goals_root else goalmod.GoalBook()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -144,6 +147,38 @@ class Handler(BaseHTTPRequestHandler):
         if parts == ["observe"] and method == "POST":
             return self._json(self._observe(self._body()))
         council = self.server.council
+        book = self.server.goals
+        if parts == ["models"]:
+            return self._json({"models": catalog_public(council.config)})
+        if parts == ["council", "select"] and method == "POST":
+            b = self._body()
+            return self._json(council.select(str(b["role"]), b.get("key") or None))
+        if parts == ["goals", "metrics"]:
+            ws = [w for w in ",".join(q.get("whites", [])).split(",") if w] or list(whites.registry())
+            return self._json({"metrics": {w: goalmod.metrics_of(w) for w in ws}, "ops": list(goalmod.OPS)})
+        if parts == ["goals"] and method == "GET":
+            return self._json({"goals": book.all()})
+        if parts == ["goals"] and method == "POST":
+            return self._json(book.create(self._body()), 201)
+        if len(parts) >= 2 and parts[0] == "goals":
+            gid = parts[1]
+            if len(parts) == 2 and method == "GET":
+                g = book.get(gid)
+                ev = goalmod.evaluate(g, hub)
+                book.record_eval(gid, ev)
+                return self._json({"goal": book.get(gid), "evaluation": ev, "now": book.now_doing(gid),
+                                   "over_budget": book.over_budget(gid)})
+            if len(parts) == 2 and method == "POST":
+                return self._json(book.update(gid, self._body()))
+            if len(parts) == 3 and parts[2] == "nodes" and method == "POST":
+                b = self._body()
+                n = book.add_node(gid, b.get("kind", "note"), str(b.get("text", "")), b.get("by", "you"),
+                                  b.get("parent"), b.get("universe"), b.get("status", "info"))
+                book.log(gid, n["by"], f"マップに追加: {n['text'][:80]}", n["universe"])
+                return self._json(n, 201)
+            if len(parts) == 4 and parts[2] == "nodes" and method == "POST":
+                b = self._body()
+                return self._json(book.set_node(gid, parts[3], b.get("status"), b.get("text")))
         if parts == ["council"] and method == "GET":
             return self._json(council.snapshot(int((q.get("since") or ["0"])[0])))
         if parts == ["council", "look"] and method == "POST":
@@ -180,6 +215,7 @@ class Handler(BaseHTTPRequestHandler):
             uid = hub.create(b["white"], int(b.get("seed", 0)), b.get("knobs") or {})
             if b.get("play", True):
                 hub.control(uid, "play")
+            self._attach(b.get("goal"), uid, "新しい宇宙")
             return self._json(hub.info(uid), 201)
         if len(parts) >= 2 and parts[0] == "universes":
             uid = parts[1]
@@ -202,8 +238,18 @@ class Handler(BaseHTTPRequestHandler):
                     child = hub.branch(uid, b.get("set"), b.get("perturb"))
                     if b.get("play", True):
                         hub.control(child, "play")
+                    self._attach(b.get("goal"), child, f"{hub.info(uid)['label']} から分岐")
                     return self._json(hub.info(child), 201)
         return self._error(404, "unknown endpoint")
+
+    def _attach(self, gid: str | None, uid: str, what: str) -> None:
+        """A universe made by a person while a goal is selected becomes an attempt on that goal's map."""
+        if not gid:
+            return
+        info = self.server.hub.info(uid)
+        self.server.goals.add_node(gid, "attempt", f"宇宙 {info['label']}（{info['white']}）: {what}", "you",
+                                   universe=uid, status="doing")
+        self.server.goals.log(gid, "you", f"宇宙 {info['label']} を試している（{what}）", uid)
 
     def _observe(self, body: dict[str, Any]) -> dict[str, Any]:
         """Build the observation packet for the given universes (all, if none given), save it with the
@@ -304,12 +350,12 @@ def _lan_ip() -> str:
 
 
 def make_server(host: str = "127.0.0.1", port: int = 8765, lan: bool = False, max_universes: int | None = None,
-                journal: Journal | None = None, token: str | None = None, council=None) -> LabServer:
+                journal: Journal | None = None, token: str | None = None, council=None, goals_root=None) -> LabServer:
     if lan:
         host = "0.0.0.0"
         token = token or secrets.token_urlsafe(12)
     hub = Hub(max_universes=max_universes, journal=journal)
-    return LabServer((host, port), hub, token, council=council)
+    return LabServer((host, port), hub, token, council=council, goals_root=goals_root)
 
 
 def main(argv: list[str] | None = None) -> int:
