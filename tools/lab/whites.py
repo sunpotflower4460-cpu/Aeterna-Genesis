@@ -644,8 +644,55 @@ def _higgs3d():
         defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _sh_hex():
+    """Triangle white (P9-Q3): Swift-Hohenberg + quadratic term. Stripes (two waves) or hexagons (three waves
+    closing a triangle); the triangle phase Φ is measured by its sign-carrying skewness."""
+    from genesis.diagnostics import triads as td
+    from genesis.models import swift_hohenberg_quadratic as sq
+    N = 64
+
+    def init(seed, knobs, p):
+        return {"u": sq.make_initial((N, N), np.random.default_rng(seed), p)}
+
+    def step(s, t, p, cache):
+        return {"u": sq.step(s["u"], p)}
+
+    def lens(name, s):
+        return s["u"]
+
+    def metrics(s):
+        dx = sq.DEFAULTS["dx"]
+        tri = td.triads(td.peaks(s["u"], dx, 6))
+        best = max(tri, key=lambda t: t["weight"]) if tri else None
+        return {"triad_skewness": td.triad_skewness(s["u"], dx), "triangles": len(tri),
+                "triangle_phase": float(abs(best["Phi"])) if best else -1.0,
+                "amax": float(np.abs(s["u"]).max())}
+
+    def perturb(name, a, s, p, rng):
+        if name == "cut_half":
+            u = s["u"].copy()
+            u[_half(u)] = 0.0
+            return {"u": u}
+        return _kick(s, ["u"], a["amp"], rng)
+
+    return White(
+        id="sh-hex", title="三角形の白：縞（2 つの波）か六角形（3 つの波）か（Swift-Hohenberg＋2 次の項・2D）",
+        family="Swift-Hohenberg", model="genesis.models.swift_hohenberg_quadratic", dimension=2, grid=(N, N),
+        steps_per_frame=100,
+        knobs=[Knob("r", "模様の育ちやすさ r", "law", 0.05, -0.05, 0.3, 0.01),
+               Knob("g", "2 次の項 g（0＝縞、＋は山の粒、－は谷の粒）", "law", 0.5, -1.0, 1.0, 0.05),
+               Knob("noise", "はじめのノイズ", "start", 0.01, 0.0, 0.1, 0.001)],
+        lenses=[Lens("u", "u", "diverging", -0.6, 0.6)],
+        perturbs=[PERTURB_CUT, PERTURB_KICK],
+        put_in=["u≈0＋ごく小さなノイズ", "法則（r・g）と格子の間隔（波長あたり 8 マス）"],
+        source="genesis/models/swift_hohenberg_quadratic.py · tools/triangle_first_look.py", ceiling_ref=None,
+        track=None, defaults=dict(sq.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics,
+        _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
-             lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d]
+             lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
+             _sh_hex]
 _REGISTRY: dict[str, White] | None = None
 
 
