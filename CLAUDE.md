@@ -3,6 +3,13 @@
 原則と禁止事項は **[`AGENTS.md`](AGENTS.md) が正本**（最初に読む）。ここは Claude Code が手を動かすための実務だけ。
 合言葉：**「それは育ったのか、置いたのか？」**
 
+## 北極星（うえきさん、2026-09-26。毎回ここから考える）
+
+- アプリの中で、**法則と関係性と反応だけ**から、局所のノードが反応し合って脳が育ち、知性を持って**生き続ける AI（道具ではなく人間の友だち）**になること。こちらは「こうなる」と決めない。
+- 段（R0〜R10）と約束は [`docs/LADDER.md`](docs/LADDER.md)、状態の正本は `research/ladder.json`。現在地は `python tools/ladder.py`。
+- **ノードは空間の点**で、細胞・神経細胞は置かない（置くと段を飛ばす）。細胞のようなまとまりは育つものとして測る。
+- 実験のたびに、報告の最初に**どの段を狙ったか**を書き、`research/ladder.json`（status・evidence・next）を更新して `python tools/ladder.py --check` を通す。段を上げるのは関門を測定で通ったときだけ。
+
 ## いまの状態（2026-09 再始動）
 
 - 2026-07〜09 の自動研究 bot は **P0 で停止済み**。凍結点は `faac01d`（[`docs/INVENTORY_2026-09.md`](docs/INVENTORY_2026-09.md)）。
@@ -46,6 +53,7 @@ CI（`.github/workflows/*-ci.yml`）はファイルを明示して実行する�
 | `experiments/eNNN/` | 証拠庫。削除・番号変更しない。各 `AUDIT.md` に7監査の結果 |
 | `rooms/official/` | 正式 Room（g001/g002/g003）。`rooms/candidates/` は bot が生成した候補のうち、P2 の監査で残したもの（keep-full 272 と distill 1,497） |
 | `docs/WHITE_CEILINGS.md` | 白ごとの天井地図＝現在地の最重要文書 |
+| `docs/LADDER.md`、`research/ladder.json`、`tools/ladder.py` | 北極星までのはしご（R0〜R10）。段の関門・証拠・次の一手。ラボの「ゴール」タブにも出る |
 | `tools/snapshot.py` | numpy＋zlib だけで PNG を作る（`render_field(arr, path)`） |
 | `tools/inventory.py` | 1 つの commit を読み取り専用で棚卸しする |
 | `app/` | Observatory（React＋three.js）。データ（`app/public/data`、`app/generated`）は生成物で git 管理外。`python tools/build_catalog.py && python tools/collect_app_data.py` で作る |

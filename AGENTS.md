@@ -8,6 +8,7 @@
 > IC の由来（その部品どこから来たの?）は [`docs/GENESIS_PROVENANCE.md`](docs/GENESIS_PROVENANCE.md)＋
 > [`docs/CAUSAL_CLOSURE.md`](docs/CAUSAL_CLOSURE.md)（C0〜C4）、能力の多軸記述は [`docs/PERIODIC_TABLE.md`](docs/PERIODIC_TABLE.md)。
 > 自走個体は「探す」でなく角モード固有値の順序を「測る」＝ [`docs/ANGULAR_MODES.md`](docs/ANGULAR_MODES.md)（M1）。
+> 北極星（法則と関係と反応だけから脳が育ち、生き続ける友だちになる）までの段は [`docs/LADDER.md`](docs/LADDER.md)（R0〜R10、状態は `research/ladder.json`）。
 
 ---
 

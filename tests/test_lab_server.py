@@ -134,3 +134,10 @@ def test_observe_endpoint_saves_the_packet(server):
     assert st == 200 and p["universes"][0]["images"][0]["src"].startswith("data:image/png;base64,")
     assert "観測パケット" in p["text"] and p["saved"]
     assert any(e["kind"] == "observe" for e in srv.hub.journal.entries())
+
+
+def test_the_ladder_is_served(server):
+    srv, base = server
+    st, d = _call(base, "GET", "/api/ladder")
+    assert st == 200 and d["rungs"][0]["id"] == "R0" and d["summary"].startswith("いま：")
+    assert d["integrated"] is False and d["north_star"]

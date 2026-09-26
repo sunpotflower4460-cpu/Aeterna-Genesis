@@ -8,6 +8,7 @@ description: 研究の現在地を短く要約する（読み取りのみ）
 3. `audit/` があればその要約。無ければ「P2 の宝の監査は未実施」と書く
 4. `research/inbox/` の未決の提案と、`research/decisions/` の最近の決定
 5. `git log --oneline -10`：最近の人間の作業
+6. `python tools/ladder.py`：北極星までのはしご（docs/LADDER.md）のどの段にいるか
 
 最後に「次にやるとよいこと」を 1〜3 個、理由つきで挙げてください。
 `CURRENT_RESEARCH.md`（bot 時代の自動生成）の見出しは、P2 の監査を通るまで事実として扱わないこと。

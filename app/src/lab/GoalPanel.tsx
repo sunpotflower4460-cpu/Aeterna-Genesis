@@ -163,6 +163,48 @@ function HypothesisBody({ h }: { h: Hypothesis }) {
   )
 }
 
+interface Rung {
+  id: string; name: string; question: string; gate: string; placed_ok: string
+  status: 'reached' | 'partial' | 'open' | 'frontier'; note: string; next: string; hypotheses: string[]
+  evidence: { claim: string; file: string; pr?: number }[]
+}
+interface Ladder { north_star: string; integrated: boolean; rungs: Rung[]; summary: string }
+const RUNG_MARK: Record<string, string> = { reached: '●', partial: '◐', open: '○', frontier: '·' }
+const RUNG_WORD: Record<string, string> = { reached: '到達', partial: '一部', open: 'まだ', frontier: '遠い' }
+
+/** 「はしご」: research/ladder.json (docs/LADDER.md). Read only -- a rung goes up only when its gate is measured. */
+function LadderView({ ladder }: { ladder: Ladder | null }) {
+  if (!ladder) return null
+  return (
+    <details className="lab-section">
+      <summary>はしご（北極星までの段）— {ladder.summary.replace(/^いま：/, '')}</summary>
+      <p className="lab-note">{ladder.north_star}</p>
+      {!ladder.integrated && <p className="muted lab-note">どの段も別々の白で確かめた段階です。1 つの宇宙で t=0 から全部の段を通るのは、まだです。</p>}
+      {[...ladder.rungs].reverse().map((r) => (
+        <div key={r.id} className={'lab-rung st-' + r.status}>
+          <div className="lab-row">
+            <span className="lab-rung-mark">{RUNG_MARK[r.status]}</span>
+            <b className="mono">{r.id}</b> <span className="lab-grow">{r.name}</span>
+            <span className="lab-badge">{RUNG_WORD[r.status]}</span>
+          </div>
+          <details className="lab-fold">
+            <summary>中身</summary>
+            <div className="lab-hyp-body">
+              <p><b>問い</b> {r.question}</p>
+              <p><b>関門（測り方）</b> {r.gate}</p>
+              <p><b className="aq-put">置いてよいもの</b> {r.placed_ok}</p>
+              {r.note && <p><b>メモ</b> {r.note}</p>}
+              {r.evidence.map((e, i) => <p key={i}><b>証拠</b> {e.claim} <span className="mono muted">{e.file}{e.pr ? ` #${e.pr}` : ''}</span></p>)}
+              {r.hypotheses.length > 0 && <p><b>仮説</b> <span className="mono">{r.hypotheses.join(' ')}</span></p>}
+              {r.next && <p><b>次</b> {r.next}</p>}
+            </div>
+          </details>
+        </div>
+      ))}
+    </details>
+  )
+}
+
 /** 「仮説から選ぶ」: research/hypotheses.json. A ready hypothesis becomes a goal with one press. */
 function Hypotheses({ list, open, onPick }: { list: Hypothesis[]; open: boolean; onPick: (id: string) => void }) {
   if (!list.length) return null
@@ -315,6 +357,8 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
   const [list, setList] = useState<Goal[]>([])
   const [hyps, setHyps] = useState<Hypothesis[]>([])
   useEffect(() => { api<{ hypotheses: Hypothesis[] }>('goals/hypotheses').then((d) => setHyps(d.hypotheses)).catch(() => {}) }, [])
+  const [ladder, setLadder] = useState<Ladder | null>(null)
+  useEffect(() => { api<Ladder>('ladder').then(setLadder).catch(() => {}) }, [])
   const fromHypothesis = (id: string) => api<Goal>('goals', { method: 'POST', body: { hypothesis: id } })
     .then((g) => { loadList(); setActiveGoal(g.id) }).catch(onError)
   const [view, setView] = useState<GoalView | null>(null)
@@ -409,6 +453,7 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
           <MapTree view={view} onAdd={addNode} onStatus={nodeStatus} />
         </>
       )}
+      <LadderView ladder={ladder} />
       <Hypotheses list={hyps} open={!activeGoal} onPick={fromHypothesis} />
       <NewGoal whites={whites} models={models} onCreated={(g) => { loadList(); setActiveGoal(g.id) }} onError={onError} />
     </div>
