@@ -822,9 +822,58 @@ def _barkley_3d():
         defaults=dict(eb.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _gs_two_3d():
+    """Two replicators on one food (P14, ladder R3): spots divide -- do daughters carry the parent's kind?"""
+    from genesis.models import gray_scott_two as g2
+    N = 48
+
+    def init(seed, knobs, p):
+        U, V1, V2, _ = g2.make_initial((N, N, N), np.random.default_rng(seed), p)
+        return {"U": U, "V1": V1, "V2": V2}
+
+    def step(s, t, p, cache):
+        U, V1, V2 = g2.step(s["U"], s["V1"], s["V2"], p)
+        return {"U": U, "V1": V1, "V2": V2}
+
+    def lens(name, s):
+        if name == "kind":
+            return s["V1"] - s["V2"]
+        return s["V1"] + s["V2"]
+
+    def metrics(s):
+        _, sp = g2.spots(s["V1"], s["V2"])
+        pur = [g2.purity(x["kind1"]) for x in sp]
+        return {"spots": len(sp), "kind1_share": float(np.mean([x["kind1"] > 0.5 for x in sp])) if sp else 0.0,
+                "purity": float(np.median(pur)) if pur else 0.0}
+
+    def perturb(name, a, s, p, rng):
+        if name == "cut_half":
+            U, V1, V2 = s["U"].copy(), s["V1"].copy(), s["V2"].copy()
+            h = _half(U)
+            U[h], V1[h], V2[h] = 1.0, 0.0, 0.0
+            return {"U": U, "V1": V1, "V2": V2}
+        return _kick(s, ["V1", "V2"], a["amp"], rng)
+
+    return White(
+        id="gs-two-3d", title="分かれて増え、種類を受け継ぐか：1 つの餌を食べる 2 つの自己複製（Gray-Scott×2・3D）",
+        family="Gray-Scott", model="genesis.models.gray_scott_two", dimension=3, grid=(N, N, N),
+        steps_per_frame=40,
+        knobs=[Knob("F", "補給 F", "law", 0.03, 0.02, 0.05, 0.001),
+               Knob("k1", "V1 の消える速さ k1", "law", 0.065, 0.055, 0.07, 0.0005),
+               Knob("k2", "V2 の消える速さ k2", "law", 0.065, 0.055, 0.07, 0.0005),
+               Knob("mu", "V1⇄V2 の入れ替わり μ（突然変異）", "law", 0.0, 0.0, 0.02, 0.0005),
+               Knob("n_seeds", "はじめの種の数（それぞれ V1 と V2 のランダムな混ざり）", "start", 12, 1, 30, 1, True)],
+        lenses=[Lens("kind", "種類（V1 − V2：＋は V1、−は V2）", "diverging", -0.4, 0.4),
+                Lens("V", "自己複製するものの濃さ（V1＋V2）", "high", 0.0, 0.5)],
+        perturbs=[PERTURB_CUT, PERTURB_KICK],
+        put_in=["同じ自己複製の化学が 2 種類（V1・V2）あること", "種の場所と数。種は V1 と V2 のランダムな混ざりで、種類は決めていない"],
+        source="genesis/models/gray_scott_two.py · tools/cell_inherit.py", ceiling_ref=None, track=None,
+        defaults=dict(g2.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d]
+             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d]
 _REGISTRY: dict[str, White] | None = None
 
 

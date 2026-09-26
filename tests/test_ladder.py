@@ -17,7 +17,8 @@ def test_the_summary_names_the_top_reached_rung():
 def test_broken_ladders_are_caught():
     d = ladder.load()
     bad = copy.deepcopy(d)
-    bad["rungs"][7]["status"] = "reached"                       # reached with no evidence
+    bad["rungs"][9]["status"] = "reached"                       # reached with no evidence
+    bad["rungs"][9]["evidence"] = []
     assert any("証拠がない" in p for p in ladder.check(bad))
     bad = copy.deepcopy(d)
     bad["rungs"][1]["evidence"] = [{"claim": "x", "file": "docs/does-not-exist.md"}]
@@ -32,7 +33,8 @@ def test_broken_ladders_are_caught():
     bad["integrated"] = True
     assert any("integrated" in p for p in ladder.check(bad))
     bad = copy.deepcopy(d)
-    bad["rungs"][3]["note"] = ""
+    bad["rungs"][5]["status"] = "partial"
+    bad["rungs"][5]["note"] = ""
     assert any("partial" in p for p in ladder.check(bad))
 
 
