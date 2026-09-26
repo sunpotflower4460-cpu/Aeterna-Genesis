@@ -8,6 +8,7 @@ runs in 3D and 2D alike (local × parallel × no central solver; the FFT is not 
 * γ > 0: a small coupling to a bath at chemical potential μ (put in). Starting from ψ ≈ 0 the modes with
   ½k² < μ grow at rate γ(μ − ½k²): a quench. The bulk density settles at n = μ/g, healing length ξ = 1/√(gn).
 Put in: the law (g, μ, γ), t = 0 = ψ ≈ 0 + tiny complex noise. No vortex, ring or shape is put in.
+Optional (P12): an external potential V (an obstacle); V = None is the law above, bit for bit.
 """
 from __future__ import annotations
 
@@ -25,17 +26,20 @@ def laplacian(psi: np.ndarray) -> np.ndarray:
     return out
 
 
-def rhs(psi: np.ndarray, p: dict[str, Any]) -> np.ndarray:
+def rhs(psi: np.ndarray, p: dict[str, Any], V: np.ndarray | None = None) -> np.ndarray:
     H = -0.5 * laplacian(psi) + p["g"] * (np.abs(psi) ** 2 - p["mu"]) * psi
+    if V is not None:
+        H = H + V * psi
     return -(1j + p["gamma"]) * H
 
 
-def step(psi: np.ndarray, p: dict[str, Any]) -> np.ndarray:
+def step(psi: np.ndarray, p: dict[str, Any], V: np.ndarray | None = None) -> np.ndarray:
+    """One RK4 step. V (optional, put in): an external potential held fixed during the step (e.g. an obstacle)."""
     dt = p["dt"]
-    k1 = rhs(psi, p)
-    k2 = rhs(psi + 0.5 * dt * k1, p)
-    k3 = rhs(psi + 0.5 * dt * k2, p)
-    k4 = rhs(psi + dt * k3, p)
+    k1 = rhs(psi, p, V)
+    k2 = rhs(psi + 0.5 * dt * k1, p, V)
+    k3 = rhs(psi + 0.5 * dt * k2, p, V)
+    k4 = rhs(psi + dt * k3, p, V)
     return psi + dt / 6.0 * (k1 + 2 * k2 + 2 * k3 + k4)
 
 

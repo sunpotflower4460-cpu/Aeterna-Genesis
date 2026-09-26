@@ -35,10 +35,15 @@ def plaquette_windings(psi: np.ndarray) -> dict[tuple[int, int], np.ndarray]:
     return out
 
 
-def line_mask(psi: np.ndarray, dilate: int = 1) -> np.ndarray:
+def line_mask(psi: np.ndarray, dilate: int = 1, exclude: np.ndarray | None = None) -> np.ndarray:
+    """exclude (optional): voxels where the phase means nothing (e.g. inside an impenetrable obstacle, where
+    |ψ| ≈ 0); plaquettes touching them are ignored. None = every plaquette counts."""
     m = np.zeros(psi.shape, bool)
     for (i, j), w in plaquette_windings(psi).items():
         p = w != 0
+        if exclude is not None:
+            touch = exclude | np.roll(exclude, -1, i) | np.roll(exclude, -1, j) | np.roll(np.roll(exclude, -1, i), -1, j)
+            p = p & ~touch
         m |= p | np.roll(p, 1, i) | np.roll(p, 1, j) | np.roll(np.roll(p, 1, i), 1, j)
     for _ in range(dilate):
         m = m | np.any([np.roll(m, s, ax) for ax in range(3) for s in (1, -1)], axis=0)
@@ -95,5 +100,5 @@ def ring_stats(c: np.ndarray, L, wraps: bool = False) -> dict:
     return stats
 
 
-def rings(psi: np.ndarray, dilate: int = 1) -> list[dict]:
-    return [ring_stats(c, psi.shape, w) for c, w in components(line_mask(psi, dilate))]
+def rings(psi: np.ndarray, dilate: int = 1, exclude: np.ndarray | None = None) -> list[dict]:
+    return [ring_stats(c, psi.shape, w) for c, w in components(line_mask(psi, dilate, exclude))]

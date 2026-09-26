@@ -726,9 +726,57 @@ def _gpe_quench_3d():
         defaults=dict(gl.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _gpe_obstacle_3d():
+    """Fed torus white (P12): an obstacle pushed through the superfluid at speed U sheds vortex rings."""
+    from genesis.diagnostics import vortex_rings as vr
+    from genesis.models import gpe_local as gl
+    from tools import torus_feed as tf
+    shape = (48, 48, 96)
+
+    def init(seed, knobs, p):
+        rng = np.random.default_rng(seed)
+        return {"psi": 1.0 + 0j + p["noise"] * (rng.standard_normal(shape) + 1j * rng.standard_normal(shape)),
+                "pos": tf.position(shape, 0.0, p["U"])}
+
+    def step(s, t, p, cache):
+        V, _ = tf.obstacle(shape, tf.position(shape, t, p["U"]))
+        return {"psi": gl.step(s["psi"], p, V), "pos": tf.position(shape, t + p["dt"], p["U"])}
+
+    def _inside(s):
+        return tf.obstacle(shape, s["pos"])[0] > 0.5            # the stone itself: its phase means nothing
+
+    def lens(name, s):
+        if name == "amp":
+            return np.abs(s["psi"])
+        return vr.line_mask(s["psi"], 1, _inside(s)).astype(float)
+
+    def metrics(s):
+        pieces = vr.rings(s["psi"], exclude=_inside(s))
+        return {"rings": sum(r["ring"] for r in pieces), "line_pieces": len(pieces),
+                "line_voxels": int(sum(r["voxels"] for r in pieces)), "mean_amp": float(np.abs(s["psi"]).mean())}
+
+    def perturb(name, a, s, p, rng):
+        return _kick(s, ["psi"], a["amp"], rng)
+
+    defaults = dict(gl.DEFAULTS, gamma=0.01, U=0.6)
+    return White(
+        id="gpe-obstacle-3d", title="消えないトーラス：超流体の中を進む石が、渦の輪を生み続けるか（GPE・局所・3D）",
+        family="GPE（超流体）", model="genesis.models.gpe_local", dimension=3, grid=shape, steps_per_frame=5,
+        knobs=[Knob("U", "石の速さ U（外から押し続ける。置いたもの）", "law", 0.6, 0.0, 0.9, 0.05),
+               Knob("gamma", "外（熱浴）とのつながり γ（置いたもの）", "law", 0.01, 0.0, 0.1, 0.005),
+               Knob("noise", "はじめのノイズ", "start", 0.01, 0.001, 0.05, 0.001)],
+        lenses=[Lens("lines", "渦の線（芯は 1 マスなので太らせて表示）", "high", 0.0, 1.0),
+                Lens("amp", "|ψ|（渦の芯と石は穴）", "low", 0.0, 1.2)],
+        perturbs=[PERTURB_KICK],
+        put_in=["静止した一様な超流体（ψ=1）＋ごく小さなノイズ", "石（高さ 5・幅 2.5）と、その速さ U（はじめの 50 時間で加速）",
+                "法則（g=μ=1）と外とのつながり γ"],
+        source="genesis/models/gpe_local.py · tools/torus_feed.py", ceiling_ref=None, track=None,
+        defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex, _gpe_quench_3d]
+             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d]
 _REGISTRY: dict[str, White] | None = None
 
 
