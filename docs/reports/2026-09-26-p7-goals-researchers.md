@@ -69,3 +69,17 @@ python -m tools.lab.server        # 「ゴール」タブ → 新しいゴール
 
 1. うえきさんの PC で、実際のキーを使って研究員 1 人（Opus 5.5）を小さい予算（$0.3・10 分）で動かし、道具の使い方を見る。
 2. P7-3：波の白（Klein–Gordon φ⁴／sine-Gordon）。光らしさ（エネルギー保存・可逆・光円錐）をテストしてから、壁やオシロンが置かずに生まれるかを測る。
+
+## 追記（同日）：仮説から選べるゴール・まとめて試す・やさしい説明（#152 の続き・#153）
+
+| # | 主張 | tier | 根拠 |
+|---|---|---|---|
+| C11 | `research/hypotheses.json` の仮説（H1〜H6）は、どれも測り方・反証・置いたものを持つ。すぐ始められるものはそのままゴールとして通り、準備中のものは足りないものを言って断る | measured | `tests/test_lab_goals.py::test_hypotheses_catalog_is_well_formed_and_ready_ones_become_goals` |
+| C12 | 「まとめて試す」の各組み合わせは、t=0 からのレシピで、水槽で動かすのと同じ状態（sha256 一致）と同じ判定になる。1 プロセスと 2 プロセスで結果が同じ | measured | `tests/test_lab_sweep.py::test_variants_match_the_live_lab_and_replay` |
+| C13 | 研究員の sweep は、許された白とステップ予算の中でだけ動く。記録と、専門用語なしの言いかえ（plain）がマップに残る | measured（偽の provider） | `tests/test_lab_sweep.py::test_researcher_sweeps_inside_budget_and_records_it` |
+| C14 | 「やさしい説明」は、ゴールの数字（評価・sweep・活動・予算）だけから機械的に作られる。「数字の目安で『生きている』などの意味はない」という注意が必ず入る | measured | 同上と `test_plain_text_without_criteria_or_activity` |
+
+限界：
+- sweep の順位は「満たした条件の数＋条件ごとの最長の続き方」で決めている。この重みの付け方は選択であって、物理ではない。
+- 「AI にもっとやさしく」は、偽の provider でしか確かめていない。言いかえの正しさ（誇張しないこと）は、指示でしか縛れていない。
+- 撮影では H1 の 6 通りを実際に回した。その結果、条件（点 1 つが 100 時間続く）を満たすものは無かった（1 通りあたり 60 コマ＝約 180 時間）。
