@@ -154,6 +154,10 @@ class Provider:
     def ask(self, system: str, parts: list[Part], on_text: Callable[[str], None]) -> Usage:
         raise NotImplementedError
 
+    def user_content(self, parts: list[Part]) -> Any:
+        """A user turn for this provider's conversation history (converse)."""
+        return openai_content(parts, bool(self.cfg.get("images", False)))
+
     def public(self) -> dict[str, Any]:
         ok, why = self.available()
         return {"role": self.role, "label": ROLE_LABEL[self.role], "provider": self.cfg.get("provider"),
@@ -203,6 +207,9 @@ class AnthropicProvider(Provider):
                 on_text(text)
             return stream.get_final_message()
 
+    def user_content(self, parts: list[Part]) -> Any:
+        return self._content(parts)
+
     def ask(self, system, parts, on_text) -> Usage:
         msg = self._stream(self._client(), system, [{"role": "user", "content": self._content(parts)}], None, on_text)
         if msg.stop_reason == "refusal":
@@ -210,11 +217,11 @@ class AnthropicProvider(Provider):
         return Usage(msg.usage.input_tokens, msg.usage.output_tokens)
 
     def converse(self, system: str, history: list, run_tool: Callable[[str, dict], str], on_text,
-                 max_rounds: int = 6) -> Usage:
+                 max_rounds: int = 6, tools: list | None = None) -> Usage:
         """Manual tool loop. The history is append-only (assistant content is appended exactly as returned)."""
         client, total = self._client(), Usage()
         for _ in range(max_rounds):
-            msg = self._stream(client, system, history, TOOLS, on_text)
+            msg = self._stream(client, system, history, tools if tools is not None else TOOLS, on_text)
             total.add(Usage(msg.usage.input_tokens, msg.usage.output_tokens))
             history.append({"role": "assistant", "content": msg.content})
             if msg.stop_reason == "refusal":
@@ -230,6 +237,52 @@ class AnthropicProvider(Provider):
         return total
 
 
+def openai_content(parts: list[Part], images: bool) -> Any:
+    """Parts in the OpenAI chat format: text only (joined), or text + data-URL images when the model reads images."""
+    if not images:
+        return "\n\n".join(p["text"] for p in parts if p["type"] == "text")
+    return [{"type": "text", "text": p["text"]} if p["type"] == "text" else
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.standard_b64encode(p["png"]).decode()}}
+            for p in parts if p["type"] in ("text", "image")]
+
+
+def openai_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Our tool definitions in the OpenAI / DeepSeek function-calling format."""
+    return [{"type": "function", "function": {"name": t["name"], "description": t["description"],
+                                              "parameters": t["input_schema"]}} for t in tools]
+
+
+def openai_style_loop(post: Callable[[dict], dict], model: str, system: str, history: list, tools: list,
+                      run_tool: Callable[[str, dict], str], on_text, max_rounds: int = 6) -> Usage:
+    """Function-calling loop in the OpenAI chat format (DeepSeek, GPT). History is append-only; DeepSeek's
+    reasoning_content is not sent back."""
+    total = Usage()
+    if not history or history[0].get("role") != "system":
+        history.insert(0, {"role": "system", "content": system})
+    for _ in range(max_rounds):
+        resp = post({"model": model, "messages": history, "tools": openai_tools(tools), "tool_choice": "auto"})
+        u = resp.get("usage") or {}
+        total.add(Usage(u.get("prompt_tokens") or 0, u.get("completion_tokens") or 0))
+        choice = (resp.get("choices") or [{}])[0]
+        msg = choice.get("message") or {}
+        if msg.get("content"):
+            on_text(msg["content"])
+        calls = msg.get("tool_calls") or []
+        history.append({"role": "assistant", "content": msg.get("content") or "",
+                        **({"tool_calls": calls} if calls else {})})
+        if not calls:
+            break
+        for c in calls:
+            fn = c.get("function") or {}
+            try:
+                args = json.loads(fn.get("arguments") or "{}")
+            except ValueError:
+                args = None
+            out = run_tool(fn.get("name", ""), args) if isinstance(args, dict) else "エラー: 引数が JSON ではありません"
+            history.append({"role": "tool", "tool_call_id": c.get("id"), "content": out})
+    return total
+
+
 class DeepSeekProvider(Provider):
     """DeepSeek's own API, called DIRECTLY with the standard library (urllib): no OpenAI package, and nothing
     is sent anywhere but `base_url` (default https://api.deepseek.com). Streams the reply; DeepSeek's
@@ -243,12 +296,7 @@ class DeepSeekProvider(Provider):
     def ask(self, system, parts, on_text) -> Usage:
         import urllib.error
         import urllib.request
-        if self.cfg.get("images", False):
-            content: Any = [{"type": "text", "text": p["text"]} if p["type"] == "text" else
-                            {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.standard_b64encode(p["png"]).decode()}}
-                            for p in parts if p["type"] in ("text", "image")]
-        else:
-            content = "\n\n".join(p["text"] for p in parts if p["type"] == "text")
+        content = openai_content(parts, bool(self.cfg.get("images", False)))
         body = {"model": self.model, "stream": True, "stream_options": {"include_usage": True},
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}]}
         req = urllib.request.Request(self.endpoint(), data=json.dumps(body).encode(), method="POST", headers={
@@ -273,6 +321,21 @@ class DeepSeekProvider(Provider):
         except urllib.error.HTTPError as e:        # show DeepSeek's message, never the key
             raise RuntimeError(f"DeepSeek {e.code}: {e.read().decode('utf-8', 'replace')[:300]}") from None
         return u
+
+    def post(self, body: dict[str, Any]) -> dict[str, Any]:
+        import urllib.error
+        import urllib.request
+        req = urllib.request.Request(self.endpoint(), data=json.dumps(body).encode(), method="POST", headers={
+            "Content-Type": "application/json", "Authorization": f"Bearer {self.key()}"})
+        try:
+            with urllib.request.urlopen(req, timeout=300) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"DeepSeek {e.code}: {e.read().decode('utf-8', 'replace')[:300]}") from None
+
+    def converse(self, system, history, run_tool, on_text, max_rounds: int = 6, tools: list | None = None) -> Usage:
+        return openai_style_loop(self.post, self.model, system, history, tools if tools is not None else TOOLS,
+                                 run_tool, on_text, max_rounds)
 
 
 class OpenAICompatProvider(Provider):
@@ -310,6 +373,15 @@ class OpenAICompatProvider(Provider):
                 u = Usage(ch.usage.prompt_tokens or 0, ch.usage.completion_tokens or 0)
         return u
 
+
+    def post(self, body: dict[str, Any]) -> dict[str, Any]:
+        from openai import OpenAI
+        client = OpenAI(api_key=self.key(), base_url=self.cfg.get("base_url") or None)
+        return client.chat.completions.create(**body).model_dump(exclude_none=True)
+
+    def converse(self, system, history, run_tool, on_text, max_rounds: int = 6, tools: list | None = None) -> Usage:
+        return openai_style_loop(self.post, self.model, system, history, tools if tools is not None else TOOLS,
+                                 run_tool, on_text, max_rounds)
 
 class GeminiProvider(Provider):
     """Google Gemini via google-genai; reads images and (when enabled) the mp4. Unverified against live keys in CI."""
@@ -397,6 +469,41 @@ def catalog_public(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                     "video": bool(e.get("video", False)) and e["provider"] == "gemini",
                     "price_in": e.get("price_in", 0), "price_out": e.get("price_out", 0)})
     return out
+
+
+# ============================================================================ checks shared with researchers
+def uid_of(hub, label: str) -> str | None:
+    """A universe by its label (A, B, …) or its id (u3)."""
+    label = str(label).strip()
+    for uid in hub.ids():
+        if uid == label or hub.info(uid)["label"] == label:
+            return uid
+    return None
+
+
+def check_branch(hub, parent: str, changes: dict[str, float], perturb: dict[str, Any] | None) -> tuple[str, dict]:
+    """Validate a branch against the registry: law knobs in range (start knobs refused), a declared
+    perturbation with arguments in range. Returns (parent uid, {"set", "perturb"})."""
+    uid = uid_of(hub, parent)
+    if not uid:
+        raise ValueError(f"宇宙 {parent} はいません（いるのは {', '.join(hub.info(u)['label'] for u in hub.ids()) or 'なし'}）")
+    w = whites.get(hub.info(uid)["white"])
+    checked = w.check_knobs(changes, allow_start=False) if changes else {}
+    pert = None
+    if perturb and perturb.get("name"):
+        if perturb["name"] not in {p.name for p in w.perturbs}:
+            raise ValueError(f"摂動 {perturb['name']} はこの白では使えません（使えるもの: {', '.join(p.name for p in w.perturbs)}）")
+        spec = w.perturb_spec(perturb["name"])
+        args = {}
+        for k, v in (perturb.get("args") or {}).items():
+            a = next((x for x in spec.args if x.name == k), None)
+            if a is None or not (a.lo <= float(v) <= a.hi):
+                raise ValueError(f"摂動の引数 {k}={v} は使えません")
+            args[k] = float(v)
+        pert = {"name": spec.name, "args": args}
+    if not checked and not pert:
+        raise ValueError("つまみの変更か摂動のどちらかが必要です")
+    return uid, {"set": checked, "perturb": pert}
 
 
 # ============================================================================ council
@@ -553,32 +660,10 @@ class Council:
 
     # ------------------------------------------------------------------ tools for the core
     def _uid_of(self, label: str) -> str | None:
-        for uid in self.hub.ids():
-            if self.hub.info(uid)["label"] == label.strip():
-                return uid
-        return None
+        return uid_of(self.hub, label)
 
     def validate_proposal(self, parent: str, changes: dict[str, float], perturb: dict[str, Any] | None) -> tuple[str, dict]:
-        uid = self._uid_of(parent) if not parent.startswith("u") else parent
-        if not uid or uid not in self.hub.ids():
-            raise ValueError(f"宇宙 {parent} はいません（いるのは {', '.join(self.hub.info(u)['label'] for u in self.hub.ids())}）")
-        w = whites.get(self.hub.info(uid)["white"])
-        checked = w.check_knobs(changes, allow_start=False) if changes else {}
-        pert = None
-        if perturb and perturb.get("name"):
-            spec = w.perturb_spec(perturb["name"]) if perturb["name"] in {p.name for p in w.perturbs} else None
-            if spec is None:
-                raise ValueError(f"摂動 {perturb['name']} はこの白では使えません（使えるもの: {', '.join(p.name for p in w.perturbs)}）")
-            args = {}
-            for k, v in (perturb.get("args") or {}).items():
-                a = next((x for x in spec.args if x.name == k), None)
-                if a is None or not (a.lo <= float(v) <= a.hi):
-                    raise ValueError(f"摂動の引数 {k}={v} は使えません")
-                args[k] = float(v)
-            pert = {"name": spec.name, "args": args}
-        if not checked and not pert:
-            raise ValueError("つまみの変更か摂動のどちらかが必要です")
-        return uid, {"set": checked, "perturb": pert}
+        return check_branch(self.hub, parent, changes, perturb)
 
     def add_proposal(self, source: str, parent: str, changes: dict[str, float], perturb: dict[str, Any] | None,
                      why: str, predict: str, put_in: str) -> dict[str, Any]:
@@ -654,9 +739,13 @@ class Council:
             return
         m = self._msg("core", "", core.model, done=False)
         try:
-            if isinstance(core, AnthropicProvider) or hasattr(core, "converse"):
-                self.history.append({"role": "user", "content": AnthropicProvider._content(content)
-                                     if isinstance(core, AnthropicProvider) else content})
+            if hasattr(core, "converse"):
+                owner = (type(core).__name__, core.model)
+                if getattr(self, "_history_owner", owner) != owner:     # another model: its own history format
+                    self.history.clear()
+                    self._msg("system", f"中心の AI が {core.model} に変わったので、会話の履歴を新しく始めました。")
+                self._history_owner = owner
+                self.history.append({"role": "user", "content": core.user_content(content)})
                 u = core.converse(CORE_PROMPT, self.history, self._run_tool,
                                   lambda s: m.__setitem__("text", m["text"] + s))
             else:

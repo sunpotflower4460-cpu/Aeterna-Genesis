@@ -68,7 +68,8 @@ def test_look_runs_roles_in_order_and_cards_are_not_executed(lab):
     assert whos[0] == "you" and whos[-1] == "core" and set(whos[1:3]) == {"vision", "second_view"}
     vmsg = next(m for m in c.messages if m["who"] == "vision")
     assert vmsg["text"].startswith(C.UNMEASURED)                 # labelled even though the model did not say so
-    core_input = json.dumps([p.get("text", "") for p in core.histories[0][-1]["content"]], ensure_ascii=False)
+    c0 = core.histories[0][-1]["content"]              # a tool-using non-Anthropic core gets the text parts
+    core_input = c0 if isinstance(c0, str) else json.dumps([p.get("text", "") for p in c0], ensure_ascii=False)
     assert C.UNMEASURED in core_input and "Fを上げたらどうなる" in core_input
     assert all(p["type"] == "text" for p in sec.seen[0][1])      # text-only second view gets no images
     assert any(p["type"] == "image" for p in vis.seen[0][1])
@@ -210,3 +211,19 @@ def test_deepseek_is_called_directly_without_the_openai_package(lab, monkeypatch
     assert path == "/chat/completions" and auth == "Bearer sk-ds-test"
     assert body["model"] == "deepseek-test" and isinstance(body["messages"][1]["content"], str)   # text only
     assert C.make_providers(C.DEFAULT_CONFIG)["second_view"].__class__ is C.DeepSeekProvider
+
+
+def test_core_history_restarts_when_the_core_model_changes(lab):
+    """Each provider keeps its own history format; switching the core must not mix them (or send raw PNG bytes)."""
+    hub, uid, tmp = lab
+    a, b = FakeCore([]), FakeCore([])
+    b.model = "fake-other"
+    c = _council(hub, tmp, {"core": a})
+    c.chat("一つ目", wait=True)
+    c.chat("二つ目", wait=True)
+    assert len(a.histories[1]) == 2 and all(isinstance(m["content"], str) for m in a.histories[1])
+    c.providers["core"] = b
+    c.chat("三つ目", wait=True)
+    assert len(b.histories[0]) == 1 and "三つ目" in b.histories[0][0]["content"]
+    assert any("履歴を新しく" in m["text"] for m in c.messages)
+    json.dumps(b.histories[0])                                   # JSON-serialisable: no bytes inside

@@ -83,6 +83,8 @@ def check_criterion(samples: list[dict[str, Any]], c: dict[str, Any]) -> dict[st
         else:
             start = None
     current = (samples[-1]["t"] - start) if (samples and start is not None) else 0.0
+    end = samples[-1]["metrics"].get(metric) if samples else None      # "now" = the latest sample, not an old one
+    last_v = float(end) if isinstance(end, (int, float)) and end == end else None
     met = ever and best >= hold
     return {"metric": metric, "op": c["op"], "value": value, "hold": hold, "met": bool(met),
             "longest": round(best, 4), "holding_now": round(current, 4) if start is not None else None,
@@ -234,10 +236,14 @@ class GoalBook:
             self._save(g)
             return g["spent"]
 
-    def over_budget(self, gid: str) -> str | None:
+    def over_budget(self, gid: str, include_universes: bool = True) -> str | None:
+        """The first exhausted budget, if any. Universes are a cap on MAKING universes: a researcher who has
+        made the last one allowed may still run and observe it (include_universes=False)."""
         g = self.get(gid)
         b, s = g["budget"], g["spent"]
         for k, lim in (("universes", "max_universes"), ("steps", "max_steps"), ("usd", "max_usd"), ("minutes", "max_minutes")):
+            if k == "universes" and not include_universes:
+                continue
             if s.get(k, 0) >= b[lim]:
                 return f"上限に達しました：{k} {s.get(k, 0):g} / {b[lim]:g}"
         return None

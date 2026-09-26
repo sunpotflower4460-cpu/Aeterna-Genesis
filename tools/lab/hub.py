@@ -46,6 +46,13 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
                         playing = False
                     elif cmd == "step":
                         u.advance(max(1, int(args.get("n", 1))) * u.white.steps_per_frame)
+                    elif cmd == "run":             # n frames, each one measured (for AI researchers)
+                        for _ in range(max(1, int(args.get("n", 1)))):
+                            u.advance(u.white.steps_per_frame)
+                            conn.send(("frame", _frame_msg(u, playing, speed)))
+                            if not u.finite():
+                                playing = False
+                                break
                     elif cmd == "speed":
                         speed = float(min(max(args.get("value", 1.0), 0.1), 10.0))
                     elif cmd == "set":
@@ -63,8 +70,8 @@ def _worker(conn, universe: Universe, max_fps: float) -> None:
                         return
                     else:
                         raise ValueError(f"unknown command {cmd!r}")
-                    if cmd in ("play", "pause", "step", "speed"):
-                        out = {"step": u.step_index, "t": u.t}
+                    if cmd in ("play", "pause", "step", "speed", "run"):
+                        out = {"step": u.step_index, "t": u.t, "diverged": not u.finite()}
                     conn.send(("reply", req, True, out))
                 except Exception as e:  # report to the caller, keep the universe alive
                     conn.send(("reply", req, False, str(e)))
@@ -306,6 +313,17 @@ class Hub:
             self._log(action, uid, step=out["step"], **({"n": args["n"]} if "n" in args else {}))
         return out
 
+    def run(self, uid: str, frames: int) -> dict[str, Any]:
+        """Advance exactly `frames` frames, measuring each one (so the observation buffer sees them all)."""
+        h = self._get(uid)
+        frames = max(1, int(frames))
+        with h.cmd_lock:
+            out = h.call("run", timeout=60.0 + 2.0 * frames, n=frames)
+        h.step = out["step"]
+        self._remember(h)
+        self._log("run", uid, step=out["step"], n=frames)
+        return out
+
     def _intervene(self, uid: str, kind: str, **args: Any) -> dict[str, Any]:
         h = self._get(uid)
         with h.cmd_lock:                        # worker order == recipe order, even for concurrent requests
@@ -393,6 +411,7 @@ class LocalHub:
     observation packet from the command line (tools/lab/observe.py --white …)."""
 
     def __init__(self):
+        self._lock = threading.RLock()        # researchers may use it from several threads
         self._u: dict[str, Universe] = {}
         self._meta: dict[str, dict[str, Any]] = {}
         self._obs: dict[str, ObservationBuffer] = {}
@@ -408,21 +427,42 @@ class LocalHub:
         self._obs[uid].add(self._meta[uid]["seq"], f)
 
     def _add(self, u: Universe, parent: str | None = None, fork_index: int | None = None) -> str:
-        uid = f"u{next(self._ids)}"
-        self._u[uid], self._obs[uid] = u, ObservationBuffer()
-        self._meta[uid] = {"label": next(self._labels), "parent": parent, "fork_index": fork_index,
-                           "branch_step": u.step_index if parent else None}
-        self._emit(uid)
+        with self._lock:
+            uid = f"u{next(self._ids)}"
+            self._u[uid], self._obs[uid] = u, ObservationBuffer()
+            self._meta[uid] = {"label": next(self._labels), "parent": parent, "fork_index": fork_index,
+                               "branch_step": u.step_index if parent else None}
+            self._emit(uid)
         return uid
 
     def create(self, white_id: str, seed: int = 0, knobs: dict[str, Any] | None = None) -> str:
         return self._add(Universe(white_id, seed, knobs))
 
-    def run(self, uid: str, frames: int) -> None:
+    def run(self, uid: str, frames: int) -> dict[str, Any]:
         u = self._u[uid]
         for _ in range(frames):
             u.advance(u.white.steps_per_frame)
-            self._emit(uid)
+            with self._lock:
+                self._emit(uid)
+            if not u.finite():
+                break
+        return {"step": u.step_index, "t": u.t, "diverged": not u.finite()}
+
+    def control(self, uid: str, action: str, **args: Any) -> dict[str, Any]:
+        """play / pause / speed do nothing here (no clock); step n advances n frames."""
+        if action not in ("play", "pause", "step", "speed"):
+            raise ValueError(f"unknown action {action!r}")
+        if action == "step":
+            return self.run(uid, max(1, int(args.get("n", 1))))
+        u = self._u[uid]
+        return {"step": u.step_index, "t": u.t}
+
+    def delete(self, uid: str) -> None:
+        with self._lock:
+            if uid not in self._u:
+                raise KeyError(uid)
+            for d in (self._u, self._meta, self._obs, self._last):
+                d.pop(uid, None)
 
     def _intervene(self, uid: str, tag: str, fn) -> dict[str, Any]:
         self._obs[uid].mark(self._meta[uid]["seq"], self._last.get(uid), tag)
@@ -446,7 +486,8 @@ class LocalHub:
         return self._add(child, uid, fork)
 
     def ids(self) -> list[str]:
-        return list(self._u)
+        with self._lock:
+            return list(self._u)
 
     def final_info(self, uid: str) -> dict[str, Any]:
         u = self._u[uid]

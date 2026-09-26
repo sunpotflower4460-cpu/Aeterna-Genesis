@@ -20,7 +20,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
@@ -30,6 +30,7 @@ from tools.lab import goals as goalmod  # noqa: E402
 from tools.lab import observe, record, whites  # noqa: E402
 from tools.lab.council import catalog_public  # noqa: E402
 from tools.lab.council import Council  # noqa: E402
+from tools.lab.researcher import GoalRunner  # noqa: E402
 from tools.lab.hub import Hub  # noqa: E402
 from tools.lab.journal import Journal  # noqa: E402
 
@@ -56,12 +57,17 @@ class LabServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, addr, hub: Hub, token: str | None, dist: Path = DIST, council=None, goals_root=None):
+    def __init__(self, addr, hub: Hub, token: str | None, dist: Path = DIST, council=None, goals_root=None,
+                 researcher_factory=None):
         super().__init__(addr, Handler)
         self.hub, self.token, self.dist = hub, token, dist
         self.council = council if council is not None else Council(hub, hub.journal)
         self.record_root = None          # research/sessions (tests point this elsewhere)
         self.goals = goalmod.GoalBook(goals_root) if goals_root else goalmod.GoalBook()
+        for g in self.goals.all():       # researchers do not survive a restart: a running goal comes back paused
+            if g["status"] == "running":
+                self.goals.update(g["id"], {"status": "paused"})
+        self.runner = GoalRunner(hub, self.goals, self.council, researcher_factory)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -100,7 +106,7 @@ class Handler(BaseHTTPRequestHandler):
     def _route(self, method: str) -> None:
         url = urlparse(self.path)
         q = parse_qs(url.query)
-        parts = [p for p in url.path.split("/") if p]
+        parts = [unquote(p) for p in url.path.split("/") if p]
         if not parts or parts[0] != "api":
             if method == "GET":
                 return self._static(url.path)
@@ -148,6 +154,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(self._observe(self._body()))
         council = self.server.council
         book = self.server.goals
+        runner = self.server.runner
         if parts == ["models"]:
             return self._json({"models": catalog_public(council.config)})
         if parts == ["council", "select"] and method == "POST":
@@ -167,9 +174,25 @@ class Handler(BaseHTTPRequestHandler):
                 ev = goalmod.evaluate(g, hub)
                 book.record_eval(gid, ev)
                 return self._json({"goal": book.get(gid), "evaluation": ev, "now": book.now_doing(gid),
-                                   "over_budget": book.over_budget(gid)})
+                                   "over_budget": book.over_budget(gid), "researchers": runner.status(gid)})
             if len(parts) == 2 and method == "POST":
-                return self._json(book.update(gid, self._body()))
+                b = self._body()
+                prev = book.get(gid)["status"]
+                if b.get("status") == "running" and prev != "running":
+                    over = book.over_budget(gid)
+                    if over:
+                        raise ValueError(over + "（上限を上げてから始めてください）")
+                g = book.update(gid, b)
+                started = []
+                if g["status"] == "running" and prev != "running":
+                    started = runner.start(gid)
+                elif g["status"] in ("paused", "done", "draft") and prev == "running":
+                    runner.stop(gid, why=f"ゴールを「{g['status']}」にした")
+                return self._json({**g, "started": started})
+            if len(parts) == 5 and parts[2] == "researchers" and parts[4] == "stop" and method == "POST":
+                n = runner.stop(gid, parts[3])
+                book.log(gid, "you", f"{parts[3]} を止めた")
+                return self._json({"stopped": n})
             if len(parts) == 3 and parts[2] == "nodes" and method == "POST":
                 b = self._body()
                 n = book.add_node(gid, b.get("kind", "note"), str(b.get("text", "")), b.get("by", "you"),
@@ -350,12 +373,14 @@ def _lan_ip() -> str:
 
 
 def make_server(host: str = "127.0.0.1", port: int = 8765, lan: bool = False, max_universes: int | None = None,
-                journal: Journal | None = None, token: str | None = None, council=None, goals_root=None) -> LabServer:
+                journal: Journal | None = None, token: str | None = None, council=None, goals_root=None,
+                researcher_factory=None) -> LabServer:
     if lan:
         host = "0.0.0.0"
         token = token or secrets.token_urlsafe(12)
     hub = Hub(max_universes=max_universes, journal=journal)
-    return LabServer((host, port), hub, token, council=council, goals_root=goals_root)
+    return LabServer((host, port), hub, token, council=council, goals_root=goals_root,
+                     researcher_factory=researcher_factory)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -378,6 +403,7 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         pass
     finally:
+        srv.runner.close()
         srv.hub.close()
         srv.server_close()
     return 0
