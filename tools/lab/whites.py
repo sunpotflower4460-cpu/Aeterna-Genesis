@@ -774,9 +774,57 @@ def _gpe_obstacle_3d():
         defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _barkley_3d():
+    """Excitable white (P13): a medium that fires, rests and fires again; scroll waves and scroll rings (tori)."""
+    from genesis.diagnostics import vortex_rings as vr
+    from genesis.models import excitable_barkley as eb
+    N = 48
+
+    def init(seed, knobs, p):
+        u, v = eb.make_initial((N, N, N), np.random.default_rng(seed), p)
+        return {"u": u, "v": v}
+
+    def step(s, t, p, cache):
+        u, v = eb.step(s["u"], s["v"], p)
+        return {"u": u, "v": v}
+
+    def lens(name, s):
+        if name == "u":
+            return s["u"]
+        return vr.line_mask(eb.phase_field(s["u"], s["v"])).astype(float)
+
+    def metrics(s):
+        pieces = vr.rings(eb.phase_field(s["u"], s["v"]))
+        return {"rings": sum(r["ring"] for r in pieces), "line_pieces": len(pieces),
+                "firing": float((s["u"] > 0.5).mean())}
+
+    def perturb(name, a, s, p, rng):
+        if name == "cut_half":
+            u, v = s["u"].copy(), s["v"].copy()
+            h = _half(u)
+            u[h], v[h] = 0.0, 0.0
+            return {"u": u, "v": v}
+        return _kick(s, ["u"], a["amp"], rng)
+
+    return White(
+        id="barkley-3d", title="脳や心臓の波：興奮する媒質で、渦の輪の波（スクロール輪）が自然に生まれて続くか（Barkley・3D）",
+        family="興奮する媒質", model="genesis.models.excitable_barkley", dimension=3, grid=(N, N, N),
+        steps_per_frame=30,
+        knobs=[Knob("a", "興奮のしやすさ a", "law", 0.75, 0.6, 0.9, 0.01),
+               Knob("b", "しきい値 b", "law", 0.06, 0.02, 0.1, 0.005),
+               Knob("corr", "はじめの興奮のまだらの大きさ（マス）", "start", 6.0, 2.0, 12.0, 0.5),
+               Knob("noise", "はじめの興奮の強さ（0＝静かなまま）", "start", 1.0, 0.0, 1.0, 0.05)],
+        lenses=[Lens("u", "興奮 u（発火しているところ）", "high", 0.0, 1.0),
+                Lens("lines", "渦の線（スクロール波の軸）", "high", 0.0, 1.0)],
+        perturbs=[PERTURB_CUT, PERTURB_KICK],
+        put_in=["まだらのランダムな興奮（大きさ corr マス）。波・らせん・輪は置かない", "法則（a・b・ε）と格子の間隔"],
+        source="genesis/models/excitable_barkley.py · tools/torus_excitable.py", ceiling_ref=None, track=None,
+        defaults=dict(eb.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d]
+             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d]
 _REGISTRY: dict[str, White] | None = None
 
 
