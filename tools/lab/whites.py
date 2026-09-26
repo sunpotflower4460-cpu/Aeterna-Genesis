@@ -905,7 +905,7 @@ def _protocell_3d():
         return _kick(s, ["V1", "V2"], a["amp"], rng)
 
     return White(
-        id="protocell-3d", title="自分の入れ物を作る自己複製：閉じた境界が生まれ、中身ごと分かれるか（3D）",
+        id="protocell-3d", title="自分の入れ物を作る自己複製：閉じた境界が生まれ、中身ごと分かれるか（入れ物×自己複製・3D）",
         family="Gray-Scott", model="genesis.models.protocell", dimension=3, grid=(N, N, N),
         steps_per_frame=100,
         knobs=[Knob("alpha", "入れ物の材料を作る速さ α（0＝作れない）", "law", 1.0, 0.0, 2.0, 0.05),
