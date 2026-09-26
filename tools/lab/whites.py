@@ -690,9 +690,45 @@ def _sh_hex():
         _perturb=perturb)
 
 
+def _gpe_quench_3d():
+    """Torus white (P11): damped superfluid quenched from ψ ≈ 0; vortex rings (tori) may be born and travel."""
+    from genesis.diagnostics import vortex_rings as vr
+    from genesis.models import gpe_local as gl
+    N = 48
+
+    def init(seed, knobs, p):
+        return {"psi": gl.make_initial((N, N, N), np.random.default_rng(seed), p)}
+
+    def step(s, t, p, cache):
+        return {"psi": gl.step(s["psi"], p)}
+
+    def lens(name, s):
+        return np.abs(s["psi"]) if name == "amp" else vr.line_mask(s["psi"], 1).astype(float)
+
+    def metrics(s):
+        pieces = vr.rings(s["psi"]) if np.abs(s["psi"]).mean() > 0.7 else []
+        return {"rings": sum(r["ring"] for r in pieces), "line_pieces": len(pieces),
+                "line_voxels": int(sum(r["voxels"] for r in pieces)), "mean_amp": float(np.abs(s["psi"]).mean())}
+
+    def perturb(name, a, s, p, rng):
+        return _kick(s, ["psi"], a["amp"], rng)
+
+    return White(
+        id="gpe-quench-3d", title="トーラスが自然に生まれるか：冷える超流体の渦の輪（GPE・局所・3D）",
+        family="GPE（超流体）", model="genesis.models.gpe_local", dimension=3, grid=(N, N, N), steps_per_frame=10,
+        knobs=[Knob("gamma", "外（熱浴）とのつながり γ（置いたもの）", "law", 0.03, 0.005, 0.1, 0.005),
+               Knob("noise", "はじめのノイズ", "start", 0.01, 0.001, 0.05, 0.001)],
+        lenses=[Lens("lines", "渦の線（芯は 1 マスなので太らせて表示）", "high", 0.0, 1.0),
+                Lens("amp", "|ψ|（渦の芯は穴）", "low", 0.0, 1.2)],
+        perturbs=[PERTURB_KICK],
+        put_in=["ψ≈0＋ごく小さなノイズ（渦も輪も置かない）", "法則（g=μ=1）と外とのつながり γ"],
+        source="genesis/models/gpe_local.py · tools/torus_birth.py", ceiling_ref=None, track=None,
+        defaults=dict(gl.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex]
+             _sh_hex, _gpe_quench_3d]
 _REGISTRY: dict[str, White] | None = None
 
 

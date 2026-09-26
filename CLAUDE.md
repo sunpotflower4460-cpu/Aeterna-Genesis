@@ -76,3 +76,4 @@ CI（`.github/workflows/*-ci.yml`）はファイルを明示して実行する�
 - ブランチを切って PR にする。main への直接 push や bot 的な連投はしない。
 - 研究データ（`rooms/`、`experiments/`、`ai_lab/discoveries/`）は削除しない。作業ツリーから外すときは `tools/archive.py` でマニフェストに記録し、復元できるようにする。
 - `rooms/candidates/` と `ai_lab/discoveries/` の数値を見出しにするときは、P2 の監査結果（`docs/TREASURE_AUDIT.md`、`audit/`）を通してからにする。
+- **実験は毎回、必ず 3D で先に行い、そのあと 2D で行う**（うえきさんの指示、2026-09-26）。報告も 3D の結果を先に書き、2D は 3D と比べる形にする。
