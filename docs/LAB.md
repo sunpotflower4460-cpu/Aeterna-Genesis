@@ -131,6 +131,13 @@ python -m tools.lab.server                           # 起動時に、どの役�
 - **道具を使える model**：Anthropic（tool use）、DeepSeek（直接つなぐ・function calling）、OpenAI 互換。Gemini は研究員にはなれない（見る係だけ）。
 - 研究員が書くことは**観察の記録で、主張ではない**。主張にするには、人が replay と `/audit` を通す。
 
+### 端の温度（波の白・H8）
+
+波の白（`wave-phi4`・`wave-sine-gordon`）のつまみ「端の温度」を 0 より大きくすると、端（`absorb` の縁）が熱浴になる。
+- 吸い込む（散逸）だけでなく、同じ温度で蹴り返す（揺らぎ）。「見えない外」との行き来を置いたことになる。
+- 乱数は seed ごと・step ごとに決まり、replay できる。
+- 測定は `tools/bath_circulation.py`（仮説 H8）。
+
 ### まとめて試す（研究員の道具 `sweep`）
 
 たくさんのパターンを、画面に出さずにまとめて試す（`tools/lab/sweep.py`）。

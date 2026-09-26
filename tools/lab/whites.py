@@ -484,11 +484,14 @@ def _wave(potential: str, dim: int):
     def init(seed, knobs, p):
         rng = np.random.default_rng(seed)
         phi, pi = kg.make_initial(shape, rng, p)
-        return {"phi": phi, "pi": pi, "lam": np.array(float(p["lam"]))}
+        # bseed: the bath's own random stream (per seed, per step) -- replayable
+        return {"phi": phi, "pi": pi, "lam": np.array(float(p["lam"])), "bseed": np.array(int(seed))}
 
     def step(s, t, p, cache):
-        phi, pi = kg.step(s["phi"], s["pi"], p, cache["mask"])
-        return {"phi": phi, "pi": pi, "lam": np.array(float(p["lam"]))}
+        rng = (np.random.default_rng([int(s["bseed"]), int(round(t / p["dt"]))])
+               if p.get("bath_T", 0.0) > 0.0 and p.get("absorb", 0.0) > 0.0 else None)
+        phi, pi = kg.step(s["phi"], s["pi"], p, cache["mask"], rng)
+        return {"phi": phi, "pi": pi, "lam": np.array(float(p["lam"])), "bseed": s["bseed"]}
 
     def lens(name, s):
         p = params_of(s)
@@ -513,7 +516,7 @@ def _wave(potential: str, dim: int):
             phi = phi + 0.5 * _gauss(shape, a["y"] * N, a["x"] * N, 3.0)
         else:
             phi = phi + a["amp"] * rng.standard_normal(phi.shape)
-        return {"phi": phi, "pi": pi, "lam": s["lam"]}
+        return {"phi": phi, "pi": pi, "lam": s["lam"], "bseed": s["bseed"]}
 
     sg = potential == "sine_gordon"
     name = "サイン–ゴルドン" if sg else "φ⁴"
@@ -524,6 +527,7 @@ def _wave(potential: str, dim: int):
         # dt = 0.2 is fixed: leapfrog with the nearest-neighbour stencil is stable for dt < 1/sqrt(ndim)
         knobs=[Knob("lam", "谷の深さ λ", "law", 1.0, 0.2, 3.0, 0.05),
                Knob("absorb", "端で吸い込む強さ（0＝閉じた宇宙。置いたもの）", "law", 0.0, 0.0, 0.5, 0.01),
+               Knob("bath_T", "端の温度（0＝吸い込むだけ。>0 で蹴り返しもする。置いたもの）", "law", 0.0, 0.0, 0.2, 0.005),
                Knob("noise", "はじめのノイズ", "start", 0.01, 1e-4, 0.1, 1e-4),
                Knob("bias", "はじめの片寄り（0＝左右対称）", "start", 0.0, -0.2, 0.2, 0.005)],
         lenses=([Lens("phi", "φ（谷は 0、山は ±π）", "cyclic", -np.pi, np.pi, True)] if sg else
@@ -532,7 +536,8 @@ def _wave(potential: str, dim: int):
         perturbs=[PERTURB_CUT, PERTURB_KICK] + ([PERTURB_SEED] if dim == 2 else []),
         put_in=["山の頂上で止まっている一様な場＋ごく小さなノイズ",
                 "谷の形（" + ("2πごとに谷があるサイン–ゴルドン" if sg else "±1 の 2 つの谷を持つ φ⁴") + "）",
-                "端で吸い込むとき（absorb > 0）は、その吸い込み（時間の矢を端に置く）"],
+                "端で吸い込むとき（absorb > 0）は、その吸い込み（時間の矢を端に置く）",
+                "端の温度（bath_T > 0）は、端が同じ温度で蹴り返す熱浴（見えない外との行き来を置く）"],
         source="genesis/models/wave_klein_gordon.py", ceiling_ref=None,
         track=("energy", 0.5, "above") if dim == 2 else None,
         defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb, _cache=cache)
