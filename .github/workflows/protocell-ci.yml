@@ -1,0 +1,46 @@
+name: Protocell CI (P15/P17)
+
+# Runs the protocell tests including the slow ones -- above all the local-stencil vs spectral corroboration in 2D
+# and 3D -- whenever the law, the discretisations or the measures change. The fast per-PR suite (tests.yml) skips
+# slow tests, so without this job the solver corroboration would only run in the weekly full suite.
+on:
+  pull_request:
+    paths:
+      - 'genesis/models/protocell.py'
+      - 'genesis/models/protocell_one.py'
+      - 'genesis/models/gray_scott_two.py'
+      - 'genesis/diagnostics/corroborate_protocell.py'
+      - 'genesis/diagnostics/topology3d.py'
+      - 'genesis/diagnostics/topology_betti.py'
+      - 'tools/protocell_run.py'
+      - 'tools/protocell_resolution.py'
+      - 'tests/test_protocell.py'
+      - 'tests/test_protocell_one.py'
+      - 'tests/test_protocell_resolution.py'
+      - 'tests/test_corroborate_protocell.py'
+      - '.github/workflows/protocell-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Protocell law, measures and resolution verdict (including slow tests)
+        run: python -m pytest -q tests/test_protocell.py tests/test_protocell_one.py tests/test_protocell_resolution.py
+      - name: Local stencil vs spectral Laplacian, 2D and 3D (slow)
+        run: python -m pytest -q tests/test_corroborate_protocell.py

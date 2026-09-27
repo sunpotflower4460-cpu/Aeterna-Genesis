@@ -32,6 +32,14 @@ from tools.cell_inherit import _overlaps
 from tools.snapshot import render_field
 
 
+def inside_shares(spots, box):
+    """For each labelled replicator spot, the share of its voxels inside a container (box). A spot counts as
+    outside when this is <= 0.5 (at least half of it outside)."""
+    vox = np.bincount(spots.ravel())
+    inside = np.bincount(spots[box].ravel(), minlength=vox.size)[1:] / np.maximum(vox[1:], 1)
+    return inside[vox[1:] > 0]
+
+
 def _unwrap(mask):
     """Roll a periodic 3D component so that it does not cross the box edge where possible (an empty slab is moved
     to index 0 on every axis). Returns (mask, spans): spans = axes on which it has no empty slab."""
@@ -91,14 +99,11 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
     for i in range(n_steps + 1):
         if kill_i is not None and i == kill_i:
             V1, V2 = np.zeros_like(V1), np.zeros_like(V2)
-        if i % stride == 0:
+        if i % stride == 0 or i == n_steps:              # the last frame is always at T
             lab, cs = pc.containers(c, V1, V2)
             box = lab > 0
             V = V1 + V2
-            slab = pc.labels(V, pc.THRESH_V)
-            vox = np.bincount(slab.ravel())
-            inside = np.bincount(slab[box].ravel(), minlength=vox.size)[1:] / np.maximum(vox[1:], 1)
-            inside = inside[vox[1:] > 0]                 # share of each spot's voxels inside a container
+            inside = inside_shares(pc.labels(V, pc.THRESH_V), box)
             occ = [x for x in cs if x["spots"] > 0]
             kinds = {x["id"]: x["kind1"] for x in occ}
             frac1 = float(np.mean([k > 0.5 for k in kinds.values()])) if kinds else 0.5
@@ -108,8 +113,8 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                            "v_in": round(float(V[box].mean()), 4) if box.any() else None,
                            "v_out": round(float(V[~box].mean()), 5) if (~box).any() else None,
                            "replicators": round(float(V.mean()), 5), "spots": int(inside.size),
-                           "spots_outside": int((inside < 0.5).sum()),          # mostly outside
-                           "spots_straddling": int(((inside >= 0.5) & (inside < 1.0)).sum()),
+                           "spots_outside": int((inside <= 0.5).sum()),         # at least half outside
+                           "spots_straddling": int(((inside > 0.5) & (inside < 1.0)).sum()),
                            "spot_min_inside": round(float(inside.min()), 3) if inside.size else None})
             if prev is not None:
                 plab, pkinds, pfrac1 = prev

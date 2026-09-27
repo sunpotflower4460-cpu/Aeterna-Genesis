@@ -48,19 +48,23 @@ def summary(out: Path, rel_tol: float = 0.15) -> dict:
         agg = {dx: {k: {"mean": float(np.mean(v)) if v else None, "min": min(v) if v else None,
                         "max": max(v) if v else None, "n": len(v)} for k, v in s.items()}
                for dx, s in stats.items()}
-        coarse, fine = max(agg), min(agg)
+        if len(agg) < 2:                                   # nothing to compare a single spacing with
+            table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": {}, "insufficient": True,
+                          "reason": "need at least two grid spacings"}
+            continue
         verdict = {}
         for k in OBS:
-            a, b = agg[coarse][k], agg[fine][k]
-            if a["mean"] is None or b["mean"] is None:
+            means = {dx: a[k]["mean"] for dx, a in agg.items() if a[k]["mean"] is not None}
+            if len(means) < 2:
                 continue
-            diff = abs(a["mean"] - b["mean"])
-            spread = max(a["max"] - a["min"], b["max"] - b["min"])
-            rel = diff / (abs(a["mean"]) + abs(b["mean"]) + 1e-12) * 2
+            hi, lo = max(means, key=means.get), min(means, key=means.get)
+            diff = means[hi] - means[lo]                      # over every pair of spacings, not only the ends
+            spread = max(agg[dx][k]["max"] - agg[dx][k]["min"] for dx in means)
+            rel = diff / (float(np.mean([abs(m) for m in means.values()])) + 1e-12)
             verdict[k] = {"diff": round(diff, 6), "rel": round(rel, 4), "spread": round(spread, 6),
+                          "widest_pair": [hi, lo],
                           "resolution_independent": bool(diff <= spread or rel <= rel_tol)}
-        table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": verdict,
-                      "compared": [coarse, fine]}
+        table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": verdict, "insufficient": False}
     return table
 
 
@@ -79,7 +83,7 @@ def main(argv=None) -> int:
     if a.mode == "summary":
         t = summary(out)
         for dim, d in t.items():
-            print(f"{dim}D  dx {d['dx']}  (compared {d['compared'][0]} vs {d['compared'][1]})")
+            print(f"{dim}D  dx {d['dx']}" + ("  -- " + d["reason"] if d["insufficient"] else ""))
             for k in OBS:
                 row = "  ".join(f"{dx}: {d['agg'][dx][k]['mean']:.4g} [{d['agg'][dx][k]['min']:.4g}–"
                                 f"{d['agg'][dx][k]['max']:.4g}]" if d['agg'][dx][k]['mean'] is not None else f"{dx}: –"
