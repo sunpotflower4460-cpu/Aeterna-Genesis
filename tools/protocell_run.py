@@ -5,6 +5,7 @@
     python tools/protocell_run.py --out /tmp/pc --seed 1 --set alpha=0         # control: replicators cannot build
     python tools/protocell_run.py --out /tmp/pc --seed 1 --kill 200            # control: remove the replicators at t=200
     python tools/protocell_run.py --out /tmp/pc --seed 1 --dim 2
+    python tools/protocell_run.py --out /tmp/pc --seed 1 --model one --set y=2          # P17: one chemistry
 
 Law: genesis/models/protocell.py. t = 0: no container anywhere (c = −1 + noise), food, seed blobs of V1/V2 in
 random mixtures.
@@ -32,11 +33,11 @@ from tools.snapshot import render_field
 
 
 def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: float | None = None, n: int | None = None,
-        every: float = 25.0, out: Path | None = None, tag: str = ""):
+        every: float = 25.0, out: Path | None = None, tag: str = "", model=pc):
     n = n or (48 if dim == 3 else 128)
     shape = (n,) * dim
-    p = dict(pc.DEFAULTS if dim == 3 else pc.DEFAULTS_2D, **(overrides or {}))
-    c, U, V1, V2 = pc.make_initial(shape, np.random.default_rng(seed), p)
+    p = dict(model.DEFAULTS if dim == 3 else model.DEFAULTS_2D, **(overrides or {}))
+    c, U, V1, V2 = model.make_initial(shape, np.random.default_rng(seed), p)
     stride = int(round(every / p["dt"]))
     kill_i = None if kill is None else int(round(kill / p["dt"]))
     frames, divisions = [], []
@@ -49,6 +50,9 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
             lab, cs = pc.containers(c, V1, V2)
             box = lab > 0
             V = V1 + V2
+            slab = pc.labels(V, pc.THRESH_V)
+            spot_ids = set(np.unique(slab)) - {0}
+            housed = set(np.unique(slab[box])) - {0}
             occ = [x for x in cs if x["spots"] > 0]
             kinds = {x["id"]: x["kind1"] for x in occ}
             frac1 = float(np.mean([k > 0.5 for k in kinds.values()])) if kinds else 0.5
@@ -57,7 +61,8 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                            "box_share": round(float(box.mean()), 4),
                            "v_in": round(float(V[box].mean()), 4) if box.any() else None,
                            "v_out": round(float(V[~box].mean()), 5) if (~box).any() else None,
-                           "replicators": round(float(V.mean()), 5)})
+                           "replicators": round(float(V.mean()), 5), "spots": len(spot_ids),
+                           "spots_outside": len(spot_ids - housed)})
             if prev is not None:
                 plab, pkinds, pfrac1 = prev
                 ov = _overlaps(plab, lab)
@@ -80,13 +85,13 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                                       null=round(pfrac1 if pk > 0.5 else 1.0 - pfrac1, 4))
                         divisions.append(ev)
             prev = (lab, kinds, frac1)
-        c, U, V1, V2 = pc.step(c, U, V1, V2, p)
+        c, U, V1, V2 = model.step(c, U, V1, V2, p)
     fr = frames
     inh = [d for d in divisions if "same" in d]
     late = [f for f in fr if f["t"] >= T / 2]
     one_each = [float(np.mean([s == 1 for s in f["spots_per_container"]])) for f in late if f["containers"]]
     res = {"dim": dim, "n": n, "seed": seed, "T": T, "kill": kill, "params": {k: p[k] for k in
-           ("kappa", "alpha", "beta", "g0", "s", "F", "k")}, "frames": fr, "divisions": divisions,
+           ("kappa", "alpha", "beta", "M", "y", "g0", "s", "F", "k") if k in p}, "frames": fr, "divisions": divisions,
            "n_divisions": len(divisions), "births": births, "merges": merges, "deaths": deaths,
            "n_inherit": len(inh), "inheritance": round(float(np.mean([d["same"] for d in inh])), 4) if inh else None,
            "null": round(float(np.mean([d["null"] for d in inh])), 4) if inh else None,
@@ -112,17 +117,23 @@ def main(argv=None) -> int:
     ap.add_argument("--n", type=int, default=None)
     ap.add_argument("--kill", type=float, default=None)
     ap.add_argument("--set", action="append", default=[], help="law override, e.g. alpha=0")
+    ap.add_argument("--model", default="protocell", choices=("protocell", "one"),
+                    help="one = genesis/models/protocell_one.py (P17: the material is the replicators' breakdown)")
     a = ap.parse_args(argv)
     ov = {k: float(v) for k, v in (s.split("=") for s in a.set)}
     tag = "".join(f"_{k}{v}" for k, v in ov.items()) + (f"_kill{a.kill}" if a.kill is not None else "")
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    r = run(a.dim, a.seed, a.T, ov, a.kill, a.n, out=out, tag=tag)
+    model = pc
+    if a.model == "one":
+        from genesis.models import protocell_one as model
+        tag = "_one" + tag
+    r = run(a.dim, a.seed, a.T, ov, a.kill, a.n, out=out, tag=tag, model=model)
     fr = r["frames"]
     k = max(1, len(fr) // 8)
     print(f"{a.dim}D seed={a.seed}{tag}: containers {[f['containers'] for f in fr][::k]} | occupied"
           f" {[f['occupied'] for f in fr][::k]} | share {[f['box_share'] for f in fr][::k]} | replicators"
-          f" {[f['replicators'] for f in fr][::k]} | births {r['births']} divisions {r['n_divisions']} merges"
+          f" {[f['replicators'] for f in fr][::k]} | spots outside {[f['spots_outside'] for f in fr][::k]} | births {r['births']} divisions {r['n_divisions']} merges"
           f" {r['merges']} deaths {r['deaths']} | one spot each (late) {r['late_one_spot_each']} | in/out"
           f" {r['late_in_out_ratio']} | inheritance {r['inheritance']} of {r['n_inherit']} (null {r['null']})",
           flush=True)

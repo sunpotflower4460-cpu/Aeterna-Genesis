@@ -921,6 +921,37 @@ def _protocell_3d():
         defaults=dict(pc.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _protocell_one_3d():
+    """One chemistry (P17, ladder R4): the container material is the replicators' own breakdown product."""
+    from genesis.models import protocell_one as po
+    base = _protocell_3d()
+    N = base.grid[0]
+
+    def init(seed, knobs, p):
+        c, U, V1, V2 = po.make_initial((N, N, N), np.random.default_rng(seed), p)
+        return {"c": c, "U": U, "V1": V1, "V2": V2}
+
+    def step(s, t, p, cache):
+        c, U, V1, V2 = po.step(s["c"], s["U"], s["V1"], s["V2"], p)
+        return {"c": c, "U": U, "V1": V1, "V2": V2}
+
+    return White(
+        id="protocell-one-3d", title="1 つの化学：自己複製が壊れたものが入れ物になり、水がいる分解が中で遅いとき（入れ物×自己複製・3D）",
+        family="Gray-Scott", model="genesis.models.protocell_one", dimension=3, grid=(N, N, N),
+        steps_per_frame=100,
+        knobs=[Knob("y", "壊れた自己複製 1 つからできる材料の量 y（0＝材料にならない）", "law", 2.0, 0.0, 4.0, 0.5),
+               Knob("hyd", "分解に水がいる度合い h（0＝材料の中でも同じ速さで壊れる）", "law", 0.1, 0.0, 0.5, 0.01),
+               Knob("k", "自己複製が壊れる速さ k", "law", 0.070, 0.060, 0.080, 0.001),
+               Knob("n_seeds", "はじめの種の数（V1 と V2 のランダムな混ざり）", "start", 12, 1, 30, 1, True)],
+        lenses=base.lenses, perturbs=base.perturbs,
+        put_in=["法則：Gray–Scott の自己複製と流れ（k は水の中だけでは増え続けられない値）、壊れたものは水と混ざらない"
+                "（Cahn–Hilliard）、壊れた 1 つから材料 y、分解は水がいる（材料の中で h だけ遅い）",
+                "t=0：入れ物も材料もどこにもない。種は V1 と V2 のランダムな混ざり"],
+        source="genesis/models/protocell_one.py · tools/protocell_run.py --model one", ceiling_ref=None, track=None,
+        defaults=dict(po.DEFAULTS), _init=init, _step=step, _lens=base._lens, _metrics=base._metrics,
+        _perturb=base._perturb)
+
+
 def _forced_3d():
     """A medium with its own rhythm under an outside beat (P16, H7): captured, or keeping its own rhythm?"""
     from genesis.diagnostics import vortex_rings as vr
@@ -972,7 +1003,7 @@ def _forced_3d():
 
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d, _forced_3d]
+             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d, _forced_3d, _protocell_one_3d]
 _REGISTRY: dict[str, White] | None = None
 
 
