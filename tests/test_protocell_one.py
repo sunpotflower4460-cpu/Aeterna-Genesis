@@ -108,3 +108,18 @@ def test_the_last_frame_is_at_T_when_T_is_not_a_multiple_of_every():
     r = pr.run(3, seed=1, T=60.0, n=24, model=po)                  # every = 25
     assert [f["t"] for f in r["frames"]][-2:] == [50.0, 60.0]
     assert r["three_d"]["containers"] == r["frames"][-1]["containers"] > 0     # the audit sees the last frame
+
+
+def test_a_spot_clipping_a_neighbour_is_assigned_once():
+    lab = np.zeros((10, 10), int)
+    lab[1:5, 1:5] = 1
+    lab[1:5, 6:9] = 2
+    spots = np.zeros((10, 10), int)
+    spots[2:4, 2:7] = 7                                             # 10 voxels: 6 in container 1, 2 in container 2
+    per, unassigned = pr.assign_spots(spots, lab)
+    assert per == {1: 1, 2: 0} and unassigned == 0
+
+
+def test_the_grid_spacing_cannot_be_set_as_a_law_override():
+    with pytest.raises(ValueError):
+        pr.run(2, seed=1, T=1.0, n=16, model=po, overrides={"dx": 0.5})

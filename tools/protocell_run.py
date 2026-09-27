@@ -40,6 +40,29 @@ def inside_shares(spots, box):
     return inside[vox[1:] > 0]
 
 
+def assign_spots(spots, lab):
+    """Each replicator spot is assigned to the one container holding more than half of its voxels (or to none).
+    Returns (per-container number of assigned spots for every container id in lab, number of unassigned spots).
+    Unlike protocell.containers' `spots` (any touch counts), a spot clipping a neighbour is counted only once."""
+    n_c = int(lab.max())
+    counts = np.zeros(n_c + 1, int)
+    unassigned = 0
+    s_ids, s_inv = np.unique(spots.ravel(), return_inverse=True)
+    size = np.bincount(s_inv)
+    pair = np.bincount(s_inv * (n_c + 1) + lab.ravel(), minlength=s_ids.size * (n_c + 1)).reshape(s_ids.size, n_c + 1)
+    for j, sid in enumerate(s_ids):
+        if sid == 0:
+            continue
+        pair[j, 0] = 0
+        best = int(np.argmax(pair[j]))
+        if pair[j, best] * 2 > size[j]:
+            counts[best] += 1
+        else:
+            unassigned += 1
+    ids = [int(i) for i in np.unique(lab) if i]
+    return {i: int(counts[i]) for i in ids}, unassigned
+
+
 def _unwrap(mask):
     """Roll a periodic 3D component so that it does not cross the box edge where possible (an empty slab is moved
     to index 0 on every axis). Returns (mask, spans): spans = axes on which it has no empty slab."""
@@ -85,6 +108,8 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
     keeps its strength per physical volume."""
     n = n or (48 if dim == 3 else 128)
     shape = (n,) * dim
+    if "dx" in (overrides or {}):
+        raise ValueError("set the grid spacing with the dx argument (--dx), which also rescales dt, seeds and noise")
     p = dict(model.DEFAULTS if dim == 3 else model.DEFAULTS_2D, **(overrides or {}))
     if dx != 1.0:
         if "dx" not in p:
@@ -107,7 +132,9 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
             lab, cs = pc.containers(c, V1, V2)
             box = lab > 0
             V = V1 + V2
-            inside = inside_shares(pc.labels(V, pc.THRESH_V), box)
+            slab = pc.labels(V, pc.THRESH_V)
+            inside = inside_shares(slab, box)
+            maj, unassigned = assign_spots(slab, lab)
             occ = [x for x in cs if x["spots"] > 0]
             kinds = {x["id"]: x["kind1"] for x in occ}
             frac1 = float(np.mean([k > 0.5 for k in kinds.values()])) if kinds else 0.5
@@ -119,7 +146,10 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                            "replicators": round(float(V.mean()), 5), "spots": int(inside.size),
                            "spots_outside": int((inside <= 0.5).sum()),         # at least half outside
                            "spots_straddling": int(((inside > 0.5) & (inside < 1.0)).sum()),
-                           "spot_min_inside": round(float(inside.min()), 3) if inside.size else None})
+                           "spot_min_inside": round(float(inside.min()), 3) if inside.size else None,
+                           "occupied_majority": sum(1 for v in maj.values() if v > 0),
+                           "spots_per_container_majority": sorted(maj.values()),
+                           "spots_unassigned": unassigned})
             if prev is not None:
                 plab, pkinds, pfrac1 = prev
                 ov = _overlaps(plab, lab)
@@ -148,6 +178,8 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
     inh = [d for d in divisions if "same" in d]
     late = [f for f in fr if f["t"] >= T / 2]
     one_each = [float(np.mean([s == 1 for s in f["spots_per_container"]])) for f in late if f["containers"]]
+    one_each_maj = [float(np.mean([s == 1 for s in f["spots_per_container_majority"]])) for f in late
+                    if f["containers"]]
     keys = ("kappa", "alpha", "beta", "M", "y", "hyd", "g0", "s", "F", "k", "dx", "dt", "noise", "seed_radius")
     res = {"dim": dim, "n": n, "seed": seed, "T": T, "kill": kill, "params": {k: p[k] for k in keys if k in p},
            "frames": fr, "divisions": divisions,
@@ -156,6 +188,9 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
            "null": round(float(np.mean([d["null"] for d in inh])), 4) if inh else None,
            "containers_first_last": [next((f["containers"] for f in fr if f["containers"]), 0), fr[-1]["containers"]],
            "late_one_spot_each": round(float(np.mean(one_each)), 3) if one_each else None,
+           "late_one_spot_each_majority": round(float(np.mean(one_each_maj)), 3) if one_each_maj else None,
+           "late_occupied_majority": round(float(np.mean([f["occupied_majority"] / f["containers"] for f in late
+                                                           if f["containers"]])), 3) if one_each_maj else None,
            "late_in_out_ratio": round(float(np.median([f["v_in"] / max(f["v_out"], 1e-9) for f in late
                                                         if f["v_in"] is not None and f["v_out"] is not None])), 1)
            if any(f["v_in"] is not None for f in late) else None}
@@ -177,6 +212,7 @@ def main(argv=None) -> int:
     ap.add_argument("--T", type=float, default=400.0)
     ap.add_argument("--n", type=int, default=None)
     ap.add_argument("--kill", type=float, default=None)
+    ap.add_argument("--dx", type=float, default=1.0, help="grid spacing (protocell_one only); pass --n = L/dx")
     ap.add_argument("--set", action="append", default=[], help="law override, e.g. alpha=0")
     ap.add_argument("--model", default="protocell", choices=("protocell", "one"),
                     help="one = genesis/models/protocell_one.py (P17: the material is the replicators' breakdown)")
@@ -189,14 +225,15 @@ def main(argv=None) -> int:
     if a.model == "one":
         from genesis.models import protocell_one as model
         tag = "_one" + tag
-    r = run(a.dim, a.seed, a.T, ov, a.kill, a.n, out=out, tag=tag, model=model)
+    r = run(a.dim, a.seed, a.T, ov, a.kill, a.n, out=out, tag=tag, model=model, dx=a.dx)
     fr = r["frames"]
     k = max(1, len(fr) // 8)
     print(f"{a.dim}D seed={a.seed}{tag}: containers {[f['containers'] for f in fr][::k]} | occupied"
           f" {[f['occupied'] for f in fr][::k]} | share {[f['box_share'] for f in fr][::k]} | replicators"
           f" {[f['replicators'] for f in fr][::k]} | spots outside {[f['spots_outside'] for f in fr][::k]} straddling"
           f" {[f['spots_straddling'] for f in fr][::k]} | births {r['births']} divisions {r['n_divisions']} merges"
-          f" {r['merges']} deaths {r['deaths']} | one spot each (late) {r['late_one_spot_each']} | in/out"
+          f" {r['merges']} deaths {r['deaths']} | one spot each (late) {r['late_one_spot_each']} (majority"
+          f" {r['late_one_spot_each_majority']}, occupied {r['late_occupied_majority']}) | in/out"
           f" {r['late_in_out_ratio']} | inheritance {r['inheritance']} of {r['n_inherit']} (null {r['null']})",
           flush=True)
     if "three_d" in r:

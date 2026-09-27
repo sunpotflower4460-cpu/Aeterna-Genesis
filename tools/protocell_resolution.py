@@ -21,7 +21,7 @@ import numpy as np
 from genesis.models import protocell_one as po
 from tools.protocell_run import run as pc_run
 
-OBS = ("density", "box_share", "in_out", "one_spot_each", "divisions", "inheritance", "balls")
+OBS = ("density", "box_share", "in_out", "one_spot_each", "occupied", "divisions", "inheritance", "balls")
 
 
 def observe(r: dict, L: float) -> dict:
@@ -30,7 +30,8 @@ def observe(r: dict, L: float) -> dict:
     last = r["frames"][-1]
     t3 = r.get("three_d")
     return {"density": last["containers"] / vol, "box_share": last["box_share"],
-            "in_out": r["late_in_out_ratio"], "one_spot_each": r["late_one_spot_each"],
+            "in_out": r["late_in_out_ratio"], "one_spot_each": r["late_one_spot_each_majority"],
+            "occupied": r["late_occupied_majority"],
             "divisions": r["n_divisions"] / vol, "inheritance": r["inheritance"],
             "balls": (t3["solid_balls"] / t3["containers"]) if t3 and t3["containers"] else None,
             "containers": last["containers"], "n_inherit": r["n_inherit"],
@@ -38,11 +39,13 @@ def observe(r: dict, L: float) -> dict:
 
 
 def summary(out: Path, rel_tol: float = 0.15) -> dict:
+    """{"<dim>D L=<L> T=<T>": {...}}: runs are compared only within the same dimension, box and duration."""
     rows = [json.loads(p.read_text()) for p in sorted(out.glob("res*.json"))]
     table: dict = {}
-    for dim in sorted({r["dim"] for r in rows}):
+    for key in sorted({(r["dim"], r["L"], r["T"]) for r in rows}):       # only the same box and duration compare
+        dim = f"{key[0]}D L={key[1]:g} T={key[2]:g}"
         by_dx: dict = {}
-        for r in (r for r in rows if r["dim"] == dim):
+        for r in (r for r in rows if (r["dim"], r["L"], r["T"]) == key):
             by_dx.setdefault(r["dx"], []).append(r["obs"])
         stats = {dx: {k: [o[k] for o in obs if o[k] is not None] for k in OBS} for dx, obs in by_dx.items()}
         agg = {dx: {k: {"mean": float(np.mean(v)) if v else None, "min": min(v) if v else None,
@@ -55,7 +58,9 @@ def summary(out: Path, rel_tol: float = 0.15) -> dict:
         verdict = {}
         for k in OBS:
             means = {dx: a[k]["mean"] for dx, a in agg.items() if a[k]["mean"] is not None}
-            if len(means) < 2:
+            if len(means) < len(agg):                     # every spacing must contribute, or no verdict
+                verdict[k] = {"insufficient": True, "missing_dx": sorted(set(agg) - set(means)),
+                              "resolution_independent": None}
                 continue
             hi, lo = max(means, key=means.get), min(means, key=means.get)
             diff = means[hi] - means[lo]                      # over every pair of spacings, not only the ends
@@ -83,7 +88,7 @@ def main(argv=None) -> int:
     if a.mode == "summary":
         t = summary(out)
         for dim, d in t.items():
-            print(f"{dim}D  dx {d['dx']}" + ("  -- " + d["reason"] if d["insufficient"] else ""))
+            print(f"{dim}  dx {d['dx']}" + ("  -- " + d["reason"] if d["insufficient"] else ""))
             for k in OBS:
                 row = "  ".join(f"{dx}: {d['agg'][dx][k]['mean']:.4g} [{d['agg'][dx][k]['min']:.4g}–"
                                 f"{d['agg'][dx][k]['max']:.4g}]" if d['agg'][dx][k]['mean'] is not None else f"{dx}: –"
@@ -97,7 +102,7 @@ def main(argv=None) -> int:
         raise SystemExit(f"dx={a.dx} does not divide L={L} (n*dx = {n * a.dx}); choose dx = L/n")
     r = pc_run(a.dim, a.seed, a.T, n=n, model=po, dx=a.dx)
     rec = {"dim": a.dim, "L": L, "dx": a.dx, "n": n, "seed": a.seed, "T": a.T, "dt": r["params"]["dt"],
-           "obs": observe(r, L), "three_d": r.get("three_d")}
+           "params": r["params"], "obs": observe(r, L), "three_d": r.get("three_d")}
     print(json.dumps(rec["obs"]), flush=True)
     (out / f"res{a.dim}d_dx{a.dx:.4f}_s{a.seed}.json").write_text(json.dumps(rec, indent=1))
     return 0

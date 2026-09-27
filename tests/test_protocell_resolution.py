@@ -11,10 +11,15 @@ def _write(tmp_path, dx, seed, density):
     (tmp_path / f"res3d_dx{dx:.4f}_s{seed}.json").write_text(json.dumps(rec))
 
 
+def _only(table):
+    assert len(table) == 1
+    return next(iter(table.values()))
+
+
 def test_a_single_spacing_gives_no_verdict(tmp_path):
     for s in (1, 2):
         _write(tmp_path, 1.0, s, 1.0)
-    t = pres.summary(tmp_path)[3]
+    t = _only(pres.summary(tmp_path))
     assert t["insufficient"] and t["verdict"] == {}
 
 
@@ -22,9 +27,9 @@ def test_a_divergent_middle_spacing_is_caught(tmp_path):
     for dx, d in ((1.0, 1.0), (0.8, 2.0), (0.6666666667, 1.0)):     # the ends agree, the middle does not
         for s in (1, 2):
             _write(tmp_path, dx, s, d)
-    v = pres.summary(tmp_path)[3]["verdict"]["density"]
+    v = _only(pres.summary(tmp_path))["verdict"]["density"]
     assert not v["resolution_independent"] and 0.8 in v["widest_pair"]
-    assert pres.summary(tmp_path)[3]["verdict"]["box_share"]["resolution_independent"]
+    assert _only(pres.summary(tmp_path))["verdict"]["box_share"]["resolution_independent"]
 
 
 def test_a_spacing_that_does_not_tile_the_box_is_rejected(tmp_path):
@@ -42,3 +47,23 @@ def test_refining_keeps_the_noise_strength_per_physical_volume():
     q = r["params"]
     assert np.isclose(q["dt"], po.DEFAULTS_2D["dt"] * 0.5 ** 4) and np.isclose(q["seed_radius"], 6.0)
     assert np.isclose(q["noise"], po.DEFAULTS_2D["noise"] / 0.5)             # per-cell std ∝ dx^(−dim/2), dim = 2
+
+
+def test_runs_of_another_box_or_duration_are_not_mixed(tmp_path):
+    _write(tmp_path, 1.0, 1, 1.0)
+    rec = json.loads((tmp_path / "res3d_dx1.0000_s1.json").read_text())
+    rec.update(dx=0.8, L=40.0)
+    (tmp_path / "res3d_dx0.8000_s1.json").write_text(json.dumps(rec))
+    t = pres.summary(tmp_path)
+    assert len(t) == 2 and all(v["insufficient"] for v in t.values())
+
+
+def test_an_observable_missing_at_one_spacing_gets_no_verdict(tmp_path):
+    for dx in (1.0, 0.8):
+        _write(tmp_path, dx, 1, 1.0)
+    f = tmp_path / "res3d_dx0.8000_s1.json"
+    rec = json.loads(f.read_text())
+    rec["obs"]["inheritance"] = None
+    f.write_text(json.dumps(rec))
+    v = _only(pres.summary(tmp_path))["verdict"]["inheritance"]
+    assert v["insufficient"] and v["resolution_independent"] is None and v["missing_dx"] == [0.8]
