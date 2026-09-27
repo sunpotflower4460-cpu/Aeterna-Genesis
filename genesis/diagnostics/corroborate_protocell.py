@@ -3,7 +3,7 @@ finite-difference stencil?
 
 The same law and the same t = 0 are run with two independent discretisations of ∇² -- the LOCAL nearest-neighbour
 stencil (the main line) and a SPECTRAL (FFT) Laplacian with a smaller time step (its ∇⁴ has larger eigenvalues) --
-and scale-robust observables are compared: the number of containers, how many hold a replicator spot, the share of
+and scale-robust observables are compared (all in the verdict): the number of containers, how many hold a replicator spot, the share of
 the box inside containers, the mean replicator density and the inside/outside ratio. Same pattern of layout under
 both => not a discretisation artefact. The measure (genesis.models.protocell.containers) is shared and unchanged.
 """
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 
-KEYS = ("containers", "box_share", "replicators", "in_out")
+KEYS = ("containers", "occupied", "box_share", "replicators", "in_out")
 
 
 def observables(c, V1, V2):
@@ -40,7 +40,7 @@ def corroborate_local_vs_spectral(shape, T, seed=1, params=None, refine=8, tol=0
     for _ in range(int(round(T / p["dt"]))):
         a = po.step(*a, p)
     ps = dict(p, dt=p["dt"] / refine)
-    lap = po.spectral_laplacian(shape)
+    lap = po.spectral_laplacian(shape, p.get("dx", 1.0))              # the same physical grid as the local run
     b = tuple(x.copy() for x in s0)
     for _ in range(int(round(T / ps["dt"]))):
         b = po.step(*b, ps, lap=lap)

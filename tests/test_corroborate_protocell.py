@@ -27,7 +27,7 @@ def test_grid_spacing_scales_both_laplacians():
 
 
 def test_agree_flags_disagreement():
-    a = {"containers": 20, "box_share": 0.1, "replicators": 0.1, "in_out": 5.0}
+    a = {"containers": 20, "occupied": 20, "box_share": 0.1, "replicators": 0.1, "in_out": 5.0}
     assert cp.agree(a, dict(a, containers=21))[0] and not cp.agree(a, dict(a, containers=5))[0]
 
 
@@ -41,3 +41,22 @@ def test_local_and_spectral_agree_in_2d():
 def test_local_and_spectral_agree_in_3d():
     v = cp.corroborate_local_vs_spectral((32, 32, 32), 100.0)             # enough containers to compare counts
     assert v["corroborated"] and v["local"]["containers"] >= 5 and v["spectral"]["containers"] >= 5
+
+
+def test_the_spectral_run_uses_the_same_grid_spacing():
+    fine = {"dx": 0.5, "dt": 0.02 * 0.5 ** 4, "seed_radius": 6.0}            # the same physics on a finer grid
+    v = cp.corroborate_local_vs_spectral((48, 48), 2.0, params=fine)         # short: the two agree closely
+    assert v["rel_diff"]["replicators"] < 0.01 and "occupied" in v["rel_diff"]
+    bad = cp.observables(*_spectral_at_dx1((48, 48), 2.0, fine))              # the old bug: spectral grid at dx = 1
+    assert abs(bad["replicators"] - v["spectral"]["replicators"]) > 10 * abs(v["local"]["replicators"]
+                                                                            - v["spectral"]["replicators"])
+
+
+def _spectral_at_dx1(shape, T, params):
+    p = dict(po.DEFAULTS_2D, **params)
+    s = po.make_initial(shape, np.random.default_rng(1), p)
+    ps = dict(p, dt=p["dt"] / 8)
+    lap = po.spectral_laplacian(shape)                                       # dx = 1, not the run's dx
+    for _ in range(int(round(T / ps["dt"]))):
+        s = po.step(*s, ps, lap=lap)
+    return s[0], s[2], s[3]

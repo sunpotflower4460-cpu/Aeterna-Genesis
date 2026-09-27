@@ -81,14 +81,18 @@ def three_d_audit(c, V, dx: float = 1.0):
 def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: float | None = None, n: int | None = None,
         every: float = 25.0, out: Path | None = None, tag: str = "", model=pc, dx: float = 1.0):
     """dx < 1 (models with a "dx" parameter only): the same physical system on a finer grid -- pass n = L/dx; the
-    time step shrinks as dx⁴ (explicit ∇⁴) and the seed radius is kept in physical units."""
+    time step shrinks as dx⁴ (explicit ∇⁴), the seed radius is kept in physical units and the initial white noise
+    keeps its strength per physical volume."""
     n = n or (48 if dim == 3 else 128)
     shape = (n,) * dim
     p = dict(model.DEFAULTS if dim == 3 else model.DEFAULTS_2D, **(overrides or {}))
     if dx != 1.0:
         if "dx" not in p:
             raise ValueError("this model has no grid spacing parameter")
-        p.update(dx=dx, dt=p["dt"] * dx ** 4, seed_radius=p["seed_radius"] / dx)
+        # the same physical system: dt ∝ dx⁴ (explicit ∇⁴), the seed radius in physical units, and the white noise of
+        # the material with the same strength per physical volume (per-cell std ∝ dx^(−dim/2))
+        p.update(dx=dx, dt=p["dt"] * dx ** 4, seed_radius=p["seed_radius"] / dx,
+                 noise=p["noise"] * dx ** (-dim / 2.0))
     c, U, V1, V2 = model.make_initial(shape, np.random.default_rng(seed), p)
     stride = int(round(every / p["dt"]))
     kill_i = None if kill is None else int(round(kill / p["dt"]))
@@ -144,7 +148,7 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
     inh = [d for d in divisions if "same" in d]
     late = [f for f in fr if f["t"] >= T / 2]
     one_each = [float(np.mean([s == 1 for s in f["spots_per_container"]])) for f in late if f["containers"]]
-    keys = ("kappa", "alpha", "beta", "M", "y", "hyd", "g0", "s", "F", "k", "dx", "dt")
+    keys = ("kappa", "alpha", "beta", "M", "y", "hyd", "g0", "s", "F", "k", "dx", "dt", "noise", "seed_radius")
     res = {"dim": dim, "n": n, "seed": seed, "T": T, "kill": kill, "params": {k: p[k] for k in keys if k in p},
            "frames": fr, "divisions": divisions,
            "n_divisions": len(divisions), "births": births, "merges": merges, "deaths": deaths,

@@ -93,6 +93,8 @@ def main(argv=None) -> int:
         return 0
     L = a.L or (32.0 if a.dim == 3 else 128.0)
     n = int(round(L / a.dx))
+    if abs(n * a.dx - L) > 1e-6 * L:                     # the grid must tile the same physical box exactly
+        raise SystemExit(f"dx={a.dx} does not divide L={L} (n*dx = {n * a.dx}); choose dx = L/n")
     r = pc_run(a.dim, a.seed, a.T, n=n, model=po, dx=a.dx)
     rec = {"dim": a.dim, "L": L, "dx": a.dx, "n": n, "seed": a.seed, "T": a.T, "dt": r["params"]["dt"],
            "obs": observe(r, L), "three_d": r.get("three_d")}

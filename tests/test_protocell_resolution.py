@@ -25,3 +25,20 @@ def test_a_divergent_middle_spacing_is_caught(tmp_path):
     v = pres.summary(tmp_path)[3]["verdict"]["density"]
     assert not v["resolution_independent"] and 0.8 in v["widest_pair"]
     assert pres.summary(tmp_path)[3]["verdict"]["box_share"]["resolution_independent"]
+
+
+def test_a_spacing_that_does_not_tile_the_box_is_rejected(tmp_path):
+    import pytest
+    with pytest.raises(SystemExit):
+        pres.main(["run", "--dim", "2", "--L", "32", "--dx", "0.7", "--T", "1", "--out", str(tmp_path)])
+    assert not list(tmp_path.glob("res*.json"))
+
+
+def test_refining_keeps_the_noise_strength_per_physical_volume():
+    import numpy as np
+    from genesis.models import protocell_one as po
+    from tools import protocell_run as pr
+    r = pr.run(2, seed=1, T=0.0, n=64, model=po, dx=0.5, overrides={"n_seeds": 0})
+    q = r["params"]
+    assert np.isclose(q["dt"], po.DEFAULTS_2D["dt"] * 0.5 ** 4) and np.isclose(q["seed_radius"], 6.0)
+    assert np.isclose(q["noise"], po.DEFAULTS_2D["noise"] / 0.5)             # per-cell std ∝ dx^(−dim/2), dim = 2
