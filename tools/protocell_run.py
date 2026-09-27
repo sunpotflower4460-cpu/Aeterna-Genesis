@@ -46,7 +46,7 @@ def _unwrap(mask):
     return mask, spans
 
 
-def three_d_audit(c, V):
+def three_d_audit(c, V, dx: float = 1.0):
     """Is the 3D result a genuine 3D structure? three_d_authenticity of the material and the replicator fields, and
     a 3D-only invariant: the Betti numbers of every container (c > 0). A closed solid ball is (b0, b1, b2) =
     (1, 0, 0); a flat or extruded sheet that spans the box would show up as spanning components or b1 > 0."""
@@ -66,21 +66,29 @@ def three_d_audit(c, V):
     return {"material": three_d_authenticity(c), "replicators": three_d_authenticity(V),
             "containers": len(shapes), "solid_balls": len(balls),
             "min_extent": min((min(x["extent"]) for x in shapes), default=None),
+            "min_extent_length": min((min(x["extent"]) * dx for x in shapes), default=None),
             "not_balls": [x for x in shapes if x not in balls]}
 
 
 def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: float | None = None, n: int | None = None,
-        every: float = 25.0, out: Path | None = None, tag: str = "", model=pc):
+        every: float = 25.0, out: Path | None = None, tag: str = "", model=pc, dx: float = 1.0):
+    """dx < 1 (models with a "dx" parameter only): the same physical system on a finer grid -- pass n = L/dx; the
+    time step shrinks as dx⁴ (explicit ∇⁴) and the seed radius is kept in physical units."""
     n = n or (48 if dim == 3 else 128)
     shape = (n,) * dim
     p = dict(model.DEFAULTS if dim == 3 else model.DEFAULTS_2D, **(overrides or {}))
+    if dx != 1.0:
+        if "dx" not in p:
+            raise ValueError("this model has no grid spacing parameter")
+        p.update(dx=dx, dt=p["dt"] * dx ** 4, seed_radius=p["seed_radius"] / dx)
     c, U, V1, V2 = model.make_initial(shape, np.random.default_rng(seed), p)
     stride = int(round(every / p["dt"]))
     kill_i = None if kill is None else int(round(kill / p["dt"]))
     frames, divisions = [], []
     births = merges = deaths = 0
     prev = None
-    for i in range(int(round(T / p["dt"])) + 1):
+    n_steps = int(round(T / p["dt"]))
+    for i in range(n_steps + 1):
         if kill_i is not None and i == kill_i:
             V1, V2 = np.zeros_like(V1), np.zeros_like(V2)
         if i % stride == 0:
@@ -125,12 +133,13 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                                       null=round(pfrac1 if pk > 0.5 else 1.0 - pfrac1, 4))
                         divisions.append(ev)
             prev = (lab, kinds, frac1)
-        c, U, V1, V2 = model.step(c, U, V1, V2, p)
+        if i < n_steps:                                  # the audit and images below see the state of the last frame
+            c, U, V1, V2 = model.step(c, U, V1, V2, p)
     fr = frames
     inh = [d for d in divisions if "same" in d]
     late = [f for f in fr if f["t"] >= T / 2]
     one_each = [float(np.mean([s == 1 for s in f["spots_per_container"]])) for f in late if f["containers"]]
-    keys = ("kappa", "alpha", "beta", "M", "y", "hyd", "g0", "s", "F", "k")
+    keys = ("kappa", "alpha", "beta", "M", "y", "hyd", "g0", "s", "F", "k", "dx", "dt")
     res = {"dim": dim, "n": n, "seed": seed, "T": T, "kill": kill, "params": {k: p[k] for k in keys if k in p},
            "frames": fr, "divisions": divisions,
            "n_divisions": len(divisions), "births": births, "merges": merges, "deaths": deaths,
@@ -142,7 +151,7 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                                                         if f["v_in"] is not None and f["v_out"] is not None])), 1)
            if any(f["v_in"] is not None for f in late) else None}
     if dim == 3:
-        res["three_d"] = three_d_audit(c, V1 + V2)
+        res["three_d"] = three_d_audit(c, V1 + V2, dx)
     if out is not None:
         box_img = (c > 0).mean(axis=-1) if dim == 3 else c
         kind_img = (V1 - V2).sum(axis=-1) if dim == 3 else V1 - V2

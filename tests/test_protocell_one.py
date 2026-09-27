@@ -91,3 +91,8 @@ def test_the_3d_audit_sees_closed_balls():
     sheet = np.where(np.abs(g[2]) < 3, 1.0, -1.0)                          # a slab spanning x and y
     s = three_d_audit(sheet, np.zeros_like(sheet))
     assert s["solid_balls"] == 0 and s["not_balls"][0]["spans"] == [0, 1]
+
+
+def test_the_3d_audit_sees_the_last_recorded_state():
+    r = pr.run(3, seed=1, T=50.0, n=24, model=po)
+    assert r["three_d"]["containers"] == r["frames"][-1]["containers"] > 0

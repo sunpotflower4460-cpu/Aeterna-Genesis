@@ -33,14 +33,15 @@ from genesis.models.gray_scott_two import labels, laplacian, purity  # noqa: F40
 from genesis.models.protocell import THRESH_V, catalysis, containers, make_initial  # noqa: F401  (same measure)
 
 DEFAULTS_2D: dict[str, Any] = {"kappa": 1.0, "M": 1.0, "y": 2.0, "hyd": 0.1, "g0": 1.0, "s": 10.0, "F": 0.035,
-                               "k": 0.066, "Du": 0.16, "Dv": 0.08, "dt": 0.02, "n_seeds": 12, "seed_radius": 3.0, "noise": 0.02}
+                               "k": 0.066, "Du": 0.16, "Dv": 0.08, "dt": 0.02, "n_seeds": 12, "seed_radius": 3.0, "noise": 0.02,
+                               "dx": 1.0}
 DEFAULTS: dict[str, Any] = dict(DEFAULTS_2D, F=0.03, k=0.070, dt=0.01)   # 3D (∇⁴: dt ≤ ~0.014)
 
 
-def spectral_laplacian(shape):
+def spectral_laplacian(shape, dx: float = 1.0):
     """A second, independent discretisation of ∇² (FFT, periodic) -- used only to corroborate the local stencil
     (genesis/diagnostics/corroborate_protocell.py); the main line is the local stencil."""
-    k2 = sum(np.meshgrid(*[(2.0 * np.pi * np.fft.fftfreq(n)) ** 2 for n in shape], indexing="ij"))
+    k2 = sum(np.meshgrid(*[(2.0 * np.pi * np.fft.fftfreq(n, d=dx)) ** 2 for n in shape], indexing="ij"))
 
     def lap(f):
         return np.real(np.fft.ifftn(-k2 * np.fft.fftn(f)))
@@ -48,7 +49,14 @@ def spectral_laplacian(shape):
 
 
 def step(c, U, V1, V2, p: dict[str, Any], lap=laplacian):
+    """One explicit Euler step. With p["dx"] != 1 the same law on a finer grid (∇² scaled by 1/dx²); pass
+    lap=spectral_laplacian(shape, dx) already scaled to use the FFT Laplacian."""
     dt, s = p["dt"], p["s"]
+    if p.get("dx", 1.0) != 1.0 and lap is laplacian:
+        h2 = p["dx"] ** 2
+
+        def lap(f):
+            return laplacian(f) / h2
     g = catalysis(c, p["g0"])
     a1, a2 = g * U * V1 * V1, g * U * V2 * V2
     V = V1 + V2
