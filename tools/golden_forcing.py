@@ -208,11 +208,10 @@ def run_medium(dim: int, s: float, gamma: float, seed: int, n: int | None = None
         from tools.torus_birth import vortices_2d
         res["spiral_tips"] = len(vortices_2d(z))
     if out is not None:
-        img = ph.mean(axis=-1) if dim == 3 else ph
+        mid = (slice(None),) * (dim - 1) + (n // 2,) if dim == 3 else (slice(None),) * dim
         tag = f"gf{dim}d_s{s:.4f}_g{gamma}_seed{seed}"
-        render_field(np.where(locked.mean(axis=-1) > 0.5, img, np.nan) if dim == 3 else np.where(locked, img, np.nan),
-                     str(out / f"{tag}_phase.png"), px=480)
-        render_field(u.mean(axis=-1) if dim == 3 else u, str(out / f"{tag}_u.png"), px=480)
+        render_field(ph[mid], str(out / f"{tag}_phase.png"), px=480)        # stroboscopic phase (middle slice in 3D)
+        render_field(u[mid], str(out / f"{tag}_u.png"), px=480)
     return res
 
 

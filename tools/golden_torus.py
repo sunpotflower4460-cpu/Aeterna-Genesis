@@ -47,10 +47,12 @@ def main(argv=None) -> int:
     out.mkdir(parents=True, exist_ok=True)
     r = run()
     img = np.zeros((300, len(r["rows"])))
+    for name in ("1/phi", "1/pi"):                       # faint guide rows at the golden ratio and 1/π
+        img[299 - int(TARGETS[name] * 299), :] = 0.25
     for j, row in enumerate(r["rows"]):
         for w in row["omegas"]:
             img[299 - int(w * 299), j] = 1.0
-    render_field(img, str(out / "golden_torus.png"), px=720)
+    render_field(np.kron(img, np.ones((1, 12))), str(out / "golden_torus.png"), px=720)   # one column block per K
     for row in r["rows"]:
         print(f"K={row['K']}: circles {row['circles']} | nearest circle to "
               + ", ".join(f"{k} {v}" for k, v in row["nearest"].items()), flush=True)
