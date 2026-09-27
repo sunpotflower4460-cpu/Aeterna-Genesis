@@ -921,9 +921,58 @@ def _protocell_3d():
         defaults=dict(pc.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _forced_3d():
+    """A medium with its own rhythm under an outside beat (P16, H7): captured, or keeping its own rhythm?"""
+    from genesis.diagnostics import vortex_rings as vr
+    from genesis.models import forced_oscillator as fo
+    N = 40
+
+    def init(seed, knobs, p):
+        u, v = fo.make_initial((N, N, N), np.random.default_rng(seed), p)
+        return {"u": u, "v": v, "t": np.array(0.0)}
+
+    def step(s, t, p, cache):
+        u, v = fo.step(s["u"], s["v"], float(s["t"]), p)
+        return {"u": u, "v": v, "t": s["t"] + p["dt"]}
+
+    def lens(name, s):
+        if name == "phase":
+            return fo.phase(s["u"], s["v"])
+        return s["u"]
+
+    def metrics(s):
+        th = fo.phase(s["u"], s["v"])
+        z = (s["u"] - fo.U_STAR) + 1j * (s["v"] - fo.V_STAR)
+        return {"sync": float(np.abs(np.exp(1j * th).mean())), "firing": float((s["u"] > 0).mean()),
+                "line_pieces": len(vr.rings(z))}
+
+    def perturb(name, a, s, p, rng):
+        if name == "cut_half":
+            u, v = s["u"].copy(), s["v"].copy()
+            h = _half(u)
+            u[h], v[h] = -1.0, -0.5
+            return {**s, "u": u, "v": v}
+        return _kick(s, ["u", "v"], a["amp"], rng)
+
+    return White(
+        id="forced-3d", title="外の拍子に取り込まれるか、自分のリズムを保つか：黄金比と π（拍子×振動する媒質・3D）",
+        family="興奮する媒質", model="genesis.models.forced_oscillator", dimension=3, grid=(N, N, N),
+        steps_per_frame=100,
+        knobs=[Knob("s", "拍子の周期 ÷ 自分の周期 s（0.618＝黄金比、0.318＝1/π、0.5＝2 倍速）", "law", 0.5, 0.25, 1.2, 0.001),
+               Knob("gamma", "拍子の強さ γ（0＝拍子なし）", "law", 0.1, 0.0, 0.3, 0.005),
+               Knob("corr", "はじめのまだらの大きさ（マス）", "start", 6.0, 2.0, 12.0, 0.5)],
+        lenses=[Lens("u", "u（発火）", "diverging", -2.2, 2.2),
+                Lens("phase", "リズムの位相（どこまで回ったか）", "cyclic", -np.pi, np.pi, True)],
+        perturbs=[PERTURB_CUT, PERTURB_KICK],
+        put_in=["法則：それぞれの場所が自分で振動する（フィッツヒュー–南雲、周期 T0≈39.5）",
+                "外の拍子：箱全体に同じ強さ γ・周期 s·T0 でかける（昼と夜のように）", "t=0：まだらのランダム"],
+        source="genesis/models/forced_oscillator.py · tools/golden_forcing.py", ceiling_ref=None, track=None,
+        defaults=dict(fo.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d]
+             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d, _forced_3d]
 _REGISTRY: dict[str, White] | None = None
 
 
