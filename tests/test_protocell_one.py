@@ -69,3 +69,25 @@ def test_deterministic():
 def test_containers_divide_with_their_kind_in_2d():
     r = run(300.0, n=96)
     assert r["n_inherit"] >= 10 and r["inheritance"] == 1.0 and r["inheritance"] > r["null"] + 0.2
+
+
+def test_without_flow_and_reactions_the_material_is_conserved():
+    p = dict(po.DEFAULTS, n_seeds=0, F=0.0)                         # Cahn–Hilliard alone: ∫c is conserved (3D)
+    _, U, V1, V2 = po.make_initial((16, 16, 16), np.random.default_rng(2), p)
+    c = 0.1 * np.random.default_rng(2).standard_normal(U.shape)           # a 50/50 mixture, inside the spinodal
+    total = c.sum()
+    for _ in range(3000):
+        c, U, V1, V2 = po.step(c, U, V1, V2, p)
+    assert abs(c.sum() - total) < 1e-8 * c.size and c.std() > 0.5          # it separated, and kept its amount
+
+
+def test_the_3d_audit_sees_closed_balls():
+    from tools.protocell_run import three_d_audit
+    g = np.indices((24, 24, 24)) - 12
+    c = np.where((g ** 2).sum(0) < 25, 1.0, -1.0)
+    c = c + 0.01 * np.random.default_rng(0).standard_normal(c.shape)
+    a = three_d_audit(np.roll(c, 12, axis=0), np.zeros_like(c))          # a ball cut by the periodic edge
+    assert a["containers"] == 1 and a["solid_balls"] == 1 and a["material"]["genuinely_3d"]
+    sheet = np.where(np.abs(g[2]) < 3, 1.0, -1.0)                          # a slab spanning x and y
+    s = three_d_audit(sheet, np.zeros_like(sheet))
+    assert s["solid_balls"] == 0 and s["not_balls"][0]["spans"] == [0, 1]

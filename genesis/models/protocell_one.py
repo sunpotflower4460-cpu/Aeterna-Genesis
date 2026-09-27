@@ -37,15 +37,25 @@ DEFAULTS_2D: dict[str, Any] = {"kappa": 1.0, "M": 1.0, "y": 2.0, "hyd": 0.1, "g0
 DEFAULTS: dict[str, Any] = dict(DEFAULTS_2D, F=0.03, k=0.070, dt=0.01)   # 3D (∇⁴: dt ≤ ~0.014)
 
 
-def step(c, U, V1, V2, p: dict[str, Any]):
+def spectral_laplacian(shape):
+    """A second, independent discretisation of ∇² (FFT, periodic) -- used only to corroborate the local stencil
+    (genesis/diagnostics/corroborate_protocell.py); the main line is the local stencil."""
+    k2 = sum(np.meshgrid(*[(2.0 * np.pi * np.fft.fftfreq(n)) ** 2 for n in shape], indexing="ij"))
+
+    def lap(f):
+        return np.real(np.fft.ifftn(-k2 * np.fft.fftn(f)))
+    return lap
+
+
+def step(c, U, V1, V2, p: dict[str, Any], lap=laplacian):
     dt, s = p["dt"], p["s"]
     g = catalysis(c, p["g0"])
     a1, a2 = g * U * V1 * V1, g * U * V2 * V2
     V = V1 + V2
-    kv = p["k"] * (1.0 - p["hyd"] * np.clip(0.5 * (1.0 + c), 0.0, 1.0))    # breakdown needs water: slower inside (h = hyd)
-    mu = c * c * c - c - p["kappa"] * laplacian(c)
-    cn = c + dt * (p["M"] * laplacian(mu) + p["y"] * s * kv * V * (1.0 - c) - s * p["F"] * (1.0 + c))
-    Un = U + dt * (s * p["Du"] * laplacian(U) - s * (a1 + a2) + s * p["F"] * (1.0 - U))
-    V1n = V1 + dt * (s * p["Dv"] * laplacian(V1) + s * a1 - s * (p["F"] + kv) * V1)
-    V2n = V2 + dt * (s * p["Dv"] * laplacian(V2) + s * a2 - s * (p["F"] + kv) * V2)
+    kv = p["k"] * (1.0 - p["hyd"] * np.clip(0.5 * (1.0 + c), 0.0, 1.0))    # breakdown needs water (h = hyd)
+    mu = c * c * c - c - p["kappa"] * lap(c)
+    cn = c + dt * (p["M"] * lap(mu) + p["y"] * s * kv * V * (1.0 - c) - s * p["F"] * (1.0 + c))
+    Un = U + dt * (s * p["Du"] * lap(U) - s * (a1 + a2) + s * p["F"] * (1.0 - U))
+    V1n = V1 + dt * (s * p["Dv"] * lap(V1) + s * a1 - s * (p["F"] + kv) * V1)
+    V2n = V2 + dt * (s * p["Dv"] * lap(V2) + s * a2 - s * (p["F"] + kv) * V2)
     return cn, Un, V1n, V2n
