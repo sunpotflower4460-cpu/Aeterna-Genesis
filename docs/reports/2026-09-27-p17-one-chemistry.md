@@ -196,7 +196,11 @@ python tools/protocell_run.py --out /tmp/p17 --seed 1 --model one --T 400 --set 
 python tools/protocell_run.py --out /tmp/p17 --seed 1 --model one --T 400 --kill 250      # 対照：中身を取り除く
 python tools/protocell_run.py --out /tmp/p17 --seed 1 --model one --T 400 --set hyd=0 --set k=0.065 --set y=2   # 段 A
 python tools/protocell_run.py --out /tmp/p17 --seed 1 --model one --T 400 --dim 2         # 2D（約 1 分）
-python tools/protocell_resolution.py run --dim 3 --dx 0.6666666667 --seed 1 --T 200 --out /tmp/res   # 解像度（約 45 分）
-python tools/protocell_resolution.py summary --out /tmp/res
+# 解像度：すべての dx と seed を回してから summary（dx=2/3 の 3D は 1 本約 45 分）
+for dx in 1.0 0.8 0.6666666667; do for s in 1 2 3; do
+  python tools/protocell_resolution.py run --dim 3 --dx $dx --seed $s --T 200 --out /tmp/res
+  python tools/protocell_resolution.py run --dim 2 --dx $dx --seed $s --T 400 --out /tmp/res
+done; done
+python tools/protocell_resolution.py summary --out /tmp/res       # 同じ次元・箱・時間の run だけを比べる
 python -m tools.lab.server   # → http://127.0.0.1:8765/#lab で「protocell-one-3d」を h=0 と 0.1 で並べる
 ```

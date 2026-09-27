@@ -2,8 +2,10 @@
 spacings dx (n = L/dx; the time step shrinks as dx⁴, the seed radius is kept in physical units) and physical
 observables are compared (3D first, 2D after).
 
-    python tools/protocell_resolution.py run --dim 3 --L 32 --dx 0.8 --seed 1 --T 200 --out /tmp/res     # one run
-    python tools/protocell_resolution.py summary --out /tmp/res                                           # compare
+    for dx in 1.0 0.8 0.6666666667; do for s in 1 2 3; do                                  # every spacing and seed
+      python tools/protocell_resolution.py run --dim 3 --L 32 --dx $dx --seed $s --T 200 --out /tmp/res
+    done; done
+    python tools/protocell_resolution.py summary --out /tmp/res                         # compare (same L and T only)
 
 Seeds place the replicator seeds on cell indices, so the same seed is not the same t = 0 at another dx: compare
 seed means and spreads, not single runs. Observables (physical units): containers per volume, the share of the box
@@ -32,9 +34,9 @@ def observe(r: dict, L: float) -> dict:
     return {"density": last["containers"] / vol, "box_share": last["box_share"],
             "in_out": r["late_in_out_ratio"], "one_spot_each": r["late_one_spot_each_majority"],
             "occupied": r["late_occupied_majority"],
-            "divisions": r["n_divisions"] / vol, "inheritance": r["inheritance"],
+            "divisions": r["n_divisions"] / vol, "inheritance": r["inheritance_spot"],
             "balls": (t3["solid_balls"] / t3["containers"]) if t3 and t3["containers"] else None,
-            "containers": last["containers"], "n_inherit": r["n_inherit"],
+            "containers": last["containers"], "n_inherit": r["n_inherit_spot"],
             "late_frames": len(late)}
 
 
@@ -48,6 +50,7 @@ def summary(out: Path, rel_tol: float = 0.15) -> dict:
         for r in (r for r in rows if (r["dim"], r["L"], r["T"]) == key):
             by_dx.setdefault(r["dx"], []).append(r["obs"])
         stats = {dx: {k: [o[k] for o in obs if o[k] is not None] for k in OBS} for dx, obs in by_dx.items()}
+        seeds = {dx: len(obs) for dx, obs in by_dx.items()}
         agg = {dx: {k: {"mean": float(np.mean(v)) if v else None, "min": min(v) if v else None,
                         "max": max(v) if v else None, "n": len(v)} for k, v in s.items()}
                for dx, s in stats.items()}
@@ -58,9 +61,10 @@ def summary(out: Path, rel_tol: float = 0.15) -> dict:
         verdict = {}
         for k in OBS:
             means = {dx: a[k]["mean"] for dx, a in agg.items() if a[k]["mean"] is not None}
-            if len(means) < len(agg):                     # every spacing must contribute, or no verdict
+            short = sorted(dx for dx in agg if agg[dx][k]["n"] < seeds[dx])       # a seed without a value
+            if len(means) < len(agg) or short:            # every spacing and every seed must contribute
                 verdict[k] = {"insufficient": True, "missing_dx": sorted(set(agg) - set(means)),
-                              "resolution_independent": None}
+                              "incomplete_seeds_dx": short, "resolution_independent": None}
                 continue
             hi, lo = max(means, key=means.get), min(means, key=means.get)
             diff = means[hi] - means[lo]                      # over every pair of spacings, not only the ends
@@ -104,7 +108,7 @@ def main(argv=None) -> int:
     rec = {"dim": a.dim, "L": L, "dx": a.dx, "n": n, "seed": a.seed, "T": a.T, "dt": r["params"]["dt"],
            "params": r["params"], "obs": observe(r, L), "three_d": r.get("three_d")}
     print(json.dumps(rec["obs"]), flush=True)
-    (out / f"res{a.dim}d_dx{a.dx:.4f}_s{a.seed}.json").write_text(json.dumps(rec, indent=1))
+    (out / f"res{a.dim}d_L{L:g}_T{a.T:g}_dx{a.dx:.4f}_s{a.seed}.json").write_text(json.dumps(rec, indent=1))
     return 0
 
 

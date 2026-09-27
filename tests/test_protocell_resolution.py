@@ -8,7 +8,7 @@ def _write(tmp_path, dx, seed, density):
     obs = {k: 1.0 for k in pres.OBS}
     obs.update(density=density, containers=10, n_inherit=5, late_frames=4)
     rec = {"dim": 3, "L": 32.0, "dx": dx, "n": int(32 / dx), "seed": seed, "T": 200.0, "obs": obs}
-    (tmp_path / f"res3d_dx{dx:.4f}_s{seed}.json").write_text(json.dumps(rec))
+    (tmp_path / f"res3d_L32_T200_dx{dx:.4f}_s{seed}.json").write_text(json.dumps(rec))
 
 
 def _only(table):
@@ -51,9 +51,9 @@ def test_refining_keeps_the_noise_strength_per_physical_volume():
 
 def test_runs_of_another_box_or_duration_are_not_mixed(tmp_path):
     _write(tmp_path, 1.0, 1, 1.0)
-    rec = json.loads((tmp_path / "res3d_dx1.0000_s1.json").read_text())
+    rec = json.loads((tmp_path / "res3d_L32_T200_dx1.0000_s1.json").read_text())
     rec.update(dx=0.8, L=40.0)
-    (tmp_path / "res3d_dx0.8000_s1.json").write_text(json.dumps(rec))
+    (tmp_path / "res3d_L40_T200_dx0.8000_s1.json").write_text(json.dumps(rec))
     t = pres.summary(tmp_path)
     assert len(t) == 2 and all(v["insufficient"] for v in t.values())
 
@@ -61,9 +61,21 @@ def test_runs_of_another_box_or_duration_are_not_mixed(tmp_path):
 def test_an_observable_missing_at_one_spacing_gets_no_verdict(tmp_path):
     for dx in (1.0, 0.8):
         _write(tmp_path, dx, 1, 1.0)
-    f = tmp_path / "res3d_dx0.8000_s1.json"
+    f = tmp_path / "res3d_L32_T200_dx0.8000_s1.json"
     rec = json.loads(f.read_text())
     rec["obs"]["inheritance"] = None
     f.write_text(json.dumps(rec))
     v = _only(pres.summary(tmp_path))["verdict"]["inheritance"]
     assert v["insufficient"] and v["resolution_independent"] is None and v["missing_dx"] == [0.8]
+
+
+def test_a_seed_without_a_value_gets_no_verdict(tmp_path):
+    for dx in (1.0, 0.8):
+        for s in (1, 2):
+            _write(tmp_path, dx, s, 1.0)
+    f = tmp_path / "res3d_L32_T200_dx1.0000_s2.json"
+    rec = json.loads(f.read_text())
+    rec["obs"]["inheritance"] = None                                  # seed 2 had no scorable division
+    f.write_text(json.dumps(rec))
+    v = _only(pres.summary(tmp_path))["verdict"]["inheritance"]
+    assert v["insufficient"] and v["incomplete_seeds_dx"] == [1.0]

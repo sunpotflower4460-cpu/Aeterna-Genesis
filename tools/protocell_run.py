@@ -27,40 +27,10 @@ from pathlib import Path
 
 import numpy as np
 
+from genesis.diagnostics.protocell_measures import assign_spots, inside_shares, spot_kinds  # noqa: F401 (re-export)
 from genesis.models import protocell as pc
 from tools.cell_inherit import _overlaps
 from tools.snapshot import render_field
-
-
-def inside_shares(spots, box):
-    """For each labelled replicator spot, the share of its voxels inside a container (box). A spot counts as
-    outside when this is <= 0.5 (at least half of it outside)."""
-    vox = np.bincount(spots.ravel())
-    inside = np.bincount(spots[box].ravel(), minlength=vox.size)[1:] / np.maximum(vox[1:], 1)
-    return inside[vox[1:] > 0]
-
-
-def assign_spots(spots, lab):
-    """Each replicator spot is assigned to the one container holding more than half of its voxels (or to none).
-    Returns (per-container number of assigned spots for every container id in lab, number of unassigned spots).
-    Unlike protocell.containers' `spots` (any touch counts), a spot clipping a neighbour is counted only once."""
-    n_c = int(lab.max())
-    counts = np.zeros(n_c + 1, int)
-    unassigned = 0
-    s_ids, s_inv = np.unique(spots.ravel(), return_inverse=True)
-    size = np.bincount(s_inv)
-    pair = np.bincount(s_inv * (n_c + 1) + lab.ravel(), minlength=s_ids.size * (n_c + 1)).reshape(s_ids.size, n_c + 1)
-    for j, sid in enumerate(s_ids):
-        if sid == 0:
-            continue
-        pair[j, 0] = 0
-        best = int(np.argmax(pair[j]))
-        if pair[j, best] * 2 > size[j]:
-            counts[best] += 1
-        else:
-            unassigned += 1
-    ids = [int(i) for i in np.unique(lab) if i]
-    return {i: int(counts[i]) for i in ids}, unassigned
 
 
 def _unwrap(mask):
@@ -135,6 +105,8 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
             slab = pc.labels(V, pc.THRESH_V)
             inside = inside_shares(slab, box)
             maj, unassigned = assign_spots(slab, lab)
+            skinds = spot_kinds(slab, lab, V1, V)                   # kind of the spots each container holds
+            sfrac1 = float(np.mean([k > 0.5 for k in skinds.values()])) if skinds else 0.5
             occ = [x for x in cs if x["spots"] > 0]
             kinds = {x["id"]: x["kind1"] for x in occ}
             frac1 = float(np.mean([k > 0.5 for k in kinds.values()])) if kinds else 0.5
@@ -151,7 +123,7 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                            "spots_per_container_majority": sorted(maj.values()),
                            "spots_unassigned": unassigned})
             if prev is not None:
-                plab, pkinds, pfrac1 = prev
+                plab, pkinds, pfrac1, pskinds, psfrac1 = prev
                 ov = _overlaps(plab, lab)
                 kids_of: dict[int, set] = {}
                 pars_of: dict[int, set] = {}
@@ -170,22 +142,33 @@ def run(dim: int, seed: int, T: float, overrides: dict | None = None, kill: floa
                             ev.update(parent_kind1=round(pk, 4), kids_kind1=[round(kinds[b], 4) for b in kids],
                                       same=float(np.mean([(kinds[b] > 0.5) == (pk > 0.5) for b in kids])),
                                       null=round(pfrac1 if pk > 0.5 else 1.0 - pfrac1, 4))
+                        # the same division scored by the spots: every daughter must hold a spot of its own (a spot
+                        # belongs to one container only, so one straddling spot cannot count for two daughters)
+                        if a in pskinds and pc.purity(pskinds[a]) > 0.9 and all(b in skinds for b in kids):
+                            pk = pskinds[a]
+                            ev.update(spot_parent_kind1=round(pk, 4), spot_kids_kind1=[round(skinds[b], 4) for b in kids],
+                                      spot_same=float(np.mean([(skinds[b] > 0.5) == (pk > 0.5) for b in kids])),
+                                      spot_null=round(psfrac1 if pk > 0.5 else 1.0 - psfrac1, 4))
                         divisions.append(ev)
-            prev = (lab, kinds, frac1)
+            prev = (lab, kinds, frac1, skinds, sfrac1)
         if i < n_steps:                                  # the audit and images below see the state of the last frame
             c, U, V1, V2 = model.step(c, U, V1, V2, p)
     fr = frames
     inh = [d for d in divisions if "same" in d]
+    inh_s = [d for d in divisions if "spot_same" in d]
     late = [f for f in fr if f["t"] >= T / 2]
     one_each = [float(np.mean([s == 1 for s in f["spots_per_container"]])) for f in late if f["containers"]]
     one_each_maj = [float(np.mean([s == 1 for s in f["spots_per_container_majority"]])) for f in late
                     if f["containers"]]
-    keys = ("kappa", "alpha", "beta", "M", "y", "hyd", "g0", "s", "F", "k", "dx", "dt", "noise", "seed_radius")
-    res = {"dim": dim, "n": n, "seed": seed, "T": T, "kill": kill, "params": {k: p[k] for k in keys if k in p},
+    res = {"dim": dim, "n": n, "seed": seed, "T": T, "kill": kill, "model": model.__name__,
+           "params": {k: (float(v) if isinstance(v, (int, float)) else v) for k, v in p.items()},   # every entry
            "frames": fr, "divisions": divisions,
            "n_divisions": len(divisions), "births": births, "merges": merges, "deaths": deaths,
            "n_inherit": len(inh), "inheritance": round(float(np.mean([d["same"] for d in inh])), 4) if inh else None,
            "null": round(float(np.mean([d["null"] for d in inh])), 4) if inh else None,
+           "n_inherit_spot": len(inh_s),
+           "inheritance_spot": round(float(np.mean([d["spot_same"] for d in inh_s])), 4) if inh_s else None,
+           "null_spot": round(float(np.mean([d["spot_null"] for d in inh_s])), 4) if inh_s else None,
            "containers_first_last": [next((f["containers"] for f in fr if f["containers"]), 0), fr[-1]["containers"]],
            "late_one_spot_each": round(float(np.mean(one_each)), 3) if one_each else None,
            "late_one_spot_each_majority": round(float(np.mean(one_each_maj)), 3) if one_each_maj else None,
@@ -234,7 +217,8 @@ def main(argv=None) -> int:
           f" {[f['spots_straddling'] for f in fr][::k]} | births {r['births']} divisions {r['n_divisions']} merges"
           f" {r['merges']} deaths {r['deaths']} | one spot each (late) {r['late_one_spot_each']} (majority"
           f" {r['late_one_spot_each_majority']}, occupied {r['late_occupied_majority']}) | in/out"
-          f" {r['late_in_out_ratio']} | inheritance {r['inheritance']} of {r['n_inherit']} (null {r['null']})",
+          f" {r['late_in_out_ratio']} | inheritance {r['inheritance']} of {r['n_inherit']} (null {r['null']}) |"
+          f" by spots {r['inheritance_spot']} of {r['n_inherit_spot']} (null {r['null_spot']})",
           flush=True)
     if "three_d" in r:
         t3 = r["three_d"]

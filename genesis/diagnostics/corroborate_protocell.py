@@ -15,12 +15,14 @@ KEYS = ("containers", "occupied", "box_share", "replicators", "in_out")
 
 
 def observables(c, V1, V2):
+    from genesis.diagnostics.protocell_measures import assign_spots
     from genesis.models import protocell as pc
     lab, cs = pc.containers(c, V1, V2)
     box = lab > 0
     V = V1 + V2
+    per, _ = assign_spots(pc.labels(V, pc.THRESH_V), lab)             # a spot counts for one container only
     v_out = float(V[~box].mean()) if (~box).any() else 0.0
-    return {"containers": len(cs), "occupied": sum(1 for x in cs if x["spots"] > 0),
+    return {"containers": len(cs), "occupied": sum(1 for v in per.values() if v > 0),
             "box_share": float(box.mean()), "replicators": float(V.mean()),
             "in_out": float(V[box].mean() / max(v_out, 1e-9)) if box.any() else 0.0}
 

@@ -123,3 +123,20 @@ def test_a_spot_clipping_a_neighbour_is_assigned_once():
 def test_the_grid_spacing_cannot_be_set_as_a_law_override():
     with pytest.raises(ValueError):
         pr.run(2, seed=1, T=1.0, n=16, model=po, overrides={"dx": 0.5})
+
+
+def test_one_straddling_spot_cannot_score_two_daughters():
+    from genesis.diagnostics.protocell_measures import spot_kinds
+    lab = np.zeros((10, 12), int)
+    lab[2:8, 1:5] = 1
+    lab[2:8, 7:11] = 2                                             # two daughters
+    spots = np.zeros_like(lab)
+    spots[3:7, 3:9] = 5                                            # one spot bridging both, 8/24 in each
+    V1 = (spots > 0).astype(float)
+    k = spot_kinds(spots, lab, V1, V1)
+    assert k == {}                                                 # neither daughter holds it: no kind to inherit
+    spots[3:7, 3:7] = 5
+    spots[3:7, 7:9] = 0                                            # now 8 of 16 voxels in 1: still not a majority
+    assert spot_kinds(spots, lab, V1 * (spots > 0), (spots > 0).astype(float)) == {}
+    spots[3:7, 2:7] = 5                                            # 12 of 20 in container 1
+    assert list(spot_kinds(spots, lab, (spots > 0).astype(float), (spots > 0).astype(float))) == [1]
