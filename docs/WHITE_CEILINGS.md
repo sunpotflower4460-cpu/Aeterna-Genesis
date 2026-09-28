@@ -6,6 +6,12 @@
 > Level 定義は [`EMERGENCE_LEVELS.md`](EMERGENCE_LEVELS.md)、成果一覧は [`PIECES.md`](PIECES.md)、
 > 床は [`honest_floors.md`](honest_floors.md)。実行：`python -m ai_lab.lab --mode lawscan`。
 
+> **2026-09-28 監査（法則は現実の化学・物理だけ）**：各白の法則を A（現実でもそのまま成り立つ）・B（現実の物理から導かれる近似）・
+> C（現象を真似る簡略モデル）・D（結果を言い換えた規則を含む）に分けた（[`reports/2026-09-28-real-chemistry-audit.md`](reports/2026-09-28-real-chemistry-audit.md)）。
+> **Gray–Scott 系（gray_scott・gray_scott_two・protocell・protocell_one・protocell_partition）は D**（U + 2V → 3V で「増える」を書いた）、
+> Barkley・フィッツヒュー–南雲・三成分 RD・mass_conserved は C、TDGL・CGL・SH・Q テンソルは B。下の表の「到達」は、その白の法則の下での結果で、
+> はしご（`research/ladder.json`）の段の到達に数えるのは A の白だけ。
+
 ## 天井地図（すべて t=0・IC は種/ノイズ/対称のみ・第8監査 clean・Level は measured）
 
 | 白 (white) | 場と法則 | 到達（正直な天井） | tier | 天井の理由（なぜここで止まるか） |

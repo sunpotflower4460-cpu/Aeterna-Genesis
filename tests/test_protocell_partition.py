@@ -126,6 +126,20 @@ def test_no_recovery_is_reported_when_the_untouched_copy_died_too():
     assert ko["intact_dead"] and not ko["recovered"]
 
 
+def test_the_map_keeps_gaps_and_separates_laws(tmp_path):
+    base = {"dim": 3, "n": 32, "T": 200.0, "seed": 1, "extra": {}, "v_with": 0.1}
+    law = dict(pp.DEFAULTS, k=0.0, aff=0.5)
+    rows = [dict(base, k=k, aff=0.5, v_without=vw, params=dict(law, k=k), **{"class": dep.classify(0.1, vw)})
+            for k, vw in ((0.075, 0.0), (0.085, 0.05), (0.095, 0.0))]                # dependent, gap, dependent
+    rows.append(dict(rows[0], k=0.080, params=dict(law, k=0.080, F=0.05)))                # another law: own map
+    for i, r in enumerate(rows):
+        (tmp_path / f"point_{i}.json").write_text(__import__("json").dumps(r))
+    maps = dep.summary(tmp_path)["maps"]
+    assert len(maps) == 2
+    main = next(m for m in maps if m["law"]["F"] == law["F"])
+    assert main["dependent_k"]["aff=0.5"] == [[0.075, 0.075], [0.095, 0.095]]
+
+
 def test_classify():
     assert dep.classify(0.0, 0.0) == "dead"
     assert dep.classify(0.1, 0.1) == "anywhere"

@@ -107,26 +107,47 @@ def knockout(dim: int, n: int, k: float, aff: float, seed: int, t0: float, dt_af
             "containers_again": series[-1]["dissolved"]["containers"]}
 
 
+def _law_key(r: dict) -> str:
+    """Everything that defines the law except the two map axes (k, aff): points from different defaults or overrides
+    never share a map."""
+    p = {key: v for key, v in (r.get("params") or {}).items() if key not in ("k", "aff")}
+    return json.dumps(p, sort_keys=True)
+
+
+def _runs(ks: list, ok: list) -> list:
+    """Contiguous runs of sampled k values that all pass: a gap (another class or an unsampled k) splits the band."""
+    runs, cur = [], []
+    for k, good in zip(ks, ok):
+        if good:
+            cur.append(k)
+        elif cur:
+            runs.append([cur[0], cur[-1]])
+            cur = []
+    if cur:
+        runs.append([cur[0], cur[-1]])
+    return runs
+
+
 def summary(out: Path) -> dict:
     rows = [json.loads(f.read_text()) for f in sorted(out.glob("point_*.json"))]
     table: dict = {}
     for r in rows:
-        key = (r["dim"], r["n"], r["T"], json.dumps(r["extra"], sort_keys=True))
+        key = (r["dim"], r["n"], r["T"], _law_key(r))
         table.setdefault(key, []).append(r)
     res = []
-    for (dim, n, T, extra), rs in sorted(table.items()):
+    for (dim, n, T, law), rs in sorted(table.items()):
         affs = sorted({r["aff"] for r in rs})
         ks = sorted({r["k"] for r in rs})
         grid = {f"aff={a}": {f"{k:.4f}": sorted({r["class"] for r in rs if r["aff"] == a and r["k"] == k})
                              for k in ks} for a in affs}
         window, enh = {}, {}
         for a in affs:
+            ka = sorted({r["k"] for r in rs if r["aff"] == a})          # only the k values sampled at this aff
             for cls, w in (("dependent", window), ("enhanced", enh)):
-                sel = [k for k in ks if all(r["class"] == cls for r in rs if r["aff"] == a and r["k"] == k)
-                       and any(r["aff"] == a and r["k"] == k for r in rs)]
-                w[f"aff={a}"] = [min(sel), max(sel)] if sel else None
-        res.append({"dim": dim, "n": n, "T": T, "extra": json.loads(extra), "grid": grid, "dependent_k": window,
-                    "enhanced_k": enh})
+                ok = [all(r["class"] == cls for r in rs if r["aff"] == a and r["k"] == k) for k in ka]
+                w[f"aff={a}"] = _runs(ka, ok)
+        res.append({"dim": dim, "n": n, "T": T, "law": json.loads(law), "grid": grid,
+                    "dependent_k": window, "enhanced_k": enh})
     return {"maps": res}
 
 
