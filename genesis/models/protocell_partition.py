@@ -35,8 +35,9 @@ from genesis.models.gray_scott_two import labels, laplacian, purity  # noqa: F40
 from genesis.models.protocell import THRESH_V, containers, make_initial  # noqa: F401  (same measure)
 from genesis.models.protocell_one import spectral_laplacian  # noqa: F401  (corroboration)
 
-DEFAULTS_2D: dict[str, Any] = {"kappa": 1.0, "M": 1.0, "y": 2.0, "aff": 1.0, "back": 1.0, "s": 10.0, "F": 0.035,
-                               "k": 0.066, "Du": 0.16, "Dv": 0.08, "dt": 0.02, "n_seeds": 12, "seed_radius": 3.0,
+# 2D: the k × aff map (128²): dependent for k 0.066–0.086 at aff = 0.5; open water alone fails from 0.074
+DEFAULTS_2D: dict[str, Any] = {"kappa": 1.0, "M": 1.0, "y": 2.0, "aff": 0.5, "back": 1.0, "s": 10.0, "F": 0.035,
+                               "k": 0.070, "Du": 0.16, "Dv": 0.08, "dt": 0.02, "n_seeds": 12, "seed_radius": 3.0,
                                "noise": 0.02, "dx": 1.0}
 # 3D (∇⁴: dt ≤ ~0.014). aff and k: the middle of the band where the replicators need their material (the k × aff map
 # of tools/protocell_dependence.py, 32³: dependent for k 0.0675–0.095 at aff = 0.5; open water alone fails from 0.075)
