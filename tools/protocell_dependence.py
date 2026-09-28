@@ -142,10 +142,11 @@ def summary(out: Path) -> dict:
                              for k in ks} for a in affs}
         window, enh = {}, {}
         for a in affs:
-            ka = sorted({r["k"] for r in rs if r["aff"] == a})          # only the k values sampled at this aff
             for cls, w in (("dependent", window), ("enhanced", enh)):
-                ok = [all(r["class"] == cls for r in rs if r["aff"] == a and r["k"] == k) for k in ka]
-                w[f"aff={a}"] = _runs(ka, ok)
+                # over the whole k grid of this map: a k not sampled at this aff breaks the band like another class
+                ok = [any(r["aff"] == a and r["k"] == k for r in rs)
+                      and all(r["class"] == cls for r in rs if r["aff"] == a and r["k"] == k) for k in ks]
+                w[f"aff={a}"] = _runs(ks, ok)
         res.append({"dim": dim, "n": n, "T": T, "law": json.loads(law), "grid": grid,
                     "dependent_k": window, "enhanced_k": enh})
     return {"maps": res}

@@ -138,6 +138,13 @@ def test_the_map_keeps_gaps_and_separates_laws(tmp_path):
     assert len(maps) == 2
     main = next(m for m in maps if m["law"]["F"] == law["F"])
     assert main["dependent_k"]["aff=0.5"] == [[0.075, 0.075], [0.095, 0.095]]
+    rows = [r for r in rows[:3] if r["k"] != 0.085] + [dict(rows[0], aff=1.0, k=0.085)]      # 0.085 unsampled at 0.5
+    for f in tmp_path.glob("point_*.json"):
+        f.unlink()
+    for i, r in enumerate(rows):
+        (tmp_path / f"point_{i}.json").write_text(__import__("json").dumps(r))
+    main = dep.summary(tmp_path)["maps"][0]
+    assert main["dependent_k"]["aff=0.5"] == [[0.075, 0.075], [0.095, 0.095]]
 
 
 def test_classify():
