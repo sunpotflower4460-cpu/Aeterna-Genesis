@@ -37,7 +37,9 @@ from genesis.models.protocell_one import spectral_laplacian  # noqa: F401  (corr
 DEFAULTS_2D: dict[str, Any] = {"kappa": 1.0, "M": 1.0, "y": 2.0, "aff": 1.0, "back": 1.0, "s": 10.0, "F": 0.035,
                                "k": 0.066, "Du": 0.16, "Dv": 0.08, "dt": 0.02, "n_seeds": 12, "seed_radius": 3.0,
                                "noise": 0.02, "dx": 1.0}
-DEFAULTS: dict[str, Any] = dict(DEFAULTS_2D, F=0.03, k=0.070, dt=0.01)   # 3D (∇⁴: dt ≤ ~0.014)
+# 3D (∇⁴: dt ≤ ~0.014). aff and k: the middle of the band where the replicators need their material (the k × aff map
+# of tools/protocell_dependence.py, 32³: dependent for k 0.0675–0.095 at aff = 0.5; open water alone fails from 0.075)
+DEFAULTS: dict[str, Any] = dict(DEFAULTS_2D, F=0.03, k=0.080, aff=0.5, dt=0.01)
 
 
 def partition_flux(X, m, lap):
