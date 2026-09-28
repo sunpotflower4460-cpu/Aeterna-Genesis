@@ -101,6 +101,26 @@ def test_without_material_every_aff_is_the_same_run():
     assert all(np.array_equal(a, b) for r in runs[1:] for a, b in zip(runs[0][1:], r[1:]))
 
 
+def test_a_species_that_does_not_partition_does_not_push_the_material():
+    """aff_U = 0 (only the replicators partition): the food enters neither its own flux nor the material's
+    chemical potential, so changing only the food leaves the material's update unchanged; likewise aff_V = 0."""
+    rng = np.random.default_rng(6)
+    c, U, V1, V2 = rng.uniform(-1, 1, (4, 24, 24)) * np.array([1, 0.5, 0.2, 0.2])[:, None, None]
+    U2 = U + 0.3 * rng.random(U.shape)
+    V1b = V1 + 0.1 * rng.random(V1.shape)
+    p = dict(pp.DEFAULTS_2D, aff=0.5)
+    only_v = dict(p, aff_U=0.0, y=0.0)               # y = 0: the material's source would see V, not U
+    only_u = dict(p, aff_V=0.0, y=0.0)
+    assert np.array_equal(pp.step(c, U, V1, V2, only_v)[0], pp.step(c, U2, V1, V2, only_v)[0])
+    assert np.array_equal(pp.step(c, U, V1, V2, only_u)[0], pp.step(c, U, V1b, V2, only_u)[0])
+    assert not np.array_equal(pp.step(c, U, V1, V2, p)[0], pp.step(c, U2, V1, V2, p)[0])
+
+
+def test_the_knockout_is_measured_at_the_requested_time():
+    ko = dep.knockout(2, 24, k=0.060, aff=0.5, seed=1, t0=4.0, dt_after=15.0, every=10.0)
+    assert [x["t"] for x in ko["series"]] == [4.0, 14.0, 19.0]
+
+
 def test_classify():
     assert dep.classify(0.0, 0.0) == "dead"
     assert dep.classify(0.1, 0.1) == "anywhere"
@@ -116,6 +136,13 @@ def test_the_replicators_come_to_need_their_material_in_2d():
     assert dep.point(2, 48, k=0.070, aff=0.0, seed=1, T=100.0)["D_y"] == 0.0
     assert dep.knockout(2, 48, k=0.070, aff=0.5, seed=1, t0=60.0, dt_after=30.0, remake=False)["D_ko"] == 1.0
     assert dep.knockout(2, 48, k=0.070, aff=0.5, seed=1, t0=60.0, dt_after=30.0)["recovered"]
+
+
+def test_local_and_spectral_agree_in_3d():
+    from genesis.diagnostics import corroborate_protocell as cp
+    v = cp.corroborate_local_vs_spectral((32, 32, 32), 100.0, model=pp)          # the default 3D point
+    assert v["model"].endswith("protocell_partition")
+    assert v["corroborated"] and v["local"]["containers"] >= 5 and v["spectral"]["containers"] >= 5
 
 
 def test_local_and_spectral_agree_in_2d():

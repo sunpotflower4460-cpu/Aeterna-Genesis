@@ -12,13 +12,16 @@ The flux J = −D(∇X − aff X ∇m) comes from the free energy −aff·X·m o
 X ∝ exp(aff·m), so the inside is e^aff times as concentrated as the outside (like anything shared between oil and
 water). The same free energy gives the material its reaction (back = 1): the dissolved species make the phase they
 prefer a little more stable. back = 0 switches that off (a control only). Optional aff_U / aff_V (controls only;
-absent = aff) partition only the food or only the replicators, to see which of the two carries the dependence.
+absent = aff) partition only the food or only the replicators, to see which of the two carries the dependence; the
+back-reaction then uses the same species-specific numbers, so a species that does not partition does not push c either.
 
 Nothing here says "the material helps the replicators": aff treats food and both replicators alike, and the
 breakdown rate k is the same everywhere. Whether the replicators come to need their containers (a dependence) --
 or are harmed by them (food used up faster inside) -- is measured (tools/protocell_dependence.py), not placed.
-Still placed: the Gray–Scott chemistry and the flow; that the breakdown product is the material and does not mix
-with water (y, Cahn–Hilliard, M, κ); aff (the material can dissolve things); and how harsh the water is (k),
+Still placed: the Gray–Scott chemistry and the flow; that the breakdown product becomes material with a yield that
+saturates, y·(1 − c) = 2y(1 − m) (this is a placed production rule, not mass conservation: where the material is
+already full, broken replicators are lost instead of becoming material), and that the material does not mix with
+water (Cahn–Hilliard, M, κ); aff (the material can dissolve things); and how harsh the water is (k),
 which is scanned rather than chosen.
 
 ∇·(X∇m) is computed as ½[∇²(Xm) − m∇²X + X∇²m]; with the 5/7-point ∇² this is exactly the face flux
@@ -62,9 +65,10 @@ def step(c, U, V1, V2, p: dict[str, Any], lap=laplacian):
     V = V1 + V2
     k = p["k"]
     m = 0.5 * (1.0 + c)
+    aU, aV = p.get("aff_U", aff), p.get("aff_V", aff)       # optional, controls only: which partition matters
     mu = c * c * c - c - p["kappa"] * lap(c)
-    if aff and p["back"]:
-        mu = mu - p["back"] * aff * 0.5 * (U + V)
+    if p["back"] and (aU or aV):                             # the same free energy −(aU·U + aV·V)·m, both ways
+        mu = mu - p["back"] * 0.5 * (aff * (U + V) if aU == aV == aff else aU * U + aV * V)
     cn = c + dt * (p["M"] * lap(mu) + p["y"] * s * k * V * (1.0 - c) - s * p["F"] * (1.0 + c))
 
     def move(X, D, a):
@@ -72,7 +76,6 @@ def step(c, U, V1, V2, p: dict[str, Any], lap=laplacian):
         if a:
             out = out - a * partition_flux(X, m, lap)
         return s * D * out
-    aU, aV = p.get("aff_U", aff), p.get("aff_V", aff)       # optional, controls only: which partition matters
     Un = U + dt * (move(U, p["Du"], aU) - s * (a1 + a2) + s * p["F"] * (1.0 - U))
     V1n = V1 + dt * (move(V1, p["Dv"], aV) + s * a1 - s * (p["F"] + k) * V1)
     V2n = V2 + dt * (move(V2, p["Dv"], aV) + s * a2 - s * (p["F"] + k) * V2)

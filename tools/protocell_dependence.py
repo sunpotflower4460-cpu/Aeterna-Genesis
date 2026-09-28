@@ -85,11 +85,13 @@ def knockout(dim: int, n: int, k: float, aff: float, seed: int, t0: float, dt_af
     a, b = s, (c_ko, *s[1:])
     stride = int(round(every / p["dt"]))
     series = []
-    for i in range(int(round(dt_after / p["dt"])) + 1):
-        if i % stride == 0:
+    n_after = int(round(dt_after / p["dt"]))
+    for i in range(n_after + 1):
+        if i % stride == 0 or i == n_after:              # the last sample is always at t0 + dt_after
             series.append({"t": round(t0 + i * p["dt"], 2), "intact": _obs(a[0], a[2], a[3]),
                            "dissolved": _obs(b[0], b[2], b[3])})
-        a, b = pp.step(*a, p), pp.step(*b, pb)
+        if i < n_after:
+            a, b = pp.step(*a, p), pp.step(*b, pb)
     va, vb = series[-1]["intact"]["replicators"], series[-1]["dissolved"]["replicators"]
     low = min(x["dissolved"]["replicators"] for x in series)
     return {"mode": "knockout", "remake": remake, "dim": dim, "n": n, "k": k, "aff": aff, "seed": seed, "t0": t0,

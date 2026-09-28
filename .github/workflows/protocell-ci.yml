@@ -46,6 +46,26 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Protocell law, measures and resolution verdict (including slow tests)
-        run: python -m pytest -q tests/test_protocell.py tests/test_protocell_one.py tests/test_protocell_resolution.py tests/test_protocell_partition.py
+        run: python -m pytest -q tests/test_protocell.py tests/test_protocell_one.py tests/test_protocell_resolution.py tests/test_protocell_partition.py -k "not test_local_and_spectral_agree_in_3d"
       - name: Local stencil vs spectral Laplacian, 2D and 3D (slow)
         run: python -m pytest -q tests/test_corroborate_protocell.py
+
+  # P18: the 3D solver corroboration of the partition model runs as its own job (about 15 minutes), so the job above
+  # stays inside its time limit.
+  partition-3d:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Partition model, local stencil vs spectral Laplacian in 3D (slow)
+        run: python -m pytest -q tests/test_protocell_partition.py -k test_local_and_spectral_agree_in_3d
