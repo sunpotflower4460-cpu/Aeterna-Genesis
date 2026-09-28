@@ -111,6 +111,9 @@ def main(argv=None) -> int:
     ap.add_argument("--dx", type=float, default=1.0)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--T", type=float, default=200.0)
+    ap.add_argument("--model", default="one", choices=("one", "partition"),
+                    help="partition = genesis/models/protocell_partition.py (P18); keep one model per --out")
+    ap.add_argument("--set", action="append", default=[], help="law override, e.g. k=0.07 (not dx)")
     a = ap.parse_args(argv)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -129,7 +132,11 @@ def main(argv=None) -> int:
     n = int(round(L / a.dx))
     if abs(n * a.dx - L) > 1e-6 * L:                     # the grid must tile the same physical box exactly
         raise SystemExit(f"dx={a.dx} does not divide L={L} (n*dx = {n * a.dx}); choose dx = L/n")
-    r = pc_run(a.dim, a.seed, a.T, n=n, model=po, dx=a.dx)
+    model = po
+    if a.model == "partition":
+        from genesis.models import protocell_partition as model
+    ov = {k: float(v) for k, v in (x.split("=") for x in a.set)}
+    r = pc_run(a.dim, a.seed, a.T, ov or None, n=n, model=model, dx=a.dx)
     rec = {"dim": a.dim, "L": L, "dx": a.dx, "n": n, "seed": a.seed, "T": a.T, "dt": r["params"]["dt"], "model": r["model"],
            "params": r["params"], "obs": observe(r, L), "three_d": r.get("three_d")}
     print(json.dumps(rec["obs"]), flush=True)
