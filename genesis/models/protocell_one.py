@@ -17,8 +17,10 @@ Compared with P15 (genesis/models/protocell.py), placed pieces are replaced by t
   replicators never feel the material.
 What is still placed: the Gray–Scott chemistry and the flow (as P14; k is set just above where replicators stop
 multiplying in open water), that the breakdown product does not mix with water (Cahn–Hilliard, M, κ), y, and h.
-Whether closed containers grow, hold one spot each, keep the inside apart from the outside, divide with their
-content and pass the kind on -- and whether the replicators come to need them -- is measured, not placed.
+The mutual dependence itself is PLACED: y writes "replicators make material" and h writes "material protects the
+replicators" directly into the law (8th audit), so that the replicators need their containers is not a finding.
+Whether closed containers grow from nothing, hold one spot each, keep the inside apart from the outside, divide
+with their content and pass the kind on is measured, not placed.
 
 t = 0 as P15: c = −1 + tiny noise (no material anywhere), U = 1, seed blobs of V1/V2 in random mixtures.
 Local stencils, explicit Euler, periodic; no FFT. The boundary is a phase interface, not a lipid bilayer.
