@@ -205,9 +205,12 @@ for a in 0 0.5 1 2; do for k in 0.058 0.060 0.062 0.064 0.066 0.068 0.070 0.074 
   python tools/protocell_dependence.py point --dim 2 --n 128 --k $k --aff $a --T 200 --out /tmp/dep2; done; done
 python tools/protocell_dependence.py summary --out /tmp/dep3
 # 3D の主な点（48³、1 本約 20〜40 分）
-python tools/protocell_dependence.py point --dim 3 --n 48 --k 0.080 --aff 0.5 --seed 1 --T 400 --out /tmp/p18
-python tools/protocell_dependence.py knockout --dim 3 --n 48 --k 0.080 --aff 0.5 --seed 1 --t0 200 --dt_after 200 --out /tmp/p18
-python tools/protocell_dependence.py knockout --dim 3 --n 48 --k 0.080 --aff 0.5 --seed 1 --t0 200 --dt_after 200 --no_remake --out /tmp/p18
+for s in 1 2 3; do                                                                        # B1〜B6（3/3 seed）
+  python tools/protocell_dependence.py point --dim 3 --n 48 --k 0.080 --aff 0.5 --seed $s --T 400 --out /tmp/p18
+  python tools/protocell_dependence.py knockout --dim 3 --n 48 --k 0.080 --aff 0.5 --seed $s --t0 200 --dt_after 200 --out /tmp/p18
+  python tools/protocell_dependence.py knockout --dim 3 --n 48 --k 0.080 --aff 0.5 --seed $s --t0 200 --dt_after 200 --no_remake --out /tmp/p18
+  python tools/protocell_dependence.py point --dim 3 --n 48 --k 0.090 --aff 1 --seed $s --T 400 --out /tmp/p18      # B9
+done
 python tools/protocell_run.py --out /tmp/p18 --seed 1 --model partition --T 400                  # 既定 = aff 0.5、k 0.080
 python tools/protocell_run.py --out /tmp/p18 --seed 1 --model partition --T 400 --set back=0
 python tools/protocell_run.py --out /tmp/p18 --seed 1 --model partition --T 400 --kill 250
