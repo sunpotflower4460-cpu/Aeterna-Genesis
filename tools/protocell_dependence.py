@@ -5,10 +5,10 @@ Three ways to measure a dependence (3D first, 2D after):
     python tools/protocell_dependence.py point --dim 3 --n 32 --k 0.07 --aff 1 --seed 1 --T 200 --out /tmp/dep
         one point of the k × aff map: the run with material (y as the law) and the same t = 0 with no material at
         all (NO_MATERIAL: y = 0, no back-reaction, no noise in c, so c ≡ −1 exactly); D_y = 1 − V(none)/V(y).
-    python tools/protocell_dependence.py knockout --dim 3 --k 0.07 --aff 1 --seed 1 --t0 200 --dt_after 100 --out …
+    python tools/protocell_dependence.py knockout --dim 3 --k 0.08 --aff 0.5 --seed 1 --t0 200 --dt_after 200 --out …
         run to t0, then branch: one copy as it is, one with the material dissolved (c = −1 + fresh noise);
         D_ko = 1 − V(dissolved)/V(intact) at t0 + dt_after, and whether containers form again and the
-        replicators recover.
+        replicators recover. --no_remake: the dissolved copy can never make material again.
     python tools/protocell_dependence.py summary --out /tmp/dep
         the map: for each k and aff, dead / lives anywhere (the container is a shadow) / lives only with its
         material (dependent).
@@ -69,13 +69,19 @@ def _obs(c, V1, V2):
 
 
 def knockout(dim: int, n: int, k: float, aff: float, seed: int, t0: float, dt_after: float, every: float = 10.0,
-             extra: dict | None = None) -> dict:
+             extra: dict | None = None, remake: bool = True) -> dict:
+    """remake=False: after the knockout the dissolved copy can never make material again (NO_MATERIAL from t0 on,
+    c ≡ −1) -- do replicators that grew up with containers die without them?"""
     p = dict(pp.DEFAULTS if dim == 3 else pp.DEFAULTS_2D, **(extra or {}), k=k, aff=aff)
     shape = (n,) * dim
     s = pp.make_initial(shape, np.random.default_rng(seed), p)
     for _ in range(int(round(t0 / p["dt"]))):
         s = pp.step(*s, p)
-    c_ko = -1.0 + p["noise"] * np.random.default_rng(seed + 10_000).standard_normal(shape)
+    if remake:
+        c_ko = -1.0 + p["noise"] * np.random.default_rng(seed + 10_000).standard_normal(shape)
+        pb = p
+    else:
+        c_ko, pb = np.full(shape, -1.0), dict(p, **NO_MATERIAL)
     a, b = s, (c_ko, *s[1:])
     stride = int(round(every / p["dt"]))
     series = []
@@ -83,10 +89,10 @@ def knockout(dim: int, n: int, k: float, aff: float, seed: int, t0: float, dt_af
         if i % stride == 0:
             series.append({"t": round(t0 + i * p["dt"], 2), "intact": _obs(a[0], a[2], a[3]),
                            "dissolved": _obs(b[0], b[2], b[3])})
-        a, b = pp.step(*a, p), pp.step(*b, p)
+        a, b = pp.step(*a, p), pp.step(*b, pb)
     va, vb = series[-1]["intact"]["replicators"], series[-1]["dissolved"]["replicators"]
     low = min(x["dissolved"]["replicators"] for x in series)
-    return {"mode": "knockout", "dim": dim, "n": n, "k": k, "aff": aff, "seed": seed, "t0": t0,
+    return {"mode": "knockout", "remake": remake, "dim": dim, "n": n, "k": k, "aff": aff, "seed": seed, "t0": t0,
             "dt_after": dt_after, "extra": extra or {}, "params": p, "series": series,
             "D_ko": round(1.0 - vb / va, 4) if va > 0 else None,
             "lowest_after_knockout": low, "v_intact_at_t0": series[0]["intact"]["replicators"],
@@ -128,6 +134,7 @@ def main(argv=None) -> int:
     ap.add_argument("--t0", type=float, default=200.0)
     ap.add_argument("--dt_after", type=float, default=100.0)
     ap.add_argument("--set", action="append", default=[], help="other law override, e.g. back=0")
+    ap.add_argument("--no_remake", action="store_true", help="knockout: the material can never form again")
     a = ap.parse_args(argv)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -147,7 +154,8 @@ def main(argv=None) -> int:
         name = f"point_{a.dim}d_n{n}_T{a.T:g}_k{k:.4f}_aff{aff:g}_s{a.seed}{tag}.json"
         print({x: r[x] for x in ("k", "aff", "v_with", "v_without", "D_y", "class", "containers", "in_out")})
     else:
-        r = knockout(a.dim, n, k, aff, a.seed, a.t0, a.dt_after, extra=extra)
+        r = knockout(a.dim, n, k, aff, a.seed, a.t0, a.dt_after, extra=extra, remake=not a.no_remake)
+        tag += "_noremake" if a.no_remake else ""
         name = f"ko_{a.dim}d_n{n}_k{k:.4f}_aff{aff:g}_s{a.seed}_t{a.t0:g}{tag}.json"
         print({x: r[x] for x in ("k", "aff", "D_ko", "recovered", "containers_again", "lowest_after_knockout")})
     (out / name).write_text(json.dumps(r, indent=1))
