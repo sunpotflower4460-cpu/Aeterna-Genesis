@@ -3,8 +3,8 @@
 Three ways to measure a dependence (3D first, 2D after):
 
     python tools/protocell_dependence.py point --dim 3 --n 32 --k 0.07 --aff 1 --seed 1 --T 200 --out /tmp/dep
-        one point of the k × aff map: the run with material (y as the law) and the same t = 0 with y = 0 (the
-        material is never made); D_y = 1 − V(y = 0)/V(y).
+        one point of the k × aff map: the run with material (y as the law) and the same t = 0 with no material at
+        all (NO_MATERIAL: y = 0, no back-reaction, no noise in c, so c ≡ −1 exactly); D_y = 1 − V(none)/V(y).
     python tools/protocell_dependence.py knockout --dim 3 --k 0.07 --aff 1 --seed 1 --t0 200 --dt_after 100 --out …
         run to t0, then branch: one copy as it is, one with the material dissolved (c = −1 + fresh noise);
         D_ko = 1 − V(dissolved)/V(intact) at t0 + dt_after, and whether containers form again and the
@@ -31,6 +31,11 @@ from tools.protocell_run import run as pc_run
 
 DEAD = 1e-4          # mean replicator density below this = gone
 DEPENDENT = 0.5      # D above this = the replicators need the material
+# "without material": never made (y = 0), and c ≡ −1 exactly (no back-reaction of the solutes on c, no noise in c;
+# make_initial draws the same random numbers, so the seeds are the same). With y = 0 alone and aff > 0 the solutes
+# still pull c by a few percent (back = 1), which is not "no material". With c ≡ −1 the partition term is exactly 0,
+# so this control is the same run for every aff (tests/test_protocell_partition.py).
+NO_MATERIAL = {"y": 0.0, "back": 0.0, "noise": 0.0}
 
 
 def classify(v_with: float, v_without: float) -> str:
@@ -43,7 +48,7 @@ def classify(v_with: float, v_without: float) -> str:
 def point(dim: int, n: int, k: float, aff: float, seed: int, T: float, extra: dict | None = None) -> dict:
     ov = dict(extra or {}, k=k, aff=aff)
     a = pc_run(dim, seed, T, ov, n=n, model=pp)
-    b = pc_run(dim, seed, T, dict(ov, y=0.0), n=n, model=pp)
+    b = pc_run(dim, seed, T, dict(ov, **NO_MATERIAL), n=n, model=pp)
     va, vb = a["frames"][-1]["replicators"], b["frames"][-1]["replicators"]
     last = a["frames"][-1]
     return {"mode": "point", "dim": dim, "n": n, "k": k, "aff": aff, "seed": seed, "T": T, "extra": extra or {},

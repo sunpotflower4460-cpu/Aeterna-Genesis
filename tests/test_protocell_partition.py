@@ -88,6 +88,19 @@ def test_the_dependence_tool_reads_zero_without_partition():
     assert ko["D_ko"] == 0.0 and ko["recovered"]
 
 
+def test_without_material_every_aff_is_the_same_run():
+    """The control of the dependence tool: with no material at all (c ≡ −1) the partition term is exactly zero."""
+    runs = []
+    for aff in (0.0, 0.5, 2.0):
+        p = dict(pp.DEFAULTS_2D, aff=aff, **dep.NO_MATERIAL)
+        s = pp.make_initial((32, 32), np.random.default_rng(4), p)
+        for _ in range(300):
+            s = pp.step(*s, p)
+        assert np.all(s[0] == -1.0)
+        runs.append(s)
+    assert all(np.array_equal(a, b) for r in runs[1:] for a, b in zip(runs[0][1:], r[1:]))
+
+
 def test_classify():
     assert dep.classify(0.0, 0.0) == "dead"
     assert dep.classify(0.1, 0.1) == "anywhere"
