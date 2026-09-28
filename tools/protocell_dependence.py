@@ -98,7 +98,8 @@ def knockout(dim: int, n: int, k: float, aff: float, seed: int, t0: float, dt_af
             "dt_after": dt_after, "extra": extra or {}, "params": p, "series": series,
             "D_ko": round(1.0 - vb / va, 4) if va > 0 else None,
             "lowest_after_knockout": low, "v_intact_at_t0": series[0]["intact"]["replicators"],
-            "recovered": bool(va > 0 and vb >= 0.5 * va),
+            "intact_dead": bool(va < DEAD),              # the untouched copy died too: nothing to recover to
+            "recovered": bool(va >= DEAD and vb >= 0.5 * va),
             "containers_again": series[-1]["dissolved"]["containers"]}
 
 
@@ -158,7 +159,7 @@ def main(argv=None) -> int:
     else:
         r = knockout(a.dim, n, k, aff, a.seed, a.t0, a.dt_after, extra=extra, remake=not a.no_remake)
         tag += "_noremake" if a.no_remake else ""
-        name = f"ko_{a.dim}d_n{n}_k{k:.4f}_aff{aff:g}_s{a.seed}_t{a.t0:g}{tag}.json"
+        name = f"ko_{a.dim}d_n{n}_k{k:.4f}_aff{aff:g}_s{a.seed}_t{a.t0:g}_da{a.dt_after:g}{tag}.json"
         print({x: r[x] for x in ("k", "aff", "D_ko", "recovered", "containers_again", "lowest_after_knockout")})
     (out / name).write_text(json.dumps(r, indent=1))
     return 0

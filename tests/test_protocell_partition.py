@@ -121,6 +121,11 @@ def test_the_knockout_is_measured_at_the_requested_time():
     assert [x["t"] for x in ko["series"]] == [4.0, 14.0, 19.0]
 
 
+def test_no_recovery_is_reported_when_the_untouched_copy_died_too():
+    ko = dep.knockout(2, 24, k=0.095, aff=0.0, seed=1, t0=20.0, dt_after=20.0)      # too harsh: everything dies
+    assert ko["intact_dead"] and not ko["recovered"]
+
+
 def test_classify():
     assert dep.classify(0.0, 0.0) == "dead"
     assert dep.classify(0.1, 0.1) == "anywhere"
