@@ -125,9 +125,36 @@ D_y（太字＝依存。空欄の「全滅」は材料ありでも消えた）�
 
 （結果を反映予定）
 
-## 6b. 解像度（同じ物理の箱を細かくする）
+## 6b. 解像度（同じ物理の箱を細かくする。`tools/protocell_resolution.py --model partition`）
 
-（結果を反映予定）
+dt ∝ dx⁴、種の半径は物理の長さで一定、t=0 のノイズは物理の体積あたり同じ強さ。seed 1〜3、同じ法則。判定は P17 と同じ（すべての dx の組で、平均の差が seed の幅以内か相対 15% 以内）。
+
+**3D（先に）**：L=32（32³・40³・48³）、T=200、既定（aff 0.5、k 0.080）
+
+| 量 | dx=1 | dx=0.8 | dx=2/3 | 判定 |
+|---|---|---|---|---|
+| 入れ物の数密度（×10⁻⁴） | 2.65 [2.14–3.05] | 2.54 [2.14–3.05] | 2.65 [1.83–3.05] | 依存しない（rel 0.04） |
+| 箱の中の割合 | 0.096 | 0.099 | 0.095 | 依存しない（0.04） |
+| 中と外の比 | 13.4 | 12.4 | 12.7 | 依存しない（0.08） |
+| 1 つに 1 つ（多数の割り当て） | 1.0 | 1.0 | 1.0 | 依存しない |
+| 閉じた玉の割合 | 1.0 | 0.95 | 1.0 | 依存しない |
+| 分裂の数（箱あたり 0〜2 回） | 4 回 | 2 回 | 2 回 | 数が少なすぎる（判定は「依存しない」だが、根拠は弱い） |
+| 受け継ぎ | 1.0 | 1.0 | 1.0 | 判定なし（分裂 0 回の seed がある） |
+
+**2D（そのあと）**：L=128（128²・160²・192²）、T=400、既定（aff 0.5、k 0.070）
+
+| 量 | dx=1 | dx=0.8 | dx=2/3 | 判定 |
+|---|---|---|---|---|
+| 入れ物の数密度（×10⁻³） | 6.33 | 5.60 | 5.90 | 依存しない（rel 0.12） |
+| 箱の中の割合 | 0.135 | 0.119 | 0.126 | 依存しない（0.13） |
+| 中と外の比 | 9.7 | 10.8 | 9.8 | 依存しない（0.11） |
+| 1 つに 1 つ | 0.986 | 0.993 | 0.990 | 依存しない |
+| 分裂の数密度（×10⁻³） | 5.64 | 5.01 | 5.21 | 依存しない（0.12） |
+| 受け継ぎ | 1.0 | 1.0 | 1.0 | 依存しない |
+
+- **依存そのものも、細かい格子で同じ**（2D dx=2/3、192²、T=400）：材料ありの V は 0.098・0.090・0.102、材料なしでは 3/3 で 0（dx=1 では 0.0014・0.0007・0.0007）。
+- 3D の分裂は、この箱（L=32、T=200）では少なく（0〜2 回）、解像度の判定の根拠にならない。P17 で見えた「細かくすると分裂が減る」傾向（9→8→4）は、ここでは 4→2→2 回で、数が少なすぎて確かめられない（candidate のまま）。
+- 界面の幅あたりのセル数は dx=1 で約 1.4、dx=2/3 で約 2.1（CH の √(2κ)≈1.4）。docs/3D_NATIVE_POLICY.md の 6 には届かない（P17 と同じ限界）。
 
 ## 7. 規律チェック
 
@@ -157,4 +184,12 @@ python tools/protocell_run.py --out /tmp/p18 --seed 1 --model partition --T 400 
 python tools/protocell_dependence.py point --dim 3 --n 32 --k 0.08 --aff 0.5 --T 200 --set aff_V=0 --out /tmp/which
 # 2D（既定 = aff 0.5、k 0.070）
 python tools/protocell_dependence.py point --dim 2 --n 128 --k 0.070 --aff 0.5 --seed 1 --T 400 --out /tmp/p18
+# 解像度（1 つの --out に 1 つのモデルと法則。dx=2/3 の 3D は 1 本 1〜2 時間）
+for dx in 1.0 0.8 0.6666666667; do for s in 1 2 3; do
+  python tools/protocell_resolution.py run --model partition --dim 3 --dx $dx --seed $s --T 200 --out /tmp/res3
+  python tools/protocell_resolution.py run --model partition --dim 2 --dx $dx --seed $s --T 400 --out /tmp/res2
+done; done
+python tools/protocell_resolution.py summary --out /tmp/res3; python tools/protocell_resolution.py summary --out /tmp/res2
+# 局所 vs スペクトル
+python -c "from genesis.diagnostics.corroborate_protocell import corroborate_local_vs_spectral as c; from genesis.models import protocell_partition as pp; print(c((32,32,32), 100.0, model=pp))"
 ```
