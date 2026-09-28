@@ -201,7 +201,8 @@ def main(argv=None) -> int:
                     help="one = genesis/models/protocell_one.py (P17: the material is the replicators' breakdown)")
     a = ap.parse_args(argv)
     ov = {k: float(v) for k, v in (s.split("=") for s in a.set)}
-    tag = "".join(f"_{k}{v}" for k, v in ov.items()) + (f"_kill{a.kill}" if a.kill is not None else "")
+    tag = ("".join(f"_{k}{v}" for k, v in ov.items()) + (f"_kill{a.kill}" if a.kill is not None else "")
+           + (f"_dx{a.dx:.4f}" if a.dx != 1.0 else ""))                       # different spacings never overwrite
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     model = pc

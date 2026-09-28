@@ -79,3 +79,12 @@ def test_a_seed_without_a_value_gets_no_verdict(tmp_path):
     f.write_text(json.dumps(rec))
     v = _only(pres.summary(tmp_path))["verdict"]["inheritance"]
     assert v["insufficient"] and v["incomplete_seeds_dx"] == [1.0]
+
+
+def test_different_seed_sets_are_not_compared(tmp_path):
+    for s in (1, 2):
+        _write(tmp_path, 1.0, s, 1.0)
+    for s in (3, 4):
+        _write(tmp_path, 0.8, s, 1.0)
+    t = _only(pres.summary(tmp_path))
+    assert t["insufficient"] and "different seeds" in t["reason"]

@@ -51,12 +51,18 @@ def summary(out: Path, rel_tol: float = 0.15) -> dict:
             by_dx.setdefault(r["dx"], []).append(r["obs"])
         stats = {dx: {k: [o[k] for o in obs if o[k] is not None] for k in OBS} for dx, obs in by_dx.items()}
         seeds = {dx: len(obs) for dx, obs in by_dx.items()}
+        seed_sets = {dx: sorted(r["seed"] for r in rows if (r["dim"], r["L"], r["T"]) == key and r["dx"] == dx)
+                     for dx in by_dx}
         agg = {dx: {k: {"mean": float(np.mean(v)) if v else None, "min": min(v) if v else None,
                         "max": max(v) if v else None, "n": len(v)} for k, v in s.items()}
                for dx, s in stats.items()}
         if len(agg) < 2:                                   # nothing to compare a single spacing with
             table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": {}, "insufficient": True,
                           "reason": "need at least two grid spacings"}
+            continue
+        if len({tuple(v) for v in seed_sets.values()}) > 1:   # the same ensemble (seed set) at every spacing
+            table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": {}, "insufficient": True,
+                          "reason": f"different seeds at different spacings: {seed_sets}"}
             continue
         verdict = {}
         for k in OBS:

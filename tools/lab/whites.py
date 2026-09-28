@@ -923,6 +923,7 @@ def _protocell_3d():
 
 def _protocell_one_3d():
     """One chemistry (P17, ladder R4): the container material is the replicators' own breakdown product."""
+    from genesis.models import protocell as pc
     from genesis.models import protocell_one as po
     base = _protocell_3d()
     N = base.grid[0]
@@ -934,6 +935,13 @@ def _protocell_one_3d():
     def step(s, t, p, cache):
         c, U, V1, V2 = po.step(s["c"], s["U"], s["V1"], s["V2"], p)
         return {"c": c, "U": U, "V1": V1, "V2": V2}
+
+    def metrics(s):
+        from genesis.diagnostics.protocell_measures import assign_spots
+        lab, cs = pc.containers(s["c"], s["V1"], s["V2"])
+        per, _ = assign_spots(pc.labels(s["V1"] + s["V2"], pc.THRESH_V), lab)   # a spot counts for one container
+        return {"containers": len(cs), "occupied": sum(1 for v in per.values() if v > 0),
+                "box_share": float((s["c"] > 0).mean())}
 
     return White(
         id="protocell-one-3d", title="1 つの化学：自己複製が壊れたものが入れ物になり、水がいる分解が中で遅いとき（入れ物×自己複製・3D）",
@@ -948,7 +956,7 @@ def _protocell_one_3d():
                 "（Cahn–Hilliard）、壊れた 1 つから材料 y、分解は水がいる（材料の中で h だけ遅い）",
                 "t=0：入れ物も材料もどこにもない。種は V1 と V2 のランダムな混ざり"],
         source="genesis/models/protocell_one.py · tools/protocell_run.py --model one", ceiling_ref=None, track=None,
-        defaults=dict(po.DEFAULTS), _init=init, _step=step, _lens=base._lens, _metrics=base._metrics,
+        defaults=dict(po.DEFAULTS), _init=init, _step=step, _lens=base._lens, _metrics=metrics,
         _perturb=base._perturb)
 
 
