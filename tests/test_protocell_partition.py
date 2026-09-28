@@ -105,3 +105,21 @@ def test_classify():
     assert dep.classify(0.0, 0.0) == "dead"
     assert dep.classify(0.1, 0.1) == "anywhere"
     assert dep.classify(0.1, 0.0) == "dependent"
+
+
+def test_the_replicators_come_to_need_their_material_in_2d():
+    """Harsh water (k = 0.07, open water alone fails): with partitioning the replicators live only with the material
+    they make; established replicators die when the material is dissolved and cannot form again, and recover when
+    it can."""
+    r = dep.point(2, 48, k=0.070, aff=0.5, seed=1, T=100.0)
+    assert r["class"] == "dependent" and r["D_y"] > 0.9 and r["containers"] >= 5
+    assert dep.point(2, 48, k=0.070, aff=0.0, seed=1, T=100.0)["D_y"] == 0.0
+    assert dep.knockout(2, 48, k=0.070, aff=0.5, seed=1, t0=60.0, dt_after=30.0, remake=False)["D_ko"] == 1.0
+    assert dep.knockout(2, 48, k=0.070, aff=0.5, seed=1, t0=60.0, dt_after=30.0)["recovered"]
+
+
+def test_local_and_spectral_agree_in_2d():
+    from genesis.diagnostics import corroborate_protocell as cp
+    v = cp.corroborate_local_vs_spectral((64, 64), 150.0, model=pp)
+    assert v["model"].endswith("protocell_partition")
+    assert v["corroborated"] and v["local"]["containers"] >= 10
