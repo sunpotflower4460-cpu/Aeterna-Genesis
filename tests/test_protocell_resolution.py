@@ -88,3 +88,22 @@ def test_different_seed_sets_are_not_compared(tmp_path):
         _write(tmp_path, 0.8, s, 1.0)
     t = _only(pres.summary(tmp_path))
     assert t["insufficient"] and "different seeds" in t["reason"]
+
+
+def test_runs_with_a_different_law_are_not_compared(tmp_path):
+    for dx in (1.0, 0.8):
+        for s in (1, 2):
+            _write(tmp_path, dx, s, 1.0)
+    for f in tmp_path.glob("res3d_*.json"):
+        rec = json.loads(f.read_text())
+        dx = rec["dx"]
+        rec["params"] = {"dx": dx, "dt": 0.01 * dx ** 4, "seed_radius": 3.0 / dx, "noise": 0.02 * dx ** -1.5,
+                         "hyd": 0.1 if dx == 1.0 else 0.2}                    # the law differs at dx = 0.8
+        f.write_text(json.dumps(rec))
+    t = _only(pres.summary(tmp_path))
+    assert t["insufficient"] and "different laws" in t["reason"]
+    for f in tmp_path.glob("res3d_*.json"):                                 # same law, only dx-scaled entries differ
+        rec = json.loads(f.read_text())
+        rec["params"]["hyd"] = 0.1
+        f.write_text(json.dumps(rec))
+    assert not _only(pres.summary(tmp_path))["insufficient"]

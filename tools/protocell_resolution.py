@@ -40,6 +40,20 @@ def observe(r: dict, L: float) -> dict:
             "late_frames": len(late)}
 
 
+def law_key(rec: dict) -> str:
+    """The run's law and initial-condition ensemble with the expected dx scaling undone (dt ∝ dx⁴, seed radius ∝ 1/dx,
+    per-cell noise ∝ dx^(−dim/2)); runs are only comparable when this is the same."""
+    p = dict(rec.get("params") or {})
+    dx = float(p.pop("dx", rec.get("dx", 1.0)))
+    if "dt" in p:
+        p["dt"] = round(p["dt"] / dx ** 4, 12)
+    if "seed_radius" in p:
+        p["seed_radius"] = round(p["seed_radius"] * dx, 9)
+    if "noise" in p:
+        p["noise"] = round(p["noise"] * dx ** (rec["dim"] / 2.0), 12)
+    return json.dumps({"model": rec.get("model"), "params": p}, sort_keys=True)
+
+
 def summary(out: Path, rel_tol: float = 0.15) -> dict:
     """{"<dim>D L=<L> T=<T>": {...}}: runs are compared only within the same dimension, box and duration."""
     rows = [json.loads(p.read_text()) for p in sorted(out.glob("res*.json"))]
@@ -59,6 +73,11 @@ def summary(out: Path, rel_tol: float = 0.15) -> dict:
         if len(agg) < 2:                                   # nothing to compare a single spacing with
             table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": {}, "insufficient": True,
                           "reason": "need at least two grid spacings"}
+            continue
+        laws = {law_key(r) for r in rows if (r["dim"], r["L"], r["T"]) == key}
+        if len(laws) > 1:                                   # the same law (after the dx scaling) at every spacing
+            table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": {}, "insufficient": True,
+                          "reason": f"different laws or parameters in one group ({len(laws)} variants)"}
             continue
         if len({tuple(v) for v in seed_sets.values()}) > 1:   # the same ensemble (seed set) at every spacing
             table[dim] = {"dx": sorted(agg, reverse=True), "agg": agg, "verdict": {}, "insufficient": True,
@@ -111,7 +130,7 @@ def main(argv=None) -> int:
     if abs(n * a.dx - L) > 1e-6 * L:                     # the grid must tile the same physical box exactly
         raise SystemExit(f"dx={a.dx} does not divide L={L} (n*dx = {n * a.dx}); choose dx = L/n")
     r = pc_run(a.dim, a.seed, a.T, n=n, model=po, dx=a.dx)
-    rec = {"dim": a.dim, "L": L, "dx": a.dx, "n": n, "seed": a.seed, "T": a.T, "dt": r["params"]["dt"],
+    rec = {"dim": a.dim, "L": L, "dx": a.dx, "n": n, "seed": a.seed, "T": a.T, "dt": r["params"]["dt"], "model": r["model"],
            "params": r["params"], "obs": observe(r, L), "three_d": r.get("three_d")}
     print(json.dumps(rec["obs"]), flush=True)
     (out / f"res{a.dim}d_L{L:g}_T{a.T:g}_dx{a.dx:.4f}_s{a.seed}.json").write_text(json.dumps(rec, indent=1))
