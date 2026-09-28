@@ -11,7 +11,8 @@ soluble in the material phase (partitioning), and the reactions follow mass acti
 The flux J = −D(∇X − aff X ∇m) comes from the free energy −aff·X·m of a solute X in the material: at rest
 X ∝ exp(aff·m), so the inside is e^aff times as concentrated as the outside (like anything shared between oil and
 water). The same free energy gives the material its reaction (back = 1): the dissolved species make the phase they
-prefer a little more stable. back = 0 switches that off (a control only).
+prefer a little more stable. back = 0 switches that off (a control only). Optional aff_U / aff_V (controls only;
+absent = aff) partition only the food or only the replicators, to see which of the two carries the dependence.
 
 Nothing here says "the material helps the replicators": aff treats food and both replicators alike, and the
 breakdown rate k is the same everywhere. Whether the replicators come to need their containers (a dependence) --
@@ -65,12 +66,13 @@ def step(c, U, V1, V2, p: dict[str, Any], lap=laplacian):
         mu = mu - p["back"] * aff * 0.5 * (U + V)
     cn = c + dt * (p["M"] * lap(mu) + p["y"] * s * k * V * (1.0 - c) - s * p["F"] * (1.0 + c))
 
-    def move(X, D):
+    def move(X, D, a):
         out = lap(X)
-        if aff:
-            out = out - aff * partition_flux(X, m, lap)
+        if a:
+            out = out - a * partition_flux(X, m, lap)
         return s * D * out
-    Un = U + dt * (move(U, p["Du"]) - s * (a1 + a2) + s * p["F"] * (1.0 - U))
-    V1n = V1 + dt * (move(V1, p["Dv"]) + s * a1 - s * (p["F"] + k) * V1)
-    V2n = V2 + dt * (move(V2, p["Dv"]) + s * a2 - s * (p["F"] + k) * V2)
+    aU, aV = p.get("aff_U", aff), p.get("aff_V", aff)       # optional, controls only: which partition matters
+    Un = U + dt * (move(U, p["Du"], aU) - s * (a1 + a2) + s * p["F"] * (1.0 - U))
+    V1n = V1 + dt * (move(V1, p["Dv"], aV) + s * a1 - s * (p["F"] + k) * V1)
+    V2n = V2 + dt * (move(V2, p["Dv"], aV) + s * a2 - s * (p["F"] + k) * V2)
     return cn, Un, V1n, V2n
