@@ -140,7 +140,8 @@ def main(argv=None) -> int:
     rec = {"dim": a.dim, "L": L, "dx": a.dx, "n": n, "seed": a.seed, "T": a.T, "dt": r["params"]["dt"], "model": r["model"],
            "params": r["params"], "obs": observe(r, L), "three_d": r.get("three_d")}
     print(json.dumps(rec["obs"]), flush=True)
-    (out / f"res{a.dim}d_L{L:g}_T{a.T:g}_dx{a.dx:.4f}_s{a.seed}.json").write_text(json.dumps(rec, indent=1))
+    law = ("" if a.model == "one" else f"_m{a.model}") + "".join(f"_{k}{v:g}" for k, v in sorted(ov.items()))
+    (out / f"res{a.dim}d_L{L:g}_T{a.T:g}_dx{a.dx:.4f}_s{a.seed}{law}.json").write_text(json.dumps(rec, indent=1))
     return 0
 
 

@@ -10,8 +10,9 @@ Three ways to measure a dependence (3D first, 2D after):
         D_ko = 1 − V(dissolved)/V(intact) at t0 + dt_after, and whether containers form again and the
         replicators recover. --no_remake: the dissolved copy can never make material again.
     python tools/protocell_dependence.py summary --out /tmp/dep
-        the map: for each k and aff, dead / lives anywhere (the container is a shadow) / lives only with its
-        material (dependent).
+        the map: for each k and aff, dead / lives anywhere (the container is a shadow or a small help) /
+        strongly enhanced (D > 0.5, but open water alone still keeps a trace) / lives only with its material
+        (dependent: the material-free control dies).
 
 With aff = 0 the replicators' equations do not contain c (genesis/models/protocell_partition.py), so D is exactly 0:
 that is the check of the tool, not a finding. The kill of the replicators (the other direction) is
@@ -30,7 +31,7 @@ from genesis.models import protocell_partition as pp
 from tools.protocell_run import run as pc_run
 
 DEAD = 1e-4          # mean replicator density below this = gone
-DEPENDENT = 0.5      # D above this = the replicators need the material
+ENHANCED = 0.5       # D above this (and the material-free control still alive) = strongly enhanced
 # "without material": never made (y = 0), and c ≡ −1 exactly (no back-reaction of the solutes on c, no noise in c;
 # make_initial draws the same random numbers, so the seeds are the same). With y = 0 alone and aff > 0 the solutes
 # still pull c by a few percent (back = 1), which is not "no material". With c ≡ −1 the partition term is exactly 0,
@@ -39,10 +40,13 @@ NO_MATERIAL = {"y": 0.0, "back": 0.0, "noise": 0.0}
 
 
 def classify(v_with: float, v_without: float) -> str:
+    """dependent only when the material-free control dies and the run with material lives; a survivor without
+    material, however much smaller, is "enhanced" (D > ENHANCED) or "anywhere"."""
     if v_with < DEAD:
         return "dead"
-    d = 1.0 - v_without / v_with
-    return "dependent" if d > DEPENDENT else "anywhere"
+    if v_without < DEAD:
+        return "dependent"
+    return "enhanced" if 1.0 - v_without / v_with > ENHANCED else "anywhere"
 
 
 def point(dim: int, n: int, k: float, aff: float, seed: int, T: float, extra: dict | None = None) -> dict:
@@ -115,12 +119,14 @@ def summary(out: Path) -> dict:
         ks = sorted({r["k"] for r in rs})
         grid = {f"aff={a}": {f"{k:.4f}": sorted({r["class"] for r in rs if r["aff"] == a and r["k"] == k})
                              for k in ks} for a in affs}
-        window = {}
+        window, enh = {}, {}
         for a in affs:
-            dep = [k for k in ks if all(r["class"] == "dependent" for r in rs if r["aff"] == a and r["k"] == k)
-                   and any(r["aff"] == a and r["k"] == k for r in rs)]
-            window[f"aff={a}"] = [min(dep), max(dep)] if dep else None
-        res.append({"dim": dim, "n": n, "T": T, "extra": json.loads(extra), "grid": grid, "dependent_k": window})
+            for cls, w in (("dependent", window), ("enhanced", enh)):
+                sel = [k for k in ks if all(r["class"] == cls for r in rs if r["aff"] == a and r["k"] == k)
+                       and any(r["aff"] == a and r["k"] == k for r in rs)]
+                w[f"aff={a}"] = [min(sel), max(sel)] if sel else None
+        res.append({"dim": dim, "n": n, "T": T, "extra": json.loads(extra), "grid": grid, "dependent_k": window,
+                    "enhanced_k": enh})
     return {"maps": res}
 
 

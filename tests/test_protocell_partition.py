@@ -130,17 +130,19 @@ def test_classify():
     assert dep.classify(0.0, 0.0) == "dead"
     assert dep.classify(0.1, 0.1) == "anywhere"
     assert dep.classify(0.1, 0.0) == "dependent"
+    assert dep.classify(0.1, 0.001) == "enhanced"          # open water keeps a trace: a big help, not a need
+    assert dep.classify(0.1, 0.06) == "anywhere"
 
 
 def test_the_replicators_come_to_need_their_material_in_2d():
-    """Harsh water (k = 0.07, open water alone fails): with partitioning the replicators live only with the material
+    """Harsh water (k = 0.074, open water alone dies): with partitioning the replicators live only with the material
     they make; established replicators die when the material is dissolved and cannot form again, and recover when
     it can."""
-    r = dep.point(2, 48, k=0.070, aff=0.5, seed=1, T=100.0)
-    assert r["class"] == "dependent" and r["D_y"] > 0.9 and r["containers"] >= 5
-    assert dep.point(2, 48, k=0.070, aff=0.0, seed=1, T=100.0)["D_y"] == 0.0
-    assert dep.knockout(2, 48, k=0.070, aff=0.5, seed=1, t0=60.0, dt_after=30.0, remake=False)["D_ko"] == 1.0
-    assert dep.knockout(2, 48, k=0.070, aff=0.5, seed=1, t0=60.0, dt_after=30.0)["recovered"]
+    r = dep.point(2, 48, k=0.074, aff=0.5, seed=1, T=100.0)
+    assert r["class"] == "dependent" and r["v_without"] < dep.DEAD and r["containers"] >= 5
+    assert dep.point(2, 48, k=0.074, aff=0.0, seed=1, T=100.0)["class"] == "dead"
+    assert dep.knockout(2, 48, k=0.074, aff=0.5, seed=1, t0=60.0, dt_after=30.0, remake=False)["D_ko"] == 1.0
+    assert dep.knockout(2, 48, k=0.074, aff=0.5, seed=1, t0=60.0, dt_after=30.0)["recovered"]
 
 
 def test_local_and_spectral_agree_in_3d():
