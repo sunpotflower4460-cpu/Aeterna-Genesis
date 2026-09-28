@@ -32,17 +32,20 @@ def agree(a, b, tol=0.2, keys=KEYS):
     return bool(all(v <= tol for v in rel.values())), {k: round(v, 4) for k, v in rel.items()}
 
 
-def corroborate_local_vs_spectral(shape, T, seed=1, params=None, refine=8, tol=0.2):
-    """Run genesis.models.protocell_one from one t = 0 with the local stencil (dt) and with the spectral Laplacian
-    (dt / refine) to time T; compare observables. Returns a verdict dict."""
-    from genesis.models import protocell_one as po
+def corroborate_local_vs_spectral(shape, T, seed=1, params=None, refine=8, tol=0.2, model=None):
+    """Run genesis.models.protocell_one (or another model with the same step(..., lap=) signature, e.g.
+    protocell_partition) from one t = 0 with the local stencil (dt) and with the spectral Laplacian (dt / refine) to
+    time T; compare observables. Returns a verdict dict."""
+    from genesis.models import protocell_one
+    from genesis.models.protocell_one import spectral_laplacian
+    po = model or protocell_one
     p = dict(po.DEFAULTS if len(shape) == 3 else po.DEFAULTS_2D, **(params or {}))
     s0 = po.make_initial(shape, np.random.default_rng(seed), p)
     a = tuple(x.copy() for x in s0)
     for _ in range(int(round(T / p["dt"]))):
         a = po.step(*a, p)
     ps = dict(p, dt=p["dt"] / refine)
-    lap = po.spectral_laplacian(shape, p.get("dx", 1.0))              # the same physical grid as the local run
+    lap = spectral_laplacian(shape, p.get("dx", 1.0))                 # the same physical grid as the local run
     b = tuple(x.copy() for x in s0)
     for _ in range(int(round(T / ps["dt"]))):
         b = po.step(*b, ps, lap=lap)
@@ -50,4 +53,4 @@ def corroborate_local_vs_spectral(shape, T, seed=1, params=None, refine=8, tol=0
     ok, rel = agree(oa, ob, tol=tol)
     return {"corroborated": ok, "tol": tol, "rel_diff": rel, "local": oa, "spectral": ob,
             "method_a": "local_stencil", "method_b": "spectral_fft", "shape": tuple(shape), "T": T,
-            "dt": [p["dt"], ps["dt"]]}
+            "model": po.__name__, "dt": [p["dt"], ps["dt"]]}

@@ -76,8 +76,8 @@ def test_researcher_sweeps_inside_budget_and_records_it(tmp_path):
 
 def test_plain_text_without_criteria_or_activity(tmp_path):
     book = goals.GoalBook(tmp_path)
-    g = book.create({"hypothesis": "H2"})
-    lines = plain.goal_plain(g, goals.evaluate(g, LocalHub()), [], [], goals.hypothesis("H2"))
+    g = book.create({"hypothesis": "H8"})
+    lines = plain.goal_plain(g, goals.evaluate(g, LocalHub()), [], [], goals.hypothesis("H8"))
     assert lines[0].startswith("🎯") and "決まった目安はありません" in lines[1] and lines[-1].startswith("💰")
 
 
@@ -131,7 +131,7 @@ def test_explain_endpoint(tmp_path):
             return e.code, json.loads(e.read())
 
     try:
-        st, g = call("goals", {"hypothesis": "H1"})
+        st, g = call("goals", {"hypothesis": "H8"})
         st, v = call(f"goals/{g['id']}")
         assert st == 200 and v["plain"][0].startswith("🎯")
         st, e = call(f"goals/{g['id']}/explain", {})

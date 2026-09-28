@@ -125,7 +125,8 @@ def test_hypotheses_catalog_is_well_formed_and_ready_ones_become_goals(tmp_path)
             assert h["needs"].strip() and h["goal"] is None
             with pytest.raises(ValueError, match="始められません"):
                 book.create({"hypothesis": h["id"]})
-    g = book.create({"hypothesis": "H1", "budget": {"max_usd": 0.3}})    # overrides on top of the template
-    assert g["budget"]["max_usd"] == 0.3 and g["budget"]["max_universes"] == 4 and g["whites"] == ["three-component"]
+    ready = next(h for h in hs if h["status"] == "ready")                # overrides on top of the template
+    g = book.create({"hypothesis": ready["id"], "budget": {"max_usd": 0.3}})
+    assert g["budget"]["max_usd"] == 0.3 and g["whites"] == ready["goal"]["whites"]
     with pytest.raises(KeyError):
         book.create({"hypothesis": "H99"})

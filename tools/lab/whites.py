@@ -960,6 +960,47 @@ def _protocell_one_3d():
         _perturb=base._perturb)
 
 
+def _protocell_partition_3d():
+    """No law says the material helps (P18, ladder R4): h = 0; everything dissolved is a little more soluble in the
+    material (one number aff for food and both replicators) and reactions follow mass action."""
+    from genesis.models import protocell_partition as pp
+    base = _protocell_one_3d()
+    N = base.grid[0]
+
+    def init(seed, knobs, p):
+        c, U, V1, V2 = pp.make_initial((N, N, N), np.random.default_rng(seed), p)
+        return {"c": c, "U": U, "V1": V1, "V2": V2}
+
+    def step(s, t, p, cache):
+        c, U, V1, V2 = pp.step(s["c"], s["U"], s["V1"], s["V2"], p)
+        return {"c": c, "U": U, "V1": V1, "V2": V2}
+
+    def perturb(name, a, s, p, rng):
+        if name == "dissolve_material":                     # the knockout of tools/protocell_dependence.py
+            return {**s, "c": -1.0 + p["noise"] * rng.standard_normal(s["c"].shape)}
+        return base._perturb(name, a, s, p, rng)
+
+    return White(
+        id="protocell-partition-3d",
+        title="依存を法則に書かない：溶けやすさと出会いの法則だけで、中身は入れ物を必要とするか（入れ物×自己複製・3D）",
+        family="Gray-Scott", model="genesis.models.protocell_partition", dimension=3, grid=(N, N, N),
+        steps_per_frame=100,
+        knobs=[Knob("aff", "材料の中への溶けやすさ aff（餌も中身も同じ。中は e^aff 倍濃くなる。0＝分かれない）", "law",
+                    float(pp.DEFAULTS["aff"]), 0.0, 2.0, 0.1),
+               Knob("k", "自己複製が壊れる速さ k（水の厳しさ。地図で測った帯 0.060〜0.100）", "law", float(pp.DEFAULTS["k"]),
+                    0.060, 0.100, 0.001),
+               Knob("y", "壊れた自己複製 1 つからできる材料の量 y（0＝材料にならない）", "law", 2.0, 0.0, 4.0, 0.5),
+               Knob("n_seeds", "はじめの種の数（V1 と V2 のランダムな混ざり）", "start", 12, 1, 30, 1, True)],
+        lenses=base.lenses,
+        perturbs=[Perturb("dissolve_material", "入れ物の材料を全部溶かす（中身は残す）"), *base.perturbs],
+        put_in=["法則：Gray–Scott の自己複製と流れ、壊れたものは材料になり水と混ざらない（y、Cahn–Hilliard）、"
+                "溶けている物はどれも材料の中に少し溶けやすい（aff、全部に同じ）。「材料が中身を助ける」とは書いていない",
+                "t=0：入れ物も材料もどこにもない。種は V1 と V2 のランダムな混ざり"],
+        source="genesis/models/protocell_partition.py · tools/protocell_dependence.py", ceiling_ref=None, track=None,
+        defaults=dict(pp.DEFAULTS), _init=init, _step=step, _lens=base._lens, _metrics=base._metrics,
+        _perturb=perturb)
+
+
 def _forced_3d():
     """A medium with its own rhythm under an outside beat (P16, H7): captured, or keeping its own rhythm?"""
     from genesis.diagnostics import vortex_rings as vr
@@ -1011,7 +1052,8 @@ def _forced_3d():
 
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
-             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d, _forced_3d, _protocell_one_3d]
+             _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d, _forced_3d, _protocell_one_3d,
+             _protocell_partition_3d]
 _REGISTRY: dict[str, White] | None = None
 
 

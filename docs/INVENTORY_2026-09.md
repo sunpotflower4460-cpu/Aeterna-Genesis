@@ -9,6 +9,7 @@
 - 排出の確認: 2026-09-25 19:14 UTC に GitHub Actions API で確認。in_progress の run は 0 件。queued は 2026-09-13 から止まっている 2 件（research-postflight 34748579138、research-continuity 34748579151。どちらも 12 日間開始されていない。このセッションの権限では cancel が 403）のみ。main では easy/latest・research_health・research_continuity の burst がすべて dream-20260925-1180 で揃い、research_maintenance_entrypoint は healthy=True。停止後の最後の bot commit は d95e5b3（18:57 UTC）。
 - 復元手順: `git restore --source=faac01d7b525225df414a4978fb92ce0932c5805 -- <path>`（SHA は不変。タグ作成後はタグ名でも可）
 - 凍結タグ `evidence-freeze-2026-09`: origin に**未作成**（`git ls-remote` で確認）。作成されるまでは SHA を使う。
+- 2026-09-28 うえきさんの判断：**タグは作らない**。この文書に記録した SHA を凍結点の正本とする。
 
 ## 全体
 

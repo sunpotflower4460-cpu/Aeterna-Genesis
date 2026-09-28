@@ -195,10 +195,11 @@ def main(argv=None) -> int:
     ap.add_argument("--T", type=float, default=400.0)
     ap.add_argument("--n", type=int, default=None)
     ap.add_argument("--kill", type=float, default=None)
-    ap.add_argument("--dx", type=float, default=1.0, help="grid spacing (protocell_one only); pass --n = L/dx")
+    ap.add_argument("--dx", type=float, default=1.0, help="grid spacing (one / partition only); pass --n = L/dx")
     ap.add_argument("--set", action="append", default=[], help="law override, e.g. alpha=0")
-    ap.add_argument("--model", default="protocell", choices=("protocell", "one"),
-                    help="one = genesis/models/protocell_one.py (P17: the material is the replicators' breakdown)")
+    ap.add_argument("--model", default="protocell", choices=("protocell", "one", "partition"),
+                    help="one = genesis/models/protocell_one.py (P17: the material is the replicators' breakdown); "
+                         "partition = genesis/models/protocell_partition.py (P18: no h, solutes partition)")
     a = ap.parse_args(argv)
     ov = {k: float(v) for k, v in (s.split("=") for s in a.set)}
     tag = ("".join(f"_{k}{v}" for k, v in ov.items()) + (f"_kill{a.kill}" if a.kill is not None else "")
@@ -209,6 +210,9 @@ def main(argv=None) -> int:
     if a.model == "one":
         from genesis.models import protocell_one as model
         tag = "_one" + tag
+    elif a.model == "partition":
+        from genesis.models import protocell_partition as model
+        tag = "_part" + tag
     r = run(a.dim, a.seed, a.T, ov, a.kill, a.n, out=out, tag=tag, model=model, dx=a.dx)
     fr = r["frames"]
     k = max(1, len(fr) // 8)
