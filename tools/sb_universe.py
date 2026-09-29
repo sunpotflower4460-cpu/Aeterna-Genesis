@@ -89,7 +89,7 @@ def _labels_png(labels: np.ndarray, path: Path, px: int = 360) -> None:
 
 def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window: float, out: Path, name: str,
         expand: bool = False, min_cells: float = 1.5, png: bool = True, lump_every: float = 2.0,
-        long_life: float = 100.0) -> dict:
+        long_life: float = 100.0, snaps: tuple = ()) -> dict:
     """long_life: a lump followed (every lump_every, within the light-cone reach) for at least this long counts as
     long-lived."""
     shape = (n,) * dim
@@ -130,9 +130,14 @@ def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window:
             by_pos = {L["pos"]: L for L in c["_lumps"]}
             for tr in tracker.alive:                                  # what the followed lumps hold, at census times
                 if tr.t[-1] == c["t"] and tr.pos[-1] in by_pos:
-                    seen.setdefault(tr.id, []).append(by_pos[tr.pos[-1]].get("windings"))
+                    L = by_pos[tr.pos[-1]]
+                    seen.setdefault(tr.id, []).append({"t": c["t"], "windings": L.get("windings"),
+                                                       "valleys": L.get("valleys"), "size": L["size"]})
             last = c
             frames.append({k: v for k, v in c.items() if not k.startswith("_")})
+            if png and any(abs(c["t"] - x) <= 0.5 * every for x in snaps):
+                _labels_png(c["_labels"], out / f"{name}_labels_t{round(c['t']):04d}.png")
+                render_field(_slice(sb.order_parameter(spec, st)), out / f"{name}_s_t{round(c['t']):04d}.png")
             if not spec["H"]:
                 worst = max(worst, abs(sb.energy(spec, st) - E0))
             print(f"t={c['t']:.1f} a={c['a']:.3f} s={c['s_mean']:.3f} regions={c['domains']['regions']} "
@@ -142,7 +147,7 @@ def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window:
         "name": name, "spec": spec, "dim": dim, "n": n, "seed": seed, "T": T, "dt": dt, "steps": n_steps,
         "frames": frames, "lumps": tracker.summary(), "spectrum": spectrum.result(),
         "long_lived_lumps": sum(1 for tr in tracker.tracks if tr.t[-1] - tr.t[0] >= long_life),
-        "longest_lumps": [dict(x, windings_seen=seen.get(x["id"], [])) for x in
+        "longest_lumps": [dict(x, seen=seen.get(x["id"], [])) for x in
                           sorted((tr.summary(shape) for tr in tracker.tracks), key=lambda x: -x["lifetime"])[:5]],
         "energy_drift": (worst / abs(E0)) if not spec["H"] else None,
         "energy_scale": E0,
@@ -198,6 +203,7 @@ def main(argv=None) -> int:
     ap.add_argument("--every", type=float, default=20.0)
     ap.add_argument("--window", type=float, default=200.0)
     ap.add_argument("--expand", action="store_true")
+    ap.add_argument("--snaps", default="", help="times at which to also save the slice pictures, e.g. 60,80,120")
     ap.add_argument("--outside", default="closed,expand", help="compare: closed, expand or both")
     a = ap.parse_args(argv)
     out = Path(a.out)
@@ -220,7 +226,8 @@ def main(argv=None) -> int:
             continue
         spec = build_spec(preset, a.set, a.term)
         try:
-            r = run(spec, a.dim, n, seed, a.T, a.every, a.window, out, name, expand=expand)
+            r = run(spec, a.dim, n, seed, a.T, a.every, a.window, out, name, expand=expand,
+                    snaps=tuple(float(x) for x in a.snaps.split(",") if x))
         except ValueError as err:
             print(name, "skipped:", err)
             continue

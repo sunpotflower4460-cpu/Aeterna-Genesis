@@ -390,9 +390,11 @@ def winding_sites(spec, st) -> np.ndarray:
     return out
 
 
-def lumps(spec, st, thr_sigma: float = 3.0, min_size: int = 3, wind: np.ndarray | None = None) -> dict[str, Any]:
+def lumps(spec, st, thr_sigma: float = 3.0, min_size: int = 3, wind: np.ndarray | None = None,
+          labels: np.ndarray | None = None) -> dict[str, Any]:
     """Regions of energy density above mean + thr_sigma·std that do not span more than half the box. With `wind`
-    (winding_sites), each lump also says how many windings lie inside it."""
+    (winding_sites), each lump also says how many windings lie inside it; with `labels` (label_sites), how many of
+    its sites lie in each valley (-1: between)."""
     e = sb.energy_density(spec, st)
     thr = float(e.mean() + thr_sigma * e.std())
     lab, n = _periodic_label(e > thr)
@@ -421,6 +423,9 @@ def lumps(spec, st, thr_sigma: float = 3.0, min_size: int = 3, wind: np.ndarray 
                       "charge": round(float(rho[sites].sum()), 6),
                       "flavour_charges": [round(float(q[sites].sum()), 6) for q in Qa],
                       "windings": int(wind.ravel()[sites].sum()) if wind is not None else None,
+                      "valleys": ({str(int(v)): int(n_) for v, n_ in zip(*np.unique(labels.ravel()[sites],
+                                                                              return_counts=True))}
+                                  if labels is not None else None),
                       "descr": _shape_descriptor(list(idx), e.shape)})
     return {"threshold": thr, "lumps": items, "extended": extended}
 
@@ -445,7 +450,8 @@ def census(spec, st, with_domains: bool = True) -> dict[str, Any]:
         out["domains"] = domains(labels)
         out["_labels"] = labels
     out["windings"] = windings(spec, st)
-    L = lumps(spec, st, wind=winding_sites(spec, st) if spec["complex"] else None)
+    L = lumps(spec, st, wind=winding_sites(spec, st) if spec["complex"] else None,
+              labels=out.get("_labels"))
     unit = float(np.median([x["content"] for x in L["lumps"]])) if L["lumps"] else 1.0
     kinds = [lump_kind(x, unit) for x in L["lumps"]]
     big = [i for i, x in enumerate(L["lumps"]) if x["size"] >= 27]          # a few cells are the same by the lattice
