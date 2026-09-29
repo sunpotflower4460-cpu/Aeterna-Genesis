@@ -1050,10 +1050,91 @@ def _forced_3d():
         defaults=dict(fo.DEFAULTS), _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb)
 
 
+def _sb_universe(dim: int):
+    """P19: a universe built from a spec -- how the first difference can go (the preset), the light-like field, ħ."""
+    from genesis.models import abelian_higgs_nd as an
+    from genesis.models import sb_universe as sb
+    N = 48 if dim == 3 else 128
+    shape = (N,) * dim
+    names = list(sb.PRESETS)
+    defaults = {"preset": 0, "lam": 0.1, "g": 0.0, "e": 0.3, "hbar": 1e-4, "T0": 0.0, "dt": 0.2}
+
+    def spec_of(p):
+        s = sb.spec_from(names[int(p["preset"])])
+        for t in s["terms"]:
+            if t["kind"] in ("mexican", "triple_well"):
+                t["lam"] = float(p["lam"])
+            if t["kind"] in ("z3", "cross") and p["g"]:
+                t["g"] = float(p["g"])
+        gauged = s["complex"] > 0 and not any(t["kind"] == "z3" for t in s["terms"])
+        s.update(e=float(p["e"]) if gauged else 0.0, hbar=float(p["hbar"]), T0=float(p["T0"]))
+        return sb.validate(s)
+
+    def cache(p):
+        return spec_of(p)
+
+    def pack(st):
+        return {**{k: st[k] for k in ("r", "pr", "c", "pc", "th", "E")}, "tau": np.array(float(st["tau"]))}
+
+    def init(seed, knobs, p):
+        return pack(sb.make_initial(spec_of(p), shape, np.random.default_rng(seed)))
+
+    def step(s, t, p, spec):
+        return pack(sb.step(spec, {**s, "tau": float(s["tau"])}, float(p["dt"])))
+
+    def lens(name, s):
+        spec = dict(sb.BASE, real=s["r"].shape[0], complex=s["c"].shape[0], H=0.0)
+        if name == "s":
+            return sb.order_parameter({**spec, "terms": []}, {**s, "tau": 0.0})
+        if name == "phase":
+            return np.angle(s["c"][0]) if s["c"].shape[0] else np.angle(s["r"][0] + 0j)
+        e = sum(np.abs(s["pc"][a]) ** 2 for a in range(s["c"].shape[0])) + \
+            sum(0.5 * s["pr"][i] ** 2 for i in range(s["r"].shape[0]))
+        return e if not np.isscalar(e) else np.zeros(shape)
+
+    def metrics(s):
+        st = {**s, "tau": float(s["tau"])}
+        out = {"s_mean": float(np.mean(lens("s", s)))}
+        out["windings"] = int(sum(an.string_length(s["c"][a], s["th"]) for a in range(s["c"].shape[0])))
+        if s["c"].shape[0]:
+            out["gauss"] = float(np.abs(sum(s["E"][i] - np.roll(s["E"][i], 1, i) for i in range(dim))
+                                        - sb.charge_density(st)).max()) if np.abs(s["E"]).max() > 0 else 0.0
+        return out
+
+    def perturb(name, a, s, p, rng):
+        # momenta only; a complex field is kicked along itself (π += n·φ, n real), which leaves its charge
+        # density 2 Im(φ*π) and so Gauss's law untouched
+        n = a["amp"] * rng.standard_normal(shape)
+        return {**s, "pr": s["pr"] + n, "pc": s["pc"] + n * s["c"]}
+
+    pre = "・".join(f"{i}＝{k}" for i, k in enumerate(names))
+    return White(
+        id=f"sb-universe-{dim}d",
+        title=f"対称な場が壊れて差が生まれる宇宙（{dim}D）：最初の差の形・光のような場・量子の揺らぎ",
+        family="場の理論（対称性の破れ）", model="genesis.models.sb_universe", dimension=dim, grid=shape,
+        steps_per_frame=5 if dim == 3 else 10,
+        knobs=[Knob("preset", f"最初の差の形（{pre}）", "start", 0, 0, len(names) - 1, 1, integer=True),
+               Knob("lam", "谷へまとまる強さ λ（全部の谷の項に同じ）", "law", 0.1, 0.02, 0.5, 0.01),
+               Knob("g", "3 つ対等の強さ・2 段目との結びつき g（0＝プリセットのまま）", "law", 0.0, 0.0, 0.3, 0.001),
+               Knob("e", "光のような場の強さ e（複素の場で、3 つ対等でないときだけ）", "start", 0.3, 0.0, 0.6, 0.01),
+               Knob("hbar", "プランク定数 ħ（t=0 の量子の揺らぎの大きさ）", "start", 1e-4, 1e-6, 1e-2, 1e-6),
+               Knob("T0", "はじめの温度（0＝量子の揺らぎだけ）", "start", 0.0, 0.0, 2.0, 0.01)],
+        lenses=[Lens("s", "差の大きさ s（½φ² + |φ|²。谷からの距離）", "high", 0.0, 3.0),
+                Lens("phase", "向き（位相。実数の場は ± の 2 色。光があるときは見かけの量）", "cyclic", -np.pi, np.pi, True),
+                Lens("kinetic", "運動のエネルギー（波）", "high", 0.0, 0.5)],
+        perturbs=[Perturb("kick", "場を揺らす（運動量に。電荷は変えない）", (Knob("amp", "強さ", "arg", 0.02, 0.0, 0.2, 0.005),))],
+        put_in=["宇宙の仕様：場の中身（実数・複素の数）と、ポテンシャルの形（プリセット）と係数",
+                "t=0：対称な点 φ=0 に、量子の真空の揺らぎ（どの波にも ħω/2）。温度 T0 > 0 なら熱い始まり",
+                "光のような場の強さ e（0 はなし）", "格子（dx=1）と周期的な有限の箱。閉じた箱（エネルギー保存）",
+                "膨張する宇宙はツール（tools/sb_universe.py --expand）で比べる"],
+        source="genesis/models/sb_universe.py · tools/sb_universe.py", ceiling_ref=None, track=None,
+        defaults=defaults, _init=init, _step=step, _lens=lens, _metrics=metrics, _perturb=perturb, _cache=cache)
+
+
 _BUILDERS = [_tdgl, _gpe_ring, _gray_scott, _three_component, _cgl, _swift_hohenberg,
              lambda: _wave("phi4", 2), lambda: _wave("sine_gordon", 2), lambda: _wave("phi4", 3), _higgs, _higgs3d,
              _sh_hex, _gpe_quench_3d, _gpe_obstacle_3d, _barkley_3d, _gs_two_3d, _protocell_3d, _forced_3d, _protocell_one_3d,
-             _protocell_partition_3d]
+             _protocell_partition_3d, lambda: _sb_universe(3), lambda: _sb_universe(2)]
 _REGISTRY: dict[str, White] | None = None
 
 

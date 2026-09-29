@@ -42,7 +42,7 @@ from typing import Any
 
 import numpy as np
 
-from genesis.models.abelian_higgs_nd import _sh, cov_laplacian, link_z, plaquette, planes, wrap  # noqa: F401
+from genesis.models.abelian_higgs_nd import _sh, plaquette, planes, wrap  # noqa: F401
 
 TERMS = ("mexican", "triple_well", "z3", "aniso", "cross", "mass")
 
@@ -50,15 +50,19 @@ BASE: dict[str, Any] = {"real": 0, "complex": 0, "c_real": 1.0, "c_complex": 1.0
                         "H": 0.0, "a_max": None, "hbar": 1e-4, "T0": 0.0, "dt": None, "cfl": 0.4}
 
 PRESETS: dict[str, dict[str, Any]] = {
-    "yinyang": {"real": 1, "terms": [{"kind": "mexican", "on": "real", "lam": 0.5, "v": 1.0}]},
-    "yinyang_middle": {"real": 1, "terms": [{"kind": "triple_well", "on": "real", "lam": 0.5, "v": 1.0}]},
-    "three_equal": {"complex": 1, "terms": [{"kind": "mexican", "on": "complex", "lam": 0.5, "v": 1.0},
-                                            {"kind": "z3", "on": "complex:0", "g": 0.3, "v": 1.0}]},
-    "continuous": {"complex": 1, "e": 0.3, "terms": [{"kind": "mexican", "on": "complex", "lam": 0.36, "v": 1.0}]},
+    # λ = 0.1: the valley's own length 1/m spans about 3 cells (m² = λ v² for the complex field's size, = λ v² for the
+    # real field), so what forms is resolved by the lattice; the time to break is ~ ln(1/ħ)/m.
+    "yinyang": {"real": 1, "terms": [{"kind": "mexican", "on": "real", "lam": 0.1, "v": 1.0}]},
+    "yinyang_middle": {"real": 1, "terms": [{"kind": "triple_well", "on": "real", "lam": 0.1, "v": 1.0}]},
+    "three_equal": {"complex": 1, "terms": [{"kind": "mexican", "on": "complex", "lam": 0.1, "v": 1.0},
+                                            {"kind": "z3", "on": "complex:0", "g": 0.06, "v": 1.0}]},
+    "continuous": {"complex": 1, "e": 0.3, "terms": [{"kind": "mexican", "on": "complex", "lam": 0.1, "v": 1.0}]},
+    # two scales: A (complex, v = 1) breaks first; B (real, v = 0.4) is slowed by its coupling to A (g > 0) and breaks
+    # later -- faster where A is small
     "cascade": {"real": 1, "complex": 1,
-                "terms": [{"kind": "mexican", "on": "complex", "lam": 0.5, "v": 1.0},
-                          {"kind": "mexican", "on": "real", "lam": 0.5, "v": 0.4},
-                          {"kind": "cross", "a": "complex", "b": "real", "g": 0.1}]},
+                "terms": [{"kind": "mexican", "on": "complex", "lam": 0.1, "v": 1.0},
+                          {"kind": "mexican", "on": "real", "lam": 0.1, "v": 0.4},
+                          {"kind": "cross", "a": "complex", "b": "real", "g": 0.004}]},
 }
 
 
@@ -303,10 +307,19 @@ def forces(spec, st, a: float = 1.0):
         d = th.shape[0]
         inv_e2 = 1.0 / spec["e"] ** 2
         cur = np.zeros(th.shape)
+        U = [np.exp(-1j * th[i]) for i in range(d)]                  # link phases, shared by every charged field
+        Ub = [np.conj(_sh(U[i], i, -1)) for i in range(d)]
         for a_ in range(spec["complex"]):
             ca2 = spec["c_complex"][a_] ** 2
-            dpc[a_] = ca2 * cov_laplacian(c[a_], th) - gc[a_]
-            cur = cur + ca2 * 2.0 * np.imag(link_z(c[a_], th))
+            f = c[a_]
+            fwd = [U[i] * _sh(f, i) for i in range(d)]
+            lap = -2.0 * d * f
+            for i in range(d):
+                lap = lap + fwd[i] + Ub[i] * _sh(f, i, -1)
+            dpc[a_] = ca2 * lap - gc[a_]
+            fc = np.conj(f)
+            for i in range(d):
+                cur[i] = cur[i] + ca2 * 2.0 * np.imag(fwd[i] * fc)
         sins = {(i, j): np.sin(plaquette(th, i, j)) for i, j in planes(d)}
         dE = np.empty_like(th)
         for i in range(d):
@@ -342,6 +355,30 @@ def step(spec, st, dt: float) -> dict:
     new["pc"] = pc + 0.5 * dt * dpc
     new["E"] = E + 0.5 * dt * dE if dE is not None else E
     return new
+
+
+def run(spec, st, dt: float, n: int) -> dict:
+    """n steps; the force at the end of one step is the force at the start of the next (computed once). The same
+    numbers as n calls of step()."""
+    f = None
+    for _ in range(n):
+        tau = st["tau"]
+        a0, a1 = scale_factor(spec, tau), scale_factor(spec, tau + dt)
+        dpr, dpc, dE = f if f is not None else forces(spec, st, a0)
+        pr = st["pr"] + 0.5 * dt * dpr
+        pc = st["pc"] + 0.5 * dt * dpc
+        E = st["E"] + 0.5 * dt * dE if dE is not None else st["E"]
+        r = st["r"] + dt * pr
+        c = st["c"] + dt * pc
+        th = st["th"] + dt * spec["e"] ** 2 * E if spec["e"] else st["th"]
+        new = dict(st, r=r, c=c, th=th, tau=tau + dt)
+        f = forces(spec, new, a1)
+        dpr, dpc, dE = f
+        new["pr"] = pr + 0.5 * dt * dpr
+        new["pc"] = pc + 0.5 * dt * dpc
+        new["E"] = E + 0.5 * dt * dE if dE is not None else E
+        st = new
+    return st
 
 
 # ------------------------------------------------------------------------------------------ t = 0
