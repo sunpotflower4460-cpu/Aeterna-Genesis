@@ -385,23 +385,30 @@ def lumps(spec, st, thr_sigma: float = 3.0, min_size: int = 3) -> dict[str, Any]
     e = sb.energy_density(spec, st)
     thr = float(e.mean() + thr_sigma * e.std())
     lab, n = _periodic_label(e > thr)
-    rho = sb.charge_density(st)
-    Qa = [2.0 * np.imag(np.conj(st["c"][a]) * st["pc"][a]) for a in range(spec["complex"])]
+    rho = sb.charge_density(st).ravel()
+    Qa = [(2.0 * np.imag(np.conj(st["c"][a]) * st["pc"][a])).ravel() for a in range(spec["complex"])]
     items, extended = [], 0
+    flat = lab.ravel()
+    where = np.flatnonzero(flat)
+    order = np.argsort(flat[where], kind="stable")
+    where = where[order]
+    sizes = np.bincount(flat[where], minlength=n + 1)
+    starts = np.concatenate([[0], np.cumsum(sizes[1:])])
+    ef = e.ravel()
     for k in range(1, n + 1):
-        sel = lab == k
-        if sel.sum() < min_size:
+        if sizes[k] < min_size:
             continue
-        idx = np.nonzero(sel)
+        sites = where[starts[k - 1]:starts[k]]
+        idx = np.unravel_index(sites, e.shape)
         ext = [lt._extent(idx[ax], e.shape[ax]) for ax in range(e.ndim)]
         if max(ext) > e.shape[0] // 2:
             extended += 1
             continue
-        w = e[idx]
+        w = ef[sites]
         items.append({"pos": tuple(lt._circ_mean(idx[ax], e.shape[ax], w) for ax in range(e.ndim)),
-                      "size": int(sel.sum()), "content": float(w.sum()), "peak": float(w.max()),
-                      "charge": round(float(rho[idx].sum()), 6),
-                      "flavour_charges": [round(float(q[idx].sum()), 6) for q in Qa],
+                      "size": int(sites.size), "content": float(w.sum()), "peak": float(w.max()),
+                      "charge": round(float(rho[sites].sum()), 6),
+                      "flavour_charges": [round(float(q[sites].sum()), 6) for q in Qa],
                       "descr": _shape_descriptor(list(idx), e.shape)})
     return {"threshold": thr, "lumps": items, "extended": extended}
 
@@ -429,9 +436,10 @@ def census(spec, st, with_domains: bool = True) -> dict[str, Any]:
     L = lumps(spec, st)
     unit = float(np.median([x["content"] for x in L["lumps"]])) if L["lumps"] else 1.0
     kinds = [lump_kind(x, unit) for x in L["lumps"]]
+    big = [i for i, x in enumerate(L["lumps"]) if x["size"] >= 27]          # a few cells are the same by the lattice
     out["lumps"] = {"n": len(L["lumps"]), "extended": L["extended"], "threshold": round(L["threshold"], 6),
                     "kinds": {str(k): kinds.count(k) for k in sorted(set(kinds))},
-                    "sameness": sameness([x["descr"] for x in L["lumps"]], kinds)}
+                    "sameness": sameness([L["lumps"][i]["descr"] for i in big], [kinds[i] for i in big])}
     out["_lumps"] = L["lumps"]
     return out
 
