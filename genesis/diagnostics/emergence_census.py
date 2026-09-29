@@ -380,8 +380,19 @@ def windings(spec, st) -> dict[str, Any]:
 
 
 # ------------------------------------------------------------------------------------------ lumps
-def lumps(spec, st, thr_sigma: float = 3.0, min_size: int = 3) -> dict[str, Any]:
-    """Regions of energy density above mean + thr_sigma·std that do not span more than half the box."""
+def winding_sites(spec, st) -> np.ndarray:
+    """Number of windings (any complex field, any plane) on the plaquettes based at every site."""
+    c, th = st["c"], st["th"] if spec["e"] else np.zeros_like(st["th"])
+    out = np.zeros(c.shape[1:], int)
+    for a in range(spec["complex"]):
+        for w in ah.winding(c[a], th).values():
+            out += np.abs(w)
+    return out
+
+
+def lumps(spec, st, thr_sigma: float = 3.0, min_size: int = 3, wind: np.ndarray | None = None) -> dict[str, Any]:
+    """Regions of energy density above mean + thr_sigma·std that do not span more than half the box. With `wind`
+    (winding_sites), each lump also says how many windings lie inside it."""
     e = sb.energy_density(spec, st)
     thr = float(e.mean() + thr_sigma * e.std())
     lab, n = _periodic_label(e > thr)
@@ -409,14 +420,15 @@ def lumps(spec, st, thr_sigma: float = 3.0, min_size: int = 3) -> dict[str, Any]
                       "size": int(sites.size), "content": float(w.sum()), "peak": float(w.max()),
                       "charge": round(float(rho[sites].sum()), 6),
                       "flavour_charges": [round(float(q[sites].sum()), 6) for q in Qa],
+                      "windings": int(wind.ravel()[sites].sum()) if wind is not None else None,
                       "descr": _shape_descriptor(list(idx), e.shape)})
     return {"threshold": thr, "lumps": items, "extended": extended}
 
 
 def lump_kind(L: dict[str, Any], unit: float) -> tuple:
-    """Rounded features: content in octaves of `unit`, the sign of each charge."""
+    """Rounded features: content in octaves of `unit`, the sign of each charge, whether a winding lies inside."""
     return (int(np.floor(np.log2(max(L["content"] / unit, 1e-12)))), int(np.sign(np.round(L["charge"], 3))),
-            tuple(int(np.sign(np.round(q, 3))) for q in L["flavour_charges"]))
+            tuple(int(np.sign(np.round(q, 3))) for q in L["flavour_charges"]), int(bool(L.get("windings"))))
 
 
 # ------------------------------------------------------------------------------------------ one frame
@@ -433,13 +445,14 @@ def census(spec, st, with_domains: bool = True) -> dict[str, Any]:
         out["domains"] = domains(labels)
         out["_labels"] = labels
     out["windings"] = windings(spec, st)
-    L = lumps(spec, st)
+    L = lumps(spec, st, wind=winding_sites(spec, st) if spec["complex"] else None)
     unit = float(np.median([x["content"] for x in L["lumps"]])) if L["lumps"] else 1.0
     kinds = [lump_kind(x, unit) for x in L["lumps"]]
     big = [i for i, x in enumerate(L["lumps"]) if x["size"] >= 27]          # a few cells are the same by the lattice
     out["lumps"] = {"n": len(L["lumps"]), "extended": L["extended"], "threshold": round(L["threshold"], 6),
                     "kinds": {str(k): kinds.count(k) for k in sorted(set(kinds))},
                     "sameness": sameness([L["lumps"][i]["descr"] for i in big], [kinds[i] for i in big])}
+    out["lumps"]["with_windings"] = sum(1 for x in L["lumps"] if x.get("windings"))
     out["_lumps"] = L["lumps"]
     return out
 

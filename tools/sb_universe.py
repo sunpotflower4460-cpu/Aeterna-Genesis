@@ -114,6 +114,7 @@ def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window:
     lump_at = set(range(0, n_steps + 1, max(1, int(round(lump_every / dt)))))   # lumps are followed more often
     t0 = time.time()
     i, worst, last = 0, 0.0, None
+    seen: dict[int, list] = {}
     for j in sorted(census_at | spec_at | lump_at):
         if j > i:
             st = sb.run(spec, st, dt, j - i)
@@ -126,6 +127,10 @@ def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window:
         if j in census_at:
             c = ec.census(spec, st)
             tracker.add(c["t"], [{k: v for k, v in L.items() if k != "descr"} for L in c["_lumps"]])
+            by_pos = {L["pos"]: L for L in c["_lumps"]}
+            for tr in tracker.alive:                                  # what the followed lumps hold, at census times
+                if tr.t[-1] == c["t"] and tr.pos[-1] in by_pos:
+                    seen.setdefault(tr.id, []).append(by_pos[tr.pos[-1]].get("windings"))
             last = c
             frames.append({k: v for k, v in c.items() if not k.startswith("_")})
             if not spec["H"]:
@@ -137,7 +142,8 @@ def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window:
         "name": name, "spec": spec, "dim": dim, "n": n, "seed": seed, "T": T, "dt": dt, "steps": n_steps,
         "frames": frames, "lumps": tracker.summary(), "spectrum": spectrum.result(),
         "long_lived_lumps": sum(1 for tr in tracker.tracks if tr.t[-1] - tr.t[0] >= long_life),
-        "longest_lumps": sorted((tr.summary(shape) for tr in tracker.tracks), key=lambda x: -x["lifetime"])[:5],
+        "longest_lumps": [dict(x, windings_seen=seen.get(x["id"], [])) for x in
+                          sorted((tr.summary(shape) for tr in tracker.tracks), key=lambda x: -x["lifetime"])[:5]],
         "energy_drift": (worst / abs(E0)) if not spec["H"] else None,
         "energy_scale": E0,
         "core_cells_at_end": round(1.0 / (m * sb.scale_factor(spec, st["tau"])), 3),
