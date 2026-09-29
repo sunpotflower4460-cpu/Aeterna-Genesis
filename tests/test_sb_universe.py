@@ -169,3 +169,7 @@ def test_the_vacuum_carries_half_a_quantum_per_mode():
     assert abs(got / np.mean(hbar / (2 * w)) - 1) < 0.02
     hot = np.var(sb._vacuum_real(shape, np.random.default_rng(0), hbar, 0.05, 1.0, m2)[0])
     assert hot > got                                                  # a hot start carries more
+    # hot and classical (T ≫ ħω): ⟨|φ_k|²⟩ = T/ω², whatever ħ is
+    for h in (1e-4, 1e-6):
+        cl = np.var(sb._vacuum_real(shape, np.random.default_rng(1), h, 0.05, 1.0, m2)[0])
+        assert abs(cl / np.mean(0.05 / w ** 2) - 1) < 0.03

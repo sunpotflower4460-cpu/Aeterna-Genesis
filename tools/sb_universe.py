@@ -88,7 +88,10 @@ def _labels_png(labels: np.ndarray, path: Path, px: int = 360) -> None:
 
 
 def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window: float, out: Path, name: str,
-        expand: bool = False, min_cells: float = 1.5, png: bool = True) -> dict:
+        expand: bool = False, min_cells: float = 1.5, png: bool = True, lump_every: float = 2.0,
+        long_life: float = 100.0) -> dict:
+    """long_life: a lump followed (every lump_every, within the light-cone reach) for at least this long counts as
+    long-lived."""
     shape = (n,) * dim
     m = heaviest_mass(spec)
     res = {"core_cells_at_start": round(1.0 / m, 3)}
@@ -108,14 +111,18 @@ def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window:
     w0 = max(0, n_steps - int(round(window / dt)))
     census_at = set(range(0, n_steps + 1, stride)) | {n_steps}
     spec_at = set(range(w0, n_steps + 1, sstride))
+    lump_at = set(range(0, n_steps + 1, max(1, int(round(lump_every / dt)))))   # lumps are followed more often
     t0 = time.time()
     i, worst, last = 0, 0.0, None
-    for j in sorted(census_at | spec_at):
+    for j in sorted(census_at | spec_at | lump_at):
         if j > i:
             st = sb.run(spec, st, dt, j - i)
             i = j
         if j in spec_at:
             spectrum.add(st)
+        if j in lump_at and j not in census_at:
+            tracker.add(float(st["tau"]), [{k: v for k, v in L.items() if k != "descr"}
+                                           for L in ec.lumps(spec, st)["lumps"]])
         if j in census_at:
             c = ec.census(spec, st)
             tracker.add(c["t"], [{k: v for k, v in L.items() if k != "descr"} for L in c["_lumps"]])
@@ -129,7 +136,8 @@ def run(spec: dict, dim: int, n: int, seed: int, T: float, every: float, window:
     res.update({
         "name": name, "spec": spec, "dim": dim, "n": n, "seed": seed, "T": T, "dt": dt, "steps": n_steps,
         "frames": frames, "lumps": tracker.summary(), "spectrum": spectrum.result(),
-        "long_lived_lumps": sum(1 for tr in tracker.tracks if len(tr.t) >= 3),   # seen in ≥ 3 frames in a row
+        "long_lived_lumps": sum(1 for tr in tracker.tracks if tr.t[-1] - tr.t[0] >= long_life),
+        "longest_lumps": sorted((tr.summary(shape) for tr in tracker.tracks), key=lambda x: -x["lifetime"])[:5],
         "energy_drift": (worst / abs(E0)) if not spec["H"] else None,
         "energy_scale": E0,
         "core_cells_at_end": round(1.0 / (m * sb.scale_factor(spec, st["tau"])), 3),
@@ -157,13 +165,13 @@ def table(out: Path) -> str:
         sp = r.get("spectrum", {}).get("channels", {})
         rows.append("| " + " | ".join(str(x) for x in (
             r["name"], r["dim"], c["t"], c["a"], round(c["s_mean"], 3), f"{d.get('regions')}/{d.get('regions_big')}",
-            d.get("between_fraction"), d.get("bonds_between"), d.get("plaquettes_3plus"),
+            d.get("between_fraction"), d.get("meetings"), d.get("boundary_pieces", {}).get("3+"),
             c["windings"].get("per_field"), c["windings"].get("shared_by_all"),
             f"{c['lumps']['n']}/{r.get('long_lived_lumps')}",
             r["lumps"]["events"], {k: v["branches_small_k"] for k, v in sp.items()},
             r["energy_drift"] and f"{r['energy_drift']:.1e}", r["core_cells_at_end"])) + " |")
-    head = ("| run | dim | t | a | s | regions (all/≥27) | between | meetings | 3+ | windings | shared "
-            "| lumps (now/long-lived) | lump events "
+    head = ("| run | dim | t | a | s | regions (all/≥27) | between | meetings | 3+ pieces | windings | shared "
+            "| lumps (now/lived ≥100) | lump events "
             "| branches | dE/E | core cells |\n|" + "---|" * 16)
     return head + "\n" + "\n".join(rows)
 

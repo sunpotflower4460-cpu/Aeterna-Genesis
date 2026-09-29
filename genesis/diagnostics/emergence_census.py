@@ -9,15 +9,16 @@ by name. Everything is counted in the same general way for every spec:
                       continuous valley one connected group. The number of flat directions at the valley (Hessian)
                       tells whether it is a set of points or a manifold. A charged field's phase is not physical, so
                       with light (e > 0) the groups are formed in gauge-invariant coordinates.
-    domains           a site is IN a valley when it lies closer to it than half the way to the next valley (else it
-                      is "between": still on the top, or inside a wall or a core); connected regions of sites in the
-                      same group, their sizes; bonds between
-                      different groups (where regions meet, by pair of groups: the "kinds" of meeting), and
-                      plaquettes whose corners belong to three or more groups (where three or more regions meet)
+    domains           a site is IN a valley when it lies within half the way from it to the border of its basin (else
+                      it is "between": still on the top, or inside a wall or a core); connected regions of sites in
+                      the same group, their sizes; the boundary set (between sites and sites next to another group)
+                      in connected pieces, each counted by how many groups it touches: 1 (a pocket or a core inside
+                      one region), 2 (where two regions meet, by pair: the kinds of meeting), 3+ (where three or more
+                      meet)
     windings          for every complex field, plaquettes around which its phase winds (gauge-invariant with light);
                       with several fields, how many windings are shared by all of them at the same place
-    lumps             connected regions of high energy density that do not span the box, with their content,
-                      size, charges and windings inside; tracked through time with genesis/diagnostics/lump_tracker
+    lumps             connected regions of high energy density (mean + 3σ) that do not span the box, with their
+                      content, size and charges inside; tracked through time with genesis/diagnostics/lump_tracker
     kinds             lumps and domains grouped by their rounded features; within a kind, how different the members
                       are (shape descriptors): are any two exactly the same?
     Spectrum          ω–k power of gauge-invariant local fields (time series of axis modes): how many frequency
@@ -273,9 +274,9 @@ def _periodic_label(mask: np.ndarray) -> tuple[np.ndarray, int]:
     if n == 0:
         return lab, 0
     lab = lt._merge_periodic(lab)
-    _, lab = np.unique(lab, return_inverse=True)
-    lab = lab.reshape(mask.shape)
-    return lab, int(lab.max())
+    roots = np.unique(lab[lab > 0])
+    lab = np.where(lab > 0, np.searchsorted(roots, lab) + 1, 0)       # 1..n, 0 stays background
+    return lab, int(roots.size)
 
 
 def _shape_descriptor(idx_list: list[np.ndarray], shape) -> np.ndarray:
@@ -292,38 +293,50 @@ def _shape_descriptor(idx_list: list[np.ndarray], shape) -> np.ndarray:
     return np.concatenate([[len(P)], ev])
 
 
+def _touching(mask: np.ndarray) -> np.ndarray:
+    """mask or any of its 2d nearest neighbours (periodic)."""
+    out = mask.copy()
+    for ax in range(mask.ndim):
+        out |= ah._sh(mask, ax) | ah._sh(mask, ax, -1)
+    return out
+
+
 def domains(labels: np.ndarray, min_size: int = 27) -> dict[str, Any]:
-    """Connected regions per group, bonds between groups (by pair), plaquettes where ≥ 3 groups meet, and how
-    different same-group regions of at least `min_size` sites are from each other."""
-    d = labels.ndim
+    """Connected regions per group; where regions meet: the boundary set (sites between valleys, and sites next to a
+    region of another group) split into connected pieces, each counted by how many groups it touches (1: a pocket
+    or a core inside one region, 2: a meeting of two regions, 3+: where three or more meet); and how different
+    same-group regions of at least `min_size` sites are from each other."""
     per_group, descr = {}, []
-    for g in np.unique(labels[labels >= 0]):
+    groups = [int(g) for g in np.unique(labels[labels >= 0])]
+    for g in groups:
         lab, n = _periodic_label(labels == g)
         sizes = np.bincount(lab.ravel())[1:]
-        per_group[int(g)] = {"regions": n, "regions_big": int((sizes >= min_size).sum()),
-                             "largest": int(sizes.max()) if n else 0}
+        per_group[g] = {"regions": n, "regions_big": int((sizes >= min_size).sum()),
+                        "largest": int(sizes.max()) if n else 0}
         for k in np.flatnonzero(sizes >= min_size):
-            descr.append((int(g), _shape_descriptor(list(np.nonzero(lab == k + 1)), labels.shape)))
-    pairs: dict[str, int] = {}
-    K = int(labels.max()) + 1
-    for ax in range(d):
-        a, b = labels, ah._sh(labels, ax)
-        m = (a != b) & (a >= 0) & (b >= 0)
-        codes, counts = np.unique(np.minimum(a[m], b[m]) * K + np.maximum(a[m], b[m]), return_counts=True)
-        for code, cnt in zip(codes, counts):
-            key = f"{code // K}-{code % K}"
-            pairs[key] = pairs.get(key, 0) + int(cnt)
-    meet3 = 0
-    for i, j in ah.planes(d):
-        corners = np.stack([labels, ah._sh(labels, i), ah._sh(labels, j), ah._sh(ah._sh(labels, i), j)])
-        srt = np.sort(np.where(corners >= 0, corners, -1), 0)
-        distinct = (srt[0] >= 0).astype(int) + ((np.diff(srt, axis=0) != 0) & (srt[1:] >= 0)).sum(0)
-        meet3 += int((distinct >= 3).sum())
+            descr.append((g, _shape_descriptor(list(np.nonzero(lab == k + 1)), labels.shape)))
+    boundary = labels < 0
+    for g in groups:
+        other = (labels >= 0) & (labels != g)
+        boundary |= (labels == g) & _touching(other) & ~other
+    lab_b, nb = _periodic_label(boundary)
+    touches: list[set] = [set() for _ in range(nb + 1)]
+    for g in groups:
+        for comp in np.unique(lab_b[_touching(labels == g) & boundary]):
+            touches[int(comp)].add(g)
+    by_count = {"0": 0, "1": 0, "2": 0, "3+": 0}
+    kinds: dict[str, int] = {}
+    for comp in range(1, nb + 1):
+        k = len(touches[comp])
+        by_count["3+" if k >= 3 else str(k)] += 1
+        if k >= 2:
+            key = "-".join(str(x) for x in sorted(touches[comp]))
+            kinds[key] = kinds.get(key, 0) + 1
     return {"groups": per_group, "regions": int(sum(v["regions"] for v in per_group.values())),
             "regions_big": int(sum(v["regions_big"] for v in per_group.values())),
             "between_fraction": round(float((labels < 0).mean()), 6),
-            "bonds_between": pairs, "bonds_between_total": int(sum(pairs.values())),
-            "plaquettes_3plus": meet3, "sameness": sameness([x[1] for x in descr], [x[0] for x in descr])}
+            "boundary_pieces": by_count, "meetings": kinds,
+            "sameness": sameness([x[1] for x in descr], [x[0] for x in descr])}
 
 
 def sameness(descr: list[np.ndarray], kind: list[Any]) -> dict[str, Any]:

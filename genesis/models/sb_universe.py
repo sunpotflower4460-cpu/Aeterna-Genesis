@@ -50,12 +50,12 @@ BASE: dict[str, Any] = {"real": 0, "complex": 0, "c_real": 1.0, "c_complex": 1.0
                         "H": 0.0, "a_max": None, "hbar": 1e-4, "T0": 0.0, "dt": None, "cfl": 0.4}
 
 PRESETS: dict[str, dict[str, Any]] = {
-    # λ = 0.1: the valley's own length 1/m spans about 3 cells (m² = λ v² for the complex field's size, = λ v² for the
-    # real field), so what forms is resolved by the lattice; the time to break is ~ ln(1/ħ)/m.
+    # coefficients chosen so that the heaviest mode of every valley has a length 1/m of about 3 cells (2.8 for
+    # three_equal): what forms is resolved by the lattice (tools/sb_universe.py heaviest_mass)
     "yinyang": {"real": 1, "terms": [{"kind": "mexican", "on": "real", "lam": 0.1, "v": 1.0}]},
-    "yinyang_middle": {"real": 1, "terms": [{"kind": "triple_well", "on": "real", "lam": 0.1, "v": 1.0}]},
+    "yinyang_middle": {"real": 1, "terms": [{"kind": "triple_well", "on": "real", "lam": 0.025, "v": 1.0}]},
     "three_equal": {"complex": 1, "terms": [{"kind": "mexican", "on": "complex", "lam": 0.1, "v": 1.0},
-                                            {"kind": "z3", "on": "complex:0", "g": 0.06, "v": 1.0}]},
+                                            {"kind": "z3", "on": "complex:0", "g": 0.015, "v": 1.0}]},
     "continuous": {"complex": 1, "e": 0.3, "terms": [{"kind": "mexican", "on": "complex", "lam": 0.1, "v": 1.0}]},
     # two scales: A (complex, v = 1) breaks first; B (real, v = 0.4) is slowed by its coupling to A (g > 0) and breaks
     # later -- faster where A is small
@@ -390,7 +390,7 @@ def _vacuum_real(shape, rng, hbar, T0, c, m2):
     """A real field and momentum with the quantum (+ thermal) fluctuations of the free field ω² = c²k² + m²."""
     w = np.sqrt(np.maximum(c * c * _k2_lattice(shape) + max(m2, 0.0), 0.0))
     w = np.where(w > 0, w, np.inf)                          # the zero mode of a massless field carries nothing
-    occ = 0.5 + (1.0 / np.expm1(np.minimum(w / T0, 700.0)) if T0 > 0 else 0.0)
+    occ = 0.5 + (1.0 / np.expm1(np.minimum(hbar * w / T0, 700.0)) if T0 > 0 else 0.0)   # Bose: n = 1/(e^{ħω/T}−1)
     q = np.fft.ifftn(np.sqrt(hbar * occ / w) * np.fft.fftn(rng.standard_normal(shape), norm="ortho"),
                      norm="ortho").real
     p = np.fft.ifftn(np.sqrt(hbar * occ * np.where(np.isfinite(w), w, 0.0))

@@ -1057,13 +1057,13 @@ def _sb_universe(dim: int):
     N = 48 if dim == 3 else 128
     shape = (N,) * dim
     names = list(sb.PRESETS)
-    defaults = {"preset": 0, "lam": 0.1, "g": 0.0, "e": 0.3, "hbar": 1e-4, "T0": 0.0, "dt": 0.2}
+    defaults = {"preset": 0, "lam_x": 1.0, "g": 0.0, "e": 0.3, "hbar": 1e-4, "T0": 0.0, "dt": 0.2}
 
     def spec_of(p):
         s = sb.spec_from(names[int(p["preset"])])
         for t in s["terms"]:
             if t["kind"] in ("mexican", "triple_well"):
-                t["lam"] = float(p["lam"])
+                t["lam"] = t["lam"] * float(p["lam_x"])
             if t["kind"] in ("z3", "cross") and p["g"]:
                 t["g"] = float(p["g"])
         gauged = s["complex"] > 0 and not any(t["kind"] == "z3" for t in s["terms"])
@@ -1114,7 +1114,7 @@ def _sb_universe(dim: int):
         family="場の理論（対称性の破れ）", model="genesis.models.sb_universe", dimension=dim, grid=shape,
         steps_per_frame=5 if dim == 3 else 10,
         knobs=[Knob("preset", f"最初の差の形（{pre}）", "start", 0, 0, len(names) - 1, 1, integer=True),
-               Knob("lam", "谷へまとまる強さ λ（全部の谷の項に同じ）", "law", 0.1, 0.02, 0.5, 0.01),
+               Knob("lam_x", "谷へまとまる強さ λ の倍率（プリセットの値 × この数。大きいと芯が細い）", "law", 1.0, 0.2, 4.0, 0.05),
                Knob("g", "3 つ対等の強さ・2 段目との結びつき g（0＝プリセットのまま）", "law", 0.0, 0.0, 0.3, 0.001),
                Knob("e", "光のような場の強さ e（複素の場で、3 つ対等でないときだけ）", "start", 0.3, 0.0, 0.6, 0.01),
                Knob("hbar", "プランク定数 ħ（t=0 の量子の揺らぎの大きさ）", "start", 1e-4, 1e-6, 1e-2, 1e-6),

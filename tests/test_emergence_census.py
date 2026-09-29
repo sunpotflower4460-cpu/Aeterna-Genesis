@@ -22,8 +22,8 @@ def test_two_valleys_two_regions_and_where_they_meet():
     lab, groups = ec.label_sites(s, st)
     assert len(groups) == 2 and all(g["flat_dirs"] == 0 for g in groups)
     d = ec.domains(lab)
-    assert d["regions"] == 2 and d["plaquettes_3plus"] == 0
-    assert d["bonds_between_total"] == 0 and d["between_fraction"] > 0     # the walls themselves are between
+    assert d["regions"] == 2 and d["between_fraction"] > 0                 # the walls themselves are between
+    assert d["boundary_pieces"] == {"0": 0, "1": 0, "2": 2, "3+": 0} and d["meetings"] == {"0-1": 2}
 
 
 def test_the_middle_valley_is_a_valley_not_a_top():
@@ -38,12 +38,12 @@ def test_three_valleys_meet_at_points():
     y, x = np.mgrid[0:48, 0:48]
     ang = np.angle((x - 24) + 1j * (y - 24))                              # three wedges around the centre
     k = np.floor(((ang + np.pi / 3) % (2 * np.pi)) / (2 * np.pi / 3))
-    rad = 2.245
+    rad = 1.25
     c = rad * np.exp(2j * np.pi * k / 3)[None]
     lab, groups = ec.label_sites(s, _state(s, (48, 48), c=c))
     assert len(groups) == 3
     d = ec.domains(lab)
-    assert d["plaquettes_3plus"] >= 1 and len(d["bonds_between"]) == 3
+    assert d["boundary_pieces"]["3+"] >= 1 and "0-1-2" in d["meetings"]
 
 
 def test_a_continuous_valley_is_one_group_with_a_flat_direction():
@@ -116,3 +116,7 @@ def test_two_scales_give_two_circles():
     r = np.where(rng.random(shape) < 0.5, -1.0, 1.0)[None] * 0.5
     lab, groups = ec.label_sites(s, _state(s, shape, r=r, c=c))
     assert len(groups) == 2 and [g["flat_dirs"] for g in groups] == [1, 1]
+
+
+def test_one_region_filling_the_whole_box_is_one_region():
+    assert ec.domains(np.zeros((8, 8, 8), int))["regions"] == 1
