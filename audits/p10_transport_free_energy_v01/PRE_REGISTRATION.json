@@ -91,7 +91,12 @@
       2e-05,
       1e-05
     ],
-    "rk4_N": 64
+    "rk4_N": 64,
+    "rtol_primary": 1e-09,
+    "atol_primary": 1e-12,
+    "rtol_reference": 1e-11,
+    "atol_reference": 1e-13,
+    "_note": "rtol/atol numeric fields encode the strings in 'primary' and 'reference' above (added before any scored run; no value changed)"
   },
   "scenarios": {
     "T1": "finite-difference variation of F_ref and of the phi/m terms at a random positive state (N=32, seed 1)",
@@ -203,6 +208,14 @@
       "threshold_added": {
         "T10c_error_floor_L1": 1e-09
       }
+    },
+    {
+      "id": "AMD-2",
+      "when": "2026-10-08, during unit-test development, BEFORE any scored run of run_audit.py. The failing unit test (401-point uniform grid, threshold 1e-4) is recorded, not hidden.",
+      "observed_before_amendment": "uniform-grid trapezoid residual of the energy identity: 1.9e-2 (401 pts), 1.07e-3 (2001 pts). Simpson on 2001 pts: 1.4e-4. Residual scales ~ h^2 (trapezoid) because dissipation drops from ~8.7 to ~0 within t ~ 0.01 (fast initial transient not resolved by a uniform grid).",
+      "change": "T8b (energy identity) is evaluated on a graded time grid: t = [0] + geomspace(1e-5, 0.1, 400) + linspace(0.1, 2, 2000)[1:] (2400 points), trapezoid rule. Threshold 1e-4 UNCHANGED. T8a (monotonicity) keeps the uniform 2001-point grid.",
+      "result_of_graded_grid_diagnostic": "residual 4.7e-5 (< 1e-4). A second graded grid (4800 pts) gives 1.8e-5. Full diagnostic saved in results/AMD-2_quadrature_diagnostic.txt (all tried grids reported).",
+      "reason": "numerical resolution of a transient, not a change of the physical criterion"
     }
   ]
 }
