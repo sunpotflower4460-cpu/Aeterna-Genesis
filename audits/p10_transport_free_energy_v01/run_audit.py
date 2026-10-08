@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -119,6 +120,7 @@ def main():
     v0 = subprocess.run([sys.executable, "-m", "pytest", "tests/test_vessel_permeability.py", "-q", "-p",
                          "no:cacheprovider"], cwd=REPO, capture_output=True, text=True)
     v0_tail = v0.stdout.strip().splitlines()[-1] if v0.stdout.strip() else ""
+    v0_tail = re.sub(r" in [0-9.]+s", "", v0_tail)   # wall-clock time is not a result; keep the record deterministic
     rows.append({"test_id": "T9", "case": "existing_V0_suite_read_only", "N": "", "integrator": "pytest",
                  "metric": "existing tests/test_vessel_permeability.py: " + v0_tail, "value": float(v0.returncode == 0),
                  "threshold": 1.0, "op": "==", "verdict": "PASS" if v0.returncode == 0 else "FAIL"})
