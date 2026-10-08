@@ -1,0 +1,34 @@
+SUPPLEMENTARY (post-registration, exploratory). NOT part of the pre-registered verdicts in summary.json.
+Purpose: (a) check whether the literal F0 flux (Fick, no chi) can increase F_ref at all, since FORMULA_AUDIT E-2
+says its sign is not fixed; (b) measure RK4 order at time steps coarser than the pre-registered ones, where the
+RK4 error is above the reference floor.
+
+(a) Fick (literal F0 flux) search for an F_ref increase, N=128, D const, t in [0,2] uniform 2001 pts
+beta= 0.5 IC=cos2pix (pre-reg IC)             success=True max_increment=2.220e-16 n_increases=140 min_c=0.500
+beta= 0.5 IC=bump at x=0.7 (w=0.1, amp 0.5)   success=True max_increment=5.164e-04 n_increases=1998 min_c=0.919
+beta= 0.5 IC=bump at x=0.3 (w=0.1, amp 0.5)   success=True max_increment=-8.211e-13 n_increases=0 min_c=0.919
+beta= 1.5 IC=cos2pix (pre-reg IC)             success=True max_increment=3.331e-16 n_increases=128 min_c=0.500
+beta= 1.5 IC=bump at x=0.7 (w=0.1, amp 0.5)   success=True max_increment=2.227e-03 n_increases=2000 min_c=0.919
+beta= 1.5 IC=bump at x=0.3 (w=0.1, amp 0.5)   success=True max_increment=-2.463e-12 n_increases=0 min_c=0.919
+
+(b) RK4 order at coarser steps (N=64, t=0.2, reference = BDF rtol 1e-11), dt in {1e-4, 5e-5, 2.5e-5}
+dt=1.0e-04 L1 error vs BDF ref = 3.536e-11
+dt=5.0e-05 L1 error vs BDF ref = 3.536e-11
+dt=2.5e-05 L1 error vs BDF ref = 3.536e-11
+observed order dt 1e-04->5.0e-05: -0.000
+observed order dt 5e-05->2.5e-05: 0.000
+
+(c) Fick F_ref total change vs resolution (bump at x=0.7, w=0.1, amp 0.5), t in [0,2], BDF rtol 1e-10
+beta=0.5 N=64: F(0)=-1.030694  F(2)=-1.000000  F(2)-F(0)=+3.069424e-02  max_incr=5.157e-04
+beta=0.5 N=128: F(0)=-1.030694  F(2)=-1.000000  F(2)-F(0)=+3.069423e-02  max_incr=5.164e-04
+beta=0.5 N=256: F(0)=-1.030694  F(2)=-1.000000  F(2)-F(0)=+3.069422e-02  max_incr=5.166e-04
+beta=1.5 N=64: F(0)=-1.110610  F(2)=-1.000000  F(2)-F(0)=+1.106105e-01  max_incr=2.223e-03
+beta=1.5 N=128: F(0)=-1.110610  F(2)=-1.000000  F(2)-F(0)=+1.106105e-01  max_incr=2.227e-03
+beta=1.5 N=256: F(0)=-1.110610  F(2)=-1.000000  F(2)-F(0)=+1.106104e-01  max_incr=2.228e-03
+
+(d) Integrator check of the RK4 result: RK4 self-convergence and BDF tolerance dependence (N=64, t=0.2)
+RK4 self-difference L1 dt 1e-4 vs 5e-5 : 2.413e-14
+RK4 self-difference L1 dt 5e-5 vs 2.5e-5: 2.139e-15
+BDF rtol=1e-09 vs RK4(2.5e-5) L1 difference: 1.412e-09
+BDF rtol=1e-10 vs RK4(2.5e-5) L1 difference: 2.241e-10
+BDF rtol=1e-11 vs RK4(2.5e-5) L1 difference: 3.536e-11
