@@ -1,0 +1,178 @@
+{
+  "audit_id": "p10_transport_free_energy_v01",
+  "version": "0.1",
+  "status": "registered_before_execution",
+  "role": "V (validation). Fixed planar interface, 1-D, independent reference. NOT an emergence claim; NOT a Room; NOT an experiments/eNNN entry; NOT a P10 vessel result.",
+  "base_commit": "649fd7e0de259a30048684ba98480739be1edcd9",
+  "branch": "audit/p10-transport-free-energy-v01",
+  "rules": {
+    "thresholds_fixed_before_first_run": true,
+    "no_clipping_of_negative_concentration": true,
+    "failed_or_unstable_runs_are_recorded_not_replaced": true,
+    "existing_V0_used_read_only_for_comparison_only": true,
+    "independent_model_must_not_call": ["vessel_permeability.relax_step", "vessel_permeability.equilibrate", "vessel_permeability._bernoulli"]
+  },
+  "math_model": {
+    "id": "FE-MU-1D-v0.1",
+    "free_energy_reference": "F_ref[c|phi] = sum_j dx * sum_i [ RT c_ij (ln(c_ij/c_ref) - 1) + chi_i phi_j c_ij ]",
+    "chemical_potential": "mu_ij = RT ln(c_ij / c_ref) + chi_i phi_j",
+    "mobility": "M = D(phi) / RT (shared by all species)",
+    "flux_main_B": "J_{j+1/2} = - M_face * c_face * (mu_{j+1} - mu_j) / dx ; M_face = (M_j + M_{j+1})/2 ; c_face = (c_j + c_{j+1})/2",
+    "flux_control_A_fick": "J_{j+1/2} = - D_face * (c_{j+1} - c_j) / dx ; D_face = (D_j + D_{j+1})/2  (literal F0 form, no chi)",
+    "rhs": "dc_j/dt = - (J_{j+1/2} - J_{j-1/2}) / dx ; J_{-1/2} = J_{N-1/2} = 0 (no-flux both ends)",
+    "phi_chem_potential_for_T1_only": "mu_phi = a phi (phi^2-1) - div_h(kappa(m) grad phi) + sum_i chi_i c_i ; mu_m_interface = (kappa'(m)/2) |grad phi|^2",
+    "kappa_of_m": "kappa0 * (1 - alpha * m), kappa0 = 1.0, alpha = 0.5 (T1 only; not used in transport runs)",
+    "a_coefficient_T1_only": 1.0
+  },
+  "geometry": {
+    "domain_length_L": 1.0,
+    "cell_centres": "x_j = (j + 0.5) dx, dx = L / N",
+    "phi_profile": "phi(x) = tanh((x0 - x) / w), x0 = 0.5, w = 0.05 (main); w = 0.02 (sharp stress case T3s)",
+    "phi_sign": "phi > 0 for x < x0 ('inside' = left half); phi < 0 for x > x0 ('outside' = right half)",
+    "N_main": 128,
+    "N_list_convergence": [64, 128, 256],
+    "N_reference_T10": 512,
+    "N_slab_T9_index_units": 24,
+    "width_slab_T9_index_units": 1.5
+  },
+  "parameters": {
+    "RT": 1.0,
+    "c_ref": 1.0,
+    "D0": 1.0,
+    "D_profiles": {
+      "const": "D(phi) = D0",
+      "linear": "D(phi) = D0 * (1 + 0.5 * phi)  (positive for |phi| <= 1)"
+    },
+    "beta_chi_over_RT": {
+      "A_positive": 0.5,
+      "B_negative": -0.5,
+      "equal_control": 0.5,
+      "zero_control": 0.0,
+      "sharp_stress": 1.5
+    },
+    "D_sweep_T6": [0.25, 1.0, 4.0]
+  },
+  "initial_condition": {
+    "c0": "c0(x) = 1 + 0.5 cos(2 pi x / L)",
+    "mass_M0": 1.0,
+    "min_c0": 0.5,
+    "uniform_IC_used_for": "T5 chi=0 control only"
+  },
+  "time": {
+    "t_check": 0.2,
+    "t_short": 0.05,
+    "t_eq": 40.0,
+    "t_free_energy_horizon": 2.0,
+    "save_dt_free_energy": 0.001,
+    "rationale_t_eq": "Holley-Stroock gives a spectral-gap lower bound gap >= pi^2 D exp(-osc), osc = 2|beta| (phi in [-1,1]). Worst cases used: beta=0.5 with D=0.25 -> gap >= 0.90, so exp(-40*0.90) = 2e-16 ; beta=1.5 with D=1 (sharp T3s) -> gap >= 0.49, so exp(-40*0.49) = 3e-9. The equilibrium criterion T3_boltzmann_cv_at_t_eq_max is checked at run time anyway, so the bound is a justification, not the test."
+  },
+  "integrators": {
+    "primary": "scipy.integrate.solve_ivp, method=BDF, rtol=1e-9, atol=1e-12, jac_sparsity = tridiagonal",
+    "reference": "solve_ivp BDF, rtol=1e-11, atol=1e-13",
+    "secondary_explicit": "fixed-step classical RK4 (time-step check only)",
+    "rtol_sequence_T10b": [1e-6, 1e-8, 1e-10],
+    "rk4_dt_sequence_T10c": [2e-5, 1e-5],
+    "rk4_N": 64
+  },
+  "scenarios": {
+    "T1": "finite-difference variation of F_ref and of the phi/m terms at a random positive state (N=32, seed 1)",
+    "T2": "Fick (A) vs mu-flux (B) with D(phi)=linear, beta=+0.5, N=128, same IC, no reaction, no-flux, to t_eq",
+    "T3": "equilibrium partition, D const, beta=+0.5, N in {64,128,256}; plus sharp stress (w=0.02, beta=1.5, N=256)",
+    "T4": "species A beta=+0.5 and species B beta=-0.5 sharing the same D(phi)=const, N=128, to t_eq",
+    "T5": "controls: beta_A=beta_B=+0.5 ; beta_A=beta_B=0 (uniform IC c=1 for the second)",
+    "T6": "D sweep const D in {0.25,1,4} and linear D(phi), beta=+0.5, N=128, to t_eq; relaxation time measured",
+    "T7": "conservation, positivity, finiteness, boundary-flux structure over all runs",
+    "T8a": "F_ref(t) monotonicity for B flux, N in {64,128,256}, beta=+0.5 and beta=-0.5, D const, to t=2",
+    "T8b": "energy identity dF/dt = -dissipation (B flux) integrated over [0,2], N=128",
+    "T8c": "EXPLORATORY ONLY (no verdict): F_ref(t) for Fick flux A with IC c0(x)=1+0.5cos(pi x), beta=+0.5",
+    "T9": "read-only comparison with existing V0: (a) its 3D sphere test suite; (b) planar slab in 3D arrays of shape (24,4,4) with phi(x) only, beta=0.5, D=1, dx=1 (index units)",
+    "T10a": "spatial convergence at t_check, N in {64,128,256} vs reference N=512, L1 error on cell averages",
+    "T10b": "time-tolerance convergence at t_check, N=128, rtol in {1e-6,1e-8,1e-10} vs reference rtol 1e-11",
+    "T10c": "RK4 time-step convergence at t_check, N=64, dt in {2e-5,1e-5} vs BDF reference rtol 1e-11"
+  },
+  "metric_definitions": {
+    "mass_residual": "max_t |sum_j c_j dx(t) - M0| / M0",
+    "boltzmann_invariant_cv": "std(g)/mean(g), g_j = c_j exp(beta phi_j)",
+    "discrete_equilibrium": "c_j^disc = K exp(-beta phi_j), K from total mass M0 (exact zero-flux state of the B scheme)",
+    "continuum_equilibrium": "c(x) = M0 exp(-beta phi(x)) / int exp(-beta phi) dx, evaluated on a 16384-point midpoint quadrature",
+    "partition_ratio_measured": "mean_{x_j < x0} c_j / mean_{x_j > x0} c_j",
+    "partition_ratio_predicted_discrete": "mean_{x_j<x0} exp(-beta phi_j) / mean_{x_j>x0} exp(-beta phi_j)",
+    "partition_ratio_predicted_continuum": "(int_0^x0 e^{-beta phi} dx / x0) / (int_x0^L e^{-beta phi} dx / (L - x0))",
+    "selectivity_S": "partition_ratio(B) / partition_ratio(A)  (>1 means B is enriched inside relative to A)",
+    "relaxation_time_T6": "first t with max_j |c_j(t) - c_eq_j| / c_eq_j <= 1e-2",
+    "F_ref": "sum_j dx sum_i [ RT c (ln(c/c_ref) - 1) + chi phi c ]"
+  },
+  "tolerances": {
+    "T1_fd_relative_error_max": 1e-7,
+    "T1_sensitivity_min_divform_vs_naive_laplacian_relative": 1e-2,
+    "T2_fick_partition_ratio_abs_minus_one_max": 1e-6,
+    "T2_B_partition_discrete_rel_max": 1e-6,
+    "T3_mass_residual_rel_max": 1e-9,
+    "T3_boltzmann_cv_at_t_eq_max": 1e-6,
+    "T3_discrete_equilibrium_rel_max": 1e-6,
+    "T3_mu_spread_at_t_eq_max": 1e-6,
+    "T3_max_face_flux_at_t_eq_max": 1e-7,
+    "T3_partition_discrete_rel_max": 1e-6,
+    "T3_partition_continuum_rel_max_at_N128": 1e-3,
+    "T3_sharp_boltzmann_cv_max": 1e-6,
+    "T4_selectivity_S_min": 2.0,
+    "T4_partition_discrete_rel_max": 1e-6,
+    "T5_equal_chi_ratio_abs_diff_max": 1e-9,
+    "T5_zero_chi_max_abs_c_minus_1": 1e-6,
+    "T6_partition_across_D_rel_max": 1e-6,
+    "T6_uniform_D_time_scaling_rel_max": 1e-3,
+    "T7_mass_residual_rel_max": 1e-9,
+    "T7_min_c_must_be_positive": true,
+    "T7_boundary_rhs_sum_rel_max": 1e-12,
+    "T8a_max_positive_F_increment_abs_max": 1e-7,
+    "T8b_energy_identity_rel_max": 1e-4,
+    "T9_slab_vs_existing_equilibrium_rel_max": 1e-6,
+    "T10a_observed_order_min_PASS": 1.5,
+    "T10a_observed_order_min_INCONCLUSIVE": 0.5,
+    "T10b_err_rtol1e-8_abs_max_L1": 1e-6,
+    "T10c_rk4_order_min_PASS": 3.0,
+    "T10c_rk4_order_min_INCONCLUSIVE": 1.5,
+    "reproducibility_bitwise_equal": true
+  },
+  "verdict_rules": {
+    "PASS": "all pre-registered conditions of the test met",
+    "FAIL": "a pre-registered condition not met (including negative or non-finite concentration, or solver failure reported by the integrator)",
+    "INCONCLUSIVE": "order/convergence in the band between the INCONCLUSIVE and PASS thresholds, or non-monotone, or evidence insufficient",
+    "OUT_OF_SCOPE": "not part of this validator (reaction, fuel, interface formation, mechanical flow, 3D Room)",
+    "T2_meaning": "PASS means the prediction 'Fick flux A produces no chi-driven partition' is confirmed. It is a negative finding about the F0-as-written flux, not a claim that P10 cannot select species.",
+    "T8c_meaning": "EXPLORATORY: reported as observed; contributes no verdict"
+  },
+  "failure_conditions": [
+    "any negative or non-finite concentration at any saved time (no clipping allowed)",
+    "any mass residual above T7 tolerance",
+    "integrator returns status != 0",
+    "T10a order below 0.5 or error non-monotone with N",
+    "any PASS-condition change after the first run (would require a new run ID and a recorded amendment)"
+  ],
+  "out_of_scope": [
+    "chemical reactions f->m->w (not implemented; D-5 is unresolved)",
+    "fuel supply / reservoir J_f^ext (not implemented)",
+    "phi dynamics (phi is fixed)",
+    "interface formation, membrane self-organization, curvature (planar fixed interface only)",
+    "non-equilibrium permeability (not measured; only equilibrium partition and transient relaxation)",
+    "fluid flow / Stokes coupling",
+    "any 3D emergence claim, any Genesis Room, any experiments/eNNN",
+    "the B3 bridge and any vertical-level claim"
+  ],
+  "tests_list": [
+    "audits/p10_transport_free_energy_v01/tests/test_variation.py",
+    "audits/p10_transport_free_energy_v01/tests/test_conservation.py",
+    "audits/p10_transport_free_energy_v01/tests/test_partition.py",
+    "audits/p10_transport_free_energy_v01/tests/test_energy.py",
+    "audits/p10_transport_free_energy_v01/tests/test_reproducibility.py"
+  ],
+  "outputs": [
+    "audits/p10_transport_free_energy_v01/results/manifest.json",
+    "audits/p10_transport_free_energy_v01/results/test_results.json",
+    "audits/p10_transport_free_energy_v01/results/numerical_results.csv",
+    "audits/p10_transport_free_energy_v01/results/summary.json",
+    "audits/p10_transport_free_energy_v01/results/figures/concentration_profiles.png",
+    "audits/p10_transport_free_energy_v01/results/figures/partition_comparison.png",
+    "audits/p10_transport_free_energy_v01/results/figures/free_energy_trace.png"
+  ]
+}
