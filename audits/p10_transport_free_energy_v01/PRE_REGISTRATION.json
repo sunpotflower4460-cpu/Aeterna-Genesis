@@ -10,7 +10,11 @@
     "no_clipping_of_negative_concentration": true,
     "failed_or_unstable_runs_are_recorded_not_replaced": true,
     "existing_V0_used_read_only_for_comparison_only": true,
-    "independent_model_must_not_call": ["vessel_permeability.relax_step", "vessel_permeability.equilibrate", "vessel_permeability._bernoulli"]
+    "independent_model_must_not_call": [
+      "vessel_permeability.relax_step",
+      "vessel_permeability.equilibrate",
+      "vessel_permeability._bernoulli"
+    ]
   },
   "math_model": {
     "id": "FE-MU-1D-v0.1",
@@ -30,7 +34,11 @@
     "phi_profile": "phi(x) = tanh((x0 - x) / w), x0 = 0.5, w = 0.05 (main); w = 0.02 (sharp stress case T3s)",
     "phi_sign": "phi > 0 for x < x0 ('inside' = left half); phi < 0 for x > x0 ('outside' = right half)",
     "N_main": 128,
-    "N_list_convergence": [64, 128, 256],
+    "N_list_convergence": [
+      64,
+      128,
+      256
+    ],
     "N_reference_T10": 512,
     "N_slab_T9_index_units": 24,
     "width_slab_T9_index_units": 1.5
@@ -50,7 +58,11 @@
       "zero_control": 0.0,
       "sharp_stress": 1.5
     },
-    "D_sweep_T6": [0.25, 1.0, 4.0]
+    "D_sweep_T6": [
+      0.25,
+      1.0,
+      4.0
+    ]
   },
   "initial_condition": {
     "c0": "c0(x) = 1 + 0.5 cos(2 pi x / L)",
@@ -70,8 +82,15 @@
     "primary": "scipy.integrate.solve_ivp, method=BDF, rtol=1e-9, atol=1e-12, jac_sparsity = tridiagonal",
     "reference": "solve_ivp BDF, rtol=1e-11, atol=1e-13",
     "secondary_explicit": "fixed-step classical RK4 (time-step check only)",
-    "rtol_sequence_T10b": [1e-6, 1e-8, 1e-10],
-    "rk4_dt_sequence_T10c": [2e-5, 1e-5],
+    "rtol_sequence_T10b": [
+      1e-06,
+      1e-08,
+      1e-10
+    ],
+    "rk4_dt_sequence_T10c": [
+      2e-05,
+      1e-05
+    ],
     "rk4_N": 64
   },
   "scenarios": {
@@ -103,36 +122,37 @@
     "F_ref": "sum_j dx sum_i [ RT c (ln(c/c_ref) - 1) + chi phi c ]"
   },
   "tolerances": {
-    "T1_fd_relative_error_max": 1e-7,
-    "T1_sensitivity_min_divform_vs_naive_laplacian_relative": 1e-2,
-    "T2_fick_partition_ratio_abs_minus_one_max": 1e-6,
-    "T2_B_partition_discrete_rel_max": 1e-6,
-    "T3_mass_residual_rel_max": 1e-9,
-    "T3_boltzmann_cv_at_t_eq_max": 1e-6,
-    "T3_discrete_equilibrium_rel_max": 1e-6,
-    "T3_mu_spread_at_t_eq_max": 1e-6,
-    "T3_max_face_flux_at_t_eq_max": 1e-7,
-    "T3_partition_discrete_rel_max": 1e-6,
-    "T3_partition_continuum_rel_max_at_N128": 1e-3,
-    "T3_sharp_boltzmann_cv_max": 1e-6,
+    "T1_fd_relative_error_max": 1e-07,
+    "T1_sensitivity_min_divform_vs_naive_laplacian_relative": 0.01,
+    "T2_fick_partition_ratio_abs_minus_one_max": 1e-06,
+    "T2_B_partition_discrete_rel_max": 1e-06,
+    "T3_mass_residual_rel_max": 1e-09,
+    "T3_boltzmann_cv_at_t_eq_max": 1e-06,
+    "T3_discrete_equilibrium_rel_max": 1e-06,
+    "T3_mu_spread_at_t_eq_max": 1e-06,
+    "T3_max_face_flux_at_t_eq_max": 1e-07,
+    "T3_partition_discrete_rel_max": 1e-06,
+    "T3_partition_continuum_rel_max_at_N128": 0.001,
+    "T3_sharp_boltzmann_cv_max": 1e-06,
     "T4_selectivity_S_min": 2.0,
-    "T4_partition_discrete_rel_max": 1e-6,
-    "T5_equal_chi_ratio_abs_diff_max": 1e-9,
-    "T5_zero_chi_max_abs_c_minus_1": 1e-6,
-    "T6_partition_across_D_rel_max": 1e-6,
-    "T6_uniform_D_time_scaling_rel_max": 1e-3,
-    "T7_mass_residual_rel_max": 1e-9,
+    "T4_partition_discrete_rel_max": 1e-06,
+    "T5_equal_chi_ratio_abs_diff_max": 1e-09,
+    "T5_zero_chi_max_abs_c_minus_1": 1e-06,
+    "T6_partition_across_D_rel_max": 1e-06,
+    "T6_uniform_D_time_scaling_rel_max": 0.001,
+    "T7_mass_residual_rel_max": 1e-09,
     "T7_min_c_must_be_positive": true,
     "T7_boundary_rhs_sum_rel_max": 1e-12,
-    "T8a_max_positive_F_increment_abs_max": 1e-7,
-    "T8b_energy_identity_rel_max": 1e-4,
-    "T9_slab_vs_existing_equilibrium_rel_max": 1e-6,
+    "T8a_max_positive_F_increment_abs_max": 1e-07,
+    "T8b_energy_identity_rel_max": 0.0001,
+    "T9_slab_vs_existing_equilibrium_rel_max": 1e-06,
     "T10a_observed_order_min_PASS": 1.5,
     "T10a_observed_order_min_INCONCLUSIVE": 0.5,
-    "T10b_err_rtol1e-8_abs_max_L1": 1e-6,
+    "T10b_err_rtol1e-8_abs_max_L1": 1e-06,
     "T10c_rk4_order_min_PASS": 3.0,
     "T10c_rk4_order_min_INCONCLUSIVE": 1.5,
-    "reproducibility_bitwise_equal": true
+    "reproducibility_bitwise_equal": true,
+    "T10c_error_floor_L1": 1e-09
   },
   "verdict_rules": {
     "PASS": "all pre-registered conditions of the test met",
@@ -174,5 +194,15 @@
     "audits/p10_transport_free_energy_v01/results/figures/concentration_profiles.png",
     "audits/p10_transport_free_energy_v01/results/figures/partition_comparison.png",
     "audits/p10_transport_free_energy_v01/results/figures/free_energy_trace.png"
+  ],
+  "amendments_before_first_run": [
+    {
+      "id": "AMD-1",
+      "when": "2026-10-08, after smoke test of the model (equilibrium/energy/Fick control only), before any scored run",
+      "change": "T10c: added a noise-floor rule. If both RK4 errors (dt=2e-5 and 1e-5, vs BDF reference rtol 1e-11) are <= 1e-9 in L1, the observed order is not measurable and T10c is INCONCLUSIVE (not FAIL). Reason: the reference error may dominate, and an order computed from floor-level errors is noise.",
+      "threshold_added": {
+        "T10c_error_floor_L1": 1e-09
+      }
+    }
   ]
 }
