@@ -26,6 +26,7 @@ sys.path.insert(0, HERE)
 import scenarios as S  # noqa: E402
 import model  # noqa: E402
 import metrics as M  # noqa: E402
+import strict_json as SJ  # noqa: E402
 
 RES = os.path.join(HERE, "results")
 FIG = os.path.join(RES, "figures")
@@ -172,7 +173,7 @@ def main():
         "wall_clock_s": round(time.time() - t0, 1),
     }
     with open(os.path.join(RES, "summary.json"), "w", encoding="utf-8") as fh:
-        json.dump(summary, fh, ensure_ascii=False, indent=2, default=lambda o: o.item() if hasattr(o, "item") else str(o))
+        fh.write(SJ.dumps(SJ.finalize_summary(summary), ensure_ascii=False, indent=2, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
 
     # ------------------------------------------------------------- figures
     try:
@@ -206,7 +207,7 @@ def main():
     test_results = {"command": "python -m pytest audits/p10_transport_free_energy_v01/tests -q",
                     "returncode": pt.returncode, "summary_line": pt_summary, "counts": counts, "cases": cases}
     with open(os.path.join(RES, "test_results.json"), "w", encoding="utf-8") as fh:
-        json.dump(test_results, fh, ensure_ascii=False, indent=2)
+        fh.write(SJ.dumps(test_results, ensure_ascii=False, indent=2))
 
     # ------------------------------------------------------------- manifest
     code_files = ["model.py", "solver.py", "metrics.py", "scenarios.py", "run_audit.py", "visualize.py",
@@ -230,7 +231,7 @@ def main():
         "figure_status": fig_status,
     }
     with open(os.path.join(RES, "manifest.json"), "w", encoding="utf-8") as fh:
-        json.dump(manifest, fh, ensure_ascii=False, indent=2)
+        fh.write(SJ.dumps(manifest, ensure_ascii=False, indent=2))
 
     print("overall:", summary["overall"])
     for tid in tids:

@@ -34,3 +34,11 @@
 ## 7. 実行環境
 - Python（本環境）、numpy 2.5.3、scipy 1.18.1、pytest 9.1.1、matplotlib 3.11.2（本環境で pip 導入。requirements には無い）。
 - 実行時間：本実行 約 90 秒。単体テスト 約 7 秒。
+
+## 8. v0.1.1 の形式修正（FMT-1）
+- 旧 `summary.json` は `NaN`（標準 JSON ではない）を含んでいた。`strict_json.py` で非有限値を `null` にし、理由を `json_null_fields` に記録する。
+- 出力は `allow_nan=False` で書く。NaN が残れば例外になる。
+- 旧ファイルは `results/corrections/summary.pre-json-fix.json` に SHA-256 付きで保存（非標準のまま。テストで SHA を照合）。
+- `json_correction.py` は一回限りの適用。他の全フィールドが元と一致することを検証してから書く。
+- 採点済みの CSV、manifest、test_results は変更していない。本実行は繰り返していない（数値と判定を保つため）。
+- `run_audit.py` のコードは形式部分だけ変わった。manifest のコードハッシュは採点時のコードを指す（`CORRECTIONS.json` に両方のハッシュ）。

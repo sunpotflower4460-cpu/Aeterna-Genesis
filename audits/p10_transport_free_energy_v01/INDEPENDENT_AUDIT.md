@@ -117,7 +117,7 @@
 |---|---|
 | 基準コミット | `649fd7e0de259a30048684ba98480739be1edcd9` |
 | 作業ブランチ・worktree | `audit/p10-transport-free-energy-v01`、`/home/user/worktrees/audit-p10-v01`（既存の作業ツリーは clean だった） |
-| 新規作成ファイル | `audits/p10_transport_free_energy_v01/` の **25 ファイルを追加**（`git diff --name-status 649fd7e0 HEAD -- audits/` は全て `A`）。`__pycache__` は .gitignore により除外 |
+| 新規作成ファイル | `audits/p10_transport_free_energy_v01/` の **33 ファイルを追加**（v0.1.1 の時点。内訳は §L）。PR #171 の旧 head `08309554c` では 28 ファイル。`git diff --name-status 649fd7e0 HEAD -- audits/` は全て `A`。`__pycache__` は .gitignore により除外 |
 | 変更した既存ファイル | **0**（`git diff --name-status 649fd7e0 HEAD -- . ':(exclude)audits/p10_transport_free_energy_v01'` が空） |
 | 保護ディレクトリのツリー SHA | `AGENTS.md`、`docs/`、`experiments/`、`genesis/`、`rooms/`、`ai_lab/`、`research/`、`tests/`、`schemas/`、`pyproject.toml`、`CLAUDE.md`、`RESEARCH_COMPASS.md`、`.github/` は基準と同一 |
 | F0 と V0 の SHA-256 | `F0_P10_active_vessel.md` `e7050c57c2e96a47`、`vessel_permeability.py` `d2566177b03bd5d7`、`test_vessel_permeability.py` `06fe810408d7c5f4`、`AGENTS.md` `e5b6a466aeff19cf`：基準と一致 |
@@ -167,7 +167,7 @@
 ```bash
 pip install -r requirements.txt          # numpy, scipy, PyYAML, jsonschema, pytest
 pip install matplotlib                   # 図のみ。requirements には無い（本環境で導入）
-python -m pytest audits/p10_transport_free_energy_v01/tests -q        # 22 件（約 7 秒）
+python -m pytest audits/p10_transport_free_energy_v01/tests -q        # 30 件（約 9 秒）
 python audits/p10_transport_free_energy_v01/run_audit.py              # 本実行（約 90 秒）
 python -m pytest tests/test_vessel_permeability.py -q                 # 既存 V0（読み取り比較）
 ```
@@ -236,7 +236,7 @@ python -m pytest tests/test_vessel_permeability.py -q                 # 既存 V
    - 解像度に依らない（Fick・β=0.5 で N=64/128/256 について +0.03069424、+0.03069423、+0.03069422）。最終の一様状態の F_ref = −1.0 は、初期の −1.0307 より高い。
    - 初期の山の位置を変えると（x=0.3）F は減少する。すなわち符号は初期条件に依る（FORMULA E-2 の「符号が定まらない」と整合）。
    - 解釈：F0 の輸送式は、F_ref（χ 項と理想混合項を含む）の勾配流ではない。F0 は F_ref を明示していないので、「F0 の自由エネルギーが増える」とは言わない。
-2. **RK4 の次数が測れない理由**：RK4 の自己収束（dt を半分にした差）は 2.4e−14 と 2.1e−15 で、RK4 自身は十分収束している。BDF の参照解（rtol 1e−11）の誤差 3.5e−11 が床になっている（BDF rtol 1e−9、1e−10、1e−11 と RK4 の差は 1.4e−9、2.2e−10、3.5e−11）。T10c の INCONCLUSIVE はこの床によるもので、RK4 の誤りではない。
+2. **RK4 の次数が測れない理由**（判定は INCONCLUSIVE のまま。下の補足は判定の根拠にしない。事前登録の床の規則は変更していない）：RK4 の自己収束（dt を半分にした差）は 2.4e−14 と 2.1e−15 で、RK4 自身は十分収束している。BDF の参照解（rtol 1e−11）の誤差 3.5e−11 が床になっている（BDF rtol 1e−9、1e−10、1e−11 と RK4 の差は 1.4e−9、2.2e−10、3.5e−11）。T10c の INCONCLUSIVE はこの床によるもので、RK4 の誤りではない。
 3. **判定の余裕**：T1 の species 項の相対誤差は 5.9e−8（閾値 1e−7）、感度は 1.12%（閾値 1%）で、どちらも余裕が小さい。有限差分の丸め誤差と、κ の変化が小さいことによる。
 
 ---
@@ -245,5 +245,60 @@ python -m pytest tests/test_vessel_permeability.py -q                 # 既存 V
 
 - `README.md`、`SOURCE_INVENTORY.md`、`FORMULA_AUDIT.md`、`ASSUMPTIONS.md`、`PRE_REGISTRATION.json`、`INDEPENDENT_AUDIT.md`（本書）、`IMPLEMENTATION_NOTES.md`
 - `model.py`、`solver.py`、`metrics.py`、`scenarios.py`、`run_audit.py`、`visualize.py`
-- `tests/`（22 件、全通過）
+- `tests/`（30 件、全通過。うち strict JSON の検証 8 件は v0.1.1 で追加）
 - `results/`：`manifest.json`、`test_results.json`、`numerical_results.csv`（96 行）、`summary.json`、`figures/`（3 図）、補足 2 件
+
+---
+
+## L. 修正履歴（v0.1.1・レビュー対応。数値と判定は変更していない）
+
+レビュー（ACCEPT WITH MINOR FIXES）への対応。事前登録条件・スコア付き結果は上書きしていない。
+
+| ID | 対象 | 内容 | 変更前の SHA-256 | 変更後の SHA-256 |
+|---|---|---|---|---|
+| **FMT-1** | `results/summary.json` | `headline.T10_rk4_order` の `NaN`（標準 JSON ではない）を `null` に変更。理由は別フィールド `json_null_fields[0].reason` に記録。他の全フィールドは元と一致（`json_correction.py` が検証してから書き込み） | `7db013c2…796fe`（保存コピー `results/corrections/summary.pre-json-fix.json`） | `785dc821…a8ab9`（`results/corrections/CORRECTIONS.json` に記録） |
+| FMT-1 | 出力コード | `strict_json.py` を追加。`run_audit.py` の JSON 出力は `allow_nan=False` と null 化を通す。今後 NaN が出ると例外になる | `run_audit.py` の基準コミット時の SHA は `CORRECTIONS.json` に記録 | 最新の SHA は同ファイル |
+| FMT-1 | テスト | `tests/test_json_strict.py` 8 件。`results/` の全 JSON を `parse_constant` で拒否する厳密パーサで検証。例外は保存された元の summary だけで、その SHA を照合 | — | — |
+| 保持 | `numerical_results.csv`、`manifest.json`、`test_results.json` | 変更なし（SHA が基準の採点コミットと一致することをテストで確認） | 同左 | 同左 |
+| 保持 | 事前登録 `PRE_REGISTRATION.json` | 変更なし | — | — |
+
+- **T10c の判定は INCONCLUSIVE のまま**（事前登録の床の規則）。RK4 の自己収束が十分良いことは補足（§J・`SUPPLEMENTARY_NOT_IN_VERDICTS.txt` (d)）に残し、判定には使わない。
+- **ファイル数の不一致（レビュー指摘）**：旧報告の「25 ファイル」は誤り。PR #171 の旧 head `08309554c` の差分は 28 ファイル（§E の一覧と一致）。v0.1.1 で 5 ファイル追加し、合計 33 ファイル。PR 説明文も 33 に合わせた。
+- 既存の監査結論（T1–T10 の判定、D-1〜D-7）と数値は変更していない。
+
+### L.1 追加された 5 ファイル（v0.1.1）
+1. `strict_json.py`（JSON の null 化と厳密出力）
+2. `json_correction.py`（FMT-1 の一回限りの適用。冪等）
+3. `tests/test_json_strict.py`（8 件）
+4. `results/corrections/summary.pre-json-fix.json`（保存した元の summary。非標準 JSON のまま）
+5. `results/corrections/CORRECTIONS.json`（修正記録と SHA-256）
+
+---
+
+## M. 今後の P10 設計時に確認する事項（物理モデルの新規実装はしていない）
+
+本節は設計上の注意点のみ。F0 設計書・物理コアは変更していない。ここに書いた範囲は、今回の検算の仮定の外にある。
+
+### M.1 κ(m) = κ₀(1 − αm) が正である範囲
+- 正であるには `m < 1/α`。α = 0.5 なら `m < 2`。`m` が無次元の体積分率（0〜1）なら、`α < 1` で `κ ≥ κ₀(1−α) > 0`。`m` が濃度（c_ref の単位）なら上限は `c_ref/α`。
+- `κ → 0` では界面の勾配エネルギーが消え、界面の幅と張力も消える。上限近傍は界面が保てないので、設計時に m の上限を明示する。
+- 線形形が近似として妥当なのは `αm ≪ 1` の範囲（FORMULA_AUDIT §5、D-4）。
+
+### M.2 界面張力 γ(m) と拡散係数 D(φ) の有効範囲
+- 平衡の tanh 界面を仮定すると `σ(m) = (2/3)√(2aκ(m))`。前提は `a > 0`、`κ > 0`。線形 `γ(m) = γ₀ − Γ_m m` は `αm ≪ 1` だけの一次近似（D-4）。
+- `D(φ) = D₀(1 + 0.5φ)` は今回の試験関数の選択で、物理的根拠は無い。移動度は正で有界であることが必要（ゼロや負は散逸を壊す）。`|φ| ≤ 1` では正。
+- D が φ の関数のとき、面平均（算術・調和）の選び方は平衡には影響しないが、過渡には影響する。設計時に選択を明示し、格子収束で確認する（T10a の考え方）。
+- χ（β = χ/RT）は Boltzmann 因子 `exp(−βφ)` の幅を決める。今回の検算は `|β| ≤ 1.5`、界面幅 `w ≥ 0.02` の範囲。`|β|` が大きい、または界面が鋭い場合は格子を細かくしないと離散化の誤差が大きくなる（T3s で確認済みの範囲のみ）。
+
+### M.3 化学量論・外部リザーバ・反応親和度・エントロピー生成の整合性
+- **化学量論**：`f → m → w` の各段について、質量と元素の保存（化学量論行列 ν）を明示する。保存量（ν の左零空間）を書き出し、数値で確認する。
+- **外部リザーバ**（`J_f^ext = k_res (f_res − f)` を外殻に置く形）：リザーバは `μ_f = const` として定義し、`f_res` の値と外殻の幾何を前登録する。流入（`matter_in`）と廃棄（`waste_out`）と内部の反応の収支が閉じることを確認する（F0 の thermodynamic_ledger の計算式）。
+- **反応親和度**：`A = −Σ ν_i μ_i`。エントロピー生成は `σ = Σ r A / T + 粘性散逸 ≥ 0`。`A` の符号が反応の向きを決め、`σ ≥ 0` が成り立つ条件を反応の定義から導く。
+- 上の σ は、反応を入れた後に計算する。今回の輸送のみの検算では σ は定義していない。
+
+### M.4 不可逆反応を使う場合の熱力学的前提
+- 不可逆反応（逆反応のない `k₁`, `k₂`, `k_out`）は、「順反応が十分に一方向に進む（`A ≫ RT`）」近似である。その近似の誤差（逆流の寄与）を見積もり、範囲を明記する。
+- この近似では外部から化学ポテンシャル差を維持する必要がある（リザーバ）。定常の非平衡であり、平衡ではない。
+- 局所平衡の仮定（各化学種の内部分布が局所的に理想混合と見なせること）を明記する。
+- 詳細つり合い：逆反応を含めた速度比が `exp(−ΔG/RT)` を満たすこと。不可逆の速度定数がこれと矛盾しない範囲を確認する。
+- 不可逆のままでは `σ ≥ 0` を保証できない（`r_+` と `r_−` の関係が無い）。設計時は、反応を可逆化するか、不可逆化の近似の範囲で `σ` の定義を別に与えるかを決める。

@@ -21,7 +21,7 @@
 
 ## 実行
 ```bash
-python -m pytest audits/p10_transport_free_energy_v01/tests -q      # 単体テスト 22 件
+python -m pytest audits/p10_transport_free_energy_v01/tests -q      # 単体テスト 30 件（うち strict JSON 8 件）
 python audits/p10_transport_free_energy_v01/run_audit.py            # 本実行（results/ を書き換える）
 ```
 図の作成には matplotlib が必要（requirements には無い）。
@@ -35,8 +35,10 @@ python audits/p10_transport_free_energy_v01/run_audit.py            # 本実行�
 | `scenarios.py` | T1–T10 とその判定（閾値は PRE_REGISTRATION.json から読む） |
 | `run_audit.py` | 全体の実行と results/ の出力 |
 | `visualize.py` | 3 枚の図（結果の表示のみ。計算の入力にしない） |
-| `tests/` | 単体テスト（変分・保存・分配・散逸・決定性） |
-| `results/` | 判定・数値・図・マニフェスト・補足（`SUPPLEMENTARY_NOT_IN_VERDICTS.txt`、`AMD-2_quadrature_diagnostic.txt`） |
+| `tests/` | 単体テスト（変分・保存・分配・散逸・決定性・標準 JSON） |
+| `strict_json.py` | 標準 JSON の出力（NaN を null にし理由を記録。NaN が残れば例外）（v0.1.1） |
+| `json_correction.py` | 元の summary.json の形式のみの修正（FMT-1）。冪等 |
+| `results/` | 判定・数値・図・マニフェスト・補足（`SUPPLEMENTARY_NOT_IN_VERDICTS.txt`、`AMD-2_quadrature_diagnostic.txt`）。修正履歴は `results/corrections/` |
 
 ## 禁止事項の確認
 - 既存ファイル（F0、V0、V0 テスト、docs、experiments、genesis、rooms、ai_lab、research、tests、schemas、pyproject、CI）は無変更（INDEPENDENT_AUDIT.md §E）。
