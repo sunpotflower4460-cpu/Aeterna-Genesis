@@ -167,8 +167,8 @@
 ```bash
 pip install -r requirements.txt          # numpy, scipy, PyYAML, jsonschema, pytest
 pip install matplotlib                   # 図のみ。requirements には無い（本環境で導入）
-python -m pytest audits/p10_transport_free_energy_v01/tests -q        # 30 件（約 9 秒）
-python audits/p10_transport_free_energy_v01/run_audit.py              # 本実行（約 90 秒）
+python -m pytest audits/p10_transport_free_energy_v01/tests -q        # 44 件（約 5 秒）
+python audits/p10_transport_free_energy_v01/run_audit.py --out <新しい空のディレクトリ>   # 再実行（約 90 秒）。results/ は書かない
 python -m pytest tests/test_vessel_permeability.py -q                 # 既存 V0（読み取り比較）
 ```
 
@@ -245,7 +245,7 @@ python -m pytest tests/test_vessel_permeability.py -q                 # 既存 V
 
 - `README.md`、`SOURCE_INVENTORY.md`、`FORMULA_AUDIT.md`、`ASSUMPTIONS.md`、`PRE_REGISTRATION.json`、`INDEPENDENT_AUDIT.md`（本書）、`IMPLEMENTATION_NOTES.md`
 - `model.py`、`solver.py`、`metrics.py`、`scenarios.py`、`run_audit.py`、`visualize.py`
-- `tests/`（30 件、全通過。うち strict JSON の検証 8 件は v0.1.1 で追加）
+- `tests/`（44 件、全通過。strict JSON の検証 8 件は v0.1.1、出力保護 14 件は v0.1.2 で追加）
 - `results/`：`manifest.json`、`test_results.json`、`numerical_results.csv`（96 行）、`summary.json`、`figures/`（3 図）、補足 2 件
 
 ---
@@ -265,6 +265,11 @@ python -m pytest tests/test_vessel_permeability.py -q                 # 既存 V
 - **T10c の判定は INCONCLUSIVE のまま**（事前登録の床の規則）。RK4 の自己収束が十分良いことは補足（§J・`SUPPLEMENTARY_NOT_IN_VERDICTS.txt` (d)）に残し、判定には使わない。
 - **ファイル数の不一致（レビュー指摘）**：旧報告の「25 ファイル」は誤り。PR #171 の旧 head `08309554c` の差分は 28 ファイル（§E の一覧と一致）。v0.1.1 で 5 ファイル追加し、合計 33 ファイル。PR 説明文も 33 に合わせた。
 - 既存の監査結論（T1–T10 の判定、D-1〜D-7）と数値は変更していない。
+
+| **GUARD-1**（v0.1.2） | `run_audit.py` | 既定の実行で採点済み `results/` を上書きできた点を修正。`--out` を必須にし、`results/` とその内側、既存ファイル、空でない既存ディレクトリを拒否（拒否は作業の前）。採点済み 11 成果物の SHA-256 を `results/corrections/PROTECTED_ARTIFACTS.json` に記録し、テストで照合 | 変更なし（保護対象） | — |
+
+- v0.1.2 の再実行確認：新しい出力先で本実行を行い、96 行の CSV、判定、見出し値が採点済みと一致。保護成果物は変化なし。数値・事前登録・判定は変更なし。
+- v0.1.2 で追加したファイル：`results/corrections/PROTECTED_ARTIFACTS.json`、`tests/test_output_protection.py`。変更したファイル：`run_audit.py`（出力先の検査と `--out`）、`README.md`、`IMPLEMENTATION_NOTES.md`、`INDEPENDENT_AUDIT.md`。
 
 ### L.1 追加された 5 ファイル（v0.1.1）
 1. `strict_json.py`（JSON の null 化と厳密出力）

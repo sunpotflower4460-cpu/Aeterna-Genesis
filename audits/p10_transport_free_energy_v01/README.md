@@ -21,8 +21,8 @@
 
 ## 実行
 ```bash
-python -m pytest audits/p10_transport_free_energy_v01/tests -q      # 単体テスト 30 件（うち strict JSON 8 件）
-python audits/p10_transport_free_energy_v01/run_audit.py            # 本実行（results/ を書き換える）
+python -m pytest audits/p10_transport_free_energy_v01/tests -q      # 単体テスト 44 件（strict JSON 8 件、出力保護 14 件）
+python audits/p10_transport_free_energy_v01/run_audit.py --out <新しい空のディレクトリ>   # 再実行。results/ は書かない（v0.1.2）
 ```
 図の作成には matplotlib が必要（requirements には無い）。
 
@@ -38,6 +38,7 @@ python audits/p10_transport_free_energy_v01/run_audit.py            # 本実行�
 | `tests/` | 単体テスト（変分・保存・分配・散逸・決定性・標準 JSON） |
 | `strict_json.py` | 標準 JSON の出力（NaN を null にし理由を記録。NaN が残れば例外）（v0.1.1） |
 | `json_correction.py` | 元の summary.json の形式のみの修正（FMT-1）。冪等 |
+| `results/corrections/PROTECTED_ARTIFACTS.json` | 採点済み成果物の SHA-256 一覧。テストで照合する（v0.1.2） |
 | `results/` | 判定・数値・図・マニフェスト・補足（`SUPPLEMENTARY_NOT_IN_VERDICTS.txt`、`AMD-2_quadrature_diagnostic.txt`）。修正履歴は `results/corrections/` |
 
 ## 禁止事項の確認

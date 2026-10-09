@@ -28,9 +28,39 @@ import model  # noqa: E402
 import metrics as M  # noqa: E402
 import strict_json as SJ  # noqa: E402
 
-RES = os.path.join(HERE, "results")
-FIG = os.path.join(RES, "figures")
-os.makedirs(FIG, exist_ok=True)
+# The scored results live here. They are protected: this script never writes into this directory.
+SCORED_DIR = os.path.join(HERE, "results")
+REPO_ROOT_FOR_MANIFEST = os.path.abspath(os.path.join(HERE, "..", ".."))
+
+
+class OutputRefused(Exception):
+    """Raised when the requested output directory would overwrite or sit inside protected results."""
+
+
+def resolve_output_dir(out):
+    """Return a new, writable output directory, or raise OutputRefused.
+
+    Rules (v0.1.2, guard against overwriting the scored results):
+      * no --out: refused (a default run would write the scored results/).
+      * the scored results/ directory, or anything inside it: refused.
+      * an existing path that is a file, or a directory that is not empty: refused (no silent overwrite).
+      * a missing path, or an existing empty directory: created / used.
+    """
+    if out is None:
+        raise OutputRefused(
+            "refusing to run without --out: results/ holds the scored results and is protected. "
+            "Pass --out <new empty directory> to write a new run elsewhere.")
+    target = os.path.realpath(os.path.abspath(out))
+    scored = os.path.realpath(SCORED_DIR)
+    if target == scored or target.startswith(scored + os.sep):
+        raise OutputRefused(f"refusing to write into the protected scored results: {target}")
+    if os.path.exists(target):
+        if not os.path.isdir(target):
+            raise OutputRefused(f"refusing to overwrite an existing file: {target}")
+        if os.listdir(target):
+            raise OutputRefused(f"refusing to write into a non-empty existing directory: {target}. Choose a new path.")
+    os.makedirs(target, exist_ok=True)
+    return target
 
 
 def sha256(path):
@@ -44,7 +74,10 @@ def git(*args):
     return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True).stdout.strip()
 
 
-def main():
+def main(outdir):
+    RES = outdir
+    FIG = os.path.join(RES, "figures")
+    os.makedirs(FIG, exist_ok=True)
     t0 = time.time()
     rows = []
 
@@ -229,6 +262,7 @@ def main():
         "executed_at_unix": int(time.time()),
         "wall_clock_s": round(time.time() - t0, 1),
         "figure_status": fig_status,
+        "output_dir": os.path.relpath(outdir, REPO_ROOT_FOR_MANIFEST),
     }
     with open(os.path.join(RES, "manifest.json"), "w", encoding="utf-8") as fh:
         fh.write(SJ.dumps(manifest, ensure_ascii=False, indent=2))
@@ -241,4 +275,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    ap = argparse.ArgumentParser(description="Run the P10 transport audit into a NEW output directory.")
+    ap.add_argument("--out", default=None, help="new, empty output directory (required; results/ is protected)")
+    args = ap.parse_args()
+    try:
+        target = resolve_output_dir(args.out)
+    except OutputRefused as exc:
+        print("REFUSED:", exc, file=sys.stderr)
+        sys.exit(2)
+    print("writing new run to", target)
+    main(target)
