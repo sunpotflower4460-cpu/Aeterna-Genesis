@@ -1,0 +1,178 @@
+{
+  "audit_id": "chemical_lineage_v01",
+  "version": "0.1",
+  "status": "FROZEN before the formal run (committed before results/formal_v01 was written). Smoke run (4 series, 5 gens) was used for implementation checks only. delta_abs and the noise floor were NOT changed after the smoke run.",
+  "role": "V/Q-type independent audit. Abstract closed well-mixed network with an EXTERNAL transfer protocol. Not a Genesis Room, not an experiments/eNNN entry, not a 3D emergence Level, not a claim about life.",
+  "base_commit": "649fd7e0de259a30048684ba98480739be1edcd9",
+  "questions": {
+    "Q1": "Does the parent composition change the child's future composition?",
+    "Q2": "Is any such effect beyond simple material carryover (dilution of the transferred fraction)?",
+    "Q3": "NOT_TESTED in v0.1 (evolvability). Requires selectable, accumulating heritable differences; not measured here."
+  },
+  "chemistry": {
+    "species": [
+      "X",
+      "Y",
+      "Z",
+      "XY",
+      "XZ",
+      "XYZ"
+    ],
+    "building_units_per_species": {
+      "X": [
+        1,
+        0,
+        0
+      ],
+      "Y": [
+        0,
+        1,
+        0
+      ],
+      "Z": [
+        0,
+        0,
+        1
+      ],
+      "XY": [
+        1,
+        1,
+        0
+      ],
+      "XZ": [
+        1,
+        0,
+        1
+      ],
+      "XYZ": [
+        1,
+        1,
+        1
+      ]
+    },
+    "reactions": [
+      "X+Y<->XY",
+      "X+Z<->XZ",
+      "XY+Z<->XYZ",
+      "XZ+Y<->XYZ"
+    ],
+    "RT": 1.0,
+    "standard_concentration_c0": 1.0,
+    "volume_V": 1.0,
+    "standard_chemical_potentials_g_RT_units": {
+      "X": 0.0,
+      "Y": 0.0,
+      "Z": 0.0,
+      "XY": -2.0,
+      "XZ": -2.0,
+      "XYZ": -4.0
+    },
+    "justification_g": "Declared, symmetric choice. Sets the equilibrium constants K = exp(-Delta_r G0) = e^2 for every reaction and nothing else. Not tuned to any result.",
+    "forward_rate_constant_KF": 1.0,
+    "reverse_rate_constant": "k- = KF / K_r (detailed balance by construction; never randomised)",
+    "rate_law": "mass action, ideal dilute, activity = c / c0",
+    "free_energy": "G = sum_i c_i (g_i + ln c_i - 1); mu_i = g_i + ln c_i"
+  },
+  "initial_conditions": {
+    "building_unit_totals_T": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "seeded_state": "gen 0 for series s: complex amounts nXY, nXZ, nXYZ ~ Uniform(0, 0.3) from rng(10000 + s); monomers fill the remaining element totals; all counts >= 0",
+    "status": "external preparation (declared). Not emerged, not a mutation."
+  },
+  "design": {
+    "n_series": 24,
+    "n_generations": 30,
+    "tau_values": [
+      0.2,
+      2.0,
+      20.0
+    ],
+    "f_values": [
+      0.1,
+      0.01
+    ],
+    "main_f": 0.1,
+    "arms": {
+      "L1": "own-parent lineage, transfer fraction f, reactions on",
+      "LR": "units-only counterfactual: transferred part reconstituted as monomers (identical to L0 at each generation start by construction; check T06)",
+      "L0": "untransferred control: fresh monomers each generation (f = 0), reactions on",
+      "LN": "passive: as L1 with reaction constants zero",
+      "LS": "foreign donor: transfer from L1 end state of series (s + 12) mod 24 in the same generation"
+    },
+    "donor_offset": 12,
+    "generation_duration_units": "tau in units of 1/KF"
+  },
+  "integrators": {
+    "primary": "scipy solve_ivp BDF, rtol 1e-9, atol 1e-12, no clipping",
+    "rtol_sequence_T14": [
+      1e-06,
+      1e-09,
+      1e-11
+    ],
+    "convergence_tolerance": 1e-06
+  },
+  "statistics": {
+    "unit": "series (24). Generations are reduced to one value per series before any test.",
+    "delta_abs": 0.01,
+    "delta_justification": "1% of the element total T = 1. ODE tolerance errors are below 1e-8 (T14), so the threshold is far above numerical noise; it is a declared minimum effect size.",
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 0,
+    "sign_flip_permutations": 10000,
+    "CI_level": 0.95,
+    "delta_noise_floor_abs": 1e-06,
+    "delta_noise_floor_justification": "Numerical floor: ODE tolerance errors < 1e-8 (T14). Reported as 'detectable above noise' alongside the meaningful threshold delta_abs. Both are declared before the formal run; delta_abs is NOT changed after the smoke run."
+  },
+  "metrics": {
+    "M1_composition_distance": "0.5 * sum_i |c_i - c'_i| (absolute, V = 1)",
+    "M3_parent_specific_dispersion": "per series: distance of the series state to the mean state of all series in the same arm and generation",
+    "M4_shared_offset": "per series: distance of L1 to the paired LR at the same generation",
+    "passive_expectation": "f^g * mean_s dispersion_s(gen 0), exact for passive carryover (checked by T13)",
+    "R_passive_ratio": "mean dispersion at g / passive expectation, paired by series"
+  },
+  "decision_rules": {
+    "A_single_generation_carryover_present": "lower 95% CI of dispersion at g=1 > delta",
+    "C_parent_specific_persistence_present": "lower 95% CI of dispersion at g=5 > delta",
+    "Q2_excess_over_passive_at_g1": "EXCESS if lower 95% CI of R_passive(g=1) > 1; BELOW_PASSIVE if upper < 1; else NOT_DISTINGUISHABLE",
+    "shared_offset_at_final_gen_present": "lower 95% CI of M4 at final generation > delta",
+    "parent_specific_at_final_gen_present": "lower 95% CI of M3 at final generation > delta",
+    "donor_identity_effect_at_g1_present": "lower 95% CI of L1 vs LS distance at g=1 > delta",
+    "interpretation_rule": "A shared offset with no parent-specific dispersion at the final generation is a property of the single attractor of the protocol and kinetics. It is recorded as NOT parent-specific heredity. A PASS of Q2 never by itself means inheritance.",
+    "detectable_above_noise": "A_detectable_above_noise_floor / C_detectable_above_noise_floor use lower CI > 1e-6 and are reported as a separate column."
+  },
+  "negative_tolerance": 1e-09,
+  "free_energy_increase_tolerance": 1e-10,
+  "ssa": {
+    "omega": 200,
+    "runs": 500,
+    "t_end": 1.0,
+    "seed": 1,
+    "sigma_multiplier": 4.0,
+    "absolute_floor": 0.001
+  },
+  "n_generations": 30,
+  "out_of_scope": [
+    "evolvability (Q3)",
+    "spatial structure",
+    "3D",
+    "reaction discovery",
+    "autocatalysis",
+    "membranes",
+    "any selection of traits"
+  ],
+  "forbidden_by_design": [
+    "genetic strings",
+    "inheritance_strength parameter",
+    "parent-to-child trait copying",
+    "self-replication reaction",
+    "generation-dependent switches",
+    "composition-restoring corrections",
+    "target composition terms",
+    "reward or fitness terms",
+    "tuning reaction constants to succeed",
+    "observers that write to the state"
+  ],
+  "freeze_note": "Exploratory magnitudes (dispersion ~1e-3 to 1e-2 at tau=2, 0.2) were looked at before this draft; delta_abs = 0.01 was fixed in the draft as a declared minimum effect size. Sensitivity to delta is reported in AUDIT.md as descriptive, not used for verdicts."
+}
