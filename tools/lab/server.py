@@ -234,6 +234,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(council.external(b.get("who", "claude-code"), str(b.get("text", ""))[:8000]), 201)
         if parts == ["proposals"] and method == "POST":
             b = self._body()
+            if b.get("mode") == "initial":
+                return self._json(council.add_initial_proposal(
+                    b.get("source", "claude-code"), str(b["parent"]), b.get("set") or {}, b.get("seed"),
+                    b.get("why", ""), b.get("predict", ""), b.get("put_in", "")), 201)
             return self._json(council.add_proposal(
                 b.get("source", "claude-code"), str(b["parent"]), b.get("set") or {}, b.get("perturb"),
                 b.get("why", ""), b.get("predict", ""), b.get("put_in", "")), 201)
@@ -432,10 +436,14 @@ def make_server(host: str = "127.0.0.1", port: int = 8765, lan: bool = False, ma
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--env-file", type=Path, help="サーバーだけが読むAPIキーのファイル（明示時だけ読み込む）")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--lan", action="store_true", help="listen on all interfaces (token required)")
     ap.add_argument("--max-universes", type=int, default=None)
     a = ap.parse_args(argv)
+    if a.env_file:
+        from tools.lab.env import load_credentials
+        load_credentials(a.env_file)
     srv = make_server(port=a.port, lan=a.lan, max_universes=a.max_universes, journal=Journal())
     host = _lan_ip() if a.lan else "127.0.0.1"
     url = f"http://{host}:{a.port}/" + (f"?token={srv.token}#lab" if srv.token else "#lab")

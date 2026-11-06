@@ -473,6 +473,12 @@ def to_text(universes: list[dict[str, Any]]) -> str:
     for u in universes:
         out.append(f"\n## 宇宙 {u['label']}（{u['id']}）: {u['title']} — いま t={_fmt(u['t'])}・step {u['step']}")
         out += [f"- {line}" for line in u["recipe_text"]]
+        w = whites.get(u["white"])
+        out.append("### 変更可能な入力（propose_initial: 始原条件を変更し t=0 から。範囲厳守）")
+        for k in w.knobs:
+            out.append(f"- {k.name}（{k.label}・{k.kind}）: 初期値 {u['recipe']['knobs'].get(k.name, k.default)}、"
+                       f"範囲 [{k.lo}, {k.hi}]" + ("・整数" if k.integer else ""))
+        out.append("propose_branch は law だけ。始め方 start は propose_initial のみ。初期レシピの途中介入は継承しない。")
         if u["parent"]:
             out.append(f"- 分岐元: {u['parent']}（step {u['branch_step']} で分かれた）")
         c = u["ceiling"]

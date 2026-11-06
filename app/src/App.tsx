@@ -10,7 +10,7 @@ import LabView from './lab/LabView'
 import { labAvailable } from './lab/api'
 
 // read before the aquarium rewrites the hash to its template id
-const WANT_LAB = typeof location !== 'undefined' && location.hash === '#lab'
+const WANT_LAB = typeof location !== 'undefined' && (location.hash === '#lab' || !location.hash)
 
 export default function App() {
   const catalog = useStore((s) => s.catalog)
@@ -33,7 +33,7 @@ export default function App() {
     labAvailable().then((ok) => {
       setLabOk(ok)
       setLabChecked(true)
-      if (ok && WANT_LAB) toLab()
+      if (ok && WANT_LAB) { history.replaceState(null, '', '#lab'); toLab() }
     })
   }, [toLab])
 
