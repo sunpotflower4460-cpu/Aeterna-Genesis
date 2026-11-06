@@ -4,6 +4,7 @@ import App from './App'
 import './styles.css'
 import './lab/workspace.css'
 import './aquarium/render/graphics.css'
+import './lab/speech.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

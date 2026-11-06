@@ -501,7 +501,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
             {tab === 'goal' && <GoalPanel whites={whites} models={models} activeGoal={activeGoal} setActiveGoal={setActiveGoal} onError={onError} onUniverse={refresh} />}
             <div hidden={tab !== 'ai'}>
-                <GuidePanel universes={merged} selected={selected} whites={whites} models={models} onError={onError} onBranched={showExperiment} />
+                <GuidePanel enabled={panel && tab === 'ai'} universes={merged} selected={selected} whites={whites} models={models} onError={onError} onBranched={showExperiment} />
             </div>
             {tab === 'tree' && (
               <>

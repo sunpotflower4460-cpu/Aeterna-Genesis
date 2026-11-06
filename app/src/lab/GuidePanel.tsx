@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, type UniverseInfo, type WhiteSpec } from './api'
 import type { ModelEntry } from './GoalPanel'
 import ObservePanel from './ObservePanel'
+import useSpeech from './useSpeech'
+import VoiceControls, { SpeakerIcon } from './VoiceControls'
 
 interface Role { role: string; label: string; provider: string | null; model: string; available: boolean; reason: string }
 interface Msg {
@@ -23,9 +25,9 @@ const WHO_COLOR: Record<string, string> = {
   'claude-code': 'var(--official)', system: 'var(--muted)',
 }
 
-export default function GuidePanel({ universes, selected, whites, models, onError, onBranched }: {
+export default function GuidePanel({ universes, selected, whites, models, onError, onBranched, enabled = true }: {
   universes: UniverseInfo[]; selected: string | null; whites: WhiteSpec[]; models: ModelEntry[]
-  onError: (e: unknown) => void; onBranched: (id: string) => void
+  onError: (e: unknown) => void; onBranched: (id: string) => void; enabled?: boolean
 }) {
   const [state, setState] = useState<CouncilState | null>(null)
   const [msgs, setMsgs] = useState<Msg[]>([])
@@ -50,12 +52,25 @@ export default function GuidePanel({ universes, selected, whites, models, onErro
           const byId = new Map(old.map((m) => [m.id, m]))
           for (const m of s.messages) byId.set(m.id, m)
           const result = [...byId.values()].sort((a, b) => a.id - b.id)
-          since.current = Math.max(since.current, ...result.filter((m) => m.done).map((m) => m.id))
+          // A later colleague may finish while an earlier core answer is still streaming.
+          // Keep requesting that earlier id until its final text/done flag has arrived.
+          let completed = since.current
+          for (const message of result) {
+            if (message.id <= completed) continue
+            if (message.id !== completed + 1 || !message.done) break
+            completed = message.id
+          }
+          since.current = completed
           return result
         })
       }
     })
   }, [])
+  const appendTranscript = useCallback((heard: string) => {
+    setText(current => (current.trimEnd() + (current.trim() ? ' ' : '') + heard).slice(0, 8000))
+  }, [])
+  const voice = useSpeech({ enabled, messages: msgs, hydrated: state !== null, onTranscript: appendTranscript })
+  const dictating = voice.phase !== 'idle'
   const active = sending || !!state?.busy || msgs.some((m) => !m.done)
   useEffect(() => {
     poll().catch(onError)
@@ -68,7 +83,8 @@ export default function GuidePanel({ universes, selected, whites, models, onErro
   }, [msgs])
 
   const send = async () => {
-    if (active || !text.trim() || !ids.length) return
+    if (active || dictating || !text.trim() || !ids.length) return
+    voice.stopSpeaking()
     setSending(true)
     setNotice('')
     try {
@@ -135,6 +151,10 @@ export default function GuidePanel({ universes, selected, whites, models, onErro
           <div className="lab-msg-head"><b style={{ color: WHO_COLOR[m.who] ?? 'var(--ink)' }}>{m.label}</b>
             <span className="mono muted"> {m.at}{m.done ? '' : ' · 考え中'}</span></div>
           <div className="lab-msg-text">{m.text}</div>
+          {m.done && m.text.trim() && m.who !== 'you' && m.who !== 'system' && <button type="button" className="tbtn lab-read-reply" disabled={!voice.canSpeak || dictating}
+            onClick={()=>voice.speakingId === m.id ? voice.stopSpeaking() : voice.read(m.text, m.id)}>
+            <SpeakerIcon/>{voice.speakingId === m.id ? '読み上げ停止' : '読み上げ'}
+          </button>}
         </article>)}
       </div>
       {active && <div className="lab-thinking" role="status"><i />観測を読み、条件を考えています…</div>}
@@ -167,8 +187,10 @@ export default function GuidePanel({ universes, selected, whites, models, onErro
         <textarea id="lab-question" ref={form} value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={8000}
           placeholder="例えば、最初のゆらぎがもっと小さかったら？"
           onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); void send() } }} />
+        <VoiceControls voice={voice}/>
+        {dictating && <p className="lab-voice-note">入力を止めて、文字を確認してから送信してください。</p>}
         <label className="lab-observe-toggle"><input type="checkbox" checked={withObservation} onChange={(e) => setWithObservation(e.target.checked)} />最新の可視化と測定値を添える</label>
-        <button className="tbtn pri lab-send" type="submit" disabled={active || !ids.length || !text.trim() || !state}>
+        <button className="tbtn pri lab-send" type="submit" disabled={active || dictating || !ids.length || !text.trim() || !state}>
           {active ? 'AIが考えています…' : state?.bridge ? '観測を保存してAIに渡す ↗' : 'AIに質問して条件をつくる ↗'}</button>
         <p className="lab-note muted">{state?.bridge ? '現在AIは未接続です。保存だけでは返答は生成されません。' : '提案を動かすかは、入力を見てから選べます。'}</p>
       </form>
