@@ -4,6 +4,11 @@ import { OrbitControls, PerspectiveCamera, View } from '@react-three/drei'
 import * as THREE from 'three'
 import VolumeTank from '../aquarium/VolumeTank'
 import SurfaceTank from '../aquarium/SurfaceTank'
+import FieldGuides from '../aquarium/render/FieldGuides'
+import FieldLegend from '../aquarium/render/FieldLegend'
+import AppearanceControls from '../aquarium/render/AppearanceControls'
+import { DEFAULT_APPEARANCE, type Appearance } from '../aquarium/render/appearance'
+import { exportFieldPng } from '../aquarium/render/exportPng'
 import { api, lab, setActiveGoalId, getActiveGoalId, type KnobSpec, type LabEvent, type UniverseInfo, type WhiteSpec } from './api'
 import { useLabStream, type LiveSource, type LiveState } from './live'
 import ComparePanel, { seriesColor } from './ComparePanel'
@@ -15,15 +20,6 @@ import GoalPanel, { type ModelEntry } from './GoalPanel'
 // perturbation); a branch forks the current state so the only difference is that one intervention.
 
 type Shared = { pos: THREE.Vector3; target: THREE.Vector3; version: number; owner: string }
-
-function Glass() {
-  const geo = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002)), [])
-  return (
-    <lineSegments geometry={geo}>
-      <lineBasicMaterial color="#7aa2cc" transparent opacity={0.35} />
-    </lineSegments>
-  )
-}
 
 /** One OrbitControls per view; whichever view the person drags becomes the owner and the others follow. */
 function LinkedControls({ id, shared }: { id: string; shared: React.MutableRefObject<Shared> }) {
@@ -41,11 +37,11 @@ function LinkedControls({ id, shared }: { id: string; shared: React.MutableRefOb
     seen.current = s.version
   })
   return (
-    <OrbitControls ref={controls} enablePan={false} minDistance={0.8} maxDistance={4}
+    <OrbitControls ref={controls} enablePan={false} minDistance={1.1} maxDistance={5} enableDamping dampingFactor={0.12}
       onStart={() => { dragging.current = true; shared.current.owner = id }}
       onEnd={() => { dragging.current = false }}
       onChange={() => {
-        if (!dragging.current || !controls.current) return
+        if (!controls.current || shared.current.owner !== id) return
         const s = shared.current
         s.pos.copy(camera.position)
         s.target.copy(controls.current.target)
@@ -71,8 +67,8 @@ function ClearAll() {
 function Camera() {
   const { size } = useThree()
   const aspect = size.width / Math.max(size.height, 1)
-  const fov = aspect < 1 ? Math.min(80, 42 / Math.pow(aspect, 0.75)) : 42
-  return <PerspectiveCamera makeDefault position={[1.25, 0.85, 1.35]} fov={fov} near={0.01} far={20} />
+  const fov = Math.min(85, 2 * Math.atan(Math.tan(42 * Math.PI / 360) / Math.min(1, aspect)) * 180 / Math.PI)
+  return <PerspectiveCamera makeDefault position={[1.55, 1.05, 1.55]} fov={fov} near={0.01} far={20} />
 }
 
 function LiveClock({ src, clock }: { src: LiveSource; clock: React.MutableRefObject<number> }) {
@@ -80,9 +76,9 @@ function LiveClock({ src, clock }: { src: LiveSource; clock: React.MutableRefObj
   return null
 }
 
-function TankScene({ id, dimension, src, transfer, shared, threshold, density, relief }: {
+function TankScene({ id, dimension, src, transfer, shared, threshold, density, relief, appearance }: {
   id: string; dimension: 2 | 3; src: LiveSource; transfer: WhiteSpec['lenses'][number]['transfer']
-  shared: React.MutableRefObject<Shared>; threshold: number; density: number; relief: number
+  shared: React.MutableRefObject<Shared>; threshold: number; density: number; relief: number; appearance: Appearance
 }) {
   const clock = useRef(0)
   return (
@@ -90,11 +86,11 @@ function TankScene({ id, dimension, src, transfer, shared, threshold, density, r
       <color attach="background" args={['#05080f']} />
       <Camera />
       <LinkedControls id={id} shared={shared} />
-      <Glass />
+      {appearance.guides && <FieldGuides dimension={dimension} />}
       <LiveClock src={src} clock={clock} />
       {dimension === 3
-        ? <VolumeTank src={src} transfer={transfer} clock={clock} threshold={threshold} density={density} />
-        : <SurfaceTank src={src} transfer={transfer} clock={clock} relief={relief} />}
+        ? <VolumeTank src={src} transfer={transfer} clock={clock} threshold={threshold} density={density} appearance={appearance} />
+        : <SurfaceTank src={src} transfer={transfer} clock={clock} relief={relief} appearance={appearance} />}
     </>
   )
 }
@@ -304,13 +300,15 @@ export default function LabView({ onExit }: { onExit: () => void }) {
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
   }, [])
+  const [appearance, setAppearance] = useState<Appearance>({ ...DEFAULT_APPEARANCE })
+  const [showAppearance, setShowAppearance] = useState(false)
   const [range, setRange] = useState<'fixed' | 'frame'>('fixed')
   const [threshold, setThreshold] = useState(0.35)
   const [density, setDensity] = useState(0.6)
   const [relief, setRelief] = useState(0.35)
   const [maxU, setMaxU] = useState(4)
   const root = useRef<HTMLDivElement>(null!)
-  const shared = useRef<Shared>({ pos: new THREE.Vector3(1.25, 0.85, 1.35), target: new THREE.Vector3(), version: 0, owner: '' })
+  const shared = useRef<Shared>({ pos: new THREE.Vector3(1.55, 1.05, 1.55), target: new THREE.Vector3(), version: 0, owner: '' })
 
   const onError = useCallback((e: unknown) => setError(String(e instanceof Error ? e.message : e)), [])
   const refresh = useCallback(() => { lab.universes().then(setUniverses).catch(onError) }, [onError])
@@ -357,6 +355,21 @@ export default function LabView({ onExit }: { onExit: () => void }) {
     lab.create(w, seed, knobs, activeGoal).then((u) => showExperiment(u.id))
       .catch(onError).finally(() => setCreating(false))
   }
+  const resetCamera = () => {
+    shared.current.pos.set(1.55, 1.05, 1.55); shared.current.target.set(0, 0, 0); shared.current.owner = ''; shared.current.version++
+  }
+  const capture = () => {
+    const canvas = root.current.querySelector<HTMLCanvasElement>('.lab-canvas canvas')
+    if (!canvas) return
+    const visible = compact ? merged.filter((u) => u.id === selected) : merged
+    const legends = visible.flatMap((u) => {
+      const lens = lensOf(u), bounds = sources.get(u.id)?.range()
+      return lens ? [{ label: `${u.label} | t=${u.t.toFixed(2)} | ${lens.name} | ${u.dimension}D ${sources.get(u.id)?.grid.join('x')} ${range === 'frame' && !lens?.cyclic ? ' | relative per-frame scale' : ''}`,
+        lo: range === 'frame' && !lens.cyclic ? 0 : bounds?.[0] ?? lens.vmin,
+        hi: range === 'frame' && !lens.cyclic ? 1 : bounds?.[1] ?? lens.vmax, transfer: lens.transfer }] : []
+    })
+    exportFieldPng(canvas, legends, appearance, { threshold, density, relief }).catch(onError)
+  }
   const batchControl = (action: 'play' | 'pause') => Promise.all(universes.map((u) => lab.control(u.id, action))).then(refresh).catch(onError)
 
   return (
@@ -375,7 +388,17 @@ export default function LabView({ onExit }: { onExit: () => void }) {
       <div className={'lab-body' + (panel ? ' with-panel' : '')}>
         <main className="lab-stage">
         <div className="lab-stage-top"><span><i className="lab-connection connected" />{merged.length ? `観測中 · ${merged.length}個の実験` : '実験のワークスペース'}</span>
-          <span className="mono">{merged.length}/{maxU} SLOTS</span></div>
+          <div className="lab-view-actions"><span className="mono">{merged.length}/{maxU} SLOTS</span>
+          {!!merged.length && <><button className="tbtn" onClick={resetCamera} title="全ての水槽を同じ初期視点へ">視点を戻す</button>
+            <button className="tbtn" aria-expanded={showAppearance} onClick={() => setShowAppearance((open) => !open)}>描画設定</button>
+            <button className="tbtn" onClick={capture}>PNG保存 ↗</button></>}
+          </div></div>
+        {showAppearance && !!merged.length && <div className="lab-appearance-popover">
+          <button className="field-settings-close" aria-label="描画設定を閉じる" onClick={() => setShowAppearance(false)}>×</button>
+          <AppearanceControls value={appearance} onChange={setAppearance} dimension={sel?.dimension ?? 3}/>
+          {sel?.dimension === 3 && <><label className="field-extra-slider">表示範囲のしきい <output>{Math.round(threshold * 100)}%</output><input aria-label="表示のしきい" type="range" min={0.02} max={0.95} step={0.01} value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/></label>
+          <label className="field-extra-slider">濃さ <output>{density.toFixed(2)}</output><input aria-label="表示の濃さ" type="range" min={0.1} max={2} step={0.05} value={density} onChange={e=>setDensity(Number(e.target.value))}/></label></>}
+        </div>}
         {compact && merged.length > 1 && <nav className="lab-universe-switcher" aria-label="表示する実験">
           {merged.map((u) => <button key={u.id} className={u.id === selected ? 'on' : ''} aria-pressed={u.id === selected} onClick={() => setSelected(u.id)}>
             <i style={{ background: seriesColor(u.label) }} />実験 {u.label}</button>)}
@@ -395,6 +418,8 @@ export default function LabView({ onExit }: { onExit: () => void }) {
           {(compact ? merged.filter((u) => u.id === selected) : merged).map((u) => {
             const l = lensOf(u)
             const src = sources.get(u.id)
+            const bounds = range === 'frame' && !l?.cyclic ? [0, 1] : src?.range() ?? [l?.vmin ?? 0, l?.vmax ?? 1]
+            const iso = bounds[0] + threshold * (bounds[1] - bounds[0])
             const w = whites.find((x) => x.id === u.white)
             const fork = u.fork_index !== null ? u.recipe.events.slice(u.fork_index) : []
             return (
@@ -404,7 +429,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
                 {src && l && w && (
                   <View className="lab-view">
                     <TankScene id={u.id} dimension={w.dimension} src={src} transfer={l.transfer} shared={shared}
-                      threshold={threshold} density={density} relief={relief} />
+                      threshold={threshold} density={density} relief={relief} appearance={appearance} />
                   </View>
                 )}
                 <div className="lab-cell-head">
@@ -415,9 +440,11 @@ export default function LabView({ onExit }: { onExit: () => void }) {
                   {u.diverged && <div className="lab-diverged" title="物理ではなく計算の限界。つまみを戻して分岐し直してください">数値が発散したので止めました</div>}
                 </div>
                 <div className="lab-cell-foot">
+                  {l && <FieldLegend transfer={l.transfer} palette={appearance.palette} label={l.label}
+                    lo={src?.range()[0] ?? l.vmin} hi={src?.range()[1] ?? l.vmax} adaptive={range === 'frame' && !l.cyclic}/>}
                   <span className="lab-measured-label">実測値 <small>step {u.step}</small></span>
                   <div className="lab-metric-strip">{Object.entries(u.metrics).slice(0, 3).map(([k, v]) => <div key={k}><span>{k}</span><b className="mono">{typeof v === 'number' && Number.isFinite(v) ? Number(v.toPrecision(4)).toString() : '—'}</b></div>)}</div>
-                  <span className="lab-lens-note">{l?.label} · {range === 'fixed' ? '固定の色範囲' : '各コマで色を調整'}{u.dimension === 2 ? ' · 2D場の表示' : ''}</span>
+                  <span className="lab-lens-note">{u.dimension === 2 ? '2D場 · 起伏は表示' : appearance.mode === 'slice' ? `3D場の断面 · ${appearance.axis.toUpperCase()}=${Math.round(appearance.slice*100)}%` : appearance.mode === 'surface' ? `3D等値面 · 値 ${Number(iso.toPrecision(3))}` : '3D体積表示'} · uint8{appearance.interpolate ? ' · 時間補間' : ' · 時間補間なし'}</span>
                 </div>
               </div>
             )
@@ -433,7 +460,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
             <button className="tbtn" onClick={() => { setTab('cmp'); setPanel(true) }}>測定値を比較 ↗</button></div>
         </div>}
         <div className="lab-stage-caption"><span>実際に計算した場を可視化</span><span>{merged.length > 1 ? '各実験の時刻は独立です · ドラッグで視点を同期' : 'ドラッグで回転 · スクロールで拡大'}</span></div>
-      <Canvas className="lab-canvas" eventSource={root} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }}>
+      <Canvas className="lab-canvas" eventSource={root} dpr={appearance.quality === 'draft' ? 1 : [1, appearance.quality === 'fine' ? 2 : 1.5]} gl={{ preserveDrawingBuffer: true, antialias: true }}>
         <ClearAll />
         <View.Port />
       </Canvas>

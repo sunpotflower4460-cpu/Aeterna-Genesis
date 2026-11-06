@@ -1,0 +1,47 @@
+Aeterna-Genesis — graphical rendering audit handoff
+Date: 2026-11-06 UTC
+Scope: read-only field visualization in the live lab and recorded aquarium.
+This is software/representation validation, not a new physics result or an emergence-level claim.
+
+Data path and no-touch boundary
+The renderer reads the existing uint8 FrameSource and its stored value-range affine mapping. It allocates separate GPU display buffers; it never writes to source arrays, the model, initial conditions, integrators, measurements, research gates, official Rooms or historical evidence. No new force, particle, flow, light field or physical boundary is introduced.
+All production changes are frontend code and documentation. No OpenAI call or credential creation is needed for this work.
+
+Rendering changes
+1. Correct straight/premultiplied-alpha handling. The volume integral accumulates premultiplied color, then unpremultiplies before Three.js normal blending. This removes accidental double attenuation.
+2. Opacity uses 1-exp(-displayWeight*displayDensity*48*rayStep). This is a sampling-stable display formula, not a claim to model optical absorption. Quality uses 72/144/240 ray samples and a device-pixel-ratio cap of 1/1.5/2 respectively; scientific resolution is unchanged.
+3. Gradient lighting reads finite differences of the displayed scalar only. It is a fixed reading aid, not simulated radiation or measured optical brightness. The unshaded palette remains available.
+4. Optional isosurface locates a selected scalar level crossing with a bounded ray search and five bisections. It does not add a predesigned shape, cap the calculation box or use an outcome-dependent target. Phase wraps are excluded from spurious crossing detection; cyclic differences are used for phase normals.
+5. Optional X/Y/Z section intersects each ray with a plane inside the recorded 3D field. The 0-100% slider denotes relative domain position, not a new physical spatial scale.
+6. Cyclic phase display buffers encode cos(theta), sin(theta) into separate 8-bit RG channels. Space/time interpolation averages these directions and decodes atan2, avoiding a false half-cycle band at the +/-pi seam. Near-cancelling averages (vector length under 0.015; fade until 0.08) are a declared DISPLAY ambiguity mask, not a defect or amplitude measurement. Surface colors are sampled in the fragment shader so triangle interpolation does not reintroduce phase seams.
+7. Shared sequential, cyclic and diverging palettes drive both GPU color and CPU legends/export bars. Cyclic/diverging semantics are retained when selecting a sequential palette. Adaptive per-frame color windows are explicitly labelled relative 0-1 rather than assigning a false single physical range to blended frames.
+8. Coordinate guides are annotation only. No mirrors, fake particles, bloom, procedural flow or hidden shape animation is added. Camera motion is controlled by the viewer; reset is synchronized in comparison views.
+9. The 2D mesh is an optional height encoding of the scalar. Cyclic phase remains flat. Optional contours mark ten divisions of the display range; they are not new measured boundaries.
+10. PNG capture uses rendered pixels, plus a footer identifying the display settings, lens/time/grid and color range. It declares quantization, spatial/time interpolation and live-frame delay. Captures are not substitutes for raw data or replay audits.
+
+Verification and evidence
+- TypeScript typecheck and Vite production build passed.
+- Three Node tests passed: circular seam and ambiguous opposing-phase averages; immutable scalar/circular uploads with wrong-grid rejection; finite sequential palettes monotonic in Rec.709-weighted RGB luma and cyclic endpoint agreement.
+- Python model-match/replay/registry/export checks: 85 passed, 5 slow tests deselected. This validates the existing physical solver/data pipeline; no new physical claim is made.
+- Actual-browser graphics check: TDGL-3D, seed 2, from t=0 to 600 steps (t=60), then display palette/quality/isosurface/section/phase changes. It compares the paused solver's public state AND original frame bytes before/after by SHA-256. Then separate CGL-2D checks verify its original bytes remain unchanged. Recorded 3D is checked before recorded 2D. PNG download, phone field/question layout, and shader/page errors are checked too.
+- Reference density-frame SHA-256 at TDGL t=60: 8e93df61dd92b1ca9a896c1df60a0338ed5c1e037ef893737e3b647c744f6d41
+- Phone final layout additionally confirms the full question input remains on screen with the 3D field (390x844 viewport); no horizontal overflow.
+- The existing live landing -> 3D solver -> camera -> pause -> question bridge -> input card -> t=0 child -> parent preservation -> charts -> phone workflow also passed after the rendering changes.
+- The physical field/recipe was not changed for visual quality. A uniform early field may truthfully render as a full volume or have no selected isosurface. Negative/boring outcomes are not filtered out.
+
+Reproduce
+pip install -r requirements.txt
+(cd app && npm ci && npm run typecheck && npm run build && npm run test:graphics)
+python -m tools.lab.server --port 18767 --max-universes 4
+(cd app && npm run test:graphics:e2e)
+Use a fresh isolated lab with no existing universes. LAB_TEST_URL, LAB_SCREENSHOT_DIR and CHROMIUM_PATH override local test defaults. Node type-stripping tests require Node >=22.18; validation used Node 24.
+Python: pytest tests/test_lab_determinism.py tests/test_lab_registry.py tests/test_lab_export.py -m 'not slow' -q
+
+Limits and integrity
+no_touch: physical equations, raw evidence, scientific diagnostics/gates and official Rooms untouched.
+tier: observed/measured software behavior only. No discovery, conservation improvement or scientific grid-convergence claim.
+8th audit: no result-dependent initial condition, stopping rule, target geometry or success threshold is introduced. The isosurface value is a visible rendering control only.
+determinism: exact-model and replay tests pass; read-only buffer and browser frame checks pass.
+resolution: spatial and temporal interpolation, finite ray sampling, 8-bit display quantization, and finite-difference normals cannot recover unrecorded sub-grid detail. Isosurfaces can miss detail below the chosen ray step; use the original field and a scientific convergence audit for physical claims.
+color: visual brightness is a transfer function, not physical emitted light or energy. Shading modifies apparent color locally; use unshaded section/legend for value reading.
+comparison: separate experiments still have independent times. An attractive screenshot is not evidence of an effect across unmatched times.

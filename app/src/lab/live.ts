@@ -33,6 +33,11 @@ export class LiveSource implements FrameSource {
     return [(s.hi - s.lo) / span, (s.lo - this.vmin) / span]
   }
 
+  range(): [number, number] {
+    const latest = this.slots[this.slots.length - 1]
+    return this.mode === 'frame' && !this.cyclic && latest ? [latest.lo, latest.hi] : [this.vmin, this.vmax]
+  }
+
   push(m: FrameMsg) {
     if (m.diverged || !m.grid || m.b64 === undefined) return
     if (this.slots.length && this.slots[this.slots.length - 1].seq === m.seq) return

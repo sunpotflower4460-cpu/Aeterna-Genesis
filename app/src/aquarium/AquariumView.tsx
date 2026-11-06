@@ -7,21 +7,16 @@ import { recordedSource } from './types'
 import type { AquariumTemplate, TankField } from './types'
 import VolumeTank from './VolumeTank'
 import SurfaceTank from './SurfaceTank'
+import FieldGuides from './render/FieldGuides'
+import FieldLegend from './render/FieldLegend'
+import AppearanceControls from './render/AppearanceControls'
+import { DEFAULT_APPEARANCE, type Appearance } from './render/appearance'
+import { exportFieldPng } from './render/exportPng'
 
 const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
 function hasWebGL2(): boolean {
   try { return !!document.createElement('canvas').getContext('webgl2') } catch { return false }
-}
-
-/** Glass edges of the tank (a unit cube). */
-function Glass() {
-  const geo = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002)), [])
-  return (
-    <lineSegments geometry={geo}>
-      <lineBasicMaterial color="#7aa2cc" transparent opacity={0.35} />
-    </lineSegments>
-  )
 }
 
 /** Advances the shared playback clock (frames per second of *recorded* frames, not physics time). */
@@ -49,6 +44,10 @@ export default function AquariumView({ onOpenObservatory, onOpenLab }: { onOpenO
   const [playing, setPlaying] = useState(!REDUCED)
   const [fps, setFps] = useState(6)
   const [frame, setFrame] = useState(0)
+  const [appearance, setAppearance] = useState<Appearance>({ ...DEFAULT_APPEARANCE })
+  const [showAppearance, setShowAppearance] = useState(false)
+  const cameraControls = useRef<any>(null)
+  const root = useRef<HTMLDivElement>(null)
   const [threshold, setThreshold] = useState(0.35)
   const [density, setDensity] = useState(0.6)
   const [relief, setRelief] = useState(0.35)
@@ -100,19 +99,19 @@ export default function AquariumView({ onOpenObservatory, onOpenLab }: { onOpenO
   }
 
   return (
-    <div className="aq-root">
+    <div className="aq-root" ref={root}>
       <div className="aq-canvas">
         {!webgl2 ? (
           <div className="aq-center mono muted">WebGL2 が必要です（このブラウザでは 3D の水槽を表示できません）</div>
         ) : (
-          <Canvas camera={{ position: [1.25, 0.85, 1.35], fov: 42, near: 0.01, far: 20 }} dpr={[1, 2]}>
+          <Canvas camera={{ position: [1.55, 1.05, 1.55], fov: 42, near: 0.01, far: 20 }} dpr={appearance.quality === 'draft' ? 1 : [1, appearance.quality === 'fine' ? 2 : 1.5]} gl={{ preserveDrawingBuffer: true, antialias: true }}>
             <color attach="background" args={['#05080f']} />
-            <Glass />
+            {appearance.guides && <FieldGuides dimension={tank?.dimension ?? 3}/>}
             {src && tank && lensMeta && (tank.dimension === 3
-              ? <VolumeTank src={src} transfer={lensMeta.transfer} clock={clock} threshold={threshold} density={density} />
-              : <SurfaceTank src={src} transfer={lensMeta.transfer} clock={clock} relief={relief} />)}
+              ? <VolumeTank src={src} transfer={lensMeta.transfer} clock={clock} threshold={threshold} density={density} appearance={appearance} />
+              : <SurfaceTank src={src} transfer={lensMeta.transfer} clock={clock} relief={relief} appearance={appearance} />)}
             {tank && <Clock clock={clock} playing={playing} fps={fps} nframes={tank.nframes} onFrame={setFrame} />}
-            <OrbitControls enablePan={false} autoRotate={!REDUCED && playing} autoRotateSpeed={0.35} minDistance={0.8} maxDistance={4} />
+            <OrbitControls ref={cameraControls} enablePan={false} enableDamping dampingFactor={0.12} minDistance={1.1} maxDistance={5} />
           </Canvas>
         )}
         {!tank && <div className="aq-center mono muted aq-overlay">◈ loading {active.id}…</div>}
@@ -160,6 +159,15 @@ export default function AquariumView({ onOpenObservatory, onOpenLab }: { onOpenO
         <button className="aq-reopen tbtn" onClick={() => setShowCard(true)}>置いた／育った</button>
       )}
 
+      {lens && lensMeta && <div className="aq-visual-tools">
+        <FieldLegend label={lensMeta.label} transfer={lensMeta.transfer} palette={appearance.palette} lo={lens.vmin} hi={lens.vmax}/>
+        <button className="tbtn" onClick={()=>cameraControls.current?.reset()}>視点を戻す</button>
+        <button className="tbtn" aria-expanded={showAppearance} onClick={()=>setShowAppearance(v=>!v)}>描画設定</button>
+      </div>}
+      {showAppearance && <div className="aq-render-settings">
+        <button className="field-settings-close" aria-label="描画設定を閉じる" onClick={()=>setShowAppearance(false)}>×</button>
+        <AppearanceControls value={appearance} onChange={setAppearance} dimension={tank?.dimension ?? 3}/>
+      </div>}
       <footer className="aq-controls glass">
         <button className="tbtn pri" onClick={() => setPlaying((p) => !p)} aria-label={playing ? '一時停止' : '再生'}>
           {playing ? '❚❚' : '▶'}
@@ -184,6 +192,10 @@ export default function AquariumView({ onOpenObservatory, onOpenLab }: { onOpenO
           <label className="aq-knob mono">起伏<input type="range" min={0} max={0.8} step={0.01} value={relief}
             onChange={(e) => setRelief(Number(e.target.value))} /></label>
         )}
+        <button className="tbtn" disabled={!lens || !lensMeta} onClick={()=>{
+          const canvas=root.current?.querySelector('canvas')
+          if(canvas && lens && lensMeta) exportFieldPng(canvas,[{label:`${active.id} | t=${t.toFixed(2)} | ${lens.name} | ${tank?.dimension}D ${tank?.grid.join('x')}`,lo:lens.vmin,hi:lens.vmax,transfer:lensMeta.transfer}],appearance,{threshold,density,relief}).catch(e=>setError(String(e)))
+        }}>PNG保存 ↗</button>
         <label className="aq-knob mono">速さ<input type="range" min={1} max={20} step={1} value={fps}
           onChange={(e) => setFps(Number(e.target.value))} /></label>
       </footer>
