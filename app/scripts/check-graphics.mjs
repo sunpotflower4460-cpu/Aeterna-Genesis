@@ -84,7 +84,9 @@ try{
  await page.getByLabel('一時停止',{exact:true}).click()
  const time=page.getByRole('slider',{name:'時刻',exact:true})
  await page.waitForFunction(()=>Number(document.querySelector('.aq-range')?.max)>0)
- await time.fill(await time.getAttribute('max'))
+ // Use keyboard changes through an intermediate value: a same-valued native
+ // fill after a controlled React range resets can leave its event tracker stale.
+ await time.press('ArrowRight')
  await time.press('End')
  await page.waitForFunction(()=>parseFloat(document.querySelector('.aq-time').textContent.replace('t=',''))>0)
  await page.getByRole('button',{name:'閉じる',exact:true}).click()
@@ -103,7 +105,9 @@ try{
  await page.getByRole('combobox',{name:'レンズ',exact:true}).selectOption('phase')
  await page.locator('.aq-overlay').waitFor({state:'hidden'})
  await page.waitForFunction(()=>Number(document.querySelector('.aq-range')?.max)>0)
- await time.fill(await time.getAttribute('max'))
+ // Use keyboard changes through an intermediate value: a same-valued native
+ // fill after a controlled React range resets can leave its event tracker stale.
+ await time.press('ArrowRight')
  await time.press('End')
  await page.waitForFunction(()=>parseFloat(document.querySelector('.aq-time').textContent.replace('t=',''))>0)
  await wait();await page.screenshot({path:out+'/recorded-2d-phase.png'})

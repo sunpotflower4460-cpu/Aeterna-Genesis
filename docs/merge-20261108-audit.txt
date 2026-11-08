@@ -1,0 +1,107 @@
+Aeterna Genesis 統合監査報告 — 2026-11-08
+対象: https://github.com/sunpotflower4460-cpu/Aeterna-Genesis/pull/175
+基準 main: 106338f01e3e0daac55d18edf88e48b3c2f9dfb4
+
+主張と範囲
+未マージの PR #120, #132, #133, #134, #135, #136, #171, #172, #173, #174 の
+10件を一つの統合ブランチに取り込み、元の全 head を merge commit の祖先として保持した。
+新しい物理結果、生命、正式 Room、到達段の成功を主張する作業ではない。
+#174 の設計書は research/inbox の未採択案として保存し、自動研究を開始していない。
+元のコミットと検証済みハッシュ37点は merge-20261108-provenance.json を参照。
+
+競合の解消
+1. #120: 現在の水槽・ライブ実験・記録閲覧を保持し、共有メモ画面を追加した。
+   旧提案を含む UNIVERSE_AQUARIUM.md には、現行 AGENTS.md/CLAUDE.md の優先を明記。
+   研究の物理規律・最新の研究方針・停止済みbotを旧文書で巻き戻していない。
+   app/public/data の古いコピーは追跡せず、aquaria/ の正本から既存の生成経路で組み立てる。
+2. #132: 対照ペアを優先する案と現在の限定付き holdout 案を両方保持。
+   休止された単独介入案を必須とするテストを、対照ペアと休止IDを確認するものに更新。
+   自動候補全体で同じ介入型が存在しうることと、特定のAI方向案の休止を区別した。
+3. #133/#134: 独立検証の測定値・画像・再現コードを元PRと同一のまま保存。
+4. #135: 袋の測定器、負の結果、旧botの研究レーンを保持。現在の研究状態は保持。
+   旧生成ページの監査注記を残し、当時の「本線」を現在の研究方針として扱わない。
+5. #136: main側とPR側が別内容の報告を同一名で保存していた。
+   main側の verify-20260829-bag-dig/ は無変更で保存。
+   PR側の全16ファイルは verify-20260829-bag-dig-pr136/ に元のバイト列で保存。
+   IMPORT_MANIFEST.json に元コミット、元パス、取込先とSHA-256を記録した。
+   本文中の旧パス表記は、その取込コピーを指すことをマニフェストに記載。
+6. #171/#172: 独立監査フォルダを元PRと完全同一のまま保存。
+   P10の INCONCLUSIVE（T10c参照誤差床）や、化学系の限定的持ち越し・負の結果を維持。
+   検証器の成功を正式3D、細胞、生命、継承、進化の成立へ読み替えていない。
+7. #173: ライブUI、t=0の条件提案、描画、音声入力/読み上げを保持。
+8. #174: 未採択設計書を保存し、RESEARCH_COMPASS.md を正本から再生成。
+
+統合時の修正
+- 記録済み水槽の切替中に、前の場が新しい水槽の見出しの下へ残ることを防止。
+  読込済みIDが選択IDと一致したデータだけを表示し、時刻を0へ戻す。
+  遅延応答を使い、読込中の時刻表示0・スライダー最大0をブラウザで確認した。
+- 共有メモのレイアウトを狭い画面に対応。
+- ライブ→記録→Observatory→共有メモ→Observatoryの移動、ローカル下書き保存が
+  実験のID、ステップ、レシピを変更しないことを検査した。
+- 独立監査のv0.1コードは同名のローカルモジュールを持つ。
+  ソースと封印された結果を変更せず、各監査を独立したPythonプロセスで検査するCIを追加。
+- NodeテストはTypeScriptを直接importするため、追加CIのNodeを24に合わせた。
+  記録の時間操作の検査には実際のキーボード操作を使い、React range入力への同値fillの
+  イベント追跡による見かけのタイムアウトを避けた。
+
+検証結果（ローカル最終検査）
+- python -m pytest -q -m "not slow": 1148 passed, 92 deselected, 5 warnings (329.22秒)。
+  最初の一式で検出した「休止案の旧テスト」「設計書追加後の古い目次」は修正後に解消。
+  休止IDの検査をさらに正確にした後も tests/test_free_hypothesis_lab.py の4件は成功。
+- P10 独立監査: 44 passed。
+- chemical lineage 独立監査: 29 passed。
+- Aquarium、袋、旧Compassなど競合に関係する検査: 26 passed（一式の内数）。
+- TypeScript型検査とVite製品ビルド: 成功。
+- 描画数値のNode検査: 3 passed。音声テキストのNode検査: 4 passed。
+- workspaceブラウザ検査: t=0子実験、親の保存、比較グラフ、カメラ操作、質問の保持、
+  携帯幅、共有メモの移動、下書きの物理状態からの分離、ページエラーなしを確認。
+- graphicsブラウザ検査: 3D体積/等値面/断面、位相の循環色、PNGのメタデータ、
+  3D→2Dの記録再生、読込中の表示、2D等高線と実験画面を確認。
+- speechブラウザ検査: 認識途中/確定文、重複防止、停止、順序が前後するAI応答、
+  自動読み上げ、拒否/非対応/非安全コンテキスト、携帯幅と非表示時停止を確認。
+- 3Dの固定した計算状態・元フレームは描画/音声操作の前後で同一。
+  フレーム SHA-256:
+  8e93df61dd92b1ca9a896c1df60a0338ed5c1e037ef893737e3b647c744f6d41
+- P10の保護された結果11点、化学系の計算コード10点、#136の取込16点のSHA-256は一致。
+- python tools/ladder.py --check と git diff --check は成功。
+- GitHubの最終headのCIとマージ記録はPR #175を参照。未確認のCI成功は本書で主張しない。
+
+規律と限界
+- no_touch: genesis/, core/, rooms/official/, experiments/, research/ladder.json,
+  research/index.json, archive/MANIFEST.jsonl.gz, rooms/jobs/ledger.json と、停止済みbotの
+  6本のworkflowは基準mainと同一。式・初期条件・真偽ゲート・公式到達判定を変更しない。
+- tier: この報告の測定はソフトウェア検証とハッシュ照合。新しい創発の証拠ではない。
+- 第8監査: 計画メモはsolverの入力にならず、下書き保存は計算を開始しない。
+  t=0提案は既存の検証済み経路を使用し、結果の形状や成功判定を実装へ追加していない。
+- 決定性: 既存の計算・再現性テストと固定フレームの照合による限定的な確認。
+  全研究の再計算や連続極限の保証を行ったわけではない。封印済み結果は再生成していない。
+- 音声はブラウザAPIイベントの模擬検査。実際のマイク、音質、スピーカー再生、
+  スマートフォン実機、外部認識サービスは未検証。有料AI APIへの通信は行っていない。
+- slowの92件は今回の全体検査から除外。既知の発散境界の検査が数値警告を出すが、
+  テストは負の結果の記録を含めて成功。Viteの既存の動的/静的import併用警告も残る。
+- tools/validate_schemas.py は旧botの実験実体が未収録の参照2695件を報告する
+  （個別ジョブ1900、台帳795）。台帳・アーカイブ・検査器はmainと同じ。
+  この既存問題を成功に偽装せず、新しいAquarium CIは追加した計画データ契約を検査する。
+
+再現
+リポジトリルートから（Python依存は requirements.txt、Node 24）:
+  OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONHASHSEED=0 python -m pytest -q -m "not slow"
+  python -m pytest audits/p10_transport_free_energy_v01/tests -q
+  python -m pytest audits/chemical_lineage_v01/tests -q
+  npm --prefix app run typecheck
+  npm --prefix app run build
+  npm --prefix app run test:graphics
+  npm --prefix app run test:speech
+  python tools/build_compass.py --check
+  python tools/ladder.py --check
+ブラウザ検査は各々新しい隔離サーバーで実行する。既存の実験は消さない。
+  python -m tools.lab.server --port 18806 --max-universes 4
+  cd app
+  LAB_TEST_URL=http://127.0.0.1:18806 npm run test:e2e
+描画と音声は別の新しいサーバーに test:graphics:e2e / test:speech:e2e を向ける。
+封印済み監査の run_audit.py を実行する場合は、必ず新しい空ディレクトリを --out に渡す。
+この統合作業では既存の results/ を上書きしていない。
+
+画像
+images/merge-lab-20261108.png: 統合後、同じ固定3Dデータの等値面と質問・音声操作の画面。
+images/merge-planning-20261108.png: 人間/AIの共有計画台帳とローカル下書き。
