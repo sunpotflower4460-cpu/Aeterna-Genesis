@@ -1,0 +1,15 @@
+{
+  "registered_before_any_v02_research_history":true,
+  "physical_law_unchanged":true,
+  "reason":"Long control matrices spend most time on null proposals because rare I conformers require a much larger global rate bound. Use a second exact scheduler while retaining the original scheduler as an independent reference.",
+  "reference_scheduler":0,
+  "research_scheduler":1,
+  "reference":"constant bound per molecule, original v01 algorithm; equal-D default state and CSV must still agree byte-for-byte",
+  "new_scheduler":"Two auxiliary lists contain physical B and I molecule IDs. Fixed per-type bounds RB=D_B+max_n k_BI^p+max_n k_BI^d and RI=D_I+k_IB^p+max_n k_IB^d give total proposal intensity Lambda=N_B*RB+N_I*RI. Draw an exponential waiting time with this intensity, a type with its contribution to Lambda, and a uniformly random molecule within that type; accept the same LOCAL actual reaction/hop rate. Update type membership only on a physical conformation change.",
+  "exactness":"For any permitted local event e on molecule i of type s, Lambda*(N_s*R_s/Lambda)*(1/N_s)*(k_e/R_s)=k_e. Null events leave state unchanged. This is exact state-dependent thinning, not a time-step approximation or an adaptive physical coefficient.",
+  "locality":"Type counts and an auxiliary clock schedule local events; no rate, force or acceptance test depends on object labels, global geometry, growth, outcome or success. This remains an asynchronous local physical Markov process, with a globally implemented numerical scheduler disclosed.",
+  "unchanged_observations":"Every 10 units ledger; full states every 50 plus quarter/half/end. Individual null proposals are numerical artifacts and not counted as physical activity.",
+  "required_checks_before_research":["legacy byte equality with v01","exact finite-system Boltzmann probabilities with unequal diffusivities under scheduler1","single-particle Poisson hop statistics for both conformers under scheduler1","frozen custom composition conservation","driven work/medium-entropy ledger and same-seed complete-state determinism under scheduler1"],
+  "no_changed_success_or_budget_threshold":true,
+  "known_algorithm_checks_excluded_from_discovery_count":true
+}
