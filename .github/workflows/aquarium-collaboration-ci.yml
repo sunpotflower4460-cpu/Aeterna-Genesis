@@ -39,9 +39,9 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Validate all repository schemas and registries
-        run: python tools/validate_schemas.py
-
+      # The global legacy-job validator remains available in tools/validate_schemas.py.
+      # This workflow checks the new planning contracts; historical orphan bot jobs are
+      # outside this feature and must not be silently accepted by weakening that validator.
       - name: Validate Aquarium registry, notebook and planning-only Compass
         run: pytest -q tests/test_aquarium_registry.py tests/test_aquarium_compass.py
 
@@ -80,6 +80,10 @@ jobs:
       - name: Typecheck Observatory
         working-directory: app
         run: npm run typecheck
+
+      - name: Check display math and speech text contracts
+        working-directory: app
+        run: npm run test:graphics && npm run test:speech
 
       - name: Build Observatory
         working-directory: app

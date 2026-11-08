@@ -89,7 +89,17 @@ try{
  await page.waitForFunction(()=>parseFloat(document.querySelector('.aq-time').textContent.replace('t=',''))>0)
  await page.getByRole('button',{name:'閉じる',exact:true}).click()
  await wait();await page.screenshot({path:out+'/recorded-3d.png'})
+ // Hold the next recorded response to check that stale 3D data cannot appear
+ // under the new 2D label, nor leave a seekable timeline during the handoff.
+ let releaseRecorded
+ const recordedHeld=new Promise(resolve=>{releaseRecorded=resolve})
+ await page.route('**/aquarium/gpe-dipole-2d/field.json',async route=>{await recordedHeld;await route.continue()})
  await page.getByRole('button',{name:/2D 渦のペアが泳ぎだす/}).click()
+ await page.locator('.aq-overlay').waitFor({state:'visible'})
+ assert.equal(await time.getAttribute('max'),'0')
+ assert.equal(await page.locator('.aq-time').textContent(),'t=0.0')
+ releaseRecorded()
+
  await page.getByRole('combobox',{name:'レンズ',exact:true}).selectOption('phase')
  await page.locator('.aq-overlay').waitFor({state:'hidden'})
  await page.waitForFunction(()=>Number(document.querySelector('.aq-range')?.max)>0)

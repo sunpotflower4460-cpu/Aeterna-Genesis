@@ -39,7 +39,8 @@ export default function AquariumView({ onOpenObservatory, onOpenLab }: { onOpenO
   const [templates, setTemplates] = useState<AquariumTemplate[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [tank, setTank] = useState<TankField | null>(null)
+  const [loadedTank, setTank] = useState<TankField | null>(null)
+  const [loadedId, setLoadedId] = useState<string | null>(null)
   const [lensName, setLensName] = useState<string | null>(null)
   const [playing, setPlaying] = useState(!REDUCED)
   const [fps, setFps] = useState(6)
@@ -75,14 +76,19 @@ export default function AquariumView({ onOpenObservatory, onOpenLab }: { onOpenO
 
   const active = templates?.find((t) => t.id === activeId) ?? null
 
+  // Never label a previous template's recorded field as the newly selected one.
+  const tank = loadedId === active?.id ? loadedTank : null
+
   useEffect(() => {
     if (!active) return
     let alive = true
     setTank(null)
+    setLoadedId(null)
+    setFrame(0)
     clock.current = 0
     setLensName(active.default_lens)
     if (location.hash !== '#' + active.id) history.replaceState(null, '', '#' + active.id)
-    loadTank(active.id).then((f) => { if (alive) setTank(f) }).catch((e) => alive && setError(String(e)))
+    loadTank(active.id).then((f) => { if (alive) { setTank(f); setLoadedId(active.id) } }).catch((e) => alive && setError(String(e)))
     return () => { alive = false }
   }, [active])
 

@@ -155,7 +155,7 @@ export default function AquariumLab() {
             <p className="eyebrow" style={{ margin: '0 0 7px' }}>Aeterna · Universe Aquarium Lab</p>
             <h1 style={{ margin: 0, fontSize: 29, fontWeight: 650, letterSpacing: '-.025em' }}>宇宙水槽</h1>
             <p className="muted" style={{ margin: '7px 0 0', maxWidth: 690, lineHeight: 1.6, fontSize: 13 }}>
-              人間とAIが「こんな世界を見たい」を共有し、結果を置かずに前提条件を探す研究室。
+              人間とAIの研究アイディアとメモを共有する計画台帳。ここでの保存は実験を開始しません。
             </p>
           </div>
           <button className="lens" onClick={toLobby}>← Observatory</button>
@@ -178,7 +178,7 @@ export default function AquariumLab() {
         {!registry ? (
           <div className="muted" style={{ padding: '42px 0' }}>Aquarium registry がまだ app data にありません。</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 330px) minmax(0, 1fr)', gap: 18, marginTop: 18, alignItems: 'start' }}>
+          <div className="collaboration-layout">
             <div style={{ display: 'grid', gap: 9 }}>
               {aquaria.map((a) => (
                 <AquariumCard key={a.aquarium_id} aquarium={a} selected={selected?.aquarium_id === a.aquarium_id} onClick={() => setSelectedId(a.aquarium_id)} />

@@ -38,7 +38,8 @@
 
 ## 提案と決定（`research/`）
 
-- 未決の提案：0 件（`/propose` で作る）
+- 未決の提案：1 件
+  - [2026-11-08-life-ladder-and-autonomous-research-design.md](research/inbox/2026-11-08-life-ladder-and-autonomous-research-design.md)（?）
 - 決定済み：0 件
 
 ## 見る・動かす

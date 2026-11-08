@@ -8,6 +8,7 @@ const artifacts = process.env.LAB_SCREENSHOT_DIR || '/tmp/aeterna-ui-check';
 const { mkdir } = await import('node:fs/promises');
 await mkdir(artifacts, { recursive: true });
 const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader']});
+try {
 const page = await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const api=async(path,data)=>{const res=await page.request[data===undefined?'get':'post'](base+'/api/'+path,data===undefined?{}:{data});assert.ok(res.ok(),await res.text());return res.json()};
@@ -67,6 +68,27 @@ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
 const stage=await page.locator('.lab-stage').boundingBox();const input=await page.getByLabel('気になったことを質問する',{exact:true}).boundingBox();
 assert.ok(stage.y>=0 && stage.y+stage.height<844);
 assert.ok(input.y>=stage.y+stage.height && input.y<844,JSON.stringify({stage,input}));
+// Regression for the merged collaboration route: notes remain planning-only and
+// saving an idea never starts or edits a live universe.
+await page.setViewportSize({width:1440,height:1000});
+const physicalBefore=await api('universes');
+await page.goto(base+'/#aquarium');
+await page.reload();
+await page.getByRole('button',{name:'Observatory →',exact:true}).click();
+await page.getByRole('button',{name:'◌ Aquariums',exact:true}).click();
+await page.getByRole('heading',{name:'宇宙水槽',exact:true}).waitFor();
+await page.getByText('planning ≠ evidence',{exact:true}).waitFor();
+await page.getByPlaceholder('水槽の名前 例：光を食べる関係網').fill('統合テストの計画');
+await page.getByPlaceholder('何を見たい？ どんな世界を試したい？').fill('条件を変えたらどうなるかを考える。実行はしない。');
+await page.getByRole('button',{name:'＋ アイディアを下書き保存',exact:true}).click();
+await page.getByText('統合テストの計画',{exact:true}).waitFor();
+assert.deepEqual((await api('universes')).universes.map(u=>[u.id,u.step,u.recipe]),physicalBefore.universes.map(u=>[u.id,u.step,u.recipe]));
+await page.screenshot({path:artifacts+'/collaboration-planning.png'});
+await page.setViewportSize({width:390,height:844});
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
+await page.screenshot({path:artifacts+'/collaboration-mobile.png'});
+await page.getByRole('button',{name:'← Observatory',exact:true}).click();
+await page.getByRole('heading',{name:'あなたの宇宙',exact:true}).waitFor();
 assert.deepEqual(errors,[]);
-console.log(JSON.stringify({passed:['live landing','3D solver','pause','orbit camera','draft survives tabs and panel','question bridge','generated input card acceptance','parent preserved','t=0 child','comparison charts','mobile question with visible field','no horizontal overflow','no page errors'],card:card.id,stage,input}));
-await browser.close();
+console.log(JSON.stringify({passed:['live landing','3D solver','pause','orbit camera','draft survives tabs and panel','question bridge','generated input card acceptance','parent preserved','t=0 child','comparison charts','mobile question with visible field','no horizontal overflow','planning route and draft isolation','no page errors'],card:card.id,stage,input}));
+} finally { await browser.close(); }
