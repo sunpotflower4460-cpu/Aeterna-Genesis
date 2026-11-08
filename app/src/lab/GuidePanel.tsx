@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api } from './api'
+import { api, type UniverseInfo, type WhiteSpec } from './api'
 import type { ModelEntry } from './GoalPanel'
-
-// The AI council: 見る係 (images/video, always "見た目（未測定）"), 別の視点, and the 中心 (Opus 5.5) who talks with
-// you and puts proposal cards on the table. Nothing runs until you press 分岐して試す on a card.
+import ObservePanel from './ObservePanel'
+import useSpeech from './useSpeech'
+import VoiceControls, { SpeakerIcon } from './VoiceControls'
 
 interface Role { role: string; label: string; provider: string | null; model: string; available: boolean; reason: string }
 interface Msg {
@@ -11,141 +11,192 @@ interface Msg {
   usage: { input_tokens: number; output_tokens: number } | null; usd: number; at: string
 }
 interface Proposal {
-  id: number; source: string; parent: string; parent_label: string; white: string; at_step: number
+  id: number; source: string; mode?: 'initial'; parent: string; parent_label: string; white: string; at_step: number
   set: Record<string, number>; perturb: { name: string; args: Record<string, number> } | null
+  seed?: number; base_seed?: number; base_knobs?: Record<string, number>; knobs?: Record<string, number>
   why: string; predict: string; put_in: string; status: 'open' | 'tried' | 'dismissed'; child: string | null
 }
 interface CouncilState {
   roles: Role[]; busy: boolean; spent_today: number; limit_usd: number; bridge: boolean
   messages: Msg[]; proposals: Proposal[]
 }
-
 const WHO_COLOR: Record<string, string> = {
   core: 'var(--accent)', vision: 'var(--candidate)', second_view: 'var(--warn)', you: 'var(--ink)',
   'claude-code': 'var(--official)', system: 'var(--muted)',
 }
 
-export default function GuidePanel({ ids, models, onError, onBranched }: {
-  ids: string[]; models: ModelEntry[]; onError: (e: unknown) => void; onBranched: () => void
+export default function GuidePanel({ universes, selected, whites, models, onError, onBranched, enabled = true }: {
+  universes: UniverseInfo[]; selected: string | null; whites: WhiteSpec[]; models: ModelEntry[]
+  onError: (e: unknown) => void; onBranched: (id: string) => void; enabled?: boolean
 }) {
   const [state, setState] = useState<CouncilState | null>(null)
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [text, setText] = useState('')
+  const [all, setAll] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [trying, setTrying] = useState<number | null>(null)
+  const [withObservation, setWithObservation] = useState(true)
+  const [notice, setNotice] = useState('')
   const since = useRef(0)
-  const bottom = useRef<HTMLDivElement>(null)
+  const chatBox = useRef<HTMLDivElement>(null)
+  const form = useRef<HTMLTextAreaElement>(null)
+  const current = universes.find((u) => u.id === selected)
+  const white = whites.find((w) => w.id === current?.white)
+  const ids = all ? universes.map((u) => u.id) : current ? [current.id] : []
 
   const poll = useCallback(() => {
-    api<CouncilState>('council?since=' + since.current).then((s) => {
+    return api<CouncilState>('council?since=' + since.current).then((s) => {
       setState(s)
       if (s.messages.length) {
         setMsgs((old) => {
           const byId = new Map(old.map((m) => [m.id, m]))
           for (const m of s.messages) byId.set(m.id, m)
-          const all = [...byId.values()].sort((a, b) => a.id - b.id)
-          since.current = Math.max(since.current, ...all.filter((m) => m.done).map((m) => m.id))
-          return all
+          const result = [...byId.values()].sort((a, b) => a.id - b.id)
+          // A later colleague may finish while an earlier core answer is still streaming.
+          // Keep requesting that earlier id until its final text/done flag has arrived.
+          let completed = since.current
+          for (const message of result) {
+            if (message.id <= completed) continue
+            if (message.id !== completed + 1 || !message.done) break
+            completed = message.id
+          }
+          since.current = completed
+          return result
         })
       }
-    }).catch(onError)
-  }, [onError])
-
-  const active = !!state?.busy || msgs.some((m) => !m.done)
+    })
+  }, [])
+  const appendTranscript = useCallback((heard: string) => {
+    setText(current => (current.trimEnd() + (current.trim() ? ' ' : '') + heard).slice(0, 8000))
+  }, [])
+  const voice = useSpeech({ enabled, messages: msgs, hydrated: state !== null, onTranscript: appendTranscript })
+  const dictating = voice.phase !== 'idle'
+  const active = sending || !!state?.busy || msgs.some((m) => !m.done)
   useEffect(() => {
-    poll()
-    const id = setInterval(poll, active ? 900 : 4000)
-    return () => clearInterval(id)
-  }, [poll, active])
-  useEffect(() => { bottom.current?.scrollIntoView({ block: 'end' }) }, [msgs.length, msgs[msgs.length - 1]?.text.length])
+    poll().catch(onError)
+    const timer = setInterval(() => poll().catch(onError), active ? 900 : 4000)
+    return () => clearInterval(timer)
+  }, [poll, active, onError])
+  useEffect(() => {
+    const box = chatBox.current
+    if (box) box.scrollTop = box.scrollHeight
+  }, [msgs])
 
-  const look = () => api('council/look', { method: 'POST', body: { ids, text } }).then(() => { setText(''); poll() }).catch(onError)
-  const chat = () => api('council/chat', { method: 'POST', body: { text } }).then(() => { setText(''); poll() }).catch(onError)
-  const tryIt = (p: Proposal) => api(`proposals/${p.id}/try`, { method: 'POST' }).then(() => { poll(); onBranched() }).catch(onError)
-  const dismiss = (p: Proposal) => api(`proposals/${p.id}/dismiss`, { method: 'POST' }).then(poll).catch(onError)
+  const send = async () => {
+    if (active || dictating || !text.trim() || !ids.length) return
+    voice.stopSpeaking()
+    setSending(true)
+    setNotice('')
+    try {
+      const observe = withObservation || !msgs.length
+      await api(observe ? 'council/look' : 'council/chat', {
+        method: 'POST', body: observe ? { ids, text: text.trim() } : { text: text.trim() },
+      })
+      setText('')
+      await poll()
+    } catch (e) { onError(e) } finally { setSending(false) }
+  }
+  const tryIt = async (p: Proposal) => {
+    if (trying !== null) return
+    setTrying(p.id)
+    try {
+      const result = await api<Proposal>(`proposals/${p.id}/try`, { method: 'POST' })
+      if (result.child) {
+        onBranched(result.child)
+        setNotice(`新しい実験を表示しました。${p.mode === 'initial' ? '時刻0から計算しています。' : '途中介入として記録しました。'}画面の実測値と「比較」タブで違いを確認できます。`)
+      }
+      await poll()
+    } catch (e) { onError(e) } finally { setTrying(null) }
+  }
+  const open = state?.proposals.filter((p) => p.status === 'open') ?? []
+  const suggestions = white ? [
+    white.knobs.find((k) => k.kind === 'start') ? `始め方の「${white.knobs.find((k) => k.kind === 'start')!.label}」を変えたらどうなる？` : 'seed だけ変えたら、どんな違いが出る？',
+    white.knobs.find((k) => k.kind === 'law') ? `「${white.knobs.find((k) => k.kind === 'law')!.label}」が今の半分だったら？` : '今と違う初期条件で、時刻0から比べたい',
+  ] : []
 
   return (
     <div className="lab-guide">
-      <div className="lab-roles">
-        {state?.roles.map((r) => (
-          <label key={r.role} className={'lab-role' + (r.available ? ' on' : '')} title={r.reason || r.model}>
-            <i style={{ background: WHO_COLOR[r.role] }} />{r.label}
-            <select className="lab-mini" value={models.find((m) => m.provider === r.provider && m.model === r.model)?.key ?? ''}
+      <div className="lab-assistant-heading"><span className="lab-ai-mark">✳</span><div><h2>問いから、次の実験へ。</h2><p>いま見ている場を、AIと一緒に考える。</p></div></div>
+      <div className="lab-question-flow" aria-label="実験の進め方">
+        <span className={!active && !open.length ? 'on' : ''}>01 質問する</span><span className={active ? 'on' : ''}>02 条件をつくる</span><span className={open.length ? 'on' : ''}>03 動かして見る</span>
+      </div>
+      <details className="lab-ai-settings lab-fold">
+        <summary><span className={'lab-connection ' + (state && !state.bridge ? 'connected' : '')} />
+          {state ? state.bridge ? 'AI未接続 · 接続設定 / 外部AIに渡す' : 'AI接続済み · モデル / 費用' : 'AIの接続を確認中…'}</summary>
+        <div className="lab-roles">
+          {state?.roles.map((r) => <label key={r.role} className={'lab-role' + (r.available ? ' on' : '')}>
+            <span>{r.label}</span>
+            <select className="lab-mini" aria-label={`${r.label}のモデル`} value={models.find((m) => m.provider === r.provider && m.model === r.model)?.key ?? ''}
               onChange={(e) => api('council/select', { method: 'POST', body: { role: r.role, key: e.target.value } }).then(poll).catch(onError)}>
               <option value="">（なし）</option>
-              {models.filter((m) => r.role !== 'vision' || m.images).map((m) => (
-                <option key={m.key} value={m.key}>{m.label}{m.available ? '' : '（未設定）'}</option>
-              ))}
+              {models.filter((m) => r.role !== 'vision' || m.images).map((m) => <option key={m.key} value={m.key}>{m.label}{m.available ? '' : '（未設定）'}</option>)}
             </select>
-            {!r.available && <span className="lab-off">未設定</span>}
-          </label>
-        ))}
-      </div>
-      <details className="lab-fold">
-        <summary>くわしく（設定・費用・使い方）</summary>
-        {state?.roles.filter((r) => !r.available && r.reason).map((r) => (
-          <div key={r.role} className="mono muted lab-note">{r.label}: {r.reason}</div>
-        ))}
-        {state && <div className="mono muted lab-note">今日の費用 ${state.spent_today.toFixed(3)} / 上限 ${state.limit_usd.toFixed(2)}</div>}
-        <p className="muted lab-note">「見てもらう」と、いま並んでいる宇宙の観測パケット（下の「AI に渡すもの」と同じ）を AI たちに渡します。
-          見る係は画像と動き、別の視点は事件簿、中心はその全部を読んで、あなたと話します。提案カードは、押すまで何も起きません。</p>
+            {!r.available && <div className="lab-note muted">{r.reason || '未設定'}</div>}
+          </label>)}
+        </div>
+        {state && <p className="lab-note muted">今日の費用 ${state.spent_today.toFixed(3)} / 上限 ${state.limit_usd.toFixed(2)}</p>}
+        <p className="lab-note muted">AIには選んだ実験の画像・測定値・レシピと質問を渡します。キーはサーバー側で設定します。未接続の場合は観測パケットを保存し、リポジトリの外部AI（/guide）から提案を受け取れます。</p>
       </details>
-      {state?.bridge && (
-        <p className="lab-note lab-bridge" title="このリポジトリで Claude Code を開き /guide と打つと、同じパケットを読んで助言し、提案カードをここに出します">
-          API キーが無いので、Claude Code に渡します（<code>/guide</code>）。</p>
-      )}
-
-      <div className="lab-chat">
-        {msgs.map((m) => (
-          <div key={m.id} className={'lab-msg who-' + m.who}>
-            <div className="lab-msg-head">
-              <b style={{ color: WHO_COLOR[m.who] ?? 'var(--ink)' }}>{m.label}</b>
-              {m.model && <span className="mono muted lab-model"> {m.model}</span>}
-              {m.who === 'vision' && <span className="lab-unmeasured">見た目（未測定）</span>}
-              <span className="mono muted"> {m.at}{m.done ? '' : ' …'}</span>
-              {m.usage && <span className="mono muted" title={`${m.usage.input_tokens}+${m.usage.output_tokens} tok`}>{m.usd ? ` · $${m.usd.toFixed(3)}` : ''}</span>}
-            </div>
-            <div className="lab-msg-text">{m.text}</div>
-          </div>
-        ))}
-        <div ref={bottom} />
+      <div className="lab-question-context">
+        <span className="eyebrow">CONTEXT</span>
+        <b>{ids.length ? all ? `${ids.length}個の実験を比較` : `${current?.label} · ${white?.title ?? current?.white}` : 'まず場を選んで実験を始めましょう'}</b>
+        {universes.length > 1 && <label><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} />すべての実験をAIに見せる</label>}
       </div>
-
-      {state && state.proposals.length > 0 && (
-        <div className="lab-section">
-          <div className="eyebrow" title="押すまで何も起きない">提案カード</div>
-          {state.proposals.map((p) => (
-            <div key={p.id} className={'lab-card st-' + p.status}>
-              <div><b>#{p.id}</b> <span className="mono">{p.parent_label} から分岐</span> <span className="muted">（{p.source === 'core' ? '中心' : p.source === 'claude-code' ? 'Claude Code' : p.source}）</span></div>
-              <div className="mono lab-card-change">
-                {Object.entries(p.set).map(([k, v]) => `${k}=${v}`).join(', ')}
-                {p.perturb && ` 摂動 ${p.perturb.name} ${Object.entries(p.perturb.args).map(([k, v]) => `${k}=${v}`).join(' ')}`}
-              </div>
-              {p.why && <div>{p.why}</div>}
-              {(p.put_in || p.predict) && (
-                <details className="lab-fold">
-                  <summary>置くもの・予想</summary>
-                  {p.put_in && <div><span className="aq-put">置くもの:</span> {p.put_in}</div>}
-                  {p.predict && <div>予想（測定）: {p.predict}</div>}
-                </details>
-              )}
-              {p.status === 'open' ? (
-                <div className="lab-row">
-                  <button className="tbtn pri" onClick={() => tryIt(p)}>分岐して試す</button>
-                  <button className="tbtn" onClick={() => dismiss(p)}>見送る</button>
-                </div>
-              ) : <div className="muted">{p.status === 'tried' ? `試した → 新しい宇宙 ${p.child}` : '見送った'}</div>}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="lab-compose">
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
-          placeholder="考えや質問（例：F を少し上げたら分裂は速くなる？）" />
-        <div className="lab-row">
-          <button className="tbtn pri" disabled={active || !ids.length} onClick={look}>見てもらう</button>
-          <button className="tbtn" disabled={active || !text.trim() || !msgs.length} onClick={chat}>話す</button>
-        </div>
+      {!msgs.length && <div className="lab-ai-welcome"><span>「これって、こうしたらどうなる？」</span>
+        <p>気になったことを、そのままどうぞ。AIが変更する入力を提案します。結果は、実際に計算して確かめます。</p>
+        {suggestions.map((q) => <button className="lab-question-example" key={q} onClick={() => { setText(q); form.current?.focus() }}>{q}<span>↗</span></button>)}
+      </div>}
+      <div className="lab-chat" ref={chatBox} role="log" aria-label="AIとの対話" aria-live="polite" aria-relevant="additions">
+        {msgs.map((m) => <article key={m.id} className={'lab-msg who-' + m.who}>
+          <div className="lab-msg-head"><b style={{ color: WHO_COLOR[m.who] ?? 'var(--ink)' }}>{m.label}</b>
+            <span className="mono muted"> {m.at}{m.done ? '' : ' · 考え中'}</span></div>
+          <div className="lab-msg-text">{m.text}</div>
+          {m.done && m.text.trim() && m.who !== 'you' && m.who !== 'system' && <button type="button" className="tbtn lab-read-reply" disabled={!voice.canSpeak || dictating}
+            onClick={()=>voice.speakingId === m.id ? voice.stopSpeaking() : voice.read(m.text, m.id)}>
+            <SpeakerIcon/>{voice.speakingId === m.id ? '読み上げ停止' : '読み上げ'}
+          </button>}
+        </article>)}
       </div>
+      {active && <div className="lab-thinking" role="status"><i />観測を読み、条件を考えています…</div>}
+      {state && state.proposals.length > 0 && <section className="lab-proposals">
+        <div className="lab-section-title"><h3>試せる入力</h3><span>{open.length}件の提案</span></div>
+        {state.proposals.filter((p) => p.status !== 'dismissed').map((p) => {
+          const w = whites.find((x) => x.id === p.white)
+          return <article key={p.id} className={'lab-card st-' + p.status}>
+            <div className="lab-card-kicker" title={`提案元: ${p.source}`}>EXPERIMENT {String(p.id).padStart(2, '0')}{p.source !== 'core' && <small>{p.source}</small>}<span>{p.mode === 'initial' ? 't=0 から新規計算' : '途中介入の分岐'}</span></div>
+            <h3>{p.why || `${p.parent_label} の条件を変えて試す`}</h3>
+            <div className="lab-note muted">{p.parent_label} の{p.mode === 'initial' ? '初期レシピを継承。途中の介入は引き継ぎません。' : `現在の状態から分岐。提案時 step=${p.at_step}、実行時の状態を使います。`}</div>
+            <dl className="lab-input-diff">
+              {Object.entries(p.set).map(([k, v]) => <div key={k}><dt>{w?.knobs.find((x) => x.name === k)?.label ?? k}</dt><dd><span>{p.base_knobs?.[k] ?? '変更前'}</span> → <b>{v}</b></dd></div>)}
+              {p.mode === 'initial' && <div><dt>seed</dt><dd>{p.base_seed} → <b>{p.seed}</b></dd></div>}
+              {p.perturb && <div><dt>手で加えるもの</dt><dd>{w?.perturbs.find((x) => x.name === p.perturb?.name)?.label ?? p.perturb.name}</dd></div>}
+            </dl>
+            {p.predict && <p className="lab-prediction"><b>予想 · 未検証</b>{p.predict}</p>}
+            {p.put_in && <p className="lab-note muted">置くもの：{p.put_in}</p>}
+            {p.status === 'open' ? <div className="lab-row">
+              <button className="tbtn pri" disabled={trying !== null} onClick={() => tryIt(p)}>{trying === p.id ? '計算を準備中…' : p.mode === 'initial' ? '▶ この条件で動かす' : '▶ 途中介入として試す'}</button>
+              <button className="tbtn" disabled={trying !== null} onClick={() => api(`proposals/${p.id}/dismiss`, { method: 'POST' }).then(poll).catch(onError)}>見送る</button>
+            </div> : <div className="lab-tried">✓ 実行済み <button className="tbtn" onClick={() => p.child && onBranched(p.child)}>実験 {universes.find((u) => u.id === p.child)?.label ?? p.child} を選ぶ ↗</button></div>}
+            {p.mode === 'initial' && <details className="lab-fold"><summary>生成された入力（再現用）</summary><pre className="lab-pre">{JSON.stringify({ white: p.white, seed: p.seed, knobs: p.knobs, events: [] }, null, 2)}</pre></details>}
+          </article>
+        })}
+      </section>}
+      {notice && <div className="lab-notice" role="status">{notice}</div>}
+      <form className="lab-compose" onSubmit={(e) => { e.preventDefault(); void send() }}>
+        <label htmlFor="lab-question">気になったことを質問する</label>
+        <textarea id="lab-question" ref={form} value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={8000}
+          placeholder="例えば、最初のゆらぎがもっと小さかったら？"
+          onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); void send() } }} />
+        <VoiceControls voice={voice}/>
+        {dictating && <p className="lab-voice-note">入力を止めて、文字を確認してから送信してください。</p>}
+        <label className="lab-observe-toggle"><input type="checkbox" checked={withObservation} onChange={(e) => setWithObservation(e.target.checked)} />最新の可視化と測定値を添える</label>
+        <button className="tbtn pri lab-send" type="submit" disabled={active || dictating || !ids.length || !text.trim() || !state}>
+          {active ? 'AIが考えています…' : state?.bridge ? '観測を保存してAIに渡す ↗' : 'AIに質問して条件をつくる ↗'}</button>
+        <p className="lab-note muted">{state?.bridge ? '現在AIは未接続です。保存だけでは返答は生成されません。' : '提案を動かすかは、入力を見てから選べます。'}</p>
+      </form>
+      <details className="lab-section lab-fold"><summary>AIに渡す観測データを確認</summary>
+        <ObservePanel ids={ids} onError={onError} />
+      </details>
     </div>
   )
 }

@@ -141,3 +141,19 @@ def test_the_ladder_is_served(server):
     st, d = _call(base, "GET", "/api/ladder")
     assert st == 200 and d["rungs"][0]["id"] == "R0" and d["summary"].startswith("いま：")
     assert d["integrated"] is False and d["north_star"]
+
+
+def test_initial_input_card_executes_via_http_without_parent_intervention(server):
+    srv, base = server
+    status, parent = _call(base, 'POST', '/api/universes', {'white': 'tdgl-3d', 'seed': 2, 'play': False})
+    assert status == 201
+    status, card = _call(base, 'POST', '/api/proposals', {'mode': 'initial', 'parent': parent['id'],
+                                              'set': {'noise_amplitude': 0.002}, 'why': '初期ノイズの比較'})
+    assert status == 201 and len(srv.hub.ids()) == 1
+    status, tried = _call(base, 'POST', f"/api/proposals/{card['id']}/try", {})
+    assert status == 200 and tried['status'] == 'tried'
+    child = srv.hub.info(tried['child'])
+    assert child['recipe']['events'] == [] and child['recipe']['knobs']['noise_amplitude'] == 0.002
+    assert srv.hub.info(parent['id'])['step'] == 0
+    status, _ = _call(base, 'POST', f"/api/proposals/{card['id']}/try", {})
+    assert status == 400 and len(srv.hub.ids()) == 2

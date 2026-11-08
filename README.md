@@ -4,6 +4,7 @@
 
 > 🧭 **いまの現在地 → [`RESEARCH_COMPASS.md`](RESEARCH_COMPASS.md)**（白ごとの天井・開いている問い・監査）
 > 🐠 **見る → アプリ（`app/`）の水槽**：有望な白を t=0 から 3D の水槽で再生する（`cd app && npm install && npm run dev`）
+> 🧪 **見ながら試す → 対話型ライブ水槽ラボ**：`python -m tools.lab.server` → 場を動かす → AIに質問 → 新しい始原条件を t=0 から計算 → 比較（[使い方](docs/LAB.md)）
 > 🤝 **AI と進める → [`AGENTS.md`](AGENTS.md)（規則）・[`CLAUDE.md`](CLAUDE.md)（実務）**・文書の目次は [`docs/README.md`](docs/README.md)
 >
 > **2026-09 再始動**：2026-08〜09 の自動研究 bot は停止し（凍結点 `faac01d`）、成果を監査した

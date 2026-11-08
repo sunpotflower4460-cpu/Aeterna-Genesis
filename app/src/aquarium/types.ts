@@ -53,12 +53,14 @@ export interface FrameSource {
   key(i: number): number
   data(i: number): Uint8Array
   affine(i: number): [number, number]
+  range?(): [number, number]
 }
 
 export function recordedSource(lens: TankLens): FrameSource {
   const stride = lens.grid.reduce((a, b) => a * b, 1)
   return {
     grid: lens.grid, count: lens.nframes, key: (i) => i,
+    range: () => [lens.vmin, lens.vmax],
     data: (i) => lens.frames.subarray(i * stride, (i + 1) * stride), affine: () => [1, 0],
   }
 }

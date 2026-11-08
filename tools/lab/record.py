@@ -98,6 +98,8 @@ def export(hub, council=None, ids: list[str] | None = None, note: str = "", out_
                 state = {"open": "未決", "tried": f"試した → 宇宙 {labels.get(p['child'], p['child'])}",
                          "dismissed": "見送った"}[p["status"]]
                 change = ", ".join(f"{k}={v}" for k, v in (p["set"] or {}).items())
+                if p.get("mode") == "initial":
+                    change = f"t=0 から新規（途中介入なし）、seed={p['seed']}、" + change
                 if p["perturb"]:
                     change += f" 摂動 {p['perturb']['name']}"
                 lines.append(f"- #{p['id']}（{ROLE.get(p['source'], p['source'])}）{p['parent_label']} から {change}："
