@@ -1,0 +1,94 @@
+// Cross-stack smoke check. Run a fresh isolated lab on port 18765 first; never deletes existing work.
+// python -m tools.lab.server --port 18765 --max-universes 4
+// cd app && npm run test:e2e
+import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
+const base = process.env.LAB_TEST_URL || 'http://127.0.0.1:18765';
+const artifacts = process.env.LAB_SCREENSHOT_DIR || '/tmp/aeterna-ui-check';
+const { mkdir } = await import('node:fs/promises');
+await mkdir(artifacts, { recursive: true });
+const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader']});
+try {
+const page = await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const api=async(path,data)=>{const res=await page.request[data===undefined?'get':'post'](base+'/api/'+path,data===undefined?{}:{data});assert.ok(res.ok(),await res.text());return res.json()};
+assert.equal((await api('council')).bridge,true,'Run the isolated smoke check without a usable core API key; no paid requests are permitted');
+assert.equal((await api('universes')).universes.length,0,'Use a fresh isolated lab, not a session with existing experiments');
+await page.goto(base+'/');
+await page.getByText('ひとつの場から、').waitFor();
+assert.ok(page.url().endsWith('#lab'));
+await page.screenshot({path:artifacts+'/lab-desktop-start.png'});
+await page.getByRole('button',{name:/3D FIELD.*冷えていく複素場/}).click();
+await page.getByRole('button',{name:'❚❚ 一時停止',exact:true}).waitFor();
+await page.waitForTimeout(2500);
+await page.getByRole('button',{name:'❚❚ 一時停止',exact:true}).click();
+const parent=(await api('universes')).universes[0];
+const rect=await page.locator('.lab-view').boundingBox();
+const beforeOrbit=await page.locator('canvas').evaluate(el=>el.toDataURL());
+await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);
+await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+80,rect.y+rect.height/2+30,{steps:8});await page.mouse.up();
+await page.waitForTimeout(500);
+assert.notEqual(await page.locator('canvas').evaluate(el=>el.toDataURL()),beforeOrbit,'Dragging should change the 3D view');
+const question='最初のノイズを0.002に変えて、時刻0から比べるとどうなる？';
+await page.getByLabel('気になったことを質問する',{exact:true}).fill(question);
+await page.getByRole('button',{name:'条件',exact:true}).click();
+await page.getByRole('button',{name:'✳ AIと試す',exact:true}).click();
+assert.equal(await page.getByLabel('気になったことを質問する',{exact:true}).inputValue(),question);
+await page.getByRole('button',{name:'画面を広く',exact:true}).click();
+await page.getByRole('button',{name:'質問・操作を開く',exact:true}).click();
+assert.equal(await page.getByLabel('気になったことを質問する',{exact:true}).inputValue(),question);
+await page.getByRole('button',{name:'観測を保存してAIに渡す ↗',exact:true}).click();
+await page.getByText(/中心の AI（API）が使えないので/).waitFor({timeout:20000});
+// External-AI bridge contract. This is explicitly a validation input, not a live API-generated answer.
+const card=await api('proposals',{mode:'initial',parent:parent.id,set:{noise_amplitude:0.002},source:'validation',why:'初期のゆらぎだけを変えて比べる',predict:'結果は未検証。mean_amp と defects の時間変化を比較する。',put_in:'初期ノイズ 0.002。物理法則とseedは同じ。'});
+await page.getByRole('button',{name:'▶ この条件で動かす',exact:true}).waitFor({timeout:12000});
+await page.getByRole('button',{name:'▶ この条件で動かす',exact:true}).click();
+await page.waitForFunction(()=>document.querySelectorAll('.lab-cell').length===2);
+await page.waitForTimeout(2200);
+const rows=(await api('universes')).universes;
+assert.equal(rows[0].step,parent.step);
+assert.equal(rows[1].recipe.events.length,0);
+assert.equal(rows[1].recipe.knobs.noise_amplitude,0.002);
+await page.waitForFunction(label=>document.querySelector('.lab-selected-pill')?.textContent==='実験 '+label,rows[1].label);
+await api(`universes/${rows[1].id}/control`,{action:'pause'});
+await page.getByText('✓ 実行済み').waitFor();
+await page.locator('.lab-card.st-tried').scrollIntoViewIfNeeded();
+await page.screenshot({path:artifacts+'/lab-desktop-compare.png'});
+await page.getByRole('button',{name:'比較',exact:true}).click();
+await page.getByRole('img',{name:'mean_amp の時間変化'}).waitFor();
+await page.screenshot({path:artifacts+'/lab-desktop-metrics.png'});
+await page.getByRole('button',{name:'✳ AIと試す',exact:true}).click();
+await page.setViewportSize({width:390,height:844});
+await page.getByRole('button',{name:'✳ この実験について聞く',exact:true}).click();
+await page.waitForTimeout(700);
+assert.equal(await page.locator('.lab-cell').count(),1);
+assert.equal(await page.getByRole('navigation',{name:'表示する実験'}).getByRole('button').count(),2);
+await page.screenshot({path:artifacts+'/lab-mobile-question.png'});
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
+const stage=await page.locator('.lab-stage').boundingBox();const input=await page.getByLabel('気になったことを質問する',{exact:true}).boundingBox();
+assert.ok(stage.y>=0 && stage.y+stage.height<844);
+assert.ok(input.y>=stage.y+stage.height && input.y<844,JSON.stringify({stage,input}));
+// Regression for the merged collaboration route: notes remain planning-only and
+// saving an idea never starts or edits a live universe.
+await page.setViewportSize({width:1440,height:1000});
+const physicalBefore=await api('universes');
+await page.goto(base+'/#aquarium');
+await page.reload();
+await page.getByRole('button',{name:'Observatory →',exact:true}).click();
+await page.getByRole('button',{name:'◌ Aquariums',exact:true}).click();
+await page.getByRole('heading',{name:'宇宙水槽',exact:true}).waitFor();
+await page.getByText('planning ≠ evidence',{exact:true}).waitFor();
+await page.getByPlaceholder('水槽の名前 例：光を食べる関係網').fill('統合テストの計画');
+await page.getByPlaceholder('何を見たい？ どんな世界を試したい？').fill('条件を変えたらどうなるかを考える。実行はしない。');
+await page.getByRole('button',{name:'＋ アイディアを下書き保存',exact:true}).click();
+await page.getByText('統合テストの計画',{exact:true}).waitFor();
+assert.deepEqual((await api('universes')).universes.map(u=>[u.id,u.step,u.recipe]),physicalBefore.universes.map(u=>[u.id,u.step,u.recipe]));
+await page.screenshot({path:artifacts+'/collaboration-planning.png'});
+await page.setViewportSize({width:390,height:844});
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
+await page.screenshot({path:artifacts+'/collaboration-mobile.png'});
+await page.getByRole('button',{name:'← Observatory',exact:true}).click();
+await page.getByRole('heading',{name:'あなたの宇宙',exact:true}).waitFor();
+assert.deepEqual(errors,[]);
+console.log(JSON.stringify({passed:['live landing','3D solver','pause','orbit camera','draft survives tabs and panel','question bridge','generated input card acceptance','parent preserved','t=0 child','comparison charts','mobile question with visible field','no horizontal overflow','planning route and draft isolation','no page errors'],card:card.id,stage,input}));
+} finally { await browser.close(); }

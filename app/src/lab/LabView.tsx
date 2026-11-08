@@ -4,10 +4,14 @@ import { OrbitControls, PerspectiveCamera, View } from '@react-three/drei'
 import * as THREE from 'three'
 import VolumeTank from '../aquarium/VolumeTank'
 import SurfaceTank from '../aquarium/SurfaceTank'
+import FieldGuides from '../aquarium/render/FieldGuides'
+import FieldLegend from '../aquarium/render/FieldLegend'
+import AppearanceControls from '../aquarium/render/AppearanceControls'
+import { DEFAULT_APPEARANCE, type Appearance } from '../aquarium/render/appearance'
+import { exportFieldPng } from '../aquarium/render/exportPng'
 import { api, lab, setActiveGoalId, getActiveGoalId, type KnobSpec, type LabEvent, type UniverseInfo, type WhiteSpec } from './api'
 import { useLabStream, type LiveSource, type LiveState } from './live'
 import ComparePanel, { seriesColor } from './ComparePanel'
-import ObservePanel from './ObservePanel'
 import GuidePanel from './GuidePanel'
 import GoalPanel, { type ModelEntry } from './GoalPanel'
 
@@ -16,15 +20,6 @@ import GoalPanel, { type ModelEntry } from './GoalPanel'
 // perturbation); a branch forks the current state so the only difference is that one intervention.
 
 type Shared = { pos: THREE.Vector3; target: THREE.Vector3; version: number; owner: string }
-
-function Glass() {
-  const geo = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002)), [])
-  return (
-    <lineSegments geometry={geo}>
-      <lineBasicMaterial color="#7aa2cc" transparent opacity={0.35} />
-    </lineSegments>
-  )
-}
 
 /** One OrbitControls per view; whichever view the person drags becomes the owner and the others follow. */
 function LinkedControls({ id, shared }: { id: string; shared: React.MutableRefObject<Shared> }) {
@@ -42,11 +37,11 @@ function LinkedControls({ id, shared }: { id: string; shared: React.MutableRefOb
     seen.current = s.version
   })
   return (
-    <OrbitControls ref={controls} enablePan={false} minDistance={0.8} maxDistance={4}
+    <OrbitControls ref={controls} enablePan={false} minDistance={1.1} maxDistance={5} enableDamping dampingFactor={0.12}
       onStart={() => { dragging.current = true; shared.current.owner = id }}
       onEnd={() => { dragging.current = false }}
       onChange={() => {
-        if (!dragging.current || !controls.current) return
+        if (!controls.current || shared.current.owner !== id) return
         const s = shared.current
         s.pos.copy(camera.position)
         s.target.copy(controls.current.target)
@@ -62,7 +57,7 @@ function LinkedControls({ id, shared }: { id: string; shared: React.MutableRefOb
 function ClearAll() {
   useFrame(({ gl }) => {
     gl.setScissorTest(false)
-    gl.setClearColor('#05080f', 1)
+    gl.setClearColor('#05080f', 0)
     gl.clear(true, true, true)
   }, -1)
   return null
@@ -72,8 +67,8 @@ function ClearAll() {
 function Camera() {
   const { size } = useThree()
   const aspect = size.width / Math.max(size.height, 1)
-  const fov = aspect < 1 ? Math.min(80, 42 / Math.pow(aspect, 0.75)) : 42
-  return <PerspectiveCamera makeDefault position={[1.25, 0.85, 1.35]} fov={fov} near={0.01} far={20} />
+  const fov = Math.min(85, 2 * Math.atan(Math.tan(42 * Math.PI / 360) / Math.min(1, aspect)) * 180 / Math.PI)
+  return <PerspectiveCamera makeDefault position={[1.55, 1.05, 1.55]} fov={fov} near={0.01} far={20} />
 }
 
 function LiveClock({ src, clock }: { src: LiveSource; clock: React.MutableRefObject<number> }) {
@@ -81,9 +76,9 @@ function LiveClock({ src, clock }: { src: LiveSource; clock: React.MutableRefObj
   return null
 }
 
-function TankScene({ id, dimension, src, transfer, shared, threshold, density, relief }: {
+function TankScene({ id, dimension, src, transfer, shared, threshold, density, relief, appearance }: {
   id: string; dimension: 2 | 3; src: LiveSource; transfer: WhiteSpec['lenses'][number]['transfer']
-  shared: React.MutableRefObject<Shared>; threshold: number; density: number; relief: number
+  shared: React.MutableRefObject<Shared>; threshold: number; density: number; relief: number; appearance: Appearance
 }) {
   const clock = useRef(0)
   return (
@@ -91,11 +86,11 @@ function TankScene({ id, dimension, src, transfer, shared, threshold, density, r
       <color attach="background" args={['#05080f']} />
       <Camera />
       <LinkedControls id={id} shared={shared} />
-      <Glass />
+      {appearance.guides && <FieldGuides dimension={dimension} />}
       <LiveClock src={src} clock={clock} />
       {dimension === 3
-        ? <VolumeTank src={src} transfer={transfer} clock={clock} threshold={threshold} density={density} />
-        : <SurfaceTank src={src} transfer={transfer} clock={clock} relief={relief} />}
+        ? <VolumeTank src={src} transfer={transfer} clock={clock} threshold={threshold} density={density} appearance={appearance} />
+        : <SurfaceTank src={src} transfer={transfer} clock={clock} relief={relief} appearance={appearance} />}
     </>
   )
 }
@@ -135,7 +130,7 @@ function Slider({ k, value, onChange, changed }: { k: KnobSpec; value: number; o
 }
 
 function NewUniverse({ whites, onCreate, disabled }: { whites: WhiteSpec[]; onCreate: (w: string, seed: number, knobs: Record<string, number>) => void; disabled: boolean }) {
-  const [wid, setWid] = useState(whites[0]?.id ?? '')
+  const [wid, setWid] = useState(whites.find((w) => w.dimension === 3)?.id ?? whites[0]?.id ?? '')
   const w = whites.find((x) => x.id === wid)
   const [seed, setSeed] = useState(0)
   const [knobs, setKnobs] = useState<Record<string, number>>({})
@@ -143,13 +138,13 @@ function NewUniverse({ whites, onCreate, disabled }: { whites: WhiteSpec[]; onCr
   if (!w) return null
   const val = (k: KnobSpec) => knobs[k.name] ?? k.default
   return (
-    <details className="lab-section" open={disabled ? false : undefined}>
-      <summary>＋ 新しい宇宙（t=0 から）</summary>
-      <select className="aq-select" value={wid} onChange={(e) => setWid(e.target.value)}>
+    <details className="lab-section lab-new" open={!disabled}>
+      <summary>＋ 新しい実験をはじめる</summary>
+      <select className="aq-select" aria-label="実験の場" value={wid} onChange={(e) => setWid(e.target.value)}>
         {whites.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
       </select>
       <div className="muted lab-note">t=0 に置くもの: {w.put_in.join(' / ')}</div>
-      <button className="tbtn pri" disabled={disabled} onClick={() => onCreate(wid, seed, knobs)}>始める</button>
+      <button className="tbtn pri" disabled={disabled} onClick={() => onCreate(wid, seed, knobs)}>▶ この場を時刻0から動かす</button>
       <details className="lab-fold">
         <summary>つまみと seed を変える</summary>
         <label className="lab-knob"><span>seed</span>
@@ -194,9 +189,10 @@ function Controls({ u, w, lens, setLens, onError, refresh }: {
         {law.map((k) => <Slider key={k.name} k={k} value={draft[k.name] ?? now[k.name] ?? k.default}
           changed={changes[k.name] !== undefined} onChange={(v) => setDraft((o) => ({ ...o, [k.name]: v }))} />)}
         <div className="lab-row">
-          <button className="tbtn pri" disabled={!hasChanges} onClick={() => run(lab.branch(u.id, { set: changes }))}
-            title="いまの状態を複製し、変えたつまみだけが違う宇宙を並べる">分岐して試す</button>
-          <button className="tbtn" disabled={!hasChanges} onClick={() => run(lab.set(u.id, changes))}>この宇宙を変える</button>
+          <button className="tbtn pri" disabled={!hasChanges} onClick={() => run(lab.create(w.id, u.recipe.seed, { ...u.recipe.knobs, ...changes }, getActiveGoalId()))}
+            title="最初のレシピを引き継ぎ、選んだ条件だけ変えて時刻0から計算する">時刻0から別の実験で試す</button>
+          <button className="tbtn" disabled={!hasChanges} onClick={() => run(lab.branch(u.id, { set: changes }))}>途中から分岐（介入）</button>
+          <button className="tbtn" disabled={!hasChanges} onClick={() => run(lab.set(u.id, changes))}>途中で変更（介入）</button>
           {hasChanges && <button className="tbtn" onClick={() => setDraft({})}>戻す</button>}
         </div>
       </div>
@@ -291,18 +287,28 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [lenses, setLenses] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
-  const [tab, setTab] = useState<'ctl' | 'goal' | 'ai' | 'cmp' | 'tree'>('ctl')
+  const [tab, setTab] = useState<'ctl' | 'goal' | 'ai' | 'cmp' | 'tree'>('ai')
   const [activeGoal, setActiveGoalState] = useState<string | null>(getActiveGoalId())
   const [models, setModels] = useState<ModelEntry[]>([])
   const setActiveGoal = (id: string | null) => { setActiveGoalId(id); setActiveGoalState(id) }
-  const [panel, setPanel] = useState(() => typeof innerWidth === 'undefined' || innerWidth > 720)
+  const [panel, setPanel] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [compact, setCompact] = useState(() => matchMedia('(max-width: 720px)').matches)
+  useEffect(() => {
+    const media = matchMedia('(max-width: 720px)')
+    const update = () => setCompact(media.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+  const [appearance, setAppearance] = useState<Appearance>({ ...DEFAULT_APPEARANCE })
+  const [showAppearance, setShowAppearance] = useState(false)
   const [range, setRange] = useState<'fixed' | 'frame'>('fixed')
   const [threshold, setThreshold] = useState(0.35)
   const [density, setDensity] = useState(0.6)
   const [relief, setRelief] = useState(0.35)
   const [maxU, setMaxU] = useState(4)
   const root = useRef<HTMLDivElement>(null!)
-  const shared = useRef<Shared>({ pos: new THREE.Vector3(1.25, 0.85, 1.35), target: new THREE.Vector3(), version: 0, owner: '' })
+  const shared = useRef<Shared>({ pos: new THREE.Vector3(1.55, 1.05, 1.55), target: new THREE.Vector3(), version: 0, owner: '' })
 
   const onError = useCallback((e: unknown) => setError(String(e instanceof Error ? e.message : e)), [])
   const refresh = useCallback(() => { lab.universes().then(setUniverses).catch(onError) }, [onError])
@@ -315,8 +321,9 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   }, [refresh, onError])
 
   useEffect(() => {
-    if (!selected || !universes.some((u) => u.id === selected)) setSelected(universes[universes.length - 1]?.id ?? null)
-  }, [universes, selected])
+    setSelected((current) => current && universes.some((u) => u.id === current)
+      ? current : universes[universes.length - 1]?.id ?? null)
+  }, [universes])
 
   const lensOf = (u: UniverseInfo) => {
     const w = whites.find((x) => x.id === u.white)
@@ -338,59 +345,134 @@ export default function LabView({ onExit }: { onExit: () => void }) {
   const tick = Object.values(live).reduce((a, s) => a + s.step, 0)
   const cols = merged.length <= 1 ? 1 : 2
 
-  const create = (w: string, seed: number, knobs: Record<string, number>) =>
-    lab.create(w, seed, knobs, activeGoal).then((u) => { setSelected(u.id); refresh() }).catch(onError)
+  const showExperiment = (id: string) => lab.universes().then((rows) => {
+    setUniverses(rows)
+    if (rows.some((u) => u.id === id)) setSelected(id)
+  }).catch(onError)
+  const create = (w: string, seed: number, knobs: Record<string, number>) => {
+    if (creating) return
+    setCreating(true)
+    lab.create(w, seed, knobs, activeGoal).then((u) => showExperiment(u.id))
+      .catch(onError).finally(() => setCreating(false))
+  }
+  const resetCamera = () => {
+    shared.current.pos.set(1.55, 1.05, 1.55); shared.current.target.set(0, 0, 0); shared.current.owner = ''; shared.current.version++
+  }
+  const capture = () => {
+    const canvas = root.current.querySelector<HTMLCanvasElement>('.lab-canvas canvas')
+    if (!canvas) return
+    const visible = compact ? merged.filter((u) => u.id === selected) : merged
+    const legends = visible.flatMap((u) => {
+      const lens = lensOf(u), bounds = sources.get(u.id)?.range()
+      return lens ? [{ label: `${u.label} | t=${u.t.toFixed(2)} | ${lens.name} | ${u.dimension}D ${sources.get(u.id)?.grid.join('x')} ${range === 'frame' && !lens?.cyclic ? ' | relative per-frame scale' : ''}`,
+        lo: range === 'frame' && !lens.cyclic ? 0 : bounds?.[0] ?? lens.vmin,
+        hi: range === 'frame' && !lens.cyclic ? 1 : bounds?.[1] ?? lens.vmax, transfer: lens.transfer }] : []
+    })
+    exportFieldPng(canvas, legends, appearance, { threshold, density, relief }).catch(onError)
+  }
+  const batchControl = (action: 'play' | 'pause') => Promise.all(universes.map((u) => lab.control(u.id, action))).then(refresh).catch(onError)
 
   return (
     <div className="lab-root" ref={root}>
       <header className="lab-top">
-        <span className="eyebrow" title="物理は genesis/models のまま · 変えたことは全部「置いたもの」として記録">Aeterna · 水槽ラボ</span>
-        <span style={{ flex: 1 }} />
-        <button className="tbtn" onClick={() => setPanel((p) => !p)}>{panel ? 'パネルを隠す' : 'パネル'}</button>
-        <button className="tbtn" onClick={onExit}>◈ 記録の水槽へ</button>
+        <div className="lab-brand"><span className="lab-brand-symbol" aria-hidden="true">◈</span><div><strong>Aeterna Genesis</strong><span>INTERACTIVE RESEARCH LAB</span></div></div>
+        <div className="lab-live-badge"><i />LIVE LAB</div>
+        <div className="lab-top-actions">
+          <button className="tbtn" aria-expanded={panel} onClick={() => setPanel((p) => !p)}>{panel ? '画面を広く' : '質問・操作を開く'}</button>
+          <button className="tbtn" onClick={onExit}>記録を見る ↗</button>
+        </div>
       </header>
-
+      <div className="lab-workspace-heading"><div><span className="eyebrow">OBSERVE / ASK / EXPLORE</span><h1>もしも、を目の前で。</h1></div>
+        <p>場を動かす。気になることを聞く。条件を変えて、確かめる。</p></div>
+      {error && <div className="lab-error lab-global-error" role="alert"><span>{error}</span><button className="tbtn" aria-label="エラーを閉じる" onClick={() => setError(null)}>×</button></div>}
       <div className={'lab-body' + (panel ? ' with-panel' : '')}>
-        <div className="lab-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-          {merged.length === 0 && (
-            <div className="aq-center muted">右のパネルの「新しい宇宙」から始めてください。<br />分岐させると、ここに並んで見比べられます。</div>
-          )}
-          {merged.map((u) => {
+        <main className="lab-stage">
+        <div className="lab-stage-top"><span><i className="lab-connection connected" />{merged.length ? `観測中 · ${merged.length}個の実験` : '実験のワークスペース'}</span>
+          <div className="lab-view-actions"><span className="mono">{merged.length}/{maxU} SLOTS</span>
+          {!!merged.length && <><button className="tbtn" onClick={resetCamera} title="全ての水槽を同じ初期視点へ">視点を戻す</button>
+            <button className="tbtn" aria-expanded={showAppearance} onClick={() => setShowAppearance((open) => !open)}>描画設定</button>
+            <button className="tbtn" onClick={capture}>PNG保存 ↗</button></>}
+          </div></div>
+        {showAppearance && !!merged.length && <div className="lab-appearance-popover">
+          <button className="field-settings-close" aria-label="描画設定を閉じる" onClick={() => setShowAppearance(false)}>×</button>
+          <AppearanceControls value={appearance} onChange={setAppearance} dimension={sel?.dimension ?? 3}/>
+          {sel?.dimension === 3 && <><label className="field-extra-slider">表示範囲のしきい <output>{Math.round(threshold * 100)}%</output><input aria-label="表示のしきい" type="range" min={0.02} max={0.95} step={0.01} value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/></label>
+          <label className="field-extra-slider">濃さ <output>{density.toFixed(2)}</output><input aria-label="表示の濃さ" type="range" min={0.1} max={2} step={0.05} value={density} onChange={e=>setDensity(Number(e.target.value))}/></label></>}
+        </div>}
+        {compact && merged.length > 1 && <nav className="lab-universe-switcher" aria-label="表示する実験">
+          {merged.map((u) => <button key={u.id} className={u.id === selected ? 'on' : ''} aria-pressed={u.id === selected} onClick={() => setSelected(u.id)}>
+            <i style={{ background: seriesColor(u.label) }} />実験 {u.label}</button>)}
+        </nav>}
+        <div className={'lab-grid' + (!merged.length ? ' is-empty' : '')} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          {merged.length === 0 && <div className="lab-start">
+            <div className="lab-start-orbit" aria-hidden="true"><i /><i /><i /><span>◈</span></div>
+            <span className="eyebrow">START WITH A FIELD</span><h2>ひとつの場から、<br />あなたの問いをはじめよう。</h2>
+            <p>最初の状態と法則を与え、時刻0から計算します。<br />何が起きるかは、動かしながら観測します。</p>
+            <div className="lab-starter-cards">
+              {whites.filter((w) => ['tdgl-3d', 'gpe-quench-3d'].includes(w.id)).map((w) => <button className="lab-starter-card" key={w.id} disabled={creating} onClick={() => create(w.id, 0, {})}>
+                <span className="lab-starter-meta">3D FIELD <span>↗</span></span><strong>{w.id === 'tdgl-3d' ? '冷えていく複素場' : '超流体の場'}</strong><span>{w.family} · {w.grid.join(' × ')}</span><b>{creating ? '準備中…' : 'この場で始める →'}</b>
+              </button>)}
+            </div>
+            <button className="tbtn lab-other-fields" onClick={() => { setTab('ctl'); setPanel(true) }}>すべての場・始原条件を選ぶ →</button>
+          </div>}
+          {(compact ? merged.filter((u) => u.id === selected) : merged).map((u) => {
             const l = lensOf(u)
             const src = sources.get(u.id)
+            const bounds = range === 'frame' && !l?.cyclic ? [0, 1] : src?.range() ?? [l?.vmin ?? 0, l?.vmax ?? 1]
+            const iso = bounds[0] + threshold * (bounds[1] - bounds[0])
             const w = whites.find((x) => x.id === u.white)
             const fork = u.fork_index !== null ? u.recipe.events.slice(u.fork_index) : []
             return (
               <div key={u.id} className={'lab-cell' + (u.id === selected ? ' on' : '')} onPointerDown={() => setSelected(u.id)}
+                tabIndex={0} role="group" aria-label={`実験 ${u.label} ${shortTitle(w)} ${u.dimension}D`} onFocus={() => setSelected(u.id)}
                 style={{ borderColor: u.id === selected ? seriesColor(u.label) : undefined }}>
                 {src && l && w && (
                   <View className="lab-view">
                     <TankScene id={u.id} dimension={w.dimension} src={src} transfer={l.transfer} shared={shared}
-                      threshold={threshold} density={density} relief={relief} />
+                      threshold={threshold} density={density} relief={relief} appearance={appearance} />
                   </View>
                 )}
                 <div className="lab-cell-head">
-                  <b style={{ color: seriesColor(u.label) }}>{u.label}</b> <span title={w?.title}>{shortTitle(w, u.white)}</span>
-                  <span className="mono muted"> t={u.t.toFixed(0)}{u.playing ? '' : ' ❚❚'}</span>
+                  <b className="lab-universe-letter" style={{ background: seriesColor(u.label) }}>{u.label}</b> <span title={w?.title}>{shortTitle(w, u.white)}</span>
+                  <span className="lab-dimension">{u.dimension}D</span><span className="mono muted"> t={u.t.toFixed(1)}{u.playing ? ' · 計算中' : ' · 一時停止'}</span>
                   {u.parent && <span className="mono muted lab-fork" title={fork.map((e) => describeEvent(e, w)).join('; ')}>
                     {' '}← {universes.find((x) => x.id === u.parent)?.label ?? u.parent}</span>}
                   {u.diverged && <div className="lab-diverged" title="物理ではなく計算の限界。つまみを戻して分岐し直してください">数値が発散したので止めました</div>}
+                </div>
+                <div className="lab-cell-foot">
+                  {l && <FieldLegend transfer={l.transfer} palette={appearance.palette} label={l.label}
+                    lo={src?.range()[0] ?? l.vmin} hi={src?.range()[1] ?? l.vmax} adaptive={range === 'frame' && !l.cyclic}/>}
+                  <span className="lab-measured-label">実測値 <small>step {u.step}</small></span>
+                  <div className="lab-metric-strip">{Object.entries(u.metrics).slice(0, 3).map(([k, v]) => <div key={k}><span>{k}</span><b className="mono">{typeof v === 'number' && Number.isFinite(v) ? Number(v.toPrecision(4)).toString() : '—'}</b></div>)}</div>
+                  <span className="lab-lens-note">{u.dimension === 2 ? '2D場 · 起伏は表示' : appearance.mode === 'slice' ? `3D場の断面 · ${appearance.axis.toUpperCase()}=${Math.round(appearance.slice*100)}%` : appearance.mode === 'surface' ? `3D等値面 · 値 ${Number(iso.toPrecision(3))}` : '3D体積表示'} · uint8{appearance.interpolate ? ' · 時間補間' : ' · 時間補間なし'}</span>
                 </div>
               </div>
             )
           })}
         </div>
-
-        {panel && (
-          <aside className="lab-panel glass">
-            <nav className="lab-tabs">
-              <button className={tab === 'ctl' ? 'on' : ''} onClick={() => setTab('ctl')}>操作</button>
-              <button className={tab === 'goal' ? 'on' : ''} onClick={() => setTab('goal')}>ゴール</button>
-              <button className={tab === 'ai' ? 'on' : ''} onClick={() => setTab('ai')}>AI</button>
-              <button className={tab === 'cmp' ? 'on' : ''} onClick={() => setTab('cmp')}>グラフ</button>
+        {sel && <div className="lab-transport">
+          <div className="lab-row"><span className="lab-selected-pill" style={{ borderColor: seriesColor(sel.label) }}>実験 {sel.label}</span>
+            <button className="tbtn pri" onClick={() => lab.control(sel.id, sel.playing ? 'pause' : 'play').then(refresh).catch(onError)}>{sel.playing ? '❚❚ 一時停止' : '▶ 再開'}</button>
+            <button className="tbtn" onClick={() => lab.control(sel.id, 'step', { n: 1 }).then(refresh).catch(onError)}>1コマ進める</button>
+            <button className="tbtn" onClick={() => { setTab('ai'); setPanel(true); requestAnimationFrame(() => document.getElementById('lab-question')?.focus()) }}>✳ この実験について聞く</button>
+          </div>
+          <div className="lab-row"><button className="tbtn" onClick={() => batchControl(merged.some((u) => u.playing) ? 'pause' : 'play')}>{merged.some((u) => u.playing) ? 'すべて停止' : 'すべて再開'}</button>
+            <button className="tbtn" onClick={() => { setTab('cmp'); setPanel(true) }}>測定値を比較 ↗</button></div>
+        </div>}
+        <div className="lab-stage-caption"><span>実際に計算した場を可視化</span><span>{merged.length > 1 ? '各実験の時刻は独立です · ドラッグで視点を同期' : 'ドラッグで回転 · スクロールで拡大'}</span></div>
+      <Canvas className="lab-canvas" eventSource={root} dpr={appearance.quality === 'draft' ? 1 : [1, appearance.quality === 'fine' ? 2 : 1.5]} gl={{ preserveDrawingBuffer: true, antialias: true }}>
+        <ClearAll />
+        <View.Port />
+      </Canvas>
+        </main>
+          <aside hidden={!panel} className="lab-panel glass">
+            <nav className="lab-tabs" aria-label="研究パネル">
+              <button className={tab === 'ctl' ? 'on' : ''} onClick={() => setTab('ctl')}>条件</button>
+              <button className={tab === 'goal' ? 'on' : ''} onClick={() => setTab('goal')}>研究</button>
+              <button className={tab === 'ai' ? 'on' : ''} onClick={() => setTab('ai')}>✳ AIと試す</button>
+              <button className={tab === 'cmp' ? 'on' : ''} onClick={() => setTab('cmp')}>比較</button>
               <button className={tab === 'tree' ? 'on' : ''} onClick={() => setTab('tree')}>記録</button>
             </nav>
-            {error && <div className="lab-error" onClick={() => setError(null)}>{error}（クリックで閉じる）</div>}
             {tab === 'ctl' && (
               <>
                 {sel && selWhite && (
@@ -401,7 +483,7 @@ export default function LabView({ onExit }: { onExit: () => void }) {
                       setLens={(l) => setLenses((o) => ({ ...o, [sel.id]: l }))} />
                   </div>
                 )}
-                {whites.length > 0 && <NewUniverse whites={whites} onCreate={create} disabled={universes.length >= maxU} />}
+                {whites.length > 0 && <NewUniverse whites={whites} onCreate={create} disabled={creating || universes.length >= maxU} />}
                 <details className="lab-section lab-fold">
                   <summary>見え方（表示だけ）</summary>
                   <div className="lab-row">
@@ -418,15 +500,9 @@ export default function LabView({ onExit }: { onExit: () => void }) {
             )}
             {tab === 'cmp' && <ComparePanel universes={merged} history={history} tick={tick} />}
             {tab === 'goal' && <GoalPanel whites={whites} models={models} activeGoal={activeGoal} setActiveGoal={setActiveGoal} onError={onError} onUniverse={refresh} />}
-            {tab === 'ai' && (
-              <>
-                <GuidePanel ids={universes.map((u) => u.id)} models={models} onError={onError} onBranched={refresh} />
-                <details className="lab-section lab-fold">
-                  <summary>AI に渡すもの（中身を見る）</summary>
-                  <ObservePanel ids={universes.map((u) => u.id)} onError={onError} />
-                </details>
-              </>
-            )}
+            <div hidden={tab !== 'ai'}>
+                <GuidePanel enabled={panel && tab === 'ai'} universes={merged} selected={selected} whites={whites} models={models} onError={onError} onBranched={showExperiment} />
+            </div>
             {tab === 'tree' && (
               <>
                 <Lineage universes={merged} whites={whites} selected={selected} onSelect={setSelected} />
@@ -434,13 +510,9 @@ export default function LabView({ onExit }: { onExit: () => void }) {
               </>
             )}
           </aside>
-        )}
       </div>
 
-      <Canvas className="lab-canvas" eventSource={root} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true }}>
-        <ClearAll />
-        <View.Port />
-      </Canvas>
+
     </div>
   )
 }

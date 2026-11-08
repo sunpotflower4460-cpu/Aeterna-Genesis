@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Catalog, Room, CandidateRoom } from './lib/types'
+import type { AquariumRegistry, AquariumNotebook, Catalog, Room, CandidateRoom } from './lib/types'
 
 /** Present a non-official candidate room through the same Room shape the workspace/viewport expect. */
 export function candidateAsRoom(c: CandidateRoom): Room {
@@ -22,8 +22,10 @@ export interface ViewSettings {
 }
 
 interface State {
+  aquariumRegistry: AquariumRegistry | null
+  aquariumNotebook: AquariumNotebook | null
   catalog: Catalog | null
-  view: 'aquarium' | 'lab' | 'lobby' | 'room' | 'compare' | 'inbox'
+  view: 'aquarium' | 'lab' | 'lobby' | 'room' | 'compare' | 'inbox' | 'aquaria'
   roomId: string | null
   compareIds: [string, string]
   lens: string | null
@@ -36,6 +38,9 @@ interface State {
   viewSettings: ViewSettings
   pendingGenesis: Record<string, number> | null // View-vs-Genesis separation: staged, not applied
 
+  setAquariumRegistry: (c: AquariumRegistry | null) => void
+  setAquariumNotebook: (n: AquariumNotebook | null) => void
+  toAquaria: () => void
   setCatalog: (c: Catalog) => void
   openRoom: (id: string) => void
   toLobby: () => void
@@ -58,6 +63,8 @@ interface State {
 }
 
 export const useStore = create<State>((set, get) => ({
+  aquariumRegistry: null,
+  aquariumNotebook: null,
   catalog: null,
   view: 'aquarium',
   roomId: null,
@@ -72,6 +79,9 @@ export const useStore = create<State>((set, get) => ({
   viewSettings: { threshold: 0.2, opacity: 0.7, glow: 0.32, quality: 1 },
   pendingGenesis: null,
 
+  setAquariumRegistry: (c) => set({ aquariumRegistry: c }),
+  setAquariumNotebook: (n) => set({ aquariumNotebook: n }),
+  toAquaria: () => set({ view: 'aquaria' }),
   setCatalog: (c) => set({ catalog: c }),
   openRoom: (id) => set({ view: 'room', roomId: id, frame: 0, playing: true, lens: null, pendingGenesis: null }),
   toLobby: () => set({ view: 'lobby', roomId: null }),

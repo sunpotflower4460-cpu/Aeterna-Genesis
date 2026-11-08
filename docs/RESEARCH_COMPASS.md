@@ -21,6 +21,11 @@ Research Compass は、元の証拠を削除せずに表示を二層へ分ける
 
 ## 人向けに上へ出すもの
 
+**固定の本線（毎時の X カードより先）：** 単細胞／袋。三角・渦の輪を細胞と数えない。
+詳細は [`UNICELLULAR_FRONT.md`](UNICELLULAR_FRONT.md)。人向けカードは
+`ai_lab/reports/easy/unicellular-front.md`。Dream Loop が Compass を書き直しても、
+三つの仕事表は markdown に残る（orientation。袋が出たという主張ではない）。
+
 優先するのは、単なる回数ではなく **次の問いを狭める証拠**。
 
 - exact / nearby では残り contrast では消える X-pattern
@@ -68,6 +73,8 @@ Compassは以下を変更しない。
 - F0–F7 = one human-written reference path, not official Emergence Levels
 - relation-network separation ≠ biological cell division
 - Q-tensor = nematic order, not spacetime/gravity
+- vortex cores (amplitude holes) / triangles / ring-pinch ≠ bag / cell
+- torus is measured, not required; do not assemble holes into a doughnut and call it a cell
 
 ## 自動更新
 

@@ -1,0 +1,42 @@
+Aeterna-Genesis — browser voice interaction audit handoff
+Date: 2026-11-06 UTC
+Scope: voice input and spoken AI replies in the existing lab conversation UI.
+No change to physics, model prompts, provider implementations, scientific gates or experiment acceptance.
+
+Implemented behavior
+- Browser SpeechRecognition / webkitSpeechRecognition, Japanese, on explicit button press only. Interim recognition is labelled unconfirmed; only final text is appended to the editable draft. Final result indices are deduplicated within one recognition session. Existing typed edits remain intact.
+- Sending is blocked while recognition is starting, running or finalizing. The user stops, reviews/edits the text, then uses the existing send button. No voice event creates or accepts an experiment.
+- Browser speechSynthesis / SpeechSynthesisUtterance for completed replies. Manual per-reply playback, stop, selectable installed voice, and playback rate. Optional automatic playback targets newly completed core/external-AI replies, not old history or repeated polling.
+- Microphone start cancels spoken output. A new automatic answer waits while input is active. Hidden AI tabs/panels and page visibility changes stop/abort owned voice work; confirmed draft text remains in the existing input state.
+- Cancellation/error generations prevent late utterance callbacks from restarting a cancelled queue. Short Unicode-safe speech chunks preserve ordinary numeric/identifier atoms. Empty content is not queued. Code blocks are announced as available on screen; qualifiers, signs, numbers and variable/product notation remain in speech text.
+- Speech status changes to playing only on the browser's onstart event. Autoplay errors and an engine that never starts receive a visible fallback message. Unsupported recognition/output and insecure microphone contexts are handled independently.
+- A conversation polling fix keeps the cursor behind earlier incomplete/missing IDs, so a later completed colleague message cannot hide the core's final streamed answer and its done flag.
+
+Permissions and processing
+Microphone use requires a supported browser and HTTPS or localhost. An HTTP LAN IP such as http://192.168.x.x is not a secure microphone context. Keyboard/OS dictation and normal typing remain usable fallbacks.
+The browser/OS speech service may process audio or read-aloud text remotely. This is explained near the controls and in the voice details. The app does not create/store audio recordings or add an audio-upload endpoint. Confirmed text is sent to the existing AI only by the user's send action.
+Auto-read, rate and chosen voice URI are stored locally as preferences. Microphone capture never auto-starts. No new voice API key is needed. AI reply generation still depends on the existing AI connection or external-AI bridge.
+
+Verification
+- TypeScript typecheck and Vite production build passed.
+- Four speech text tests passed: scientific qualifiers/numbers/products and links; explicit fenced-code announcement; bounded Unicode chunks and unbroken normal numeric/identifier atoms; empty speech queue.
+- Chromium UI/event-contract test passed using mocked browser speech APIs. It covers editable existing drafts, interim vs final recognition, delayed final result after stop, duplicate final events, manual speech, queue cancellation, new-message-only auto-read, repeated polls, reload with saved preference, out-of-order streamed completion, autoplay denial, microphone denial, tab/page hide, visibility return, mobile layout, missing APIs and insecure context.
+- The same test runs a real TDGL-3D model from t=0 to t=60, then verifies its stopped public state/recipe/metrics and original density-frame SHA-256 are unchanged by voice interactions.
+- Reference frame SHA-256: 8e93df61dd92b1ca9a896c1df60a0338ed5c1e037ef893737e3b647c744f6d41
+- Existing live landing -> 3D solver -> camera -> pause -> question bridge -> input card -> t=0 child -> parent preservation -> charts -> phone workflow also passed.
+- The screenshot shows a real simulated field; microphone events and example reply text in the voice check are validation fixtures, not actual user audio or live AI output.
+
+Reproduce
+(cd app && npm ci && npm run typecheck && npm run build && npm run test:speech)
+python -m tools.lab.server --port 18772 --max-universes 2
+(cd app && npm run test:speech:e2e)
+Use a fresh isolated lab with no universes or usable core AI key. LAB_TEST_URL, LAB_SCREENSHOT_DIR and CHROMIUM_PATH override defaults. Pure TypeScript helper tests use Node >=22.18; verification used Node 24.
+The contract test invokes no external recognition, synthesis or paid AI service.
+
+Limits / integrity
+Real microphone capture, acoustic playback, speech recognition accuracy, OS/browser voice availability and physical-device permission prompts were NOT verified in this environment. Actual voices, pronunciation and autoplay behavior vary. This is not a test of a live OpenAI connection or full-duplex streaming voice service.
+Speech is an accessibility/input-output aid, not a measurement or evidence source. Numerical statements and code must be checked against the visible answer and raw records when making scientific claims.
+no_touch: model equations, initial conditions, solvers, diagnostics, raw evidence, official Rooms and scientific success thresholds are untouched.
+tier: measured/observed software behavior only. No new physical discovery, emergence level or claim of transcription accuracy.
+8th audit: no completed shape, desired outcome, result-dependent rule or stopping criterion is added. Experiments still require the existing human-accepted validated input card.
+determinism: voice writes only draft/preferences/playback state. Original frame bytes and stopped model state remained identical in the browser test.

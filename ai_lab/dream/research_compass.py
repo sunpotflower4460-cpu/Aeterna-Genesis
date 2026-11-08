@@ -14,6 +14,9 @@ This module adds a *view*, not a new truth gate:
 Nothing here changes physics, starts, scientific gates, Rooms, official Emergence Levels, hypothesis
 confidence, Cross-World status, Prefix Identity Audit, or Local Vortex Energy selection.  The raw source
 files remain authoritative and are never deleted or rewritten by this module.
+
+A pinned unicellular/bag front is always rendered first so later hunts do not score vortex triangles
+or vortex-rings as "the cell".  That pin is orientation, not a claim that a bag has appeared.
 """
 from __future__ import annotations
 
@@ -304,7 +307,75 @@ def _memory_candidates(unknown: dict[str, Any], deep: dict[str, Any], emergence:
     return entries
 
 
+# Pinned human front. Dream Loop may rotate X-cards, but these lanes must not disappear.
+_UNICELLULAR_HEADLINE = "境のある一個（袋）が、自分としてしばらく残るか"
+_UNICELLULAR_POSITION = (
+    "いまの本線は『中と外がある一個が、自分としてしばらく残るか』です。"
+    "三角の渦・渦の輪・F7は別レーンで、細胞ではありません。"
+    "名無し変化や関係の追跡は続けますが、袋と混ぜません。"
+    "個体性・自己修復・成長・適応・継承は、一個の袋のあとです。"
+)
+_UNICELLULAR_NEXT = (
+    "本線は袋：高振幅の内側がひとつにまとまり、閉じた皮を持って残るか。"
+    "三角・輪のくびれ・穴の個数で救わない。置かず、代謝場も足さない。"
+)
+
+_LANES_TABLE_MD = """\
+## 🧭 三つの仕事を混ぜない（本線は袋）
+
+**「中と外がある一個が、自分としてしばらく残る」／「境のある一個」** がいまの本線です。余談ではありません。
+
+| レーン | 問うこと | 細胞と数えない |
+|---|---|---|
+| **1. 単細胞／袋（本線）** | 皮のある、ひとつの残る内側 | 三角・輪・F7・穴の個数 |
+| **2. 渦の穴の関係** | 対・三角・残り芯。穴の幾何 | 「細胞」（PR 133 はここ） |
+| **3. トーラス（測る。仮定しない）** | からだの位相（風船かドーナツか）／渦の輪（穴のループ）／世界のトーラス（周期箱） | 穴を組んでドーナツにして細胞と呼ぶこと（PR 134 は輪のくびれ） |
+
+渦の芯は振幅の**穴**です。暗い芯を身体と数えない。密な側は黄色い地面（高振幅）。袋は置かない。
+人の勘「差 → 渦 → トーラス」は拘束しません。塊がドーナツ型なら、そのときそう呼びます。
+詳しくは `docs/UNICELLULAR_FRONT.md` と `ai_lab/reports/easy/unicellular-front.md`。
+"""
+
+
+def _unicellular_front_card() -> dict[str, Any]:
+    return {
+        "kind": "unicellular_bag_front",
+        "title": "本線：境のある一個（袋）",
+        "importance": "LEAD",
+        "evidence_status": "ORIENTATION",
+        "plain": (
+            "中と外がある一個が、自分としてしばらく残るかを先に問う。"
+            "渦の芯は穴であり袋の反対。三角（PR 133）と輪のくびれ（PR 134）は別レーン。"
+            "トーラスは測るが要求しない。袋は置かない。"
+        ),
+        "lanes": [
+            "unicellular-bag",
+            "vortex-hole-relations",
+            "torus-questions-measured-not-assumed",
+        ],
+        "not_claimed": [
+            "life",
+            "cell",
+            "new_physical_law",
+            "bag_already_observed",
+            "torus_required",
+        ],
+        "source": "docs/UNICELLULAR_FRONT.md",
+    }
+
+
 _GLOBAL_LESSONS = [
+    {
+        "key": "integrity:holes-are-not-bags",
+        "kind": "integrity_rule",
+        "human_short": "渦芯（振幅の穴）や三角・輪を袋・細胞と数えない。本線は境のある一個の内側",
+        "avoid_exact_repeat": False,
+        "reopen_when": "袋レーンで高振幅の内側＋閉じた境を測る時。三角・輪は別レーンとして残す",
+        "interpretation_block": (
+            "vortex core = amplitude hole, not a body; triangle/ring-pinch/F7 are other lanes; "
+            "do not assemble holes into a doughnut and call it a cell"
+        ),
+    },
     {
         "key": "integrity:recurrence-not-law",
         "kind": "integrity_rule",
@@ -436,7 +507,7 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
         now=now,
     )
 
-    important: list[dict[str, Any]] = []
+    important: list[dict[str, Any]] = [_unicellular_front_card()]
     important.extend(_specific_x_cards(unknown, limit=3))
     broad = _broad_x_card(emergence, unknown)
     if broad:
@@ -447,9 +518,11 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
         important.append(energy)
     important.extend(_deep_cards(deep, burst_id))
 
-    # Fixed display ordering: condition-specific leads first, then cross-world, broad background,
-    # measured energy, deep-time.  Importance is a reading aid, never a scientific confidence score.
+    # Fixed display ordering: unicellular/bag pin first (orientation, not a measured bag),
+    # then condition-specific leads, cross-world, broad background, measured energy, deep-time.
+    # Importance is a reading aid, never a scientific confidence score.
     order = {
+        "unicellular_bag_front": -1,
         "condition_specific_unknown_transition": 0,
         "cross_world_zero_aligned": 1,
         "cross_world_overlap_only": 2,
@@ -469,7 +542,10 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
         ]
 
     specific = _specific_x_cards(unknown, limit=1)
-    next_questions: list[str] = []
+    next_questions: list[str] = [
+        _UNICELLULAR_NEXT,
+        "レシピ・継承・分裂は、袋（境のある一個）が測れてから。三角（PR 133）と輪のくびれ（PR 134）は別レーン。",
+    ]
     if specific:
         next_questions.append(
             f"{specific[0]['title']}について、同じ再現確認より『どの条件を変えると消えるか』の境界を優先する。"
@@ -482,7 +558,6 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
     x_scope = f"{recurrent_x_count}種類規模の" if recurrent_x_count > 0 else "多数の"
     next_questions.extend([
         f"F-pathだけを追わず、{x_scope}名無し反復から条件特異的なものを優先して壊す。",
-        "個体性・自己修復・成長・適応・継承は、形を置かずに測れる専用instrumentから整える。",
     ])
 
     compass = {
@@ -490,15 +565,11 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
         "mode": "human-first-research-compass",
         "burst_id": burst_id,
         "generated_at": now,
-        "headline": (
-            important[0]["title"] if important else "大きな新規主張より、研究の成立条件を整理している段階"
-        ),
-        "current_position": str(human.get("current_position") or (
-            "名無しの反復変化と履歴依存の候補を絞りつつ、個体性・自己修復・成長・適応・継承は未到達です。"
-        )),
+        "headline": _UNICELLULAR_HEADLINE,
+        "current_position": _UNICELLULAR_POSITION,
         "important_discoveries": important[:8],
         "progress_this_burst": advances,
-        "highest_value_next_questions": next_questions[:4],
+        "highest_value_next_questions": next_questions[:5],
         "learned_avoidance": _failure_digest(memory),
         "strict_goal_snapshot": {
             "goal_reached": bool(goal.get("goal_reached")),
@@ -522,6 +593,20 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
             "F_path_is_official_emergence_level": False,
             "network_separation_is_biological_division_claim": False,
             "q_tensor_is_spacetime_or_gravity_claim": False,
+            "vortex_hole_is_unicellular_bag": False,
+            "triangle_is_unicellular_success": False,
+            "ring_pinch_is_unicellular_success": False,
+            "torus_is_required_for_a_body": False,
+        },
+        "lanes": {
+            "lead": "unicellular-bag",
+            "source": "docs/UNICELLULAR_FRONT.md",
+            "human_card": "ai_lab/reports/easy/unicellular-front.md",
+            "other": ["vortex-hole-relations", "torus-questions-measured-not-assumed"],
+            "see_also": [
+                "https://github.com/sunpotflower4460-cpu/Aeterna-Genesis/pull/133",
+                "https://github.com/sunpotflower4460-cpu/Aeterna-Genesis/pull/134",
+            ],
         },
         "authoritative_sources": [
             "ai_lab/reports/easy/latest.json",
@@ -531,6 +616,8 @@ def build_compass(*, now: str | None = None) -> tuple[dict[str, Any], dict[str, 
             "ai_lab/discoveries/unknown_followups.json",
             "ai_lab/discoveries/deep_time_fission.json",
             "ai_lab/discoveries/research_memory.json",
+            "docs/UNICELLULAR_FRONT.md",
+            "ai_lab/reports/easy/unicellular-front.md",
         ],
     }
     return compass, memory
@@ -544,6 +631,8 @@ def render_markdown(compass: dict[str, Any]) -> str:
         "",
         "このページは、証拠を削らずに **大事な発見と前進を先に見せる** ための入口です。",
         "失敗・隔離・弱い候補の詳細は機械向け記録に残し、ここでは同じことを繰り返さないための短い教訓だけ表示します。",
+        "",
+        _LANES_TABLE_MD.rstrip(),
         "",
         "## 🌱 現在地",
         "",
@@ -586,6 +675,8 @@ def render_markdown(compass: dict[str, Any]) -> str:
         "- F0–F7は人間が書いた参照ルートの一本で、公式Emergence Levelではありません。",
         "- 関係網の分離を、生物の細胞分裂とは呼びません。",
         "- Q-tensorはnematic orderの記述であり、時空や重力ではありません。",
+        "- 渦の芯（振幅の穴）・三角・輪のくびれを、袋や細胞とは呼びません。",
+        "- トーラスを最初から要求しません。塊がドーナツ型なら、そのとき測って呼びます。",
         "",
         "---",
         "**生の証拠は削除していません。** このページは『何が重要か』を見やすくする表示レイヤーです。",

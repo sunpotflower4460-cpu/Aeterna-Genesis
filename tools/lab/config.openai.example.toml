@@ -1,0 +1,20 @@
+# OpenAIだけで質問・画像の観測・入力カードの生成を使う例。
+# lab/config.toml にコピー。キーは書かず、環境変数または --env-file でサーバーに渡す。
+# 価格は参考値（USD / 100万 tokens）。利用時の公式価格とモデルの利用権限を確認する。
+[core]
+provider = "openai_compat"
+base_url = "https://api.openai.com/v1"
+model = "gpt-4.1"
+api_key_env = "OPENAI_API_KEY"
+images = true
+price_in = 2.0
+price_out = 8.0
+
+# 中心のAIが画像も読む。他の役は未設定のままで動作する。
+[vision]
+model = ""
+[second_view]
+model = ""
+
+[limits]
+max_usd_per_day = 3.0

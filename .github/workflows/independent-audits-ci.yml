@@ -1,0 +1,34 @@
+name: Independent audit contracts
+
+on:
+  pull_request:
+    paths:
+      - 'audits/**'
+      - '.github/workflows/independent-audits-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      # These independently frozen v0.1 validators use same-named local modules
+      # (_setup, solver, run_audit). Separate interpreters preserve their namespaces
+      # and original source/artifact hashes. Never run both in one pytest process.
+      - name: P10 transport and free-energy contracts
+        run: python -m pytest audits/p10_transport_free_energy_v01/tests -q
+      - name: Chemical lineage contracts
+        run: python -m pytest audits/chemical_lineage_v01/tests -q

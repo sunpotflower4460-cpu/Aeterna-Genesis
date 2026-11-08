@@ -7,7 +7,11 @@ def test_direction_and_auto_hypotheses_remain_exploratory_only() -> None:
     rows = lab.propose_hypotheses(max_hypotheses=8)
     assert rows
     assert any(h.experiment_type == "circular_confinement" for h in rows)
-    assert any(h.experiment_type == "annular_energy_shell" for h in rows)
+    # PR #132 deliberately pauses the unpaired shell intervention and keeps
+    # boundary anisotropy plus slow/fast quench controls in the planning queue.
+    assert any(h.experiment_type == "elliptic_confinement" for h in rows)
+    assert {"slow_quench", "fast_quench"} <= {h.experiment_type for h in rows}
+    assert not any(h.hypothesis_id == "direction-energy-shell-001" for h in rows)
     for h in rows:
         assert h.provenance_class != "STRICT_ZERO"
         assert h.abstract_factor

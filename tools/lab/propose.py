@@ -44,6 +44,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--say", help="会議に出す文章（Claude Code の発言として表示）")
     ap.add_argument("--parent", help="親の宇宙のラベル（A, B, …）")
     ap.add_argument("--set", action="append", default=[], metavar="KNOB=VALUE")
+    ap.add_argument("--initial", action="store_true", help="始原条件を変え t=0 から試すカード")
+    ap.add_argument("--seed", type=int, help="--initial の新しい seed（省略で親と同じ）")
     ap.add_argument("--perturb", help="cut_half / kick / drop_seed")
     ap.add_argument("--arg", action="append", default=[], metavar="NAME=VALUE", help="摂動の引数")
     ap.add_argument("--why", default="")
@@ -56,6 +58,10 @@ def main(argv: list[str] | None = None) -> int:
     if a.parent:
         body = {"source": "claude-code", "parent": a.parent, "set": _pairs(a.set), "why": a.why, "predict": a.predict,
                 "put_in": a.put_in, "perturb": {"name": a.perturb, "args": _pairs(a.arg)} if a.perturb else None}
+        if a.initial:
+            if a.perturb:
+                ap.error("--initial では途中の摂動は使えません")
+            body.update(mode="initial", seed=a.seed)
         p = _post(a.lab, "/api/proposals", body, a.token)
         print(f"提案カード #{p['id']} を出しました（{p['parent_label']} から: set={p['set']} perturb={p['perturb']}）。実行はアプリで人が押したときだけ。")
     if not a.say and not a.parent:

@@ -19,6 +19,7 @@ import os
 import threading
 import tomllib
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 
@@ -53,6 +54,22 @@ def load_config(path: Path | None = None) -> dict[str, Any]:
     return cfg
 
 
+@lru_cache(maxsize=1)
+def research_memory_context() -> str:
+    """Read the full memory locally; send the deduplicated cautions, never a fabricated clean slate."""
+    path = LAB_DIR.parent / "ai_lab" / "discoveries" / "research_memory.json"
+    if not path.exists():
+        return "研究記憶がありません。未検討と断言せず、過去の記録は未確認と書いてください。"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    rules = sorted({(str(e.get("human_short") or ""), str(e.get("interpretation_block") or ""),
+                     str(e.get("reopen_when") or ""), bool(e.get("avoid_exact_repeat")))
+                    for e in data.get("entries", [])})
+    lines = ["研究記憶の注意（全件から重複する注意を集約。個々の問いの照合は省略。新規性は未判定）:"]
+    for short, block, reopen, avoid in rules:
+        lines.append(f"- {short} / {block} / 再開条件: {reopen} / 同条件の反復を避ける: {avoid}")
+    return "\n".join(lines)
+
+
 # ============================================================================ prompts
 RULES = """あなたは「Aeterna-Genesis」の水槽ラボで、うえきさん（研究者）と一緒に、場の法則（白）を t=0 から動かした様子を見ています。
 守ること（このリポジトリの AGENTS.md の要約）:
@@ -83,8 +100,12 @@ CORE_PROMPT = RULES + """
   2. 見た目の印象（見る係・未測定）と、それが測定と合うか
   3. 別の見方（別の視点の係）
   4. 照合：誰が何を言い、測定と合ったか・合わなかったかを 1 行ずつ
-  5. 次に試すなら：propose_branch ツールで提案カードを最大 3 件出す（実行するかはうえきさんが決める。あなたは実行しない）
-- 提案のつまみは、事件簿にある「場の法則」のつまみ名と範囲の中だけ。始め方（start）のつまみは分岐では変えられない。
+  5. 次に試すなら：原則 propose_initial で、始原条件を変え t=0 から試す提案カードを最大 3 件出す（実行するかはうえきさんが決める。あなたは実行しない）
+- 「こうしたらどうなる？」には既存の成功例を選ぶだけでなく、登録された範囲内で質問に応じた新しい数値入力を作る。結果は計算前にはわからない。予想と実測を分け、何を見比べればよいかを書く。
+- propose_initial は親の「最初の」レシピ（途中の介入なし）を引き継ぎ、始め方・物理係数・seed の変更だけを t=0 に与える。完成形や結果を直接置かない。
+- 登録されていない法則・境界・初期分布が必要なら、その制約を説明する。コードの生成や実行、範囲を超えた代用品、現象の捏造はしない。
+- 途中からの介入を人が明示的に頼んだ場合だけ propose_branch を使い、「途中介入」と説明する。
+- 提案のつまみ名と範囲は観測パケットの登録簿を厳守。propose_initial は start/law、propose_branch は law のみ。
 - うえきさんの考えや提案には、まず良い点と、測定で確かめる方法を返す。反対するときは理由を測定で示す。
 - 必要なときだけ ask_colleague で見る係・別の視点にもう一度聞き、look_again で最新の事件簿を見直す。"""
 
@@ -106,6 +127,18 @@ TOOLS = [
                           "why": {"type": "string", "description": "なぜ試すか（1〜2 文）"},
                           "predict": {"type": "string", "description": "どの測定がどう変わると予想するか"},
                           "put_in": {"type": "string", "description": "この分岐で新しく『置く』もの"}}}},
+    {"name": "propose_initial", "strict": True,
+     "description": "質問に応じた新しい始原条件の提案。親の初期レシピを継承し t=0 から別の計算を作るカード。実行しない。途中介入を継承しない。",
+     "input_schema": {"type": "object", "additionalProperties": False,
+                      "required": ["parent", "changes", "seed", "why", "predict", "put_in"],
+                      "properties": {
+                          "parent": {"type": "string"},
+                          "changes": {"type": "array", "items": {
+                              "type": "object", "additionalProperties": False, "required": ["knob", "value"],
+                              "properties": {"knob": {"type": "string"}, "value": {"type": "number"}}}},
+                          "seed": {"type": ["integer", "null"], "description": "null は親と同じ。変更時は 0〜9999"},
+                          "why": {"type": "string"}, "predict": {"type": "string", "description": "未検証の予想と比較する測定量"},
+                          "put_in": {"type": "string"}}}},
     {"name": "look_again", "strict": True,
      "description": "指定した宇宙の最新の事件簿（測定と規則による出来事）を取り直す。",
      "input_schema": {"type": "object", "additionalProperties": False, "required": ["universe"],
@@ -678,29 +711,64 @@ class Council:
             self.journal.log("proposal", proposal=p)
         return p
 
-    def try_proposal(self, pid: int) -> dict[str, Any]:
-        p = next((x for x in self.proposals if x["id"] == pid), None)
-        if p is None:
-            raise KeyError(f"no proposal {pid}")
-        if p["status"] != "open":
-            raise ValueError("この提案はもう使われました")
-        child = self.hub.branch(p["parent"], p["set"] or None, p["perturb"])
-        p.update(status="tried", child=child)
-        if hasattr(self.hub, "control"):
-            try:
-                self.hub.control(child, "play")
-            except Exception:
-                pass
+    def add_initial_proposal(self, source: str, parent: str, changes: dict[str, float], seed: int | None,
+                             why: str, predict: str, put_in: str) -> dict[str, Any]:
+        """Freeze an input recipe, not an outcome or the parent's current state. No simulation runs here."""
+        uid = uid_of(self.hub, parent)
+        if not uid:
+            raise ValueError(f"宇宙 {parent} はいません")
+        info = self.hub.info(uid)
+        w = whites.get(info["white"])
+        checked = w.check_knobs(changes, allow_start=True)
+        base = info["recipe"]
+        if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed <= 9999):
+            raise ValueError("seed は 0〜9999 の整数にしてください")
+        next_seed = base["seed"] if seed is None else seed
+        checked = {k: v for k, v in checked.items() if v != base["knobs"].get(k, w.knob(k).default)}
+        if not checked and next_seed == base["seed"]:
+            raise ValueError("始原条件か seed を少なくとも一つ変えてください")
+        p = {"id": next(self._pids), "source": source, "mode": "initial", "parent": uid,
+             "parent_label": info["label"], "white": w.id, "at_step": 0, "set": checked, "perturb": None,
+             "seed": next_seed, "base_seed": base["seed"],
+             "base_knobs": dict(base["knobs"]), "knobs": {**base["knobs"], **checked},
+             "why": why, "predict": predict, "put_in": put_in, "status": "open", "child": None}
+        with self._lock:
+            self.proposals.append(p)
         if self.journal:
-            self.journal.log("proposal-tried", proposal=p["id"], child=child)
+            self.journal.log("proposal", proposal=p)
         return p
 
+    def try_proposal(self, pid: int) -> dict[str, Any]:
+        # Serialise acceptance: double clicks must not spawn two workers for the same card.
+        with self._lock:
+            p = next((x for x in self.proposals if x["id"] == pid), None)
+            if p is None:
+                raise KeyError(f"no proposal {pid}")
+            if p["status"] != "open":
+                raise ValueError("この提案はもう使われました")
+            if p.get("mode") == "initial":
+                whites.get(p["white"]).check_knobs(p["knobs"])
+                child = self.hub.create(p["white"], p["seed"], p["knobs"])
+            else:
+                self.validate_proposal(p["parent"], p["set"], p["perturb"])
+                child = self.hub.branch(p["parent"], p["set"] or None, p["perturb"])
+            p.update(status="tried", child=child)
+            if hasattr(self.hub, "control"):
+                self.hub.control(child, "play")
+            if self.journal:
+                self.journal.log("proposal-tried", proposal=p["id"], child=child,
+                                 mode=p.get("mode", "branch"), parent=p["parent"])
+            return p
+
     def dismiss(self, pid: int) -> dict[str, Any]:
-        p = next((x for x in self.proposals if x["id"] == pid), None)
-        if p is None:
-            raise KeyError(f"no proposal {pid}")
-        p["status"] = "dismissed"
-        return p
+        with self._lock:
+            p = next((x for x in self.proposals if x["id"] == pid), None)
+            if p is None:
+                raise KeyError(f"no proposal {pid}")
+            if p["status"] != "open":
+                raise ValueError("この提案はもう使われました")
+            p["status"] = "dismissed"
+            return p
 
     def _run_tool(self, name: str, args: dict[str, Any]) -> str:
         try:
@@ -710,6 +778,11 @@ class Council:
                 p = self.add_proposal("core", args["parent"], changes, pert if pert["name"] else None,
                                       args.get("why", ""), args.get("predict", ""), args.get("put_in", ""))
                 return f"提案カード #{p['id']} を出しました（まだ実行していません。うえきさんが押したときだけ分岐します）。"
+            if name == "propose_initial":
+                p = self.add_initial_proposal("core", args["parent"],
+                    {c["knob"]: c["value"] for c in args.get("changes", [])}, args.get("seed"),
+                    args.get("why", ""), args.get("predict", ""), args.get("put_in", ""))
+                return f"提案カード #{p['id']} を出しました（始原条件を変更、t=0 から。まだ実行していません）。"
             if name == "look_again":
                 uid = self._uid_of(args["universe"])
                 if not uid:
@@ -737,6 +810,7 @@ class Council:
         if self.spent_today() >= self._limit():
             self._msg("system", f"今日の AI の費用が上限（${self._limit():.2f}）に達しました。")
             return
+        content = content + [{"type": "text", "text": research_memory_context()}]
         m = self._msg("core", "", core.model, done=False)
         try:
             if hasattr(core, "converse"):
@@ -768,7 +842,11 @@ class Council:
         if self.busy:
             raise ValueError("いま AI が考え中です")
         self.busy = True
-        packet = observe.build(self.hub, ids)
+        try:
+            packet = observe.build(self.hub, ids)
+        except Exception:
+            self.busy = False
+            raise
         self._packet = packet
         if self.journal:
             n = len(list((self.journal.dir / "packets").glob("*"))) if (self.journal.dir / "packets").exists() else 0

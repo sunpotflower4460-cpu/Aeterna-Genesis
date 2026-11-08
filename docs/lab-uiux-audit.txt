@@ -1,0 +1,51 @@
+Aeterna-Genesis: interactive research workspace — audit handoff
+Date: 2026-11-06 UTC
+Branch: feat/interactive-research-workspace
+
+Scope and claims
+This is an application/experiment-input workflow change, not a new physical discovery.
+Observed/measured software behavior: an external AI or a tool-using council can propose new, bounded initial inputs; the person accepts a card; the existing solver runs the frozen input from t=0 in a separate worker. The parent is preserved.
+No emergence level, ladder status, GREEN classification, official Room, or scientific success criterion is changed. No physical effect is inferred from screenshots taken at different simulation times.
+
+Changes
+- Human-facing live landing, persistent viewport, visible pause/step controls and actual solver metrics.
+- Desktop comparisons and phone experiment selector; independently scrolling question panel.
+- Questions include selected experiment(s), current observation packet, declared editable knob ranges, initial recipe and existing research-memory cautions.
+- propose_initial produces input cards with before/after values, seed, unverified expectations, and reproducible JSON. It freezes initial input and excludes all runtime interventions. No worker is launched before acceptance.
+- Registered model equations are unchanged. Existing explicit runtime branch/perturb operations remain labelled as interventions.
+- Concurrent acceptance of one card is serialised; invalid/unknown/non-finite knob inputs and invalid seeds are rejected.
+- Unavailable APIs are visibly labelled. Bridge mode saves an observation packet and request for an external AI; it does not manufacture an automatic answer.
+- OpenAI-only configuration example and opt-in server credential-file loading; no shell evaluation, secret output or implicit loading.
+
+Verification
+3D first: browser TDGL-3D simulation, question/bridge, frozen initial-input card, separate t=0 execution and parent preservation. Two-dimensional replay/solver consistency is also covered by existing lab tests as software validation only.
+- npm --prefix app run typecheck: passed.
+- npm --prefix app run build: passed (existing mixed static/dynamic-import Vite warning).
+- Seven focused Python test modules: 49 passed.
+- Registry/researcher/goals/sweep integration tests: 93 passed, 5 slow tests deselected.
+- Browser smoke check: live landing, 3D field, pause, camera interaction, draft retention across tabs and panel toggles, bridge export, proposal acceptance, parent preservation, t=0 child, measured comparison charts, phone viewport and question visibility, no horizontal overflow or page errors.
+- git diff --check: passed.
+
+Reproduce
+Install requirements.txt; in app run npm ci and npm run build.
+Start a fresh isolated server: python -m tools.lab.server --port 18765 --max-universes 4
+Then: cd app && npm run test:e2e
+CHROMIUM_PATH selects Chromium; LAB_TEST_URL selects the isolated server; LAB_SCREENSHOT_DIR selects output screenshots.
+The smoke check refuses existing active experiments or a usable core API provider, so it does not delete other work or issue paid requests.
+Python tests: pytest tests/test_lab_initial_proposals.py tests/test_lab_council.py tests/test_lab_server.py tests/test_lab_observe.py tests/test_lab_determinism.py tests/test_lab_export.py tests/test_lab_env.py -q
+Integration: pytest tests/test_lab_registry.py tests/test_lab_researcher.py tests/test_lab_goals.py tests/test_lab_sweep.py -m 'not slow' -q
+
+Limits and outstanding work
+- No new API key has been created or saved. The setup picker did not display for the user. Saving to .env.local awaits explicit destination confirmation. Live OpenAI responses and billing have not been verified.
+- The browser input card is explicitly sourced as validation; it verifies the external-AI contract, not actual OpenAI generation quality.
+- Supported novelty is new numerical inputs within registered model bounds. Arbitrary new equations, boundary types and generated code are not executed. Those require a reviewed model implementation.
+- Times advance independently. A paused original and a new child are not a matched-time physical experiment; use time-series/replay and scientific audit for claims.
+- Live sessions remain local and git-ignored; use the existing export/replay process for durable research records.
+- Research-memory cautions are deduplicated; individual question novelty is not automatically established.
+
+Integrity checklist
+no_touch: genesis/, core/, experiments/, rooms/official/, raw evidence and scientific gates are untouched.
+tier: observed/measured software behavior only; no new physical/biological claim.
+8th audit: no desired outcome, completed shape, target-dependent stopping, or similarity objective is added. AI can propose allowed inputs only; results come from the unchanged solver.
+determinism: replay checksums and exact-model tests pass; display changes do not alter physics.
+negative outcomes: no successful-run filter or deletion of failed evidence is introduced.

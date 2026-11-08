@@ -1,0 +1,97 @@
+test_id,case,N,integrator,metric,value,threshold,op,verdict
+T1,species_A_dF/dc,32,FD,relative_error_max,5.945461815821056e-08,1e-07,<=,PASS
+T1,phi_dF/dphi,32,FD,relative_error_max,1.8534260166709984e-10,1e-07,<=,PASS
+T1,m_dF/dm_interface,32,FD,relative_error_max,1.5327840416993383e-09,1e-07,<=,PASS
+T1,sensitivity_div_vs_naive_lap,32,analytic,relative_difference_max,0.011155267619392357,0.01,>=,PASS
+T2,A_fick_ratio_minus_one,128,BDF,|ratio-1|,5.240252676230739e-14,1e-06,<=,PASS
+T2,B_mu_partition_rel_error,128,BDF,relative error vs discrete law,1.406888383775546e-15,1e-06,<=,PASS
+T3,solver_success,64,BDF,success(1=yes),1.0,1.0,>=,PASS
+T3,mass_residual,64,BDF,max |M-M0|/M0,2.220446049250313e-16,1e-09,<=,PASS
+T3,boltzmann_cv_at_t_eq,64,BDF,CV(c exp(beta phi)),4.199923335085286e-16,1e-06,<=,PASS
+T3,discrete_eq_rel_dev,64,BDF,max rel dev from c_disc,1.2243229772538365e-15,1e-06,<=,PASS
+T3,mu_spread_at_t_eq,64,BDF,max |mu - mean mu|,8.465450562766819e-16,1e-06,<=,PASS
+T3,max_face_flux_at_t_eq,64,BDF,max |J|,2.6271814629788776e-14,1e-07,<=,PASS
+T3,partition_rel_error_vs_discrete,64,BDF,rel error,7.036830505330313e-16,1e-06,<=,PASS
+T3,solver_success,128,BDF,success(1=yes),1.0,1.0,>=,PASS
+T3,mass_residual,128,BDF,max |M-M0|/M0,2.220446049250313e-16,1e-09,<=,PASS
+T3,boltzmann_cv_at_t_eq,128,BDF,CV(c exp(beta phi)),6.637056731481794e-16,1e-06,<=,PASS
+T3,discrete_eq_rel_dev,128,BDF,max rel dev from c_disc,1.428377121767174e-15,1e-06,<=,PASS
+T3,mu_spread_at_t_eq,128,BDF,max |mu - mean mu|,1.1657341758564144e-15,1e-06,<=,PASS
+T3,max_face_flux_at_t_eq,128,BDF,max |J|,5.2352879851709805e-14,1e-07,<=,PASS
+T3,partition_rel_error_vs_discrete,128,BDF,rel error,1.125510707020437e-15,1e-06,<=,PASS
+T3,solver_success,256,BDF,success(1=yes),1.0,1.0,>=,PASS
+T3,mass_residual,256,BDF,max |M-M0|/M0,2.220446049250313e-16,1e-09,<=,PASS
+T3,boltzmann_cv_at_t_eq,256,BDF,CV(c exp(beta phi)),3.427186773722698e-16,1e-06,<=,PASS
+T3,discrete_eq_rel_dev,256,BDF,max rel dev from c_disc,4.0810773746642855e-16,1e-06,<=,PASS
+T3,mu_spread_at_t_eq,256,BDF,max |mu - mean mu|,3.191891195797325e-16,1e-06,<=,PASS
+T3,max_face_flux_at_t_eq,256,BDF,max |J|,9.625929944107842e-14,1e-07,<=,PASS
+T3,partition_rel_error_vs_discrete,256,BDF,rel error,1.4067695573614218e-16,1e-06,<=,PASS
+T3,partition_continuum_rel_error_N128,128,BDF,rel error vs continuum,0.00011257472908571747,0.001,<=,PASS
+T3,continuum_error_order_64_128,128,BDF,observed order,2.005366945260784,1.5,>= (order),PASS
+T3,continuum_error_order_128_256,256,BDF,observed order,2.00138575866584,1.5,>= (order),PASS
+T3,sharp_boltzmann_cv_at_t_eq,256,BDF,CV,7.45033812456477e-15,1e-06,<=,PASS
+T3,sharp_min_c_positive,256,BDF,min c,0.09721830595039983,0.0,>=,PASS
+T3,sharp_partition_rel_error,256,BDF,rel error,1.1415943316468328e-14,1e-06,<=,PASS
+T4,A_partition_rel_error,128,BDF,rel error,1.125510707020437e-15,1e-06,<=,PASS
+T4,B_partition_rel_error,128,BDF,rel error,1.2265601522275907e-15,1e-06,<=,PASS
+T4,selectivity_S_B_over_A,128,BDF,S = ratio_B / ratio_A,6.423309068727345,2.0,>=,PASS
+T5,equal_chi_ratio_abs_diff,128,BDF,|r_A - r_B|,0.0,1e-09,<=,PASS
+T5,zero_chi_max_abs_c_minus_1,128,BDF,max |c - 1| at t_eq,2.220446049250313e-16,1e-06,<=,PASS
+T6,const_D0.25_partition_across_D,128,BDF,|r_end - r_pred| / r_pred,7.583128388550193e-13,1e-06,<=,PASS
+T6,const_D1_partition_across_D,128,BDF,|r_end - r_pred| / r_pred,1.125510707020437e-15,1e-06,<=,PASS
+T6,const_D4_partition_across_D,128,BDF,|r_end - r_pred| / r_pred,1.4068883837755462e-16,1e-06,<=,PASS
+T6,linear_D1_partition_across_D,128,BDF,|r_end - r_pred| / r_pred,1.406888383775546e-15,1e-06,<=,PASS
+T6,const_D0.25_time_scaling_t_rel_times_D,128,BDF,|t_rel(D) D - t_rel(1)| / t_rel(1),1.4616138930593141e-06,0.001,<=,PASS
+T6,const_D4_time_scaling_t_rel_times_D,128,BDF,|t_rel(D) D - t_rel(1)| / t_rel(1),4.021730342012118e-05,0.001,<=,PASS
+T8,max_positive_F_increment_beta0.5_N64,64,BDF,max positive increment,4.440892098500626e-16,1e-07,<=,PASS
+T8,max_positive_F_increment_beta0.5_N128,128,BDF,max positive increment,4.440892098500626e-16,1e-07,<=,PASS
+T8,max_positive_F_increment_beta0.5_N256,256,BDF,max positive increment,4.440892098500626e-16,1e-07,<=,PASS
+T8,max_positive_F_increment_beta-0.5_N64,64,BDF,max positive increment,4.440892098500626e-16,1e-07,<=,PASS
+T8,max_positive_F_increment_beta-0.5_N128,128,BDF,max positive increment,4.440892098500626e-16,1e-07,<=,PASS
+T8,max_positive_F_increment_beta-0.5_N256,256,BDF,max positive increment,4.440892098500626e-16,1e-07,<=,PASS
+T8,energy_identity_rel_residual,128,BDF,|dF - int(-diss)| / |dF|,4.7398174206948565e-05,0.0001,<=,PASS
+T7,boundary_sum_rhs_mu,32,structural,|sum rhs dx| / scale,4.090579485246346e-17,1e-12,<=,PASS
+T7,wall_flux_zero_mu,32,structural,|J_0|+|J_N|,0.0,0.0,<=,PASS
+T7,boundary_sum_rhs_fick,32,structural,|sum rhs dx| / scale,7.142934294195676e-18,1e-12,<=,PASS
+T7,wall_flux_zero_fick,32,structural,|J_0|+|J_N|,0.0,0.0,<=,PASS
+T7,boundary_sum_rhs_mu,128,structural,|sum rhs dx| / scale,2.580382407100251e-18,1e-12,<=,PASS
+T7,wall_flux_zero_mu,128,structural,|J_0|+|J_N|,0.0,0.0,<=,PASS
+T7,boundary_sum_rhs_fick,128,structural,|sum rhs dx| / scale,2.661510140826687e-18,1e-12,<=,PASS
+T7,wall_flux_zero_fick,128,structural,|J_0|+|J_N|,0.0,0.0,<=,PASS
+T7,T2_A_fick,128,BDF,mass_residual_rel_max,2.220446049250313e-16,1e-09,<=,PASS
+T7,T2_A_fick,128,BDF,min_c_strictly_positive,0.5001505906518979,0.0,>,PASS
+T7,T2_B_mu,128,BDF,mass_residual_rel_max,5.551115123125783e-16,1e-09,<=,PASS
+T7,T2_B_mu,128,BDF,min_c_strictly_positive,0.5001505906518979,0.0,>,PASS
+T7,T3_N64,64,BDF,mass_residual_rel_max,2.220446049250313e-16,1e-09,<=,PASS
+T7,T3_N64,64,BDF,min_c_strictly_positive,0.5006022718974138,0.0,>,PASS
+T7,T3_N128,128,BDF,mass_residual_rel_max,2.220446049250313e-16,1e-09,<=,PASS
+T7,T3_N128,128,BDF,min_c_strictly_positive,0.5001505906518979,0.0,>,PASS
+T7,T3_N256,256,BDF,mass_residual_rel_max,2.220446049250313e-16,1e-09,<=,PASS
+T7,T3_N256,256,BDF,min_c_strictly_positive,0.5000376490804277,0.0,>,PASS
+T7,T4_A,128,BDF,mass_residual_rel_max,2.220446049250313e-16,1e-09,<=,PASS
+T7,T4_A,128,BDF,min_c_strictly_positive,0.5001505906518979,0.0,>,PASS
+T7,T4_B,128,BDF,mass_residual_rel_max,4.440892098500626e-16,1e-09,<=,PASS
+T7,T4_B,128,BDF,min_c_strictly_positive,0.5001505906518979,0.0,>,PASS
+T7,T8_beta0.5_N64,64,BDF,mass_residual_rel_max,6.661338147750939e-16,1e-09,<=,PASS
+T7,T8_beta0.5_N64,64,BDF,min_c_strictly_positive,0.48389190536090854,0.0,>,PASS
+T7,T8_beta0.5_N128,128,BDF,mass_residual_rel_max,7.771561172376096e-16,1e-09,<=,PASS
+T7,T8_beta0.5_N128,128,BDF,min_c_strictly_positive,0.48302731429783874,0.0,>,PASS
+T7,T8_beta0.5_N256,256,BDF,mass_residual_rel_max,1.1102230246251565e-15,1e-09,<=,PASS
+T7,T8_beta0.5_N256,256,BDF,min_c_strictly_positive,0.4830561762403829,0.0,>,PASS
+T7,T8_beta-0.5_N64,64,BDF,mass_residual_rel_max,8.881784197001252e-16,1e-09,<=,PASS
+T7,T8_beta-0.5_N64,64,BDF,min_c_strictly_positive,0.48389190536090837,0.0,>,PASS
+T7,T8_beta-0.5_N128,128,BDF,mass_residual_rel_max,1.3322676295501878e-15,1e-09,<=,PASS
+T7,T8_beta-0.5_N128,128,BDF,min_c_strictly_positive,0.48302731429783885,0.0,>,PASS
+T7,T8_beta-0.5_N256,256,BDF,mass_residual_rel_max,1.5543122344752192e-15,1e-09,<=,PASS
+T7,T8_beta-0.5_N256,256,BDF,min_c_strictly_positive,0.48305617624038266,0.0,>,PASS
+T9,slab_equilibrium_vs_existing_rel,24,BDF vs existing SG (explicit dt=0.1),max rel diff,7.803117644907795e-12,1e-06,<=,PASS
+T9,existing_slab_boltzmann_cv,24,existing SG,CV(c exp(beta phi)),3.921674880797456e-14,0.01,<=,PASS
+T10,spatial_order_64_128,128,BDF,observed order,2.0674565401767637,1.5,>= (order),PASS
+T10,spatial_order_128_256,256,BDF,observed order,2.317762667836741,1.5,>= (order),PASS
+T10,spatial_error_monotone_decreasing,256,BDF,monotone (1=yes),1.0,1.0,>=,PASS
+T10,time_err_rtol1e-8_L1,128,BDF,L1 error,8.271133124758412e-09,1e-06,<=,PASS
+T10,time_err_decreasing_with_rtol,128,BDF,err(1e-8) < err(1e-6) (1=yes),1.0,1.0,>=,PASS
+T10,rk4_order_dt_2e-5_1e-5,64,RK4,errors at floor (<= 1e-09); order not measurable (AMD-1),nan,1e-09,floor rule,INCONCLUSIVE
+T8c,fick_flux_F_trace_cos_pi_x,128,BDF,"max positive F increment (EXPLORATORY, no verdict)",0.0,nan,exploratory,EXPLORATORY
+T8c,fick_flux_F_trace_cos_pi_x,128,BDF,number of saved steps with F increase (EXPLORATORY),0,nan,exploratory,EXPLORATORY
+T9,existing_V0_suite_read_only,,pytest,existing tests/test_vessel_permeability.py: 12 passed,1.0,1.0,==,PASS
