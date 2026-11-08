@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from './store'
-import { loadCatalog } from './lib/data'
+import { loadCatalog, loadAquariumRegistry, loadAquariumNotebook } from './lib/data'
+import AquariumLab from './components/AquariumLab'
 import Lobby from './components/Lobby'
 import RoomWorkspace from './components/RoomWorkspace'
 import CompareView from './components/CompareView'
@@ -15,6 +16,8 @@ const WANT_LAB = typeof location !== 'undefined' && location.hash === '#lab'
 export default function App() {
   const catalog = useStore((s) => s.catalog)
   const setCatalog = useStore((s) => s.setCatalog)
+  const setAquariumRegistry = useStore((s) => s.setAquariumRegistry)
+  const setAquariumNotebook = useStore((s) => s.setAquariumNotebook)
   const view = useStore((s) => s.view)
   const toLobby = useStore((s) => s.toLobby)
   const toAquarium = useStore((s) => s.toAquarium)
@@ -27,6 +30,11 @@ export default function App() {
     // The catalog is generated data (tools/build_catalog.py); the aquarium works without it.
     loadCatalog().then(setCatalog).catch((e) => setCatalogError(String(e)))
   }, [setCatalog])
+
+  useEffect(() => {
+    loadAquariumRegistry().then(setAquariumRegistry).catch(console.warn)
+    loadAquariumNotebook().then(setAquariumNotebook).catch(console.warn)
+  }, [setAquariumRegistry, setAquariumNotebook])
 
   useEffect(() => {
     // The live lab exists only when the app is served by tools/lab/server.py (not on the static deploy).
@@ -43,6 +51,8 @@ export default function App() {
     return <AquariumView onOpenObservatory={catalog ? toLobby : undefined}
       onOpenLab={labOk ? () => { history.replaceState(null, '', '#lab'); toLab() } : undefined} />
   }
+
+  if (view === 'aquaria') return <AquariumLab />
 
   if (!catalog) {
     return (

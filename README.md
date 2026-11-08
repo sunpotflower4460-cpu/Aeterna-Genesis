@@ -89,6 +89,10 @@ Aeterna-Genesis/
 └── tests/                  # pytest（-m "not slow" が日常の確認）
 ```
 
+## 研究アイディアの共有
+
+Observatory の「宇宙水槽」では、人間とAIの研究メモ（[`aquaria/`](aquaria/README.md)）を参照し、アイディアをローカル下書きとして保存できます。この台帳は計画用であり、実験結果・到達段・物理法則を変更しません。研究方針は現行の [`AGENTS.md`](AGENTS.md) に従い、停止中の自動研究botは再開しません。
+
 ## 使い方
 
 ```bash

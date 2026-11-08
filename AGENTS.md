@@ -10,6 +10,9 @@
 > 自走個体は「探す」でなく角モード固有値の順序を「測る」＝ [`docs/ANGULAR_MODES.md`](docs/ANGULAR_MODES.md)（M1）。
 > 北極星（法則と関係と反応だけから脳が育ち、生き続ける友だちになる）までの段は [`docs/LADDER.md`](docs/LADDER.md)（R0〜R10、状態は `research/ladder.json`）。
 
+> 研究アイディア・人間/AIメモの台帳は [`aquaria/`](aquaria/README.md)、表示は Observatory の「宇宙水槽」。
+> [`docs/UNIVERSE_AQUARIUM.md`](docs/UNIVERSE_AQUARIUM.md) は旧提案を含む planning 層の説明であり、現行の物理規律・研究方針・bot 停止を変更しない。
+
 ---
 
 ## このプロジェクトは何か

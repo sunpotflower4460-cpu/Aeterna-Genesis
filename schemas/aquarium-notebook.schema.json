@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aeterna.local/schemas/aquarium-notebook.schema.json",
+  "title": "Aeterna Universe Aquarium Notebook",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "mode", "entries", "policy"],
+  "properties": {
+    "version": {"type": "integer", "minimum": 1},
+    "mode": {"const": "universe-aquarium-notebook"},
+    "entries": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/entry"}
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["notes_are_scientific_evidence", "notes_change_physics", "history_is_append_only_in_spirit"],
+      "properties": {
+        "notes_are_scientific_evidence": {"const": false},
+        "notes_change_physics": {"const": false},
+        "history_is_append_only_in_spirit": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["note_id", "aquarium_id", "author_role", "kind", "created_at", "text", "evidence_refs"],
+      "properties": {
+        "note_id": {"type": "string", "pattern": "^NOTE-[A-Z0-9-]+$"},
+        "aquarium_id": {"type": "string", "pattern": "^AQ-[A-Z0-9-]+$"},
+        "author_role": {"enum": ["human", "ai", "joint"]},
+        "kind": {"enum": ["idea", "observation", "question", "direction", "decision", "warning"]},
+        "created_at": {"type": "string", "format": "date-time"},
+        "text": {"type": "string", "minLength": 1},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}},
+        "status": {"enum": ["open", "accepted", "superseded", "done"]}
+      }
+    }
+  }
+}

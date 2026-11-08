@@ -8,6 +8,10 @@ static site can fetch them. No physics, no summaries are recomputed here -- pure
 Dream Loop adds read-only human-facing data under `data/dream/`. These are presentation/event
 artifacts only; they do not alter Room physics or scientific status.
 
+Universe Aquarium planning data is copied under `data/aquaria/`. Aquarium intent, human notes and
+AI direction notes are collaboration/planning data only: they never alter Room physics, scientific
+promotion, or evidence status.
+
     app/public/data/
       catalog.json
       rooms/<room_id>/field.json           (referenced recorded fields; not inlined in catalog)
@@ -15,6 +19,8 @@ artifacts only; they do not alter Room physics or scientific status.
       dream/latest.json                     (latest Night Report, when present)
       dream/view-presets.json               (observation recipes, when present)
       dream/event-ledger.json               (append-only human-facing event ledger, when present)
+      aquaria/registry.json                 (Universe Aquarium research lanes)
+      aquaria/notebook.json                 (shared human/AI planning notebook)
 """
 
 import argparse
@@ -57,6 +63,7 @@ def build(out_dir):
         n += 1
 
     _copy_dream_data(out_dir)
+    _copy_aquarium_data(out_dir)
     return n
 
 
@@ -74,6 +81,21 @@ def _copy_dream_data(out_dir):
             shutil.copyfile(src, dst)
         elif os.path.exists(dst):
             # Avoid serving a stale previous report from an old local build.
+            os.remove(dst)
+
+
+def _copy_aquarium_data(out_dir):
+    aquarium_out = os.path.join(out_dir, "aquaria")
+    os.makedirs(aquarium_out, exist_ok=True)
+    sources = {
+        "registry.json": os.path.join(_REPO, "aquaria", "registry.json"),
+        "notebook.json": os.path.join(_REPO, "aquaria", "notebook.json"),
+    }
+    for name, src in sources.items():
+        dst = os.path.join(aquarium_out, name)
+        if os.path.exists(src):
+            shutil.copyfile(src, dst)
+        elif os.path.exists(dst):
             os.remove(dst)
 
 
