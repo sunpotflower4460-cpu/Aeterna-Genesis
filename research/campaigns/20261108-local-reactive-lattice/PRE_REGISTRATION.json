@@ -1,0 +1,65 @@
+{
+  "campaign": "local-reactive-lattice-v01",
+  "registered_before_new_physics_runs": true,
+  "mutation_type": "law_variant",
+  "question": "What do a spatially unstructured 3D exclusion fluid and two reversible conformational pathways do under constant chemical-potential environments and different transition-state pair interactions?",
+  "role": "F: independently implemented microscopic lattice constitutive hypothesis; no identified-molecule, continuum, membrane or life claim",
+  "base_commit": "db9c7bff9b3956badd9404dc7cf0f17fee71d313",
+  "law": {
+    "sites": "periodic cubic lattice; at most one macromolecule per site, vacancy is implicit solvent; molecular spacing=1; kBT=1",
+    "states": "I and B are conformations of the same conserved macromolecule; not distinct replicators",
+    "Hamiltonian": "H=df*N_B + epsilon*N_BB; nearest-neighbor B-B pairs counted once",
+    "passive_reaction": "B <-> I; k_IB^p=rate; k_BI^p=rate*exp(df+epsilon*nB)",
+    "driven_reaction": "B+F <-> I+W; k_IB^d=rate*eta*exp(-epsilon_ts*nB-mu/2); k_BI^d=rate*eta*exp((epsilon-epsilon_ts)*nB+df+mu/2)",
+    "transition_state_meaning": "epsilon_ts=ts_fraction*epsilon is a local contact energy of a second reaction saddle, independent of region labels. An additive common barrier may be absorbed into the time unit. It is an ASSUMED molecular energy, not a measured catalyst or an emergent property.",
+    "thermodynamic_ratios": ["k_BI^p/k_IB^p=exp(-DeltaH)", "k_BI^d/k_IB^d=exp(-DeltaH+mu)", "DeltaH(B->I)=-df-epsilon*nB"],
+    "fuel": "uniform chemostats F,W; mu=mu_F-mu_W fixed from t=0. Every net driven B->I consumes one F and returns one W; reverse events reverse that exchange. Reservoirs are placed external environments.",
+    "diffusion": "one-site hop to empty nearest neighbor at D/(2*d)*exp(epsilon*nB_source) for B, D/(2*d) for I; reverse-hop ratio is exp(-DeltaH). Transition state has no B contacts. No overlaps or artificial permeability masks.",
+    "balances": ["macromolecule count exactly constant", "H from independent full-lattice pair count", "work=mu*(driven_BI-driven_IB)", "heat_to_bath=work-(H-H0); also accumulated event by event from log forward/reverse rates"],
+    "limitations": ["implicit overdamped thermal solvent; particle momentum is not tracked", "uniform ideal fuel reservoirs, no finite fuel transport", "cubic lattice anisotropy and contact-energy coarse graining", "microscopic chemistry and saddle contact energies are hypotheses, not fitted to real molecules"]
+  },
+  "initial": {
+    "density": 0.18,
+    "occupied_sites": "exactly round(density*N^d) independent uniformly sampled sites, without replacement",
+    "B_fraction": "floor(number_of_molecules/2) randomly located B conformers, remaining I",
+    "same_initial_state_for_all_cases_at_same_seed_and_size": true,
+    "shape_seeded": false,
+    "inner_outer_labels": false,
+    "put_in": ["macromolecules and their two states", "pair and transition-state energies", "hard-core exclusion", "thermal bath", "optional uniform fuel/waste chemostats", "molecular lattice and finite periodic volume"]
+  },
+  "defaults": {"epsilon": -1.2, "df": 1.2, "mu": 0.0, "eta": 1.0, "ts_fraction": 0.5, "D": 100.0, "rate": 1.0},
+  "cases": [
+    {"id": "passive", "eta": 0.0},
+    {"id": "equilibrium_two_paths", "mu": 0.0},
+    {"id": "driven_plus", "mu": 2.0},
+    {"id": "driven_minus", "mu": -2.0},
+    {"id": "common_saddle_plus", "mu": 2.0, "ts_fraction": 0.0},
+    {"id": "no_bonds_plus", "mu": 2.0, "epsilon": 0.0},
+    {"id": "frozen_reaction", "rate": 0.0}
+  ],
+  "known_control": "With ts_fraction=0 the summed reaction ratio equals exp(epsilon*nB+df_eff), df_eff=df+log((1+eta*exp(mu/2))/(1+eta*exp(-mu/2))). Structure can be effective-equilibrium while fuel still cycles. This algebraic check is V, never a new discovery.",
+  "numerics": {
+    "method": "exact continuous-time Markov process via constant-bound null-event uniformization; local event acceptance and local neighbor updates only; no finite integration dt",
+    "scheduler_disclosure": "global uniform proposal and auxiliary Poisson clock schedule local events; no global-state-dependent force, oracle, FFT or implicit solve. Does not claim physically simultaneous hardware execution.",
+    "no_clipping_or_mass_repair": true,
+    "all_histories_start_at_zero": true,
+    "refuse_existing_output_directory": true,
+    "keep_every_failure": true,
+    "sample_interval": 10.0
+  },
+  "validation_first": ["local detailed balance for every neighbor count and both pathways", "independent full-lattice count and neighbor-cache agreement at every sample", "finite-system Boltzmann distribution versus exact state enumeration at mu0, 3D first", "common-saddle effective-equilibrium control", "one-particle random-walk statistics and unwrapped displacements", "same-seed state determinism and output protection", "energy/work/heat bookkeeping"],
+  "discovery": {"dimension": 3, "N": 24, "T": 300.0, "seeds": [19,43,71], "cases": "all seven; 21 runs"},
+  "verification": {"dimension": 3, "N": [32,48], "T": 1000.0, "holdout_seeds": [127,251,367], "selection": "follow up descriptive contrasts only after freezing all discovery outcomes; preregister specific matched controls before new runs", "volume_meaning": "lattice spacing is molecular size: larger N means larger physical volume, not numerical resolution refinement", "dimension_2": "diagnostic comparison only after 3D, never new-discovery substitute"},
+  "readouts": ["all neighbor-count bins 0..2d, without selecting an interface in the dynamics", "B/I/vacancy densities and reversible reaction counts separately by pathway and neighbor count", "hop fluxes between all local-neighbor environments", "periodic connected-region volumes, spans and topology limitations", "coarse-density variance at fixed local averaging lengths 2 and 4 molecular cells", "identity turnover and residence from persistent physical molecule IDs; observer labels never affect dynamics", "building-block, pair-count and work/heat budgets", "true-3D diagnostics and all negative outcomes"],
+  "fixed_analysis": {
+    "late_window_fraction": [0.7,1.0],
+    "coarse_density_thresholds": [0.3,0.5,0.7],
+    "instantaneous_local_environment_groups": {"dilute":"nB0..1","intermediate":"nB2..4","dense":"nB5..6; 3D only; all original bins retained"},
+    "budget_rejection": {"any_count_or_neighbor_cache_disagreement": "reject immediately, save failure", "relative_work_heat_identity_error": 1e-10, "nonfinite_values": "reject"},
+    "qualification": "At least three DISTINCT physical observations require independent mechanism/alternative controls, discovery+holdout replication, time/volume evidence and a justified material-compartment relation. Known textbook/literature reproduction, direct read-back of rate/energy parameters and splitting one instability into several knobs do not count. No promise that three will be found.",
+    "qualified_count_at_registration": 0,
+    "formal_membrane_claim": "not allowed without closed-interior, material mapping, selective transport and physical-resolution evidence; no ladder promotion by a density image"
+  },
+  "primary_source": {"url":"https://doi.org/10.1073/pnas.2501145122","preprint":"https://arxiv.org/abs/2505.16824","relation":"local exclusion, pair energy and thermodynamic constraints are related. Our 3D unseeded initial conditions and uncapped transition-state pair-energy rates are different. No source code copied; published known outcomes excluded from discovery count."},
+  "no_touch": ["existing physical models", "official Rooms", "past results", "scientific gates", "previous campaign evidence and final status"]
+}
