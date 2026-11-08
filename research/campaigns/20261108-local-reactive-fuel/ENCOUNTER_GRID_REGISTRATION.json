@@ -1,0 +1,14 @@
+{
+  "registered_after_all60_discovery_runs_before_grid_runs":true,
+  "question":"How do the declared local encounter and transport conditions evolve over a broad range of encounter prefactors, with the same reservoir aperture and explicit stoichiometry?",
+  "role":"F, prospective conditions map; no desired morphology is specified",
+  "dimension":3,"N":24,"T":300.0,"seeds":[29,59,83],
+  "grid":{"eta":[1.0,10.0,100.0],"D_F_and_D_W":[1.0,100.0],"source":["plane","uniform"],"df":[1.2,2.4],"mu":-4.0},
+  "slots":72,
+  "reuse":"Exact existing N24/T300/same-seed/same-physical-parameter discovery histories are linked with hashes, never rerun or counted twice. A mathematically equivalent sparse proposal scheduler may be used for new points only after independent validation.",
+  "numerical_acceleration":{"physical_law_unchanged":true,"reason":"A fuel or waste neighbor cannot also be a B neighbor. At given nB, sample a neighbor uniformly from the z-nB non-B neighbors and use conditional reaction coefficient k_cond=k_raw*(z-nB)/z. The maximum k_cond supplies the bound. Actual rate for each allowed occupied fuel pair remains k_cond/(z-nB)=k_raw/z, exactly the original law. nB=z permits no fuel encounter.","reference":"retain local_kmc.cpp and experiment.py unchanged","new_files":"local_kmc_sparse.cpp and experiment_sparse.py, separately hashed","validation_before_research":"grand-canonical/source/closed balances plus an isolated two-state pair with nB=2: equilibrium probabilities AND temporal autocorrelation must match exact transition rates; deterministic repeats and overwrite protection"},
+  "observations":"Same original density widths/thresholds, local reaction bins, x profiles, source currents, state histories and medium-entropy ledger. All points/seeds retained. No new success threshold.",
+  "late_window_fraction":[0.7,1.0],
+  "interpretation":"The completed60 runs show that transport geometry and actual finite fuel matter; single-path controls still assemble without sustained cycling. Source-aligned density, chemical work and equilibrium phase separation alone do not fill the goal. Freeze the full72-slot map before selecting further holdouts.",
+  "qualified_count_before_grid":0
+}
