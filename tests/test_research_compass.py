@@ -118,8 +118,11 @@ def test_specific_candidate_is_front_page_before_broad_recurrence(monkeypatch, t
     _fixtures(paths)
     compass, _ = research_compass.build_compass(now="2026-08-13T00:00:00+00:00")
     cards = compass["important_discoveries"]
-    assert cards[0]["kind"] == "condition_specific_unknown_transition"
-    assert "X-specific" in cards[0]["title"]
+    assert cards[0]["kind"] == "unicellular_bag_front"
+    assert cards[0]["evidence_status"] == "ORIENTATION"
+    assert "life" in cards[0]["not_claimed"]
+    assert cards[1]["kind"] == "condition_specific_unknown_transition"
+    assert "X-specific" in cards[1]["title"]
     assert any(x["kind"] == "robust_background_transition" for x in cards)
     assert any(x["kind"] == "cross_world_zero_aligned" for x in cards)
 
@@ -196,8 +199,28 @@ def test_next_question_uses_live_recurrent_x_count(monkeypatch, tmp_path):
     emergence["recurrent_unlabeled_patterns"] = 137
     _write(paths["_EMERGENCE"], emergence)
     compass, _ = research_compass.build_compass(now="2026-08-13T00:00:00+00:00")
+    assert compass["highest_value_next_questions"][0] == research_compass._UNICELLULAR_NEXT
     assert any("137種類規模" in x for x in compass["highest_value_next_questions"])
     assert not any("111種類規模" in x for x in compass["highest_value_next_questions"])
+
+
+def test_pinned_lanes_survive_in_human_markdown(monkeypatch, tmp_path):
+    paths = _install_paths(monkeypatch, tmp_path)
+    _fixtures(paths)
+    compass, memory = research_compass.build_compass(now="2026-08-13T00:00:00+00:00")
+    text = research_compass.render_markdown(compass)
+    assert "三つの仕事を混ぜない" in text
+    assert "単細胞／袋" in text
+    assert "PR 133" in text
+    assert "PR 134" in text
+    assert "暗い芯を身体と数えない" in text
+    assert compass["headline"] == research_compass._UNICELLULAR_HEADLINE
+    assert compass["lanes"]["lead"] == "unicellular-bag"
+    assert compass["integrity"]["vortex_hole_is_unicellular_bag"] is False
+    assert compass["integrity"]["torus_is_required_for_a_body"] is False
+    holes = [x for x in memory["entries"] if x.get("key") == "integrity:holes-are-not-bags"]
+    assert len(holes) == 1
+    assert "穴" in holes[0]["human_short"]
 
 
 def test_local_energy_card_keeps_causal_limit(monkeypatch, tmp_path):

@@ -1,3 +1,5 @@
+> 2026-08 の研究レーンと袋の不成立の記録は `docs/UNICELLULAR_FRONT.md`。現在地は `RESEARCH_COMPASS.md`。
+
 # 🧭 Aeterna Research Compass
 
 **いま一番見るべきもの：条件と結びつく名無し変化 X-e64f84a189**
