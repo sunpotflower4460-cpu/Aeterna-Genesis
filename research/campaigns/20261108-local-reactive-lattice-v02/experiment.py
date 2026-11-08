@@ -100,19 +100,19 @@ def analyse(path,recipe,elapsed):
     return summary
 
 
-def run(out,stage,case,n=24,d=3,T=300.,seed=19,density=.18,molecules=None):
+def run(out,stage,case,n=24,d=3,T=300.,seed=19,density=.18,molecules=None,scheduler=0):
     path=Path(out)/stage/f'{case["id"]}-d{d}-n{n}-T{T:g}-s{seed}'
     path.mkdir(parents=True,exist_ok=False)
     p=parameters(case);molecules=round(density*n**d) if molecules is None else molecules
     recipe={'case':case,'parameters':p,'N':n,'dimension':d,'T':T,'seed':seed,'molecules':molecules,
         'density':molecules/n**d,'starts_at_zero':True,'shape_seeded':False,'molecular_spacing':1.,'initial_B_fraction':p['initial_B_fraction'],'initial_B_count':int(molecules*p['initial_B_fraction']),
-        'numerical_dt':None,'method':'exact constant-bound null-event CTMC; sampling interval 10',
+        'numerical_dt':None,'scheduler':scheduler,'method':('exact state-type-bound thinning CTMC' if scheduler else 'exact constant-bound null-event CTMC')+'; sampling interval 10',
         'sources':{str(x.relative_to(ROOT)):digest(x) for x in [HERE/'local_kmc.cpp',Path(__file__),HERE/'PRE_REGISTRATION.json']},
         'versions':{'python':platform.python_version(),'numpy':np.__version__},
         'qualified_changes':0,'material_mapping':'hypothetical contact and saddle energies, no named-molecule calibration'}
     save(path/'recipe.json',recipe);start=time.monotonic()
     args=[str(binary()),str(n),str(d),str(molecules),str(T),str(seed)]+[
-        str(p[k]) for k in ['epsilon','df','mu','eta','ts_fraction','D','rate']]+[str(path),str(int(molecules*p['initial_B_fraction'])),str(p['D_I'])]
+        str(p[k]) for k in ['epsilon','df','mu','eta','ts_fraction','D','rate']]+[str(path),str(int(molecules*p['initial_B_fraction'])),str(p['D_I']),str(scheduler)]
     try:
         with (path/'solver.log').open('w') as log:subprocess.run(args,check=True,stdout=log,stderr=log)
         summary=analyse(path,recipe,time.monotonic()-start)
@@ -129,11 +129,11 @@ def run(out,stage,case,n=24,d=3,T=300.,seed=19,density=.18,molecules=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('stage',choices=['primary','volume'])
-    parser.add_argument('--out',required=True);parser.add_argument('--T',type=float);parser.add_argument('--seeds');parser.add_argument('--cases')
+    parser.add_argument('--out',required=True);parser.add_argument('--T',type=float);parser.add_argument('--seeds');parser.add_argument('--cases');parser.add_argument('--scheduler',type=int,choices=[0,1],default=1)
     args=parser.parse_args();reg=json.loads((HERE/'PRE_REGISTRATION.json').read_text())
     seeds=[int(x) for x in args.seeds.split(',')] if args.seeds else ([127,251,367] if args.stage=='primary' else [127])
     times=[args.T] if args.T else ([300.,3000.] if args.stage=='primary' else [1000.])
     cases=[c for c in reg['cases'] if not args.cases or c['id'] in args.cases.split(',')]
     for T in times:
         for seed in seeds:
-            for case in cases:run(args.out,args.stage,case,n=32 if args.stage=='primary' else 48,d=3,T=T,seed=seed)
+            for case in cases:run(args.out,args.stage,case,n=32 if args.stage=='primary' else 48,d=3,T=T,seed=seed,scheduler=args.scheduler)

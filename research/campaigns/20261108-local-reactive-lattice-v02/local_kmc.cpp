@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <random>
 #include <stdexcept>
@@ -16,6 +17,7 @@
 
 struct Rates {
   double eps,df,mu,eta,ts,D,DI,DB,scale,pbar=0,dbar=0,total=0;
+  double pBbar=0,pIbar=0,dBbar=0,dIbar=0,RB=0,RI=0;
   int d,z;
   std::array<double,7> bp{},ip{},bd{},id{},hop{};
   Rates(double e,double f,double m,double h,double t,double mobility,double rate,int dim,double inert_mobility=-1.):
@@ -28,8 +30,11 @@ struct Rates {
       bd[n]=scale*eta*std::exp((eps-ts)*n+df+mu/2);
       hop[n]=std::exp(eps*n);
       pbar=std::max({pbar,ip[n],bp[n]});dbar=std::max({dbar,id[n],bd[n]});
+      pBbar=std::max(pBbar,bp[n]);pIbar=std::max(pIbar,ip[n]);
+      dBbar=std::max(dBbar,bd[n]);dIbar=std::max(dIbar,id[n]);
     }
     total=D+pbar+dbar;
+    RB=DB+pBbar+dBbar;RI=DI+pIbar+dIbar;
     if(!std::isfinite(total)||total<=0)throw std::runtime_error("invalid proposal bound");
   }
 };
@@ -50,8 +55,10 @@ int main(int argc,char** argv) {
         <<r.id[n]<<','<<r.hop[n]<<','<<r.pbar<<','<<r.dbar<<','<<r.total<<'\n';
     return 0;
   }
-  if(argc!=16)throw std::runtime_error("expected N d molecules T seed epsilon df mu eta ts_fraction D rate out initial_B_count D_I");
+  if(argc!=17)throw std::runtime_error("expected N d molecules T seed epsilon df mu eta ts_fraction D rate out initial_B_count D_I scheduler");
   const int N=std::stoi(argv[1]),d=std::stoi(argv[2]),M=std::stoi(argv[3]),B0=std::stoi(argv[14]);
+  const int scheduler=std::stoi(argv[16]);
+  if(scheduler!=0&&scheduler!=1)throw std::runtime_error("unknown numerical scheduler");
   const double T=std::stod(argv[4]); const uint64_t seed=std::stoull(argv[5]);
   Rates r(std::stod(argv[6]),std::stod(argv[7]),std::stod(argv[8]),std::stod(argv[9]),
           std::stod(argv[10]),std::stod(argv[11]),std::stod(argv[12]),d,std::stod(argv[15]));
@@ -83,8 +90,10 @@ int main(int argc,char** argv) {
   }
   std::vector<int32_t> position(permutation.begin(),permutation.begin()+M),at(V,-1);
   std::vector<uint8_t> state(M),nb(V,0);
+  std::vector<int> Bids,Iids,rank(M);Bids.reserve(M);Iids.reserve(M);
   std::vector<int64_t> displacement(M*d,0);
   for(int p=0;p<M;++p){at[position[p]]=p;state[p]=p<B0;}
+  for(int p=0;p<M;++p){auto &list=state[p]?Bids:Iids;rank[p]=list.size();list.push_back(p);}
   auto isB=[&](int x){return at[x]>=0&&state[at[x]]==1;};
   for(int x=0;x<V;++x)for(int a=0;a<r.z;++a)nb[x]+=isB(neighbors[x][a]);
   int64_t NB=B0,pairs=0;
@@ -123,7 +132,12 @@ int main(int argc,char** argv) {
       if(isB(x)){actualB++;actualPairs+=n;}
     }
     if(count!=M||actualB!=NB||actualPairs!=2*pairs)throw std::runtime_error("independent mass/pair budget failed");
-    for(int p=0;p<M;++p)if(at[position[p]]!=p)throw std::runtime_error("particle identity lost");
+    for(int p=0;p<M;++p) {
+      if(at[position[p]]!=p)throw std::runtime_error("particle identity lost");
+      const auto &list=state[p]?Bids:Iids;
+      if(rank[p]<0||size_t(rank[p])>=list.size()||list[rank[p]]!=p)throw std::runtime_error("scheduler type membership disagrees with physical state");
+    }
+    if(int64_t(Bids.size())!=NB||int64_t(Iids.size())!=M-NB)throw std::runtime_error("scheduler count disagrees with physical state");
     int64_t driven=0;for(int n=0;n<=r.z;++n)driven+=reactions[2][n]-reactions[3][n];
     const long double H=r.df*NB+r.eps*pairs,work=r.mu*driven,error=heat-(work-(H-H0));
     if(std::abs(error)>1e-10*std::max({1.L,std::abs(work),std::abs(H-H0)}))
@@ -141,12 +155,22 @@ int main(int argc,char** argv) {
   };
   auto event=[&]() {
     proposals++;
-    const int p=index(M),x=position[p],n=nb[x];const bool B=state[p];
-    double choice=uniform()*r.total;
-    if(choice<r.D) {
+    int p;double choice;
+    if(scheduler==0){p=index(M);choice=uniform()*r.total;}
+    else {
+      const double bweight=NB*r.RB,total=bweight+(M-NB)*r.RI;
+      choice=uniform()*total;const bool selectB=choice<bweight;
+      const auto &list=selectB?Bids:Iids;
+      if(list.empty())throw std::runtime_error("selected empty auxiliary type");
+      choice=(choice-(selectB?0.:bweight))/list.size();
+      p=list[index(list.size())];
+    }
+    const int x=position[p],n=nb[x];const bool B=state[p];
+    const double diffusion_bound=scheduler?(B?r.DB:r.DI):r.D;
+    if(choice<diffusion_bound) {
       int direction=index(r.z),y=neighbors[x][direction];
       if(at[y]>=0)return;
-      const double acceptance=B?r.DB/r.D*r.hop[n]:r.DI/r.D;
+      const double acceptance=B?r.DB/diffusion_bound*r.hop[n]:r.DI/diffusion_bound;
       if((B||acceptance<1.)&&uniform()>=acceptance)return;
       int destination=nb[y]-int(B); // remove departing B before counting destination contacts
       transitions[int(B)][n][destination]++;
@@ -159,19 +183,27 @@ int main(int argc,char** argv) {
       displacement[p*d+direction/2]+=(direction%2==0?1:-1);
       return;
     }
-    choice-=r.D;int path=0;double actual=B?r.bp[n]:r.ip[n];
-    if(choice>=r.pbar){path=1;choice-=r.pbar;actual=B?r.bd[n]:r.id[n];}
+    choice-=diffusion_bound;int path=0;double actual=B?r.bp[n]:r.ip[n];
+    const double passive_bound=scheduler?(B?r.pBbar:r.pIbar):r.pbar;
+    if(choice>=passive_bound){path=1;choice-=passive_bound;actual=B?r.bd[n]:r.id[n];}
     if(choice>=actual)return;
     const int sign=B?-1:1;
     const double deltaH=sign*(r.df+r.eps*n);
     heat+=-deltaH+(path?r.mu*(-sign):0.);
     reactions[(path?2:0)+(B?0:1)][n]++;
+    auto &from=B?Bids:Iids;auto &to=B?Iids:Bids;
+    const int last=from.back();from[rank[p]]=last;rank[last]=rank[p];from.pop_back();
+    rank[p]=to.size();to.push_back(p);
     NB+=sign;pairs+=sign*n;state[p]=!B;
     for(int a=0;a<r.z;++a)nb[neighbors[x][a]]+=sign;
   };
-  long double next=-std::log(uniform())/(M*r.total);
+  auto waiting=[&]()->long double {
+    const double intensity=scheduler?NB*r.RB+(M-NB)*r.RI:M*r.total;
+    return intensity>0?-std::log(uniform())/intensity:std::numeric_limits<long double>::infinity();
+  };
+  long double next=waiting();
   for(int sample=0;sample<=samples;++sample) {
-    while(next<=sample*10.L){event();next+=-std::log(uniform())/(M*r.total);}
+    while(next<=sample*10.L){event();next+=waiting();}
     measure(sample);
   }
   return 0;
