@@ -1,0 +1,32 @@
+name: Research campaign instruments
+on:
+  pull_request:
+    paths:
+      - 'research/campaigns/20261108-*/**'
+      - '.github/workflows/research-campaign-instruments.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  numerical-instruments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Scalar-field reference equivalence, 3D first
+        run: python research/campaigns/20261108-conserved-mixtures/run.py validate --out "$RUNNER_TEMP/field-validation"
+      - name: Determinism, symmetry and output protection
+        run: python -m pytest research/campaigns/20261108-conserved-mixtures/test_instruments.py -q
+      - name: Transport and reversible-reaction instruments
+        run: python -m pytest research/campaigns/20261108-reactive-mixture/test_thermodynamics.py -q
+      - name: Bounded material model and independent local limit
+        run: python -m pytest research/campaigns/20261108-reactive-mixture-v02/test_bounded_model.py -q
