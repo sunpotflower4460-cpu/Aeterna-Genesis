@@ -1,0 +1,37 @@
+{
+  "file": "audits/p10_transport_free_energy_v01/results/summary.json",
+  "corrections": [
+    {
+      "id": "FMT-1",
+      "kind": "format only (non-standard JSON -> standard JSON)",
+      "change": "headline.T10_rk4_order: NaN -> null; reason recorded in json_null_fields[0].reason",
+      "numeric_or_verdict_change": false,
+      "verified_equal_fields": "all other fields of the scored summary are equal to the original",
+      "pre_change_sha256": "7db013c207c49018c0a42da45b0daaa6101fee20be58636f5d483fbaee8796fe",
+      "pre_change_copy": "audits/p10_transport_free_energy_v01/results/corrections/summary.pre-json-fix.json",
+      "post_change_sha256": "785dc82189cafe62bdedf91190e0d4b26dd13ceeed3c5174f15d36cdea9a8ab9"
+    }
+  ],
+  "scored_outputs_not_rewritten": {
+    "numerical_results.csv": {
+      "sha256_now": "b0271572591a5f4f58f92deb903694ca9011a372851234c5947189b4d2a691b9",
+      "sha256_at_scored_commit": "b0271572591a5f4f58f92deb903694ca9011a372851234c5947189b4d2a691b9"
+    },
+    "manifest.json": {
+      "sha256_now": "a425b29959b8e548b8d88a93aad7b374f19bf4e0c5daa1f5b318714f146c9876",
+      "sha256_at_scored_commit": "a425b29959b8e548b8d88a93aad7b374f19bf4e0c5daa1f5b318714f146c9876"
+    },
+    "test_results.json": {
+      "sha256_now": "b14e72ca809fceeb513185e12e42f4a8ca5627ce64bd43d21cb4fc6b43b91e82",
+      "sha256_at_scored_commit": "b14e72ca809fceeb513185e12e42f4a8ca5627ce64bd43d21cb4fc6b43b91e82"
+    }
+  },
+  "code_changes_after_scored_run": {
+    "run_audit.py": {
+      "sha256_at_scored_commit": "56f4bbf7dcb99bd2fc76be4066235cc2644cbad132098f9061472a1316ef4a98",
+      "sha256_now": "458a645a66191dd7f67bfda9a16266fb74766f301e96129fe40065709168f5e3",
+      "why": "JSON writes now use strict_json (format only). Scored run was not repeated."
+    }
+  },
+  "note": "manifest.json code hashes describe the code that produced the scored run; they were not regenerated."
+}
