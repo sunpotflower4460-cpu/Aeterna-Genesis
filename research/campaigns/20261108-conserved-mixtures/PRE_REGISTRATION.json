@@ -1,0 +1,115 @@
+{
+  "campaign": "conserved-mixtures-v01",
+  "base_commit": "9234201174c1266219a7e96ef5a8712551d988df",
+  "question": "What does an initially uniform mixture of two local relativistic complex fields do as their density and cross-interaction vary?",
+  "ladder_context": [
+    "R0",
+    "R2",
+    "R4 open; no membrane, chemistry, life or rung promotion claimed"
+  ],
+  "physics": {
+    "lagrangian": "sum_i |d_t z_i|^2 - |grad z_i|^2 - V",
+    "potential": "sum_i [lambda |z_i|^2 (|z_i|^2-v^2)^2 + m2 |z_i|^2] + g |z_1|^2 |z_2|^2",
+    "lambda": 0.02,
+    "v": 1.0,
+    "m2": 0.005,
+    "e": 0.0,
+    "boundary": "periodic",
+    "conserved": [
+      "Hamiltonian energy",
+      "Q1=2 Im(sum conj(z1) p1)",
+      "Q2=2 Im(sum conj(z2) p2)"
+    ],
+    "classification": "classical scalar-field theory; not an identified chemical material; not a microscopic derivation of life"
+  },
+  "initial": {
+    "amplitude": 0.5,
+    "relative_noise": 0.02,
+    "noise": "fixed low-frequency isotropic random Fourier modes; same continuum realization at each resolution",
+    "momentum": "uniform rotation +/-omega times the homogeneous field plus zero momentum noise; omega from homogeneous field equation",
+    "shape_seeded": false,
+    "objects_seeded": false,
+    "charge_placed": true,
+    "quantum_claim": false
+  },
+  "discovery": {
+    "dimension": 3,
+    "physical_length": 64.0,
+    "grid": 48,
+    "duration": 500.0,
+    "dt": 0.15,
+    "snapshot_interval": 10.0,
+    "seeds": [
+      11,
+      23,
+      37
+    ],
+    "couplings": [
+      -0.01,
+      0.0,
+      0.01
+    ],
+    "controls": [
+      "same initial realization and homogeneous amplitude",
+      "one-field matched universe",
+      "zero rotation matched universe",
+      "convex potential with no attractive quartic, role V/negative instrument control"
+    ]
+  },
+  "verification": {
+    "holdout_seeds": [
+      101,
+      211,
+      307
+    ],
+    "same_box_grids": [
+      64,
+      96
+    ],
+    "dt_halving": true,
+    "large_box": "128, matching dx and noise spectral density if a finite-box concern is material",
+    "two_dimensional_comparison": "only after all 3D discovery runs; same law, separate claims"
+  },
+  "measurements": [
+    "energy and Q budgets",
+    "spatial density and charge distributions",
+    "density cross-correlation and overlap relative to g=0",
+    "connected-component sizes, percolation and closed 3D interior volumes across fixed thresholds",
+    "amplitude-mode spectrum and time persistence",
+    "three_d_authenticity"
+  ],
+  "fixed_analysis": {
+    "density_threshold_multiples": [
+      1.5,
+      2.0,
+      3.0
+    ],
+    "late_window": [
+      350,
+      500
+    ],
+    "reject_as_numerical_if": {
+      "relative_energy_drift_above": 0.01,
+      "relative_charge_drift_above": 1e-08
+    },
+    "no_posthoc_gate_changes": true,
+    "counted_change_requires": "a distinct physical observation, matched control, repeat across discovery and holdout seeds, no direct read-back of an input, resolution/time-step evidence; known textbook validation alone is not counted",
+    "count_required": 3,
+    "if_fewer": "record the actual qualified count; never subdivide a single observation or reclassify validation to reach three"
+  },
+  "honesty": {
+    "no_runtime_interventions": true,
+    "no_clipping": true,
+    "no_target_stopping": true,
+    "no_solver_intent_input": true,
+    "keep_all_runs": true,
+    "no_touch": [
+      "genesis/models/",
+      "official Rooms",
+      "existing results",
+      "scientific gates"
+    ],
+    "law_change": "no change to existing sb_universe core; different declared potential/initial state in a new campaign"
+  },
+  "status": "preregistered before physics runs"
+}
