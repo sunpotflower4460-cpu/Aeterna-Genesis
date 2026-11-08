@@ -1,0 +1,160 @@
+{
+  "campaign": "reactive-mixture-v01",
+  "role": "F: prospective phenomenological thermodynamic material model, not calibrated to a named chemical mixture",
+  "question": "What happens to an initially uniform, intrinsically convex material mixture when ideal solutes reversibly associate and share reciprocal solubility interactions?",
+  "physical_law": {
+    "free_energy": "F=integral[alpha phi^2/2 + beta phi^4/4 + kappa |grad phi|^2/2 + sum_i c_i(log(c_i)-1+g_i) - chi phi(a+b+2c)]",
+    "reaction": "A+B <-> C; R=kf*a*b-kr*c; K=kf/kr; g_A=g_B=0, g_C=-log K",
+    "chemical_potentials": [
+      "mu_phi=alpha*phi+beta*phi^3-kappa*lap(phi)-chi*(a+b+2c)",
+      "mu_A=log a-chi phi",
+      "mu_B=log b-chi phi",
+      "mu_C=log c-log K-2chi phi"
+    ],
+    "dynamics": [
+      "phi_t=M lap(mu_phi)",
+      "c_i,t=-div J_i+stoichiometric reaction, J_i=-D c_i grad(mu_i)"
+    ],
+    "physical_interpretation": "isothermal coarse-grained mixing/compressibility plus dilute-solute thermodynamics and reversible elementary association; phi is a conserved material-composition deviation, NOT a membrane variable",
+    "parameter_mapping": "dimensionless coefficients; no claim of identified molecules, experimentally verified phase boundaries, or microscopic derivation",
+    "conserved": [
+      "integral phi",
+      "integral(a+c)",
+      "integral(b+c)"
+    ],
+    "thermodynamic_requirement": "F decreases; reaction entropy production R*log(K*a*b/c)>=0; a,b,c>0 without clipping",
+    "shared_diffusivity_all_species": 5.0,
+    "material_mobility": 1.0,
+    "alpha": 1.0,
+    "beta": 4.0,
+    "kappa": 2.0,
+    "heat_bath": "RT=1, isothermal; heat dissipates to bath, total microscopic energy is not simulated"
+  },
+  "initial_conditions": {
+    "phi": "0.01 RMS isotropic low-frequency noise, spatial mean zero",
+    "solutes": "spatially uniform, a=b=.5-c, c=(11-sqrt(21))/20; total A units and B units are .5 each; same concentrations for all cases",
+    "shape_seeded": false,
+    "chemicals_placed": [
+      "A",
+      "B",
+      "bound complex C",
+      "homogeneous material background"
+    ],
+    "no_objects_or_inner_outer_labels": true,
+    "starts_at_t_zero": true,
+    "material_interpretation_validity": "coarse-grained order parameter; no inference of a literal bilayer or living cell"
+  },
+  "cases": [
+    {
+      "id": "coupled",
+      "chi": 1.0,
+      "K": 10.0,
+      "rate": 1.0,
+      "alpha": 1.0
+    },
+    {
+      "id": "no_affinity",
+      "chi": 0.0,
+      "K": 10.0,
+      "rate": 1.0,
+      "alpha": 1.0
+    },
+    {
+      "id": "weak_binding",
+      "chi": 1.0,
+      "K": 0.01,
+      "rate": 1.0,
+      "alpha": 1.0
+    },
+    {
+      "id": "slow_binding",
+      "chi": 1.0,
+      "K": 10.0,
+      "rate": 0.01,
+      "alpha": 1.0
+    },
+    {
+      "id": "frozen_reaction",
+      "chi": 1.0,
+      "K": 10.0,
+      "rate": 0.0,
+      "alpha": 1.0
+    },
+    {
+      "id": "stiff_material",
+      "chi": 1.0,
+      "K": 10.0,
+      "rate": 1.0,
+      "alpha": 2.0
+    }
+  ],
+  "numerics": {
+    "main": "conservative Scharfetter-Gummel implicit line solves, exact local reaction substep, semi-implicit discrete-laplacian Fourier phase solve with subcycling if needed for numerical stability",
+    "locality_disclosure": "PDE is local. Implicit line and Fourier inversions are computational shortcuts; this does not pass the strict local-explicit R0 gate. Independent explicit local short-time and exact-equilibrium tests required.",
+    "no_clipping": true,
+    "no_target_dependent_stopping": true,
+    "numerical_failure_retained": true,
+    "no_existing_results_overwrite": true
+  },
+  "discovery": {
+    "dim": 3,
+    "N": 24,
+    "L": 32.0,
+    "T": 400.0,
+    "dt": 0.25,
+    "seeds": [
+      17,
+      31,
+      53
+    ]
+  },
+  "verification": {
+    "holdout_seeds": [
+      113,
+      227,
+      349
+    ],
+    "same_volume_N": [
+      32,
+      48
+    ],
+    "half_dt": 0.125,
+    "large_volume": "L64 at matching dx if bounded regions do not fit with margin; independent noise at same physical bandwidth",
+    "dimension_2": "comparison only after 3D phase; never substitute for 3D"
+  },
+  "fixed_analysis": {
+    "thresholds_phi": [
+      0.0,
+      0.1,
+      0.2
+    ],
+    "late_window": [
+      300.0,
+      400.0
+    ],
+    "readouts": [
+      "material variance, connected-region geometry and enclosed volume",
+      "inside/outside solute and complex ratios",
+      "reaction quotients and net reaction integrated inside and outside",
+      "growth/coarsening histories",
+      "building-block mass balances and F monotonicity",
+      "resolution, dt and true-3D diagnostics"
+    ],
+    "numerical_rejection": {
+      "relative_atom_balance_error": 1e-08,
+      "absolute_mean_phi_drift": 1e-08,
+      "negative_concentration": "any value below zero rejects; never clipped",
+      "F_increase": "above roundoff rejects or subcycles before accepting numerical state"
+    },
+    "counting": "Three genuinely distinct, controlled, reproducible physical changes are required. Textbook partition alone is validation, not a new finding. Conditional model observations must be labeled. No claim of life or a membrane from a density picture.",
+    "qualified_count_so_far": 0
+  },
+  "no_touch": [
+    "genesis/models",
+    "official Rooms",
+    "existing result artifacts",
+    "existing scientific gates"
+  ],
+  "base_commit": "d813db9e6966d61c8b49e1c96174585026218219",
+  "status": "preregistered before any model computation"
+}
