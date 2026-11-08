@@ -1,0 +1,284 @@
+Aeterna Genesis: shape-free conserved fields and material mixtures
+2026-11-08 / technical handoff and integrity audit
+
+結論
+「生命の器につながる、独立した新しい変化を3件」という目標は未達。
+採用件数は0件。濃い領域の画像、既知の相分離、同じ不安定性の係数違い、
+測定器の正解確認を、3件の発見に言い換えない。
+この報告は生命が不可能だという結論ではなく、今回調べた前提の限界を示す。
+
+1. Scope, provenance and claims
+
+Base main: 9234201174c1266219a7e96ef5a8712551d988df.
+Research branch: research/conserved-field-mixtures-20261108; draft PR #176.
+Existing models, official Rooms, historical results and scientific gates are not
+modified. No autonomous research schedule is enabled. No main-branch merge is
+part of this research report. Earlier merge work is separately documented in
+docs/merge-20261108-audit.txt.
+
+Claim tiers:
+  measured: recorded field statistics, conservation budgets and numerical checks;
+  observed: conditional contrasts within the declared dimensionless models;
+  F/frontier: relation to material compartments or a physical precursor of life;
+  not established: membrane, sustained metabolism, replication, R3 or R4 passage.
+No candidate is promoted in research/ladder.json. It remains R0 reached,
+R1 partial, R2/R3/R4 open. The campaigns do not represent one integrated universe.
+
+All claimed final counts and raw-file SHA-256 values are in evidence/manifest.json.
+The verified final archive contains 124 completed histories (85 full three-axis
+executions and 39 2D comparisons), plus two explicitly interrupted histories.
+collect_evidence.py has verified that exact matrix. The manifest, rather than
+this prose alone, is the record of completion and checkpoint identity.
+
+2. Conserved classical fields: 66 completed histories
+
+Law: two classical complex Klein-Gordon fields with local nearest-neighbor
+gradient energy and
+  V = sum_i [.02 s_i(s_i-1)^2 + .005 s_i] + g s_1 s_2,
+  s_i = |z_i|^2, g = -.01, 0, +.01.
+Uniform amplitude .5, .01 RMS isotropic low-mode noise, opposite uniform momenta
+set from a common uncoupled reference frequency. Charge, fields, the polynomial
+potential and periodic space are PLACED assumptions. No object or boundary shape
+is placed. This is not a chemical or quantum derivation of matter.
+
+Discovery: 48^3, L64, dt .15, T500, seeds 11/23/37, three couplings plus
+single-field, zero-rotation and convex-potential controls: 18 histories.
+Holdout: grids 64^3 and 96^3, same L/T/dt, seeds 101/211/307, three couplings:
+18 histories. Additional t=0 controls: T1000, L128 at matched spacing, exact
+species-conjugation symmetry, and dt .075 at 96^3: 12 histories. Subsequent 2D
+comparison: 18 histories. Equations are unchanged during every history.
+
+Discovery measurements, late time 350..500:
+  attractive: each field's density CV .154..185; positive correlation .626..774;
+  repulsive: CV 1.232..1.323; negative correlation -.508..-.420;
+  uncoupled: seed dependence matters. Seed23 field1 CV .133, while other
+    components can localize. No choosing the favorable component after the run.
+  zero rotation: dense oscillating regions also appear; zero global charge does
+    not by itself prevent density concentration.
+  convex potential: low-contrast field fluctuations, a validation control.
+
+All 66 recorded energy budgets pass the prospectively fixed .01 relative limit.
+Maximum relative energy-density drift is .0004549869215295785; maximum absolute
+charge-density drift is 5.551115123125783e-17. These are numerical budgets, not
+proof of exact finite-step energy conservation or continuum convergence.
+
+Read-only sector diagnostic assigns half the cross energy to each sector. In
+the three attractive discovery runs, sector1 changes by +.0350, -.0453, +.0537
+of initial total energy; its sign depends on the seed. The uncoupled changes
+are at most about 3.8e-6. Exact conjugate symmetry prevents spontaneous sector
+inequality. Sector-energy exchange is conditional field behavior, not metabolism.
+
+The larger-box and longer-time controls retain the broad low/high contrast
+difference. Grid/time-step checks and holdouts are archived individually rather
+than replaced by one favorable summary. No hollow material boundary or selective
+transport has been established. Scalar energy concentrations count as zero
+life-vessel discoveries.
+
+3. Ideal material mixture v01: retained and excluded
+
+Generic isothermal A+B <-> C plus conserved material composition phi, reciprocal
+solubility interactions and ideal mixing. The single N24/L32/T400/seed17 pilot
+conserves its building blocks and decreases its finite-grid free energy.
+
+It nevertheless fails a more fundamental continuum check. Let fixed solute mass
+m concentrate within radius R and choose phi=A/R f(x/R). The gradient, quartic
+and attraction terms scale as
+  [C2*kappa*A^2 + C4*beta*A^4 - C1*chi*m*A]/R.
+For sufficiently small A>0 the coefficient is negative; ideal entropy increases
+only logarithmically. A uniform O(R^2) compensation preserves the material mean.
+The continuum F is therefore not bounded below. A finite grid can hide collapse.
+The pilot and original source remain untouched, classified as unqualified.
+See 20261108-reactive-mixture/MODEL_LIMIT.json. This is not a membrane finding.
+
+4. Bounded reciprocal material v02: a separate law from t=0
+
+Constitutive hypothesis, not fitted to identified molecules:
+  F = integral[alpha phi^2/2 + beta phi^4/4 + kappa |grad phi|^2/2
+      + sum_i c_i(log c_i-1+g_i) - chi phi n + eta n^2/2],
+  n=a+b+2c; g_A=g_B=0; g_C=-log K; eta>0.
+  phi_t = M lap(mu_phi); J_i=-D c_i grad(mu_i).
+  A+B <-> C, R=.02*rate*(K*a*b-c).
+Every reaction conserves A and B building blocks; both reaction directions are
+removed together in the frozen control. The nonideal chemical potentials cancel
+from the reaction affinity by stoichiometry. No protection/degradation mask,
+inside/outside labels, autocatalytic multiplication or growth rule is supplied.
+
+Bound:
+  eta n^2/2 - chi phi n = eta/2(n-chi phi/eta)^2 - chi^2 phi^2/(2eta).
+Beta>0 bounds the remaining polynomial below; ideal mixing has a finite lower
+bound. Thus v01's continuum-collapse argument does not apply to v02.
+
+Defaults: alpha1, beta4, kappa2, eta.1, M1, D5 for all three species, chi1, K10,
+rate1. All runs start with mean-zero .01 RMS material noise and spatially uniform
+a=b=.5-c, c=(11-sqrt21)/20. Those initial complexes are PLACED. This is not the
+origin of those chemicals. Phi is an unbounded composition deviation, not a
+literal bounded solvent fraction or a bilayer thickness variable. RT=1; heat
+flows to a thermal bath. Total microscopic energy is not simulated.
+
+Discovery: N24/L32/T400/dt.25, seeds17/31/53, seven cases =21 histories:
+  case              late std(phi), range across three seeds
+  coupled           .177390 .. .186620
+  frozen_reaction   .176428 .. .185623
+  slow_binding      .176510 .. .185708    (rate .01)
+  weak_binding      .000507 .. .000702    (K .01)
+  no_affinity       1.77e-9 .. 2.49e-9     (chi 0)
+  stiff_material    1.34e-6 .. 1.88e-6     (alpha 2)
+  high_repulsion    .000178 .. .000250    (eta .5)
+
+Coupled complex enrichment at phi>.1 versus phi<-.1 is about 2.00..2.07, with
+the thresholds fixed before the runs. Initial bound material drives passive
+segregation even when chemistry is frozen. Ongoing reactions are NOT necessary
+for this boundary contrast. Weak binding releases the initially placed complexes
+and the material returns close to uniform. Different K also changes standard
+chemical free energy; it is not a calibrated change of one experimental reagent.
+
+Holdouts: N32, seeds113/227/349, coupled/weak_binding/frozen_reaction: nine runs.
+Same-volume N48 and dt-halving N32: first holdout seed113, three cases each.
+N32 late std(phi) is .1782..1901 coupled, .1773..1891 frozen, and .000462..000693
+weak. At seed113, coupled N32 -> N48 is .190131 -> .189947. The complete paired
+N48/dt-halving summaries, including the frozen control, are in the manifest.
+Frozen N32 -> N48 is .189078 -> .188897. Halving dt for the coupled N32 run
+changes .190131 -> .190316 (about .1%). These are finite tests, not a proof of
+asymptotic convergence in box size, time or microscopic material description.
+Subsequent 2D comparisons: all seven cases and three holdout seeds, 21 histories.
+They are not substituted for 3D evidence.
+
+Across all material histories, maximum building-block density drift is
+4.551914400963142e-15 and maximum mean-phi drift is 1.40898095659894e-16.
+The minimum recorded species concentration is .0025658669676938907; accepted
+free-energy histories decrease within the registered tolerance. These budgets
+also pass in the excluded v01 pilot and therefore cannot certify a material model.
+
+No three independent discoveries are inferred from no-affinity, stiff-material
+and high-repulsion contrasts: all alter the same mixing instability. No hollow
+membrane, selective permeability, self-repair, division or chemical maintenance
+has been measured. No material finite-volume convergence or calibrated molecular
+mapping has been established. A density threshold surface is not a membrane.
+
+Analytical check, NOT a new discovery: eliminating local solute fluctuations
+from the homogeneous free-energy Hessian gives a material curvature
+  alpha - chi^2 S/(1+eta S), S=a+b+4c.
+At the placed initial concentrations, S=1.64174243 and S/(1+.1S)=1.41022054.
+Increasing eta to .5 gives .90162468. Weak binding at its homogeneous equilibrium
+gives S/(1+.1S)=.91318049. Positive gradient stiffness further stabilizes short
+wavelengths. Alpha2, weaker binding, eta.5 and chi0 are therefore different
+changes to the SAME passive instability, not three independent vessel mechanisms.
+The calculation checks an interpretation of the observed contrasts; it does not
+promote them or introduce an after-the-fact success threshold.
+
+For a closed passive continuum model,
+  dF/dt = -integral[M|grad mu_phi|^2 + sum_i D*c_i|grad mu_i|^2
+                    + R log(Kab/c)] <= 0.
+This is a thermodynamic limitation: passive relaxation cannot demonstrate a
+sustained fuel-work cycle. It does not exclude passive compartments in nature.
+
+5. Numerical methods, determinism and infrastructure interruption
+
+Scalar: explicit local kick-drift-kick stencil; six reference histories agree
+with genesis.models.sb_universe to at most 4.17e-16 in field state. The initial
+reference check exposed total-energy versus energy-density units; the instrument
+comparison was corrected before any scalar discovery run. The original failed
+validation attempt was retained locally. It is not a failed physical universe.
+
+Material: exact local reversible-reaction substep; positive conservative periodic
+Scharfetter-Gummel implicit line solves; Fourier inversion of the discrete local
+Laplacian for material relaxation. Numerical trials can be rejected/subcycled
+against the known passive free-energy law. Accepted states are never clipped,
+renormalized, mass-repaired or selected using geometry. Explicitly disclosed:
+implicit/Fourier inversions are global numerical shortcuts, NOT the strict local
+R0 implementation. Positivity/conservation do not alone establish accuracy.
+An independent explicit local short-time RHS, equilibrium, dense cyclic-solver
+comparison and step refinement validate the instruments. Tests of known laws
+are V, excluded from the scientific discovery count.
+
+18 targeted tests: five scalar instruments, six v01 thermodynamic instruments,
+seven bounded-v02 instruments. Same-seed state determinism is checked for the
+scalar stencil (including thread counts) and complete material states. Bitwise
+identity across operating systems/compiler/FFT libraries is not promised.
+
+Managed environment briefly became unavailable. Two histories were interrupted:
+  coupled N32 dt.125 seed113, last sample t245;
+  frozen_reaction N48 dt.25 seed113, last sample t365.
+Their partial files are retained and hashed. Four outstanding histories were
+registered in INTERRUPTION_REGISTRATION.json and run again in a separate
+reactive-mixture-v02-recovery directory, each from t=0. No history is continued
+from an intermediate checkpoint. Completed 2D/3D histories are not rerun or
+overwritten. The infrastructure interruption is not relabeled a numerical error.
+
+6. Integrity checklist, with source anchors
+
+Campaign source anchors below are relative to research/campaigns/.
+
+Initial conditions / put_in / no seeded form:
+  20261108-conserved-mixtures/run.py:100,111; PRE_REGISTRATION.json:initial;
+  20261108-reactive-mixture-v02/experiment_v02.py:21; PRE_REGISTRATION.json:initial_conditions.
+Every t=0, no overwrite:
+  20261108-conserved-mixtures/run.py:64,163; 20261108-reactive-mixture-v02/experiment_v02.py:60;
+  INTERRUPTION_REGISTRATION.json (new output root and explicit no-resume policy).
+Local physical laws, no oracle:
+  20261108-conserved-mixtures/local_solver.cpp:24,69;
+  20261108-reactive-mixture/material_model.py:30,46;
+  20261108-reactive-mixture-v02/material_model_v02.py:17,23,53,61.
+Separate law variants / no mutation of old evidence:
+  both material PRE_REGISTRATION.json files; v01 MODEL_LIMIT.json.
+No mass correction or target-specific intervention:
+  local_solver.cpp:69; material_model_v02.py:23;
+  experiment_v02.py:60 (budget failures raise rather than repair fields).
+Measurement independence / eighth audit:
+  experiment_v02.py:32 uses fixed phi thresholds; the solver receives no labels;
+  inspect_fields.py:16 is read-only, no phenotype gate;
+  plot_audit.py reads recorded states/CSV only; pixels never enter physics.
+No posthoc success threshold:
+  original fixed_analysis contracts retained; qualified count remains zero.
+Failures and negatives:
+  v01 excluded pilot retained; all seven v02 cases and all scalar controls
+  archived; interrupted histories distinguished from complete histories.
+Actual 3D:
+  all primary histories run full 3-axis arrays, no extruded 2D initial field;
+  full-volume three_d_authenticity records in frame summaries. One late scalar
+  snapshot (uncoupled N96 seed307, state-3333.bin) fails the unchanged variation
+  threshold: .000474 < .001. It is retained and explicitly flagged in the
+  manifest; it is not counted as a passed 3D structure. No promotion based solely
+  on this diagnostic. Formal membrane-resolution/closed-interior requirements
+  have not been passed.
+Determinism:
+  20261108-conserved-mixtures/test_instruments.py:31;
+  20261108-reactive-mixture-v02/test_bounded_model.py:64.
+Language / tier:
+  conditional model observations only. Zero qualified vessel changes; no life,
+  membrane, R3/R4, integrated-universe or chemical-origin claim.
+
+7. Portable evidence and reproduction
+
+evidence/ contains all completed recipes, full summaries and CSV series, the two
+interrupted recipes/series, all raw-file SHA-256 values, and full-precision material
+states for ALL seven discovery cases at the fixed first seed (t0 and t400), plus
+the three N48 matched holdout states. This selection is independent of outcomes.
+Other full checkpoints remain in /workspace/artifacts and are NOT all committed
+to GitHub; a hash is a provenance record, not a substitute for available raw bytes.
+Do not claim full historical data persistence if that workspace is lost.
+
+Install repository requirements, use Python3/numpy/scipy/matplotlib and g++.
+Run from repository root; each --out must name fresh storage. For example:
+  python research/campaigns/20261108-conserved-mixtures/run.py validate --out /tmp/NEW-validation
+  python research/campaigns/20261108-conserved-mixtures/run.py discovery --out /tmp/NEW-fields
+  python research/campaigns/20261108-reactive-mixture-v02/experiment_v02.py discovery --out /tmp/NEW-material
+  python research/campaigns/20261108-reactive-mixture-v02/experiment_v02.py verify --out /tmp/NEW-material --grid 32 --seeds 113,227,349 --cases coupled,weak_binding,frozen_reaction
+  python research/campaigns/20261108-reactive-mixture-v02/experiment_v02.py verify --out /tmp/NEW-material --grid 48 --seeds 113 --cases coupled,weak_binding,frozen_reaction
+  python research/campaigns/20261108-reactive-mixture-v02/experiment_v02.py verify --out /tmp/NEW-material --grid 32 --seeds 113 --cases coupled,weak_binding,frozen_reaction --dt .125
+  python research/campaigns/20261108-material-search-audit/plot_audit.py research/campaigns/20261108-material-search-audit/evidence /tmp/material-audit.png
+Followup/dimension recipes are recorded individually in the archive and the
+original registration files. Do not resume a chosen successful intermediate state.
+
+8. Remaining scientific obstacle
+
+The active goal is NOT complete. More parameter tuning within this passive law
+cannot justify three independent life-vessel discoveries. A future active model
+needs explicit elementary chemistry, conserved building blocks, reservoir work,
+and microscopic justification for environment-dependent barriers. Neither an
+"inside is protected" rule nor a pre-existing sphere may supply the result.
+Primary sources and the concrete next-campaign requirements are recorded in
+LITERATURE_AUDIT.json. Existing published active droplets/shells and lattice-fluid
+results are references, not discoveries by this campaign. No external lattice
+code was copied, no new lattice chemistry implemented, and no paper's known
+outcome is used to fill the three-result quota.

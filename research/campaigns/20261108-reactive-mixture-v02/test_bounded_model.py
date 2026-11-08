@@ -60,3 +60,15 @@ def test_step_refinement_approaches_explicit_local_history():
         for _ in range(round(T/dt)):pp,cc=solver.step(pp,cc,dt)
         errors.append(np.linalg.norm(pp-pref)+np.linalg.norm(cc-cref))
     assert errors[0]/errors[1]>1.7
+
+def test_same_seed_repeats_the_complete_material_state_exactly():
+    def history(seed):
+        rng=np.random.default_rng(seed)
+        phi=rng.normal(0,.02,(8,8,8));c=rng.uniform(.1,.8,(3,8,8,8))
+        solver=Solver(phi.shape,8)
+        for _ in range(10):phi,c=solver.step(phi,c,.25)
+        return phi,c,solver.phase_rejections,solver.transport_rejections
+    first,second=history(71),history(71)
+    assert np.array_equal(first[0],second[0])
+    assert np.array_equal(first[1],second[1])
+    assert first[2:]==second[2:]
