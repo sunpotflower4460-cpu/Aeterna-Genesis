@@ -66,7 +66,7 @@ def main(evidence, out):
         for name in ['free_energy']:
             initial=float(rows[0][name])
             axes[1,2].plot(t,[float(r[name])-initial for r in rows],label=case)
-    axes[1,2].set(title='Passive free energy dissipates', xlabel='time', ylabel='F(t) - F(0)')
+    axes[1,2].set(title='Free-energy density dissipates', xlabel='time', ylabel='f(t) - f(0), f = F / volume')
     axes[1,2].legend(fontsize=8)
     fig.suptitle('Shape-free 3D material mixture | t=400, L=32, 48^3 holdout slices\n'
                  'Reaction-frozen control retains concentration: no membrane, metabolism or life claim', fontsize=12)
