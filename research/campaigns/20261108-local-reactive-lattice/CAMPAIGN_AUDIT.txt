@@ -1,0 +1,154 @@
+Local reactive exclusion fluid v01 — 2026-11-08 campaign handoff
+This phase is complete; the standing three-finding research objective is NOT complete.
+Qualified life-vessel-linked findings from this phase: 0. Research continues in v02.
+
+Claim and role
+Measured: conserved molecule counts, Hamiltonian pair counts, event ledgers,
+conformation populations, recorded density/identity statistics in this model.
+Observed/F: finite-time dependence of 3D material concentration on the specified
+local energy landscape and chemical reservoirs. No identified-molecule,
+continuum, membrane, metabolism, life or ladder promotion is established.
+Known equilibrium/statistical tests are V, never discoveries filling the quota.
+
+Physical assumptions placed at t=0
+Periodic cubic molecular lattice (spacing 1, kBT=1), single-site exclusion,
+neutral macromolecules with I/B conformers, H=df*N_B+epsilon*N_BB. Pair contacts
+are local and counted once; the Hamiltonian is bounded below at fixed molecule
+count. Vacancy denotes implicit overdamped solvent; solvent momentum, atomistic
+chemistry, finite fuel transport and hydrodynamic flow are not simulated.
+All initial occupied sites are sampled uniformly without replacement at density
+.18, with floor(M/2) randomly positioned B molecules. No droplet, membrane,
+inner/outer label, target image, catalyst object or body shape is placed.
+
+Passive B<->I and fuel-coupled B+F<->I+W are separately reversible. Their local
+forward/reverse rate ratios are exp(-DeltaH) and exp(-DeltaH+mu), respectively.
+The second saddle has declared contact energy epsilon_ts=ts_fraction*epsilon.
+It is an assumed local molecular energy, not a measured catalyst or an
+emergent protection property. No rate refers to an object or inside/outside.
+F/W activities exp(+mu/2), exp(-mu/2) are uniform ideal external reservoirs,
+constant throughout each trajectory. Both signs and zero drive are tested.
+
+Work and medium entropy
+Every net driven B->I transfers one F to W and chemical work mu. H is checked
+independently from the lattice. The column heat is generalized medium entropy
+flow times kBT, summed from local log forward/reverse rate ratios; the model's
+identity is heat = work - (H-H0). This is not calorimetry for a named chemical
+fuel. See THERMODYNAMIC_SCOPE_NOTE.json. No state is clipped or mass-repaired.
+
+Data and counts
+171 unique complete histories, all immutable, plus 14 known-law validation
+histories (excluded from the research count):
+  discovery       21: N24, T300, seven cases, seeds19/43/71;
+  holdouts        27: N32, T1000, nine cases, seeds127/251/367;
+  volume           3: N48, T1000, first holdout seed, three matched cases;
+  duration         3: N32, T5000, same three cases, new histories from t=0;
+  energy grid    108: N24/T300 new histories, plus 12 exact existing histories
+                     explicitly reused to fill 120 slots (not independent data);
+  comparison 2D    9: only after all primary 3D runs, no substitute for 3D evidence.
+Thus 162 full three-axis research histories and nine 2D comparisons. All tested
+3D checkpoint diagnostics passed the original variation threshold; this alone
+does not establish a resolved closed membrane. Larger N changes physical volume
+at fixed molecular spacing, NOT numerical resolution of a continuum equation.
+
+All completed recipes, summaries and CSV series are in evidence/histories/.
+Every full-precision binary checkpoint is retained in evidence/checkpoints.zip,
+including positions, conformers, persistent molecule IDs by array index, and
+unwrapped displacements. Original SHA-256 values and the archive hash are in
+evidence/manifest.json. All 120 slots, their three seeds, exact reuse and input
+hashes are in evidence/grid.json. No failed or unfavorable universe was deleted.
+No numerical failures occurred in this registered matrix.
+
+What happened, including alternatives
+At original df1.2/epsilon-1.2, negative drive mu=-2 with the half-contact saddle
+produces dense regions in all three N24 discovery seeds. The same qualitative
+contrast appears in all three new N32 holdouts and in larger volume/longer time.
+N32 late B fraction is about .874; final width-4 material variance .0654..0690.
+At N48/T1000 there are TWO threshold-.5 regions (volumes7331 and6576), while
+N32 has about one. A single final picture therefore cannot establish an
+intrinsic stationary droplet size or arrest of coarsening.
+
+Positive drive at the original df consumes more chemical work per molecule
+than the negative-drive case but remains dilute. This rules out using positive
+chemical work alone as a proxy for a vessel. It is not a new finding counted
+merely because mu!=0 supplies work.
+
+The common-saddle negative-drive control is exactly configurationally equivalent
+at stationarity to passive df=.2: df_eff=df+log[(1+eta exp(mu/2))/(1+eta exp(-mu/2))].
+Both controls produce dense material without needing fuel for that equilibrium
+distribution. This is a strong known-law counterexample to attributing every
+dense region to chemical maintenance. N32 B fractions are .828..832 for the
+common saddle and .826..830 for passive df.2; density variance ranges overlap.
+The half-contact driven case has a different B population, so these controls do
+NOT composition-match it. A nonequilibrium-specific structural claim remains
+unresolved, not promoted.
+
+Two-time identity retention is modestly above the chance fraction of molecules
+in a dense region, but these are liquid molecules exchanging conformation and
+position. The readout is not continuous residence, selective permeability,
+inheritance or a membrane test. Labels are computed after the run and never
+enter the dynamics.
+
+An unresolved finite-time trend motivates v02
+In the complete grid at mu=-4, half-contact saddle, increasing df from -1.2
+to2.4 reduces mean B fraction .995284 -> .872320 while width-4 material variance
+at T300 increases:
+  df -1.2: .056965, .054571, .055600 across the three registered seeds;
+  df  2.4: .064781, .064801, .062095.
+At the common saddle the trend is reversed:
+  df -1.2: .061345, .049158, .053387;
+  df  2.4: .042724, .038230, .041529.
+This is not a prediction of an asymptotic phase boundary or a separate discovery
+per coordinate. More mobile I conformers, finite-time coarsening, altered bulk
+composition and finite size remain plausible explanations. V02 preregisters
+independent state mobilities, explicit frozen-composition controls and longer
+histories. It does not insert a growth, protection, repair or division function.
+
+Numerical and integrity audit (anchors relative to this campaign directory)
+Initial conditions, no shape: local_kmc.cpp:75 (uniform permutation) and state
+initialization; experiment.py:103; PRE_REGISTRATION.json:initial lists put_in.
+Local law: local_kmc.cpp:17, neighbor construction and event acceptance.
+Only one local hop or conformation changes at an accepted event (local_kmc.cpp:142). Scheduler
+proposals use a fixed global bound and auxiliary clock; no physical global
+oracle/force or simultaneous-hardware implementation is claimed.
+Each history begins at t=0; run refuses an existing output directory. There
+are no runtime parameter interventions or target-dependent stopping rules.
+Independent neighbor, particle identity, molecule and pair checks run at every
+sample (local_kmc.cpp:114). Maximum absolute accumulated medium-entropy ledger error over the full
+matrix is 2.5057488528545946e-08; all prospective relative limits 1e-10 pass.
+The large proposal count includes null numerical events, not physical activity.
+
+Six independent instrument tests pass: every local thermodynamic rate ratio;
+exact two-molecule canonical distributions (3D before 2D; includes the driven
+common-saddle effective-equilibrium control); single-particle Poisson diffusion;
+same-seed full-state determinism and matched ICs; driven/frozen energy/count
+ledgers; output overwrite protection. See test_instruments.py and
+INSTRUMENT_VALIDATION.json. Floating/compiler/platform identity beyond the tested
+environment is not promised. All validation is excluded from the result quota.
+
+Eighth audit: coarse widths2/4 and thresholds .3/.5/.7 were fixed before runs;
+all neighbor bins0..6 are preserved. They label measurements only, not dynamics.
+The map displays every point with the mean and full seed range; it is not a
+confidence interval. The code never receives a phenotype, life score or desired
+shape. No success thresholds were relaxed to reach three. Three settings of one
+mixing mechanism, textbook reproduction and rate-ratio algebra remain excluded.
+All prior physical models, Rooms, scientific gates and previous campaign results
+are untouched; the goal remains open, count0, with v02 investigation in progress.
+
+Reproduction
+From repository root, with requirements and g++ installed, use NEW output paths:
+  python research/campaigns/20261108-local-reactive-lattice/experiment.py discovery --out /tmp/NEW-lattice
+  python research/campaigns/20261108-local-reactive-lattice/followup.py holdouts --out /tmp/NEW-lattice
+  python research/campaigns/20261108-local-reactive-lattice/followup.py volume --out /tmp/NEW-lattice
+  python research/campaigns/20261108-local-reactive-lattice/followup.py duration --out /tmp/NEW-lattice
+  python research/campaigns/20261108-local-reactive-lattice/energy_grid.py --out /tmp/NEW-lattice --seed 19
+Repeat the last command for43/71; it reuses only exact matched discovery histories.
+Run the 2D comparison only after 3D. survey.py recreates the complete map from
+recorded results and refuses an existing output directory. Checkpoints in the
+ZIP preserve original bytes; cells use uint8/Fortran order, positions int32,
+conformers uint8, unwrapped displacement int64 with shape(M,d). A molecule's
+persistent physical identity is its index in those per-molecule arrays.
+
+Primary background: https://doi.org/10.1073/pnas.2501145122
+Related local exclusion thermodynamics, but this is an independent unseeded 3D
+implementation with different transition-state rates. No external source code
+was copied, and the paper's established findings are not counted as ours.
