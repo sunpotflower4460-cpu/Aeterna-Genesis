@@ -71,7 +71,7 @@ def execute(u, out, length, dt, duration, g, convex=False):
     subprocess.run([str(binary()),str(n),str(d),str(n/length),str(dt),str(nsteps),
                     str(max(1,round(10/dt))),'.02','.005',str(g),str(int(convex)),
                     str(out/'input.bin'),str(out)],check=True,
-                    env={**os.environ,'OMP_NUM_THREADS':'3'})
+                    env={**os.environ,'OMP_NUM_THREADS':os.environ.get('OMP_NUM_THREADS','3')})
     return time.monotonic()-start
 
 def validate(out):
@@ -89,7 +89,7 @@ def validate(out):
             err=float(np.max(np.abs(actual-pack(st))))
             assert err<2e-12,err
             rows=list(csv.DictReader((work/'series.csv').open()))
-            E=sb.energy(s,unpack(u,d));Ecpp=float(rows[0]['energy'])
+            E=sb.energy(s,unpack(u,d))/(n**d);Ecpp=float(rows[0]['energy'])
             assert abs(E-Ecpp)<1e-12,(E,Ecpp)
             checks.append({'dim':d,'g':g,'convex':convex,'steps':40,'max_reference_error':err,
                            'energy_reference_error':abs(E-Ecpp)})
@@ -175,13 +175,17 @@ def campaign(out,stage,n=None,seeds=None,dt=.15,case_filter=None):
             target=out/stage/f'{name}-d{d}-n{n}-dt{dt}-s{seed}'
             if target.exists():
                 if not (target/'summary.json').exists():raise RuntimeError(f'incomplete existing run: {target}')
+                old=json.loads((target/'recipe.json').read_text())
+                assert old['source_sha256']==sha(HERE/'local_solver.cpp'), 'existing run used another solver'
+                prior=json.loads((target/'summary.json').read_text())
+                assert all(sha(target/f['file'])==f['sha256'] for f in prior['frames']), 'existing evidence changed'
                 continue
             u=initial(n,d,seed,control)
             recipe={'dimension':d,'grid':n,'length':64.,'dt':dt,'duration':500.,'seed':seed,'g':g,'control':control,
                     'put_in':['field content and potential','uniform amplitude and opposite uniform conserved charges',
                               'weak isotropic low-mode fluctuations','periodic box'],'shape_seeded':False,
                     'prereg_sha256':sha(HERE/'PRE_REGISTRATION.json'),'source_sha256':sha(HERE/'local_solver.cpp'),
-                    'omega_reference':'uncoupled homogeneous equation, identical across g'}
+                    'omega_reference':'uncoupled homogeneous equation, identical across g','runner_sha256':sha(__file__)}
             elapsed=execute(u,target,64.,dt,500.,g,control=='convex');save(target/'recipe.json',recipe)
             summary=analyse(target,n,d,64.,elapsed)
             print(json.dumps({'run':str(target),'seconds':round(elapsed,2),'energy_drift':summary['energy_drift_max_relative'],
