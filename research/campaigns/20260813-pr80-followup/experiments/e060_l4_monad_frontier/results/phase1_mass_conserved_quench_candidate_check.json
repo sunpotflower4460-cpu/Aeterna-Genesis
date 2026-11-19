@@ -1,0 +1,62 @@
+{
+  "note": "phase1_mass_conserved_quench.json trial_index=1649 (discovery seed=1000) reported label=PERSISTENT_SINGLE_CANDIDATE. The commit message for that file incorrectly said '0 survivors' -- this corrects the record and checks reproducibility before any claim.",
+  "parameters": {
+    "Da": 0.060703608319263164,
+    "Db": 1.6237650056250958,
+    "b0": 2.343595441430807,
+    "delta": 1.5447169272229075,
+    "gamma": 1.5652886126190424,
+    "k0": 0.025849510482636198,
+    "noise_amplitude": 0.0046385905810223255
+  },
+  "quench": {
+    "param": "k0",
+    "value_1": 0.12300389186344356,
+    "value_2": 0.025849510482636198,
+    "switch_frac": 0.3972709136083722
+  },
+  "discovery_seed_1000_result": {
+    "label": "PERSISTENT_SINGLE_CANDIDATE",
+    "ncomp": 1,
+    "area_fraction": 0.000244140625,
+    "amax": 1.2515075086855776,
+    "mass_drift": 0.0,
+    "ladder_reached_level": 0,
+    "level1_passed": false,
+    "level2_passed": true,
+    "level1_note": "structure_factor_prominence=1.405 < 1.5 threshold. A near-single-pixel compact spot (area_fraction=0.000244, ~1 px of 4096) has broad k-space content, so the structure-factor-peak gate -- borrowed unmodified from measures.assess_level, designed for periodic patterns -- does not register it as strongly as a periodic pattern. This is a measurement-instrument observation, not a relaxed gate: the gate was NOT loosened to pass this case."
+  },
+  "verification_seeds_result": {
+    "seeds_tested": [
+      5000,
+      5001,
+      5002
+    ],
+    "note": "Fresh seeds never used in discovery (phase1.VERIFICATION_SEED_BASE), per docs/ANTI_DRIFT.md precision-5 (the discovery run must not self-verify on the same seed).",
+    "results": [
+      {
+        "seed": 5000,
+        "label": "DIES",
+        "ncomp": 0,
+        "area_fraction": 0.0,
+        "amax": 0.043
+      },
+      {
+        "seed": 5001,
+        "label": "DIES",
+        "ncomp": 0,
+        "area_fraction": 0.0,
+        "amax": 0.043
+      },
+      {
+        "seed": 5002,
+        "label": "FRAGMENTS",
+        "ncomp": 2,
+        "area_fraction": 0.00122,
+        "amax": 1.506
+      }
+    ],
+    "reproduces": "0 / 3"
+  },
+  "conclusion": "Does NOT reproduce under fresh seeds (0/3). At a near-single-pixel support size (area_fraction=0.000244), this single-seed hit is best read as a statistical fluke near the noise floor of the classifier's support threshold (thr=0.3), not a reproducible condition. This is exactly the failure mode the pre-registered Phase 2 reproducibility gate (>=4/5 fresh seeds) exists to catch, demonstrated here on 3 seeds already falling below that bar. No Level 4 or persistent-individual claim is made for this condition. It does not advance to Phase 2."
+}
