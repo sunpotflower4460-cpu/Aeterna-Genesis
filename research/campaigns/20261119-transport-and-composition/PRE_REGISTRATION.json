@@ -1,0 +1,132 @@
+{
+  "campaign": "transport-and-composition",
+  "date": "2026-11-19",
+  "base_commit": "eb525f644a8ec12a3cdffa1f689f0ded42b1ee4d",
+  "roles": [
+    "V: instrument and equilibrium checks",
+    "F: finite-time model comparisons",
+    "N when a preregistered alternative survives"
+  ],
+  "question": "How do source geometry, explicit molecular encounters, and the mobility and population of the two conformations shape material concentration in an initially unstructured 3D exclusion fluid?",
+  "registration_scope": "Prior studies and their published summaries informed these choices. This specifies the new execution and analysis before any new research histories. The historical v02 run files and the earlier explicit-fuel run files were unavailable in this checkout.",
+  "inputs": {
+    "fuel_discovery": "20261108-local-reactive-fuel/PRE_REGISTRATION.json",
+    "fuel_grid": "20261108-local-reactive-fuel/ENCOUNTER_GRID_REGISTRATION.json",
+    "lattice_cases": "20261108-local-reactive-lattice-v02/PRE_REGISTRATION.json",
+    "lattice_brackets": "20261108-local-reactive-lattice-v02/COMPOSITION_BRACKET_REGISTRATION.json"
+  },
+  "phases": {
+    "fuel_discovery": {
+      "histories": 60,
+      "engine": "reference",
+      "selection": "all registered N24/T300 cases and seeds"
+    },
+    "fuel_grid": {
+      "histories": 57,
+      "reused_slots": 15,
+      "total_slots": 72,
+      "engine": "sparse",
+      "selection": "all registered N24/T300 slots with exact recipe reuse from this execution of discovery"
+    },
+    "lattice_matched": {
+      "N": 32,
+      "T": 3000,
+      "seeds": [
+        127,
+        251,
+        367
+      ],
+      "histories": 12,
+      "engine": "state-type scheduler 1",
+      "cases": [
+        "dynamic_low_df",
+        "dynamic_high_df",
+        "I_slow_low_df",
+        "I_slow_high_df"
+      ]
+    },
+    "lattice_brackets": {
+      "histories": 24,
+      "engine": "state-type scheduler 1",
+      "selection": "all registered concentrations, mobilities and seeds, following the matched dynamic runs"
+    },
+    "fuel_holdout": {
+      "N": [
+        24,
+        32
+      ],
+      "T": 600,
+      "seeds": [
+        421,
+        557,
+        701,
+        863,
+        997,
+        1129
+      ],
+      "engine": "sparse",
+      "histories": 60,
+      "cases_both_volumes": [
+        "fed_minus_fast",
+        "fed_minus_slow",
+        "uniform_minus",
+        "closed_minus"
+      ],
+      "cases_N32_only": [
+        "fed_minus_no_passive",
+        "uniform_minus_no_passive"
+      ]
+    }
+  },
+  "parameters": {
+    "dimension": 3,
+    "molecular_spacing": 1,
+    "kBT": 1,
+    "macro_density": 0.18,
+    "starts_at_zero": true,
+    "runtime_interventions": 0,
+    "shape_seeded": false,
+    "declaration": "Use the existing local Hamiltonian, passive and reversible driven pathways, and reservoir rules. Species, energies, mobilities, density, composition controls and the aperture geometry are placed at time zero."
+  },
+  "observations": {
+    "windows": [
+      {
+        "end": 300,
+        "start": 210
+      },
+      {
+        "end": 600,
+        "start": 420
+      },
+      {
+        "end": 3000,
+        "start": 2100
+      }
+    ],
+    "window_mean": "Trapezoidal time average including endpoints. Interpolate only between bracketing recorded samples at a window endpoint; retain all raw frame measurements and report the cadence.",
+    "primary": "Width-4 periodic coarse macromolecule density variance; paired signed differences at matched seed/volume/time. Report width 2 and the frozen thresholds 0.3, 0.5, 0.7 as sensitivity readouts.",
+    "secondary": [
+      "B fraction from ledger",
+      "net passive and driven reaction directions, measured chemical work and source exchanges",
+      "x-profiles and variance in x-only modes vs within transverse planes",
+      "contact propensities measured directly from the state, with nonmacro-site mean mixing and same-x reduced controls",
+      "periodic six-neighbor component size and winding via displacement constraints across faces"
+    ],
+    "pairing": "Record all signed per-seed differences and seed ranges; use matched same-window prefixes for duration and fixed same-duration comparisons for physical volume. A frame, a reused grid slot or a shared prefix is not an independent replicate.",
+    "lattice_composition": "At each seed and matched D_I, bracket the active high-df late B fraction by the adjacent frozen B proportions, using realized integer populations. Report active minus linearly interpolated null and active position relative to BOTH endpoints. Outside range means unavailable; interpolation summarizes the bracket and does not assert monotone behavior between knots.",
+    "interpretations": "Directional consistency across six holdouts is descriptive. Evaluate off-source structure, cycling and composition jointly. An aperture-aligned pattern, positive reaction counts, greater coarse variance or a winding component each admit non-vessel explanations.",
+    "reversibility": "Compare fed vs closed and passive-on vs passive-off using the exact source, stoichiometry and affinity ledgers. Passive-off has an effective equilibrium energy df+mu and can sustain dense regions at equilibrium. Initial fuel imbalance is a placed finite resource in the closed arms."
+  },
+  "integrity": {
+    "validation": "Run the existing reference, sparse and mobility instrument suites first. Validate periodic translation invariance, winding and independently enumerated encounter totals before interpretation.",
+    "fail_rule": "Retain any failed history and its inputs. Preserve all solver samples and four full state arrays in per-history archives. Report incompleteness visibly. Do not change physical parameters in response to any individual result.",
+    "limits": "Molecular lattice, finite physical volume and time, ideal bath and hypothetical energies, implicit solvent, no hydrodynamics. Resolve total macromolecule density and modeled chemical work. A material membrane, inheritance, life or formal ladder promotion requires independent evidence.",
+    "no_touch": [
+      "all earlier research histories and code",
+      "formal Rooms",
+      "scientific gates",
+      "automatic research workflows"
+    ],
+    "qualification": "Keep the standing three-distinct-vessel-findings contract. Known checks, parameter variants of one mechanism and placed chemistry do not fill it."
+  }
+}

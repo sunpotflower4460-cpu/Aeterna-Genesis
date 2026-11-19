@@ -1,0 +1,29 @@
+{
+  "role": "V, 2D numerical diagnostic on archived e060. The new 3D campaigns are the primary research.",
+  "source_result": "../20260813-pr80-followup/experiments/e060_l4_monad_frontier/results/phase1_swift_hohenberg_quench.json",
+  "original_commit": "dc875a81ad8d752abef0c49eedbc80ad85792cc4",
+  "selection": {
+    "b_bin_edges": [
+      0.5,
+      1.25,
+      2,
+      2.75,
+      3.5
+    ],
+    "method": "Choose the lowest trial_index with numerical_failure and the lowest trial_index with ok, in each fixed half-open b bin. Include 3.5 in the last bin. Record an empty stratum explicitly and do not replace it.",
+    "outcome_knowledge": "Original archived validity labels are used to stratify a diagnostic, not to estimate a blind discovery rate."
+  },
+  "procedure": {
+    "initial": "The original N, seed, fixed Gaussian noise with exact mean subtraction, and per-record parameters.",
+    "time": "Use the original 2500 settle and 800 hold macro steps, dt=0.2. Freeze the original integer quench split before substepping to preserve all physical times.",
+    "refinement_factors": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "solver": "Reuse the identical historical semi-implicit Swift-Hohenberg step with no clipping or changed classification thresholds.",
+    "observations": "Keep the initial, settle and final arrays, or the last finite field and exact failure time. Record legacy label, all refined labels, RMS differences, and parameter-bin failure counts."
+  },
+  "claim_scope": "Diagnostic outcomes concern selected historical 2D settings only. The exercise does not estimate a full-grid rescue rate or advance an emergence level."
+}
