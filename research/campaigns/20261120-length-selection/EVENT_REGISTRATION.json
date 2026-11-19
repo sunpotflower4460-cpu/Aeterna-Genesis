@@ -1,0 +1,15 @@
+{
+  "question": "Do actual accepted fuel-linked turnovers reproduce the dilute-region concentration indicated by archived snapshot propensities?",
+  "based_on": "After the legacy 32 histories were independently remeasured, before any event counts were observed. This is an instrument validation on archived reference seeds, not additional independent trajectory replication.",
+  "reference_plan": "../20261119-long-time-and-stationary/PRE_REGISTRATION.json",
+  "reference_plan_sha256": "3d35c8f303e2ca76048559a799187bbb40d4b65bf0c38c0071441f9740ba0a95",
+  "solver_source_sha256": "de4fd28e9d5dd2617d0265e3c4fbabdd89b90dbbd9c20b471fd73f3bd377a8ef",
+  "seeds": [2017, 2251],
+  "sizes": [32, 40],
+  "case": "uniform_minus",
+  "T": 1200,
+  "count": 4,
+  "measurement": "Count every accepted forward and reverse reaction by exact number of total material sites in the periodic 4^3 neighborhood of its material site, offsets [-2,-1,0,1] in each dimension. The density depends on I or B occupancy, which neither reaction changes. Preserve all 65 bins, total counts and both paths. Analyze t=840..1200 with cutoffs .3 and .7 and compare with snapshot propensities for the same run.",
+  "validation": "Generate an instrumented source copy of the unchanged solver. Add only observation counters with no random draws, rate or state changes. Check all four event sums against the archived ledger at each time; require complete bit-for-bit agreement of original series.csv and all physical checkpoints. Do not use any mismatched replay as accepted-event evidence.",
+  "work_convention": "Multiply net linked I to B by -mu. This partitions the chemical conversion term, not the separate change of reservoir inventory or energy flow by diffusion."
+}
