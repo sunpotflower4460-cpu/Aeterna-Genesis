@@ -1,0 +1,18 @@
+{
+  "question": "How does the two-particle conditional contact change at finite uniform exchange in the unmodified explicit-fuel simulator?",
+  "relation_to_previous": "Registered after identifying the B-neighbor and I-neighbor cycles in the averaged generator, before running these finite-exchange trajectories. Does not change the separate registered 32- and 40-site study.",
+  "source_parameters": "../20261108-local-reactive-fuel/PRE_REGISTRATION.json",
+  "case": "uniform_minus",
+  "dimensions": 3,
+  "N": 4,
+  "molecules": 2,
+  "D_I": 1.0,
+  "T": 6000,
+  "seeds": [3001, 3011, 3019, 3041, 3061, 3083, 3109, 3119],
+  "exchange_per_site": [3.125, 32.0, 256.0],
+  "conditions": ["driven", "reversible"],
+  "reversible_reference": "Set eta=0. Set df to the driven rate-ratio energy for two separated molecules in the fast-exchange limit, at the frozen historical rates. The reversible conditional contact baseline is independent of df.",
+  "windows": [[1200, 3600], [3600, 6000], [1200, 6000]],
+  "observation": "For each interval, use ledger times start < t <= end. Count B=2 and B=2 with one nearest-neighbor B-B bond. Report pooled conditional fraction, separate per-seed counts and driven minus reversible. Bootstrap paired independent seeds 8192 times with a fixed analysis seed, reporting percentile 2.5 and 97.5. Report measured departure from the analytical canonical and fast limits.",
+  "count": 48
+}
