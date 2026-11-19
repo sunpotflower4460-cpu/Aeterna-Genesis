@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from math import fsum
 
 import numpy as np
 from scipy.ndimage import generate_binary_structure, label, uniform_filter
@@ -148,4 +149,5 @@ def time_mean(times, values, start, end):
     inner = times[(start < times) & (times < end)]
     points = np.concatenate(([start], inner, [end]))
     interpolated = np.interp(points, times, values)
-    return float(np.dot(np.diff(points), (interpolated[:-1] + interpolated[1:]) / 2) / (end - start))
+    trapezoids = np.diff(points) * (interpolated[:-1] + interpolated[1:]) / 2
+    return fsum(trapezoids) / (end - start)

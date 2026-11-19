@@ -232,11 +232,45 @@ def mechanism(results, supplement, out: Path):
     plt.close(figure)
 
 
+def reversible_comparison(results, out: Path):
+    figure = plt.figure(figsize=(8.2, 6.8), layout="constrained")
+    grid = figure.add_gridspec(3, 2, height_ratios=(1, 1, .23))
+    first = figure.add_subplot(grid[0, 0])
+    axes = [first] + [
+        figure.add_subplot(grid[i, j], sharex=first, sharey=first)
+        for i, j in ((0, 1), (1, 0), (1, 1))
+    ]
+    for ax, row in zip(axes, results["comparisons"]):
+        x, y = np.asarray(row["readouts"]["variance_4"]["nulls"]).T
+        bracket = row["readouts"]["variance_4"]
+        if bracket["bracket_available"]:
+            ax.axvspan(*bracket["bracket_B"], color="#e5eef6", zorder=0)
+        ax.plot(x, y, "-o", color="#535e6d", linewidth=1.3, markersize=5, label="Reversible controls")
+        ax.scatter(row["active_B"], bracket["active"], color="#176b99", marker="D", s=43,
+                   label="Both reaction paths", zorder=4)
+        ax.set_title(f"Seed {row['seed']}", fontweight="bold")
+    for ax in axes[:2]:
+        ax.tick_params(labelbottom=False)
+    for ax in axes[1::2]:
+        ax.tick_params(labelleft=False)
+    key = figure.add_subplot(grid[2, :])
+    key.set_axis_off()
+    key.text(.5, .92, "Late fraction in bonding conformation", ha="center", va="top", fontsize=11)
+    handles, labels = first.get_legend_handles_labels()
+    key.legend(handles, labels, loc="lower center", ncol=2, fontsize=9, frameon=False)
+    figure.supylabel("Late width-4 density variance")
+    figure.suptitle("Reversible controls at overlapping compositions\n32³ uniform supply, t = 420–600",
+                    fontweight="bold")
+    figure.savefig(out / "reversible-comparison.png", dpi=160)
+    plt.close(figure)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
     parser.add_argument("--supplement-results", type=Path)
+    parser.add_argument("--reversible-results", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
@@ -247,6 +281,8 @@ def main():
     grid_map(results, args.out)
     if args.supplement_results:
         mechanism(results, read_json(args.supplement_results), args.out)
+    if args.reversible_results:
+        reversible_comparison(read_json(args.reversible_results), args.out)
 
 
 if __name__ == "__main__":
