@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-19",
+  "purpose": "Separate global bonding fraction and reservoir capacity from explicit fuel transport before interpreting the held-out 3D contrasts.",
+  "selection_provenance": "Frozen after the complete 60-history discovery and 72-slot encounter map, before reading effects from the N32 holdout. The discovery N24 means at eta=10, df=1.2 were B=0.639514 (plane fast) and 0.822154 (uniform).",
+  "n": 32,
+  "T": 600,
+  "seeds": [
+    421,
+    557,
+    701,
+    863
+  ],
+  "explicit_fuel_composition": {
+    "histories": 32,
+    "parent_cases": {
+      "fed_minus_fast": [
+        0.48,
+        0.56,
+        0.64,
+        0.72
+      ],
+      "uniform_minus": [
+        0.7,
+        0.76,
+        0.82,
+        0.88
+      ]
+    },
+    "parameters": {
+      "passive_rate": 0,
+      "eta": 0
+    },
+    "rationale": "Fixed B counts give reversible reference ensembles conditional on B population. Keep F/W present and the same reservoir geometry, molecular affinities, hop rates and same seed initial macro coordinates as the active case. The conformation fractions are prepared at time zero.",
+    "readouts": [
+      "width-4 variance",
+      "x-only variance",
+      "transverse variance"
+    ],
+    "comparison": "Compare late active B against adjacent realized frozen fractions for the same seed and source. Report both bracket endpoints and a descriptive interpolation residual. An out-of-range B fraction is recorded as uncovered; no extrapolation or outcome-dependent new concentration."
+  },
+  "exchange_capacity": {
+    "histories": 12,
+    "reference_n": 24,
+    "reference_kex": 100,
+    "cases": [
+      "fed_minus_fast",
+      "fed_minus_slow",
+      "uniform_minus"
+    ],
+    "rationale": "Both geometries have total reservoir attempt capacity proportional to kex*N^2. Multiply kex by 32/24 for N32 to match nominal capacity per lattice site to N24. This matches envelope effort; actual material exchange, access and source geometry remain separately measured.",
+    "comparison": "Pair N32 scaled with N32 unscaled (same complete initial state) and with N24 unscaled (same seed family, different volume), fixed T600. Preserve signed differences and all seed values."
+  },
+  "start": "Every prospective history starts at t=0 with the unstructured generator. Counts, phases, seeds and measurement windows are fixed before the new runs.",
+  "scope": "Physical interpretation is conditional on the model and finite windows. Prepared conformer counts, changes in aperture capacity, and equalities from detailed balance are controls."
+}
