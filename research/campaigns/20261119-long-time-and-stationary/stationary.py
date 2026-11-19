@@ -24,7 +24,8 @@ class Rates:
     driven: float
     passive: float
     ts_fraction: float
-    diffusivities: tuple[float, float]
+    D_B: float
+    D_I: float
     z_total: float | None = None
 
     def driven_factors(self, b_neighbors, macro_neighbors):
@@ -47,15 +48,16 @@ class Rates:
         return self.passive + ib
 
     def hop(self, a, b, adjacent):
-        dz = sum(self.diffusivities[state] for state in (a, b)) / 6
+        dz = sum(self.D_B if state else self.D_I for state in (a, b)) / 6
         empty = 1.0 if self.z_total is None else 1.0 / (1.0 + self.z_total)
         return dz * math.exp(self.epsilon * (a == b == 1 and adjacent)) * empty
 
-    def analytic_affinity(self):
-        def ratio(b, macro):
-            bf, ib = self.driven_factors(b, macro)
-            return math.log((self.passive + bf) / (self.passive + ib))
-        return ratio(1, 1) - ratio(0, 0)
+    def reaction_log_bias(self, b_neighbors, macro_neighbors):
+        bf, ib = self.driven_factors(b_neighbors, macro_neighbors)
+        return math.log((self.passive + bf) / (self.passive + ib))
+
+    def analytic_affinity(self, neighbor=1):
+        return self.reaction_log_bias(neighbor, 1) - self.reaction_log_bias(0, 0)
 
 
 def adjacent(r, n):
@@ -110,9 +112,10 @@ def canon_population(states, n, epsilon, effective_df):
     return weights / weights.sum()
 
 
-def measured_affinity(matrix, index):
+def measured_affinity(matrix, index, neighbor):
     apart, together = (2, 0, 0), (1, 0, 0)
-    cycle = [(apart, 1, 1), (together, 1, 1), (together, 0, 1), (apart, 0, 1)]
+    cycle = [(apart, 1, neighbor), (together, 1, neighbor),
+             (together, 0, neighbor), (apart, 0, neighbor)]
     ids = [index[state] for state in cycle]
     return math.fsum(math.log(matrix[i, j] / matrix[j, i])
                     for i, j in zip(ids, ids[1:] + ids[:1]))
@@ -124,8 +127,7 @@ def expected_effective_df(rates):
     if rates.passive == 0:
         return rates.df + rates.mu
     if rates.z_total is None and rates.ts_fraction == 0:
-        bf, ib = rates.driven_factors(0, 0)
-        return rates.df + math.log((rates.passive + bf) / (rates.passive + ib))
+        return rates.df + rates.reaction_log_bias(0, 0)
     return None
 
 
@@ -142,9 +144,10 @@ def measure(n, rates, integrate=False):
     frequency = float(population[both & contact].sum() / population[both].sum())
     p_eq = 6 * math.exp(-rates.epsilon) / (n**3 - 7 + 6 * math.exp(-rates.epsilon))
 
-    affinity = measured_affinity(matrix, index)
-    if abs(affinity - rates.analytic_affinity()) > 1e-12:
-        raise ArithmeticError("Cycle ratio disagrees with the rate formula")
+    affinities = [measured_affinity(matrix, index, neighbor) for neighbor in (0, 1)]
+    for neighbor, affinity in enumerate(affinities):
+        if abs(affinity - rates.analytic_affinity(neighbor)) > 1e-12:
+            raise ArithmeticError("Cycle ratio disagrees with the rate formula")
 
     stationary_flow = diags(population) @ matrix
     flux = stationary_flow.tocoo()
@@ -156,7 +159,8 @@ def measure(n, rates, integrate=False):
         "n": n, "states": len(states), "probability_both_B": float(population[both].sum()),
         "conditional_contact": frequency, "canonical_conditional_contact": p_eq,
         "relative_contact_shift": frequency / p_eq - 1,
-        "cycle_log_ratio": affinity, "projected_entropy_production_rate": epr,
+        "cycle_log_ratio": affinities[1], "cycle_log_ratio_I_neighbor": affinities[0],
+        "projected_entropy_production_rate": epr,
         "maximum_net_edge_flux": float(abs(forward - backward).max()),
         "max_row_residual": row_residual, "max_stationary_residual": residual,
     }
@@ -164,9 +168,13 @@ def measure(n, rates, integrate=False):
     df = expected_effective_df(rates)
     if df is not None:
         difference = float(abs(canon_population(states, n, rates.epsilon, df) - population).max())
-        if difference > 1e-12:
+        if difference > 1e-12 or max(map(abs, affinities)) > 1e-12:
             raise ArithmeticError("Reversible control does not reproduce its canonical distribution")
         observed.update(effective_df=df, max_canonical_error=difference)
+    else:
+        reference_df = rates.df + rates.reaction_log_bias(0, 0)
+        reference = canon_population(states, n, rates.epsilon, reference_df)
+        observed["max_separated_bias_distribution_difference"] = float(abs(reference - population).max())
     if integrate:
         initial = np.array([float(a + b == 1) for _, a, b in states])
         initial /= initial.sum()
@@ -192,7 +200,7 @@ def case_matrix(registration, root):
         parameters = Rates(
             epsilon=values["epsilon"], df=values["df"], mu=values["mu"],
             driven=eta, passive=p, ts_fraction=.5 if has_fuel else values["ts_fraction"],
-            diffusivities=(registration["D_B"], d_i), z_total=z_total,
+            D_B=registration["D_B"], D_I=d_i, z_total=z_total,
         )
         controls = {
             "both_driven": parameters,
@@ -206,18 +214,47 @@ def case_matrix(registration, root):
             yield label, n, d_i, case, rates
 
 
+def saddle_control(cases, control):
+    for model, n, d_i, case, rates in cases:
+        if model != control["model"] or case != control["reference_case"]:
+            continue
+        if n not in control["sizes"] or d_i not in control["D_I"]:
+            continue
+        cancellation = math.log(6 / 5) / -rates.epsilon
+        for value in control["saddles"]:
+            analytic_point = value == "log(6/5)/(-epsilon)"
+            saddle = cancellation if analytic_point else float(value)
+            varied = replace(rates, ts_fraction=saddle)
+            observed = measure(n, varied)
+            if analytic_point and abs(observed["cycle_log_ratio"]) > 1e-12:
+                raise ArithmeticError("Analytic cancellation does not close the B-neighbor cycle")
+            yield {"model": model, "D_I": d_i, "saddle": saddle, "analytic_point": analytic_point,
+                   "parameters": vars(varied), **observed}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--saddle-control", action="store_true")
     args = parser.parse_args()
+    # SciPy's exponential action estimates a matrix norm with random probe vectors.
+    np.random.seed(0)
     reg_file = HERE / "PRE_REGISTRATION.json"
     reg = json.loads(reg_file.read_text())["stationary"]
-    rows = []
-    for model, n, d_i, case, rates in case_matrix(reg, HERE.parent):
-        observation = measure(n, rates, integrate=n == 4)
-        rows.append({"model": model, "D_I": d_i, "case": case,
-                     "parameters": vars(rates), **observation})
-    result = {"registration_sha256": hashlib.sha256(reg_file.read_bytes()).hexdigest(), "rows": rows}
+    cases = case_matrix(reg, HERE.parent)
+    result = {"registration_sha256": hashlib.sha256(reg_file.read_bytes()).hexdigest()}
+    if args.saddle_control:
+        control_file = HERE / "SADDLE_CONTROL.json"
+        control = json.loads(control_file.read_text())
+        result["saddle_control_sha256"] = hashlib.sha256(control_file.read_bytes()).hexdigest()
+        rows = list(saddle_control(cases, control))
+        if len(rows) != len(control["sizes"]) * len(control["D_I"]) * len(control["saddles"]):
+            raise ArithmeticError("Incomplete saddle control")
+    else:
+        rows = [{"model": model, "D_I": d_i, "case": case,
+                 "parameters": vars(rates), **measure(n, rates, integrate=n == 4)}
+                for model, n, d_i, case, rates in cases]
+    result["rows"] = rows
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, indent=2, sort_keys=True, allow_nan=False)
         stream.write("\n")

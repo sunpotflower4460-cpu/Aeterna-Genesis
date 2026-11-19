@@ -2,6 +2,7 @@
 import csv
 from dataclasses import replace
 import io
+import math
 from pathlib import Path
 import subprocess
 
@@ -11,7 +12,7 @@ import pytest
 from longtime import wavelength_from_density
 from stationary import Rates, generator, measure
 
-PAIR = Rates(-1.2, 1.2, -4.0, 1.0, 1.0, 0.5, (100.0, 7.0))
+PAIR = Rates(-1.2, 1.2, -4.0, 1.0, 1.0, 0.5, D_B=100.0, D_I=7.0)
 ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -23,6 +24,10 @@ def test_relative_ctmc_excludes_collision_and_combines_the_two_hop_paths():
     j = index[((2, 0, 0), 1, 0)]
     assert q[i, j] == pytest.approx((100.0 + 7.0) / 6)
     assert len(q.getrow(i).nonzero()[0]) == 5 + 2 + 1
+    bb_near, bb_far = index[((1, 0, 0), 1, 1)], index[((2, 0, 0), 1, 1)]
+    ii_near, ii_far = index[((1, 0, 0), 0, 0)], index[((2, 0, 0), 0, 0)]
+    assert q[bb_near, bb_far] == pytest.approx(2 * 100.0 * np.exp(-1.2) / 6)
+    assert q[ii_near, ii_far] == pytest.approx(2 * 7.0 / 6)
 
 
 def test_canonical_nulls_and_affinity_have_independent_checks():
@@ -48,6 +53,19 @@ def test_instantaneous_bath_averages_only_accessible_faces():
     assert bath.flip(1, 1, 1) == pytest.approx(b_to_i)
     assert bath.flip(0, 1, 1) == pytest.approx(i_to_b)
     assert bath.hop(1, 0, True) == pytest.approx((100 + 7) * empty / 6)
+
+
+def test_barrier_sensitivity_can_cancel_the_loss_of_a_fuel_face():
+    bath = replace(PAIR, z_total=0.25)
+    saddle = math.log(6 / 5) / -bath.epsilon
+    cancellation = measure(4, replace(bath, ts_fraction=saddle))
+    assert abs(cancellation["cycle_log_ratio"]) <= 1e-12
+    assert cancellation["cycle_log_ratio_I_neighbor"] > 0.01
+    assert cancellation["max_separated_bias_distribution_difference"] > 1e-8
+    below = measure(4, replace(bath, ts_fraction=0))
+    above = measure(4, bath)
+    assert below["cycle_log_ratio"] > 0 > above["cycle_log_ratio"]
+    assert below["cycle_log_ratio_I_neighbor"] == pytest.approx(above["cycle_log_ratio_I_neighbor"])
 
 
 def test_implicit_rates_agree_with_original_cpp(tmp_path):
