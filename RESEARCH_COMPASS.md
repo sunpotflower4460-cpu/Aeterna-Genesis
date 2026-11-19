@@ -36,6 +36,7 @@
 - [docs/X_PATTERN_AUDIT.md](docs/X_PATTERN_AUDIT.md)：再実行 567 回中 565 回が通常のクエンチ物理。未説明 2 回。
 - [docs/reports/2026-09-28-real-chemistry-audit.md](docs/reports/2026-09-28-real-chemistry-audit.md)：法則を A（現実の物理・化学）／B（近似）／C（簡略モデル）／D（結果を書いた規則）に分類。Gray–Scott 系は D。はしごは R3 → R0（R1 は一部）。
 - [research/campaigns/20261119-transport-and-composition/AUDIT.txt](research/campaigns/20261119-transport-and-composition/AUDIT.txt)：無構造の3D格子273履歴で燃料供給・組成・移動度を比較。化学仕事と材料の濃淡を測り、周期境界と旧e060の数値計算を再検証した。
+- [research/campaigns/20261119-long-time-and-stationary/AUDIT.txt](research/campaigns/20261119-long-time-and-stationary/AUDIT.txt)：組成と反応頻度をそろえた3Dの長時間比較。2粒子の定常解と有限交換の計算で、反応障壁と燃料に接触できる面の寄与を調べた。
 
 ## 提案と決定（`research/`）
 

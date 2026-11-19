@@ -1,0 +1,98 @@
+{
+  "date": "2026-11-19",
+  "previous_commit": "fbc6a6a3ca154d32b8d042bfb9564f41fa040e1b",
+  "question": "How do finite-time density organization and the exact two-particle stationary contact change when reversible turnover, chemical circulation and physical volume are compared?",
+  "explicit": {
+    "engine": "unchanged 20261108 sparse local CTMC",
+    "dimensions": 3,
+    "sizes": [
+      32,
+      40
+    ],
+    "duration": 1200,
+    "seeds": [
+      2017,
+      2251,
+      2459,
+      2671
+    ],
+    "count": 32,
+    "parent_case": "uniform_minus",
+    "kex_per_site": 3.125,
+    "control": "eta=0, pre-calibrated reversible rate per df",
+    "starts_at_zero": true,
+    "spatial_structure_seeded": false,
+    "calibration": {
+      "path": "20261119-transport-and-composition/equilibrium-measurements/results.json",
+      "sha256": "b3dcad2b1ad590274d4921befba9d1710b54ec2291aaecdc4175facf26ff88fe",
+      "driven_target_gross_rate": 1.1206722617836555,
+      "by_df": [
+        {
+          "df": 0.05,
+          "previous_passive_gross_rate": 0.2977909178252515,
+          "passive_rate": 3.763285562796391
+        },
+        {
+          "df": 0.2,
+          "previous_passive_gross_rate": 0.3524473927131608,
+          "passive_rate": 3.179686628284166
+        },
+        {
+          "df": 0.35,
+          "previous_passive_gross_rate": 0.4076082758750612,
+          "passive_rate": 2.749385447039256
+        }
+      ],
+      "method": "Divide the previous four-seed gross (passive plus driven) turnover per molecule and time by the previous corresponding single-path gross turnover at passive_rate=1. Freeze these scaling factors; no component, outcome or online feedback enters the dynamics."
+    },
+    "comparisons": "At the same seed, N and time window, linearly interpolate each observation between the adjacent reversible controls that bracket the driven B fraction. Also report signed distance to both actual controls. Do not extrapolate. Call gross activity matched if the interpolated control rate differs by at most 10 percent from the driven gross rate.",
+    "primary": "Late width-4 density variance at t=840..1200. Compare earlier intervals and physical volumes. Finite time never establishes steady state.",
+    "secondary": [
+      "Width-2 density variance, selected 3D Fourier spectral length of the width-4 field, positive and negative paired differences",
+      "Largest periodic component fraction and winding in the already-declared 0.3, 0.5 and 0.7 masks",
+      "Work, counts, direction-specific reaction ledgers and normalized gross turnover; show capacity per site separately from realized resource flux"
+    ],
+    "windows": [
+      {
+        "start": 420,
+        "end": 600
+      },
+      {
+        "start": 630,
+        "end": 900
+      },
+      {
+        "start": 840,
+        "end": 1200
+      }
+    ],
+    "spectrum": "For periodic coarse density subtract the mean, then form power of the full 3D DFT. Use box edge divided by the power-weighted mean norm of the nonzero integer mode index. This is a descriptive wavelength, not a fitted droplet radius."
+  },
+  "stationary": {
+    "models": [
+      "implicit-reservoir v02",
+      "instantaneously equilibrated uniform fuel bath as a fast-exchange limit"
+    ],
+    "sizes": [
+      4,
+      6,
+      8
+    ],
+    "molecules": 2,
+    "D_B": 100.0,
+    "D_I": [
+      1.0,
+      100.0
+    ],
+    "controls": [
+      "both paths at mu=-4",
+      "both paths at mu=0",
+      "passive only",
+      "driven only",
+      "common saddle (implicit)"
+    ],
+    "observations": "Exact finite-state generator up to floating-point solve. Compare P(nearest-neighbor contact | both B) against the canonical conditional result at the declared epsilon. Record row and stationary residuals, projected log cycle ratio and no-drive controls. At N4 independently integrate from uniform distinct positions and one B.",
+    "limit": "No extrapolation from two particles or infinitely fast exchange to the finite-density, finite-exchange explicit experiment. The stationary calculation is a separate controlled mechanistic question."
+  },
+  "integrity": "Keep earlier code, official Rooms, bots, physics gates and all observations. No seeded structure, adaptive parameters, intervention or favorable-outcome stopping. Results are mineral/chemical lattice-model diagnostics, without claims of real material calibration, membrane or life."
+}
