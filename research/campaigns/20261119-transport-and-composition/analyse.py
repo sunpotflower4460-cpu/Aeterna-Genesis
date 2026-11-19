@@ -180,7 +180,16 @@ def inspect_history(path, trial, registration, *, registration_path=REGISTRATION
         rows = list(csv.DictReader(io.StringIO(bundle.read("series.csv").decode())))
         ledger = read_ledger(rows, recipe, explicit_fuel)
         states = summary["frames"]
-        require(states[0]["time"] == 0 and states[-1]["time"] == recipe["T"], "Missing initial or final state")
+        final_sample = int(recipe["T"] // 10)
+        expected_samples = sorted(set(range(0, final_sample + 1, 5))
+                                  | {0, final_sample // 4, final_sample // 2, final_sample})
+        require([state["sample"] for state in states] == expected_samples, "Incomplete checkpoint schedule")
+        require(all(state["time"] == state["sample"] * 10 for state in states), "Checkpoint clock")
+        for relative, digest in recipe["sources"].items():
+            root = HERE.parents[2]
+            path_on_disk = (root / relative).resolve()
+            require(path_on_disk.is_relative_to(root) and sha256(path_on_disk) == digest,
+                    f"Original simulation source changed: {relative}")
         shape = (recipe["N"],) * 3
         initial = np.frombuffer(bundle.read("state-0-positions.bin"), dtype="<i4")
         initial_coordinates = np.column_stack(np.unravel_index(initial, shape, order="F"))
