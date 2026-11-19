@@ -1,10 +1,12 @@
 from itertools import combinations
 import math
+import subprocess
 
 import numpy as np
 import pytest
 from scipy.ndimage import uniform_filter
 
+from event_replay import COUNTERS
 from measure import component_sizes, half_correlation, material_hop_derivative, reaction_fields, spectral_length
 from mixing import mean_exponential
 from stability import fourier_jacobian, homogeneous_roots, jacobian_stencil, model_cases, rhs
@@ -122,3 +124,42 @@ def test_fixed_count_neighbor_average_matches_all_combinations():
     expected = [sum(math.exp(-1.2 * sum(index < count for index in selected))
                     for selected in enumeration) / len(enumeration) for count in populations]
     assert factor == pytest.approx(expected, abs=1e-14)
+
+
+def test_event_kernel_matches_all_periodic_density_sites(tmp_path):
+    kernel = COUNTERS[COUNTERS.index("  auto count_material"):COUNTERS.index("  if(d!=3)")]
+    source = tmp_path / "density.cpp"
+    source.write_text(
+        """
+#include <array>
+#include <iostream>
+#include <vector>
+int main() {
+  constexpr int n=8, volume=n*n*n;
+  std::vector<unsigned char> cell(volume);
+  std::cin.read(reinterpret_cast<char*>(cell.data()),volume);
+  if(!std::cin)return 1;
+  std::vector<std::array<int,6>> neighbor(volume);
+  for(int x=0;x<volume;++x) {
+    int stride=1;
+    for(int a=0;a<3;++a) {
+      int coord=(x/stride)%n;
+      auto target=[&](int step){return x+stride*(((coord+step+n)%n)-coord);};
+      neighbor[x][2*a]=target(1);
+      neighbor[x][2*a+1]=target(-1);
+      stride*=n;
+    }
+  }
+""" + kernel + """
+  for(int x=0;x<volume;++x)std::cout.put(static_cast<char>(count_material(x)));
+}
+""",
+        encoding="utf-8",
+    )
+    binary = tmp_path / "density"
+    subprocess.run(["g++", "-O2", "-std=c++17", str(source), "-o", str(binary)], check=True)
+    cells = np.random.default_rng(723).integers(0, 5, (8,)*3, dtype=np.uint8)
+    check = subprocess.check_output([str(binary)], input=cells.tobytes(order="F"))
+    measured = np.frombuffer(check, np.uint8).reshape(cells.shape, order="F")
+    density = uniform_filter(((cells == 1) | (cells == 2)).astype(float), size=4, mode="wrap")
+    assert np.array_equal(measured, density * 64)
