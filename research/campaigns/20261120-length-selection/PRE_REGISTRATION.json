@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-20",
+  "starting_commit": "24d475a5eb581b3fe678a55e302a43524aa2101b",
+  "question": "How does the spatial scale of spontaneous material aggregation depend on age, volume, and the rate of chemical transitions relative to diffusion in the existing three-dimensional model?",
+  "solver": {
+    "sha256": "de4fd28e9d5dd2617d0265e3c4fbabdd89b90dbbd9c20b471fd73f3bd377a8ef",
+    "parent_plan_sha256": "3d35c8f303e2ca76048559a799187bbb40d4b65bf0c38c0071441f9740ba0a95",
+    "dimensions": 3,
+    "macro_density": 0.18,
+    "start": 0,
+    "initial_state": "Historical unstructured random positions and the same material conformations and reservoir composition for each matched N and seed.",
+    "periodic": true,
+    "parent_case": "uniform_minus",
+    "exchange_per_site": 3.125,
+    "controls": "Retain the previous campaign's three reversible controls and frozen empirical rate calibration. Check the measured B fraction bracket and interpolate each endpoint, with no extrapolation. Require <=10% gross turnover mismatch and report signed differences from both adjacent controls."
+  },
+  "seeds": [4111, 4241, 4513],
+  "panels": {
+    "extent": [
+      {"N": 56, "T": 2400, "cases": "driven"},
+      {"N": 48, "T": 3000, "cases": "matched"},
+      {"N": 32, "T": 4800, "cases": "matched"}
+    ],
+    "clock": [
+      {"N": 32, "T": 2400, "multipliers": [0.25, 4.0]}
+    ]
+  },
+  "case_count": {"extent": 27, "clock": 6},
+  "windows": [[840, 1200], [1440, 1800], [2040, 2400], [2640, 3000], [3240, 3600], [3840, 4200], [4440, 4800]],
+  "clock_control": "Multiply both passive and fuel-linked reaction rates from t=0. The ratios on each elementary reaction and diffusivities are fixed. Supply geometry and exchange stay fixed. Compare with the same seed of the baseline N32 driven panel, and report realized turnover, B fraction and work, which may change.",
+  "primary_observations": [
+    "Width-4 periodic total material density. Apply the inherited Fourier power-weighted inverse mean wave number and an independent axial half-correlation distance, with the same fixed definition for all runs. Record the fraction of power at the lowest nonzero reciprocal-lattice shell.",
+    "In the last two common windows (1440–1800 and 2040–2400), compare all three sizes for baseline driving at the same age. Also compare each size's last two available windows. Reversible comparisons are defined only at N32 and N48.",
+    "For a finite-scale plateau candidate in the studied range, require <=5% magnitude of mean temporal changes in both lengths at N48 and N56 in the last two common windows, <=10% mean difference between those sizes in both lengths in the last common window, and no majority of power in the first shell. Report the thresholds, all seeds, and which requirements pass. These are finite-window tests."
+  ],
+  "secondary_observations": [
+    "Periodic six-neighbor largest dense component as a fraction of volume, number of components at least 64 sites, and winding, for thresholds 0.3, 0.5, 0.7. Under periodic boundaries, opposite faces share the same component.",
+    "On unchanged snapshot fields, compute the signed forward-minus-reverse expected B conversion rates of the passive and fuel-linked paths and material hopping divergence. Use the preregistered local material-density ranges [0,.3), [.3,.7), [.7,1]. Record per-material and volume-weighted quantities, counts, net reaction and exchange from the actual ledger. An instantaneous, state-conditioned drift is not the measured growth rate of a moving component.",
+    "For the clock panel, compare the two lengths, width-4 variance, occupancy of B, work and turnover in the last common window against the same seed of the intermediate clock. Report all outcomes regardless of sign."
+  ],
+  "audit": "Current model law and code are immutable. Event history from t=0, no prepared geometry, forcing toward an outcome, replanning based on a favorable appearance, or modifications to cores, official rooms or automation. Reuse archive and ledger validation and qualify approximations. No newly identified chemical species."
+}
