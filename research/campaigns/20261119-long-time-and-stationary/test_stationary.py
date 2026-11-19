@@ -80,6 +80,23 @@ def test_implicit_rates_agree_with_original_cpp(tmp_path):
         assert PAIR.flip(0, n, 0) == pytest.approx(float(row["ip"]) + float(row["id"]), rel=1e-14)
 
 
+def test_averaged_explicit_rates_agree_with_original_cpp(tmp_path):
+    source = ROOT / "research/campaigns/20261108-local-reactive-fuel/local_kmc_sparse.cpp"
+    binary = tmp_path / "fuel_rates"
+    subprocess.run(["g++", "-O2", "-std=c++17", str(source), "-o", str(binary)], check=True)
+    bath = replace(PAIR, driven=10.0, z_total=0.25)
+    printed = subprocess.check_output([str(binary), "--rates", "-1.2", "1.2", "1", "10", "3"], text=True)
+    fuel = .25 / (1 + np.exp(4.0)) / 1.25
+    waste = .25 / (1 + np.exp(-4.0)) / 1.25
+    for row in csv.DictReader(io.StringIO(printed)):
+        neighbors = int(row["n"])
+        for blocked in range(neighbors, 7):
+            b_to_i = float(row["bp"]) + float(row["bd_pair"]) * (6 - blocked) * fuel
+            i_to_b = float(row["ip"]) + float(row["id_pair"]) * (6 - blocked) * waste
+            assert bath.flip(1, neighbors, blocked) == pytest.approx(b_to_i, rel=1e-14)
+            assert bath.flip(0, neighbors, blocked) == pytest.approx(i_to_b, rel=1e-14)
+
+
 def test_known_diagonal_fourier_mode_and_periodic_translation():
     n = 12
     x, y, z = np.indices((n, n, n))

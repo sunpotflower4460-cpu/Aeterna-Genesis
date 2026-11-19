@@ -5,6 +5,7 @@ import argparse
 from functools import lru_cache
 import gzip
 from itertools import product
+import math
 from pathlib import Path
 import sys
 import zipfile
@@ -59,13 +60,14 @@ def density_wavelength(cells):
 
 
 def wavelength_from_density(density):
-    power = np.abs(np.fft.fftn(density - density.mean())) ** 2
+    modes = np.fft.fftn(density - density.mean())
+    power = modes.real**2 + modes.imag**2
     power[0, 0, 0] = 0.0
-    total = float(power.sum())
+    total = math.fsum(power.flat)
     if total == 0.0:
         return None, 0.0
     n = density.shape[0]
-    mean_mode = float((power * wave_numbers(n)).sum() / total)
+    mean_mode = math.fsum((power * wave_numbers(n)).flat) / total
     return n / mean_mode, total / density.size**2
 
 
@@ -112,7 +114,11 @@ def compare(histories, plan):
                 points = sorted((r["windows"][end]["B_fraction"], r["windows"][end][field])
                                 for r in controls if r["windows"][end][field] is not None)
                 if len(points) >= 2:
-                    comparisons[field] = composition_residual(b, reference[field], points)
+                    comparison = composition_residual(b, reference[field], points)
+                    if comparison["bracket_available"]:
+                        comparison["bracket_control_values"] = comparison.pop("bracket_variance")
+                        comparison["interpolated_control"] = comparison.pop("interpolated_variance")
+                    comparisons[field] = comparison
             turnover = comparisons["gross_turnover"]
             fractional_error = (abs(turnover["signed_residual"]) / reference["gross_turnover"]
                                 if turnover["bracket_available"] else None)

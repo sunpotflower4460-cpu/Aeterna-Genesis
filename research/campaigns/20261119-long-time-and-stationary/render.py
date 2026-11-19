@@ -145,7 +145,7 @@ def difference_figure(results, output):
                         values.append(np.nan)
                         continue
                     baseline = (row["driven_gross_turnover"] if measure == "gross_turnover"
-                                else comparison["interpolated_variance"])
+                                else comparison["interpolated_control"])
                     values.append(100 * comparison["signed_residual"] / baseline)
                 axis.plot(times, values, color=color, marker=marker, markersize=4,
                           linestyle="-", linewidth=0.9, alpha=0.7,
