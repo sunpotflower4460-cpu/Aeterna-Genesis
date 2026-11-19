@@ -132,6 +132,7 @@ def main():
     simulate.add_argument("--scratch", type=Path, required=True)
     simulate.add_argument("--jobs", type=int, default=4)
     simulate.add_argument("--phase", choices=("all", COMPOSITION, CAPACITY), default="all")
+    simulate.add_argument("--seed", type=int, action="append", help="Run only these registered seeds")
     report = modes.add_parser("analyse")
     report.add_argument("--primary-results", type=Path, required=True)
     report.add_argument("--out", type=Path, required=True)
@@ -144,8 +145,12 @@ def main():
         evidence, scratch = args.evidence.resolve(), args.scratch.resolve()
         scratch.mkdir(parents=True, exist_ok=True)
         evidence.mkdir(parents=True, exist_ok=True)
+        if args.seed and set(args.seed) - set(reg["seeds"]):
+            parser.error(f"Requested seeds must be registered: {reg['seeds']}")
+        selected = {phase: [job for job in group if not args.seed or job.seed in args.seed]
+                    for phase, group in jobs.items()}
         for phase in jobs if args.phase == "all" else [args.phase]:
-            run_phase(phase, jobs, evidence, scratch, args.jobs, registration_path=SUPPLEMENT)
+            run_phase(phase, selected, evidence, scratch, args.jobs, registration_path=SUPPLEMENT)
     else:
         analyse(reg, jobs, args.evidence, args.primary_results, args.out)
 

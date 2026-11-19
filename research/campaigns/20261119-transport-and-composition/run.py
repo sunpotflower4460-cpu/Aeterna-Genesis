@@ -280,6 +280,7 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--scratch", type=Path, required=True)
     parser.add_argument("--jobs", type=int, default=4)
+    parser.add_argument("--seed", type=int, action="append", help="Run only these registered seeds in the selected phase")
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be positive")
@@ -288,9 +289,17 @@ def main():
     scratch.mkdir(parents=True, exist_ok=True)
     out.mkdir(parents=True, exist_ok=True)
     trials, slots = plan()
+    if args.seed and args.phase == "all":
+        parser.error("--seed requires one registered phase")
     for phase in PHASES if args.phase == "all" else [args.phase]:
-        run_phase(phase, trials, out, scratch, args.jobs)
-        if phase == "fuel_grid":
+        selection = trials
+        if args.seed:
+            allowed = {job.seed for job in trials[phase]}
+            if set(args.seed) - allowed:
+                parser.error(f"Requested seeds must belong to {phase}: {sorted(allowed)}")
+            selection = trials | {phase: [job for job in trials[phase] if job.seed in args.seed]}
+        run_phase(phase, selection, out, scratch, args.jobs)
+        if phase == "fuel_grid" and all((out / slot["archive"]).is_file() for slot in slots):
             for slot in slots:
                 slot["archive_sha256"] = sha256(out / slot["archive"])
             manifest = json_text(slots)
