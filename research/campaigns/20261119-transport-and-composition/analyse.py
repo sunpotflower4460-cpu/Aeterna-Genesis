@@ -166,8 +166,8 @@ def window_metrics(frames, ledger, recipe, window):
     return metrics
 
 
-def inspect_history(path, trial, registration):
-    require(valid_archive(path, trial, sha256(REGISTRATION)), f"Missing {path}")
+def inspect_history(path, trial, registration, *, registration_path=REGISTRATION):
+    require(valid_archive(path, trial, sha256(registration_path)), f"Missing {path}")
     explicit_fuel = trial.engine != "lattice"
     with zipfile.ZipFile(path) as bundle:
         recipe = json.loads(bundle.read("recipe.json"))
@@ -225,6 +225,21 @@ def contrasts(pairs):
     return {"differences": differences, "summary": {
         key: describe([pair[key] for pair in differences]) for key in METRICS
     }}
+
+
+def composition_residual(target, active, nulls):
+    x, y = np.asarray(nulls).T
+    if not (x[0] <= target <= x[-1]):
+        return {"bracket_available": False}
+    upper = min(max(1, int(np.searchsorted(x, target, side="right"))), len(x) - 1)
+    prediction = float(np.interp(target, x, y))
+    lo, hi = float(y[upper - 1]), float(y[upper])
+    return {
+        "bracket_available": True,
+        "bracket_B": [float(x[upper - 1]), float(x[upper])], "bracket_variance": [lo, hi],
+        "interpolated_variance": prediction, "signed_residual": active - prediction,
+        "strictly_above_both": active > max(lo, hi), "strictly_below_both": active < min(lo, hi),
+    }
 
 
 def compare_histories(records, slots, registration):
@@ -289,22 +304,11 @@ def compare_histories(records, slots, registration):
             for r in records if r["phase"] == "lattice_brackets" and r["recipe"]["seed"] == seed
             and r["recipe"]["parameters"]["D_I"] == mobility
         )
-        x, y = np.array(nulls).T
-        target = active["B_fraction"]
-        found = bool(x[0] <= target <= x[-1])
-        row = {"seed": seed, "case": case, "I_mobility": mobility, "active_B": target,
-               "active_variance": active["variance_4"], "nulls_B_variance": nulls,
-               "bracket_available": found}
-        if found:
-            upper = min(max(1, int(np.searchsorted(x, target, side="right"))), len(x) - 1)
-            prediction = float(np.interp(target, x, y))
-            lo, hi = float(y[upper - 1]), float(y[upper])
-            row.update(
-                bracket_B=[float(x[upper - 1]), float(x[upper])], bracket_variance=[lo, hi],
-                interpolated_variance=prediction, signed_residual=active["variance_4"] - prediction,
-                strictly_above_both=active["variance_4"] > max(lo, hi),
-                strictly_below_both=active["variance_4"] < min(lo, hi),
-            )
+        row = {
+            "seed": seed, "case": case, "I_mobility": mobility, "active_B": active["B_fraction"],
+            "active_variance": active["variance_4"], "nulls_B_variance": nulls,
+            **composition_residual(active["B_fraction"], active["variance_4"], nulls),
+        }
         brackets.append(row)
 
     grid = []

@@ -229,10 +229,10 @@ def run_trial(trial: Trial, out: Path, scratch: Path, binary: Path, execution: d
     return trial.key
 
 
-def run_phase(phase: str, trials: dict, out: Path, scratch: Path, workers: int):
+def run_phase(phase: str, trials: dict, out: Path, scratch: Path, workers: int, *, registration_path=REGISTRATION):
     jobs = trials[phase]
     source = PREREQUISITES.get(phase)
-    registration_hash = sha256(REGISTRATION)
+    registration_hash = sha256(registration_path)
     if source and not all(
         valid_archive(out / trial.relative_archive, trial, registration_hash) for trial in trials[source]
     ):
