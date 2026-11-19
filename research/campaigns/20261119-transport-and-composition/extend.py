@@ -131,6 +131,7 @@ def main():
     simulate = modes.add_parser("simulate")
     simulate.add_argument("--scratch", type=Path, required=True)
     simulate.add_argument("--jobs", type=int, default=4)
+    simulate.add_argument("--phase", choices=("all", COMPOSITION, CAPACITY), default="all")
     report = modes.add_parser("analyse")
     report.add_argument("--primary-results", type=Path, required=True)
     report.add_argument("--out", type=Path, required=True)
@@ -143,7 +144,7 @@ def main():
         evidence, scratch = args.evidence.resolve(), args.scratch.resolve()
         scratch.mkdir(parents=True, exist_ok=True)
         evidence.mkdir(parents=True, exist_ok=True)
-        for phase in jobs:
+        for phase in jobs if args.phase == "all" else [args.phase]:
             run_phase(phase, jobs, evidence, scratch, args.jobs, registration_path=SUPPLEMENT)
     else:
         analyse(reg, jobs, args.evidence, args.primary_results, args.out)

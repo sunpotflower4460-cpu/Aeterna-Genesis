@@ -190,6 +190,7 @@ def inspect_history(path, trial, registration, *, registration_path=REGISTRATION
         "archive": trial.relative_archive.as_posix(), "archive_sha256": sha256(path),
         "phase": trial.phase, "engine": trial.engine, "recipe": recipe, "execution": execution,
         "initial_hashes": states[0]["files"], "windows": windows, "frames": frames,
+        "two_time_identity_retention": summary["identity_retention"],
         "max_relative_medium_error": ledger["max_relative_medium_error"],
     }
 
@@ -353,7 +354,9 @@ def main():
         ],
         **comparisons,
         "archives": [
-            {key: record[key] for key in ("archive", "archive_sha256", "phase", "engine", "windows")}
+            {key: record[key] for key in (
+                "archive", "archive_sha256", "phase", "engine", "windows", "two_time_identity_retention",
+            )}
             for record in records
         ],
     }
