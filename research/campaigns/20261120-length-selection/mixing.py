@@ -9,7 +9,6 @@ from pathlib import Path
 import zipfile
 
 import numpy as np
-from scipy.stats import hypergeom
 
 from simulate import HERE, read_json, sha256
 from observe import time_mean
@@ -20,12 +19,17 @@ REACTIONS = ("passive_B_to_I", "passive_I_to_B", "linked_B_to_I", "linked_I_to_B
 
 
 def mean_exponential(population, b, neighbors, energy):
-    bins = np.arange(neighbors + 1)
-    weights = hypergeom.pmf(bins[None, :], population, np.asarray(b)[:, None], neighbors)
-    if not np.allclose(weights.sum(axis=1), 1, atol=1e-11, rtol=0):
-        raise ArithmeticError("Invalid hypergeometric weights")
-    powers = np.exp(energy * bins)
-    return np.asarray([math.fsum(row * powers) for row in weights])
+    denominator = math.comb(population, neighbors)
+    powers = [math.exp(energy * k) for k in range(neighbors + 1)]
+    expectation = []
+    for tagged in map(int, b):
+        numerators = [math.comb(tagged, k) * math.comb(population - tagged, neighbors - k)
+                      for k in range(neighbors + 1)]
+        if sum(numerators) != denominator:
+            raise ArithmeticError("Invalid hypergeometric counts")
+        expectation.append(math.fsum(count / denominator * rate
+                                     for count, rate in zip(numerators, powers, strict=True)))
+    return np.asarray(expectation)
 
 
 def permutation_rates(volume, i, b, f, w, params):

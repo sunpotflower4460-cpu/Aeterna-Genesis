@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import gzip
+import json
 from pathlib import Path
 from statistics import mean
 import zipfile
@@ -10,9 +12,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.ndimage import uniform_filter
+from scipy.ndimage import binary_erosion, uniform_filter
 
 from simulate import HERE, read_json, sha256
+from track_domains import region_frame
 
 SIZE_STYLES = {32: ("#23667b", "o"), 48: ("#a34a2c", "s"), 56: ("#59743b", "^")}
 DENSITY_NAMES = ("dilute", "intermediate", "dense")
@@ -145,6 +148,59 @@ def locality_plot(event_table, old, current, output):
     save(fig, output, "where-reactions-occur.png")
 
 
+def merge_plot(evidence, data, output):
+    histories = json.loads(gzip.decompress((HERE / "domain-measurements/events.json.gz").read_bytes()))
+    examples = []
+    for archive, timings in histories.items():
+        if not archive.startswith("extent/uniform_minus-d3-n56"):
+            continue
+        corroborated = {row["end"] for row in timings["0.7"]
+                        if any(e["kind"] == "many-to-one" for e in row["events"])}
+        examples.extend((row["end"], archive, event)
+                        for row in timings["0.5"] if row["end"] in corroborated
+                        for event in row["events"] if event["kind"] == "many-to-one")
+    if not examples:
+        return
+    end, archive, event = min(examples, key=lambda example: example[:2])
+    record = next(row for row in data["archives"] if row["archive"] == archive)
+    path = evidence / archive
+    if sha256(path) != record["archive_sha256"]:
+        raise ValueError("Tracked snapshot archive digest differs")
+    n = record["recipe"]["N"]
+    regions = []
+    with zipfile.ZipFile(path) as bundle:
+        for time, components in ((end - 50, event["sources"]), (end, event["targets"])):
+            cells = np.frombuffer(bundle.read(f"state-{time // 10}-cells.bin"), np.uint8).reshape((n,)*3, order="F")
+            positions = np.frombuffer(bundle.read(f"state-{time // 10}-positions.bin"), "<i4")
+            coarse = uniform_filter(((cells == 1) | (cells == 2)).astype(float), size=4, mode="wrap")
+            frame = region_frame(coarse, positions, 0.5, 64)
+            regions.append([frame.labels == component["label"] for component in components])
+    occupied = np.logical_or.reduce([mask for frame in regions for mask in frame])
+    cuts = tuple(int(np.argmin(occupied.sum(axis=tuple(j for j in range(3) if j != axis))))
+                 for axis in range(3))
+    shifted = [[np.roll(mask, tuple(-cut for cut in cuts), (0, 1, 2)) for mask in frame] for frame in regions]
+    displacement = np.argwhere(shifted[0][1]).mean(axis=0) - np.argwhere(shifted[0][0]).mean(axis=0)
+    view = np.degrees(np.arctan2(displacement[1], displacement[0])) + 90
+    fig, axes = plt.subplots(1, 2, figsize=(9.4, 5.0), subplot_kw={"projection": "3d"}, layout="constrained")
+    palette = ("#23667b", "#a34a2c", "#59743b", "#805438")
+    for axis, masks, time in zip(axes, shifted, (end - 50, end), strict=True):
+        for index, mask in enumerate(masks):
+            color = "#63538c" if len(masks) == 1 else palette[index % len(palette)]
+            boundary = mask & ~binary_erosion(mask)
+            coords = np.argwhere(boundary)
+            axis.scatter(*coords.T, s=4.5, marker="s", color=color, alpha=0.63, linewidths=0)
+        region_label = "region" if len(masks) == 1 else "regions"
+        axis.set(xlim=(0, n), ylim=(0, n), zlim=(0, n), xlabel="x", ylabel="y", zlabel="z",
+                 title=f"Time {time} · {len(masks)} linked {region_label}")
+        for coordinate in (axis.xaxis, axis.yaxis, axis.zaxis):
+            coordinate.set_ticks([0, n // 2, n])
+        axis.set_box_aspect((1, 1, 1))
+        axis.view_init(elev=22, azim=view)
+    fig.suptitle(f"Material-rich regions in a 56³ box · seed {record['recipe']['seed']}", fontsize=14)
+    fig.supxlabel("Same translated periodic coordinates in both panels · density above 0.5", fontsize=9)
+    save(fig, output, "tracked-coalescence.png")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evidence", type=Path, required=True)
@@ -158,6 +214,7 @@ def main():
     growth_plot(data, args.figures)
     factorial_plot(data, args.figures)
     locality_plot(events, old, data, args.figures)
+    merge_plot(args.evidence, data, args.figures)
 
 
 if __name__ == "__main__":
