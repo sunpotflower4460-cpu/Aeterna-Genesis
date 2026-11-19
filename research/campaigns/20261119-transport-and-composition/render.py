@@ -166,10 +166,77 @@ def grid_map(results, out: Path):
     plt.close(figure)
 
 
+def mechanism(results, supplement, out: Path):
+    figure, axes = plt.subplots(2, 2, figsize=(13, 8.2), layout="constrained")
+    for case in ("closed_minus", "fed_minus_fast", "fed_minus_slow", "uniform_minus"):
+        name, color = CASES[case]
+        prefix = f"fuel_holdout/{case}-d3-n32-"
+        profiles = [row["windows"]["600"]["x_profiles"]
+                    for row in results["archives"] if row["archive"].startswith(prefix)]
+        n = 32
+        x = np.arange(-n // 2, n // 2)
+        order = x % n
+        macro = np.asarray([np.array(row["B"]) + np.array(row["I"]) for row in profiles])[:, order]
+        waste = np.asarray([row["W"] for row in profiles])[:, order]
+        for ax, values in zip(axes[0], (macro, waste)):
+            ax.plot(x, values.mean(axis=0), color=color, label=name)
+            ax.fill_between(x, values.min(axis=0), values.max(axis=0), color=color, alpha=.10)
+    for ax in axes[0]:
+        ax.axvline(0, color="#687787", linestyle="--", linewidth=1)
+        ax.set_xlabel("Periodic x coordinate, plane reservoir at 0")
+        ax.set_ylabel("Site fraction")
+    axes[0, 0].set_title("Material profile across the source plane")
+    axes[0, 0].legend(fontsize=8, loc="best")
+    axes[0, 1].set_title("W profile across the source plane")
+
+    ax = axes[1, 0]
+    for case in ("fed_minus_fast", "uniform_minus"):
+        name, color = CASES[case]
+        rows = [row for row in supplement["composition"] if row["case"] == case]
+        null_arrays = np.asarray([r["readouts"]["variance_4"]["nulls"] for r in rows])
+        for reference in null_arrays:
+            ax.plot(reference[:, 0], reference[:, 1], color=color, alpha=.24)
+        ax.plot(null_arrays[0, :, 0], null_arrays[:, :, 1].mean(axis=0), "-o",
+                color=color, markersize=4, label=f"{name}, frozen B")
+        ax.scatter([r["active_B"] for r in rows], [r["readouts"]["variance_4"]["active"] for r in rows],
+                   color=color, marker="D", s=34, edgecolor="white", linewidth=.4, label=f"{name}, reactive")
+    ax.set_title("Explicit fuel at matched composition")
+    ax.set_xlabel("Late fraction in bonding conformation")
+    ax.set_ylabel("Late width-4 variance")
+    ax.legend(fontsize=8, loc="best")
+
+    ax = axes[1, 1]
+    cases = list(supplement["capacity"])
+    for index, key in enumerate(cases):
+        unscaled = results["fuel_holdout_volume_N32_minus_N24"][key]["differences"]
+        scaled = supplement["capacity"][key]["scaled_N32_minus_N24"]["differences"]
+        seeds = {row["seed"] for row in scaled}
+        groups = [
+            [row["variance_4"] for row in unscaled if row["seed"] in seeds],
+            [row["variance_4"] for row in scaled],
+        ]
+        for values, offset, label, color in zip(
+            groups, (-.10, .10), ("Original supply", "Matched supply per site"), ("#6e6e7e", "#176b99"),
+        ):
+            y = index + offset
+            ax.scatter(values, [y] * len(values), color=color, alpha=.75, label=label if index == 0 else None)
+            ax.plot(np.median(values), y, "|", color=color, markersize=13, markeredgewidth=2)
+    ax.axvline(0, color="#687787", linewidth=1, linestyle="--")
+    ax.set_yticks(range(len(cases)), [CASES[key][0] for key in cases])
+    ax.invert_yaxis()
+    ax.set_title("Physical volume and exchange capacity")
+    ax.set_xlabel("Width-4 variance. 32³ − 24³ sites.")
+    ax.legend(fontsize=8, loc="best")
+    figure.suptitle("Source, composition and reservoir capacity", fontweight="bold", fontsize=15)
+    figure.savefig(out / "mechanism-comparisons.png", dpi=160)
+    plt.close(figure)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
+    parser.add_argument("--supplement-results", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
@@ -178,6 +245,8 @@ def main():
     field_slices(args.evidence, args.out)
     controls(results, args.out)
     grid_map(results, args.out)
+    if args.supplement_results:
+        mechanism(results, read_json(args.supplement_results), args.out)
 
 
 if __name__ == "__main__":

@@ -155,6 +155,10 @@ def window_metrics(frames, ledger, recipe, window):
                     - metrics["inventory_work_rate"]) < 1e-10, "Window work decomposition")
         metrics["F_site_fraction"] = average(ledger["F"] / recipe["N"]**3, ledger["time"])
         metrics["W_site_fraction"] = average(ledger["W"] / recipe["N"]**3, ledger["time"])
+        metrics["x_profiles"] = {
+            key: [average([frame["profiles"][key][x] for frame in frames]) for x in range(recipe["N"])]
+            for key in ("I", "B", "F", "W")
+        }
         metrics["encounter_propensities_per_macro"] = {
             direction: {
                 key: average([frame["encounters"][direction]["propensities"][key] for frame in frames])
@@ -285,11 +289,12 @@ def compare_histories(records, slots, registration):
 
     lattice_seeds = registration["phases"]["lattice_matched"]["seeds"]
     lattice_pairs = {
-        f"{left}-{right}": contrasts([
-            (seed, window("lattice_matched", 32, seed, left, 3000),
-             window("lattice_matched", 32, seed, right, 3000))
+        f"T{end}:{left}-{right}": contrasts([
+            (seed, window("lattice_matched", 32, seed, left, end),
+             window("lattice_matched", 32, seed, right, end))
             for seed in lattice_seeds
         ])
+        for end in (300, 600, 3000)
         for left, right in (
             ("dynamic_high_df", "dynamic_low_df"), ("I_slow_high_df", "I_slow_low_df"),
             ("dynamic_high_df", "I_slow_high_df"), ("dynamic_low_df", "I_slow_low_df"),
