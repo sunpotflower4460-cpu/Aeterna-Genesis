@@ -55,15 +55,18 @@ def density_wavelength(cells):
     """Power-weighted inverse wave number and Parseval validation for width-4 density."""
     macro = (cells == 1) | (cells == 2)
     coarse = uniform_filter(macro.astype(float), size=4, mode="wrap")
-    coarse -= coarse.mean()
-    power = np.abs(np.fft.fftn(coarse)) ** 2
+    return wavelength_from_density(coarse)
+
+
+def wavelength_from_density(density):
+    power = np.abs(np.fft.fftn(density - density.mean())) ** 2
     power[0, 0, 0] = 0.0
     total = float(power.sum())
     if total == 0.0:
         return None, 0.0
-    n = cells.shape[0]
+    n = density.shape[0]
     mean_mode = float((power * wave_numbers(n)).sum() / total)
-    return n / mean_mode, total / cells.size**2
+    return n / mean_mode, total / density.size**2
 
 
 def add_spectra(path, record, plan):
