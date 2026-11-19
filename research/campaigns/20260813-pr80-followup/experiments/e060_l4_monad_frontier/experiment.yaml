@@ -1,0 +1,68 @@
+# e060 — L4 Frontier: モナド白から「一つのもの」が生まれるか（事前登録）
+# 単子性監査の凍結値は monad_audit.yaml、第8監査の自己点検は AUDIT.md。
+id: e060
+title: 局在を置かない初期条件（一様場＋ゼロ平均ノイズ）から純粋なLevel 4個体が生まれるかの探索
+role:
+  primary: F
+  secondary:
+  - N
+confidence: C
+claim_tier:
+- measured
+- frontier
+put_in: >
+  白0を「これ以上分割できないもの（モナド）」として扱う前提の下、既存のモナド白
+  （mass_conserved: a+b厳密保存／swift_hohenberg: 単一実スカラー）の初期条件だけを
+  「一様場＋ゼロ平均微小ノイズ」へ変更する。ガウシアンbump・液滴・個体の中心座標・
+  移動方向・境界や膜・分裂位置を一切置かない。場も項も足さない（IC変更のみ・
+  docs/AI_EXPERIMENT_POLICY.md 基本ルール4「変更点は一つまたは少数」）。
+  L4判定は既存の genesis/diagnostics/higher_levels.assess_individuality_level に
+  丸ごと委ね、本実験は独自の合格閾値を持たない。
+emerged: >
+  Phase 0（校正）で確認した既知対照の再現：swift_hohenberg に従来どおり bump を置くと
+  reached_level=4（area_fraction=0.0149・amax=1.412・persistence_change=2.3e-08・
+  自己修復あり・サイズ非依存）で、ai_lab/lab.py の既存測定と一致した。ただし
+  localization_seeded=True であり pure_l4 ではない。同じ白から bump を外して一様場＋
+  ゼロ平均ノイズで始めると、既定パラメータでは構造が育たず DIES（u=0 が線形安定な
+  ため微小ノイズが減衰する）。mass_conserved は2D既定パラメータでは「+」状態が
+  全域を埋めて FILLS_DOMAIN（質量ドリフトは 0.0 で保存は厳密）。
+  すなわち「局在も創発した単一個体」は既定パラメータの近傍には存在せず、
+  Phase 1 以降のパラメータ探索の対象である。
+seeded_structure: false
+dimension:
+  computed: 2D
+  official_3d: false
+  transfer_risk: high
+genesis_role: genesis_candidate
+target_encoded: false
+unresolved_audit:
+- >
+  【本実験の主張範囲】現時点で確立したのは「測定器が既知の陽性対照を通し、既定
+  パラメータでは主軸の白が純粋Level 4に届かない」ことのみ。純粋Level 4の到達は
+  未主張であり、Phase 1（広域探索）以降の結果を待つ。
+- >
+  【2D限定】docs/AI_EXPERIMENT_POLICY.md 基本ルール5「2D結果を3D結果として扱わない」に
+  従い、本実験の結論はすべて2Dに限定する。mass_conserved は元来3D存在テスト用の白
+  （m2e3d_mass_conserved.yaml で N=20/24/28 の3D単一球を確認）であり、2Dでの挙動が
+  異なること自体は既知の次元感受性であって白の否定ではない。
+- >
+  【摂動とM2（窓なし）】L4判定は recovers_after_perturbation を要求するが、摂動は
+  外部介入である。主張の土台は無摂動control（runtime_interventions=0）に置き、
+  摂動枝は「モナドについての認識論的プローブ」として分離して記録する
+  （monad_audit.yaml: perturbation_policy）。この切り分けの妥当性自体は解釈であり
+  claim_tier に interpretive を含めるべきかは未決。
+- >
+  【連結成分数の閾値依存】G1「終盤の連結成分が1個」は支持領域の閾値 thr=0.3 に
+  依存する。Phase 0 で凍結したが、thr を変えると分類が動きうる感度は未検証。
+- >
+  【前回キャンペーンの反省】gl-haiku-1000-robustness では min_reached_level=1 が
+  緩すぎて200条件すべてが5/5通過し、条件間の弁別ができなかった。本実験はその
+  反省から、通過ラベルを PERSISTENT_SINGLE_CANDIDATE ただ一つに絞っている。
+known_match: >
+  swift_hohenberg の L4-static（局在は seeded）は docs/WHITE_CEILINGS.md に既記録。
+  mass_conserved の3D単一球は ai_lab/campaigns/m2_results/m2e3d_mass_conserved.yaml、
+  非相反w付き合成白の「M2はさみ」は m2e3d_nr_null.yaml に既記録。本実験の新規性は
+  「局在も創発しているか」を初めて主軸の問いに据えた点にある。
+audit:
+  no_target_encoding: passed
+  conservation: passed
