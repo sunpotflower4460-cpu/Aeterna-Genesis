@@ -1,0 +1,62 @@
+name: Binary fluid evidence
+on:
+  pull_request:
+    paths:
+      - 'research/campaigns/20261120-binary-boundary-exchange/**'
+      - 'research/campaigns/20261120-argon-interface-turnover/**'
+      - 'research/campaigns/20261119-transport-and-composition/observe.py'
+      - 'tools/study_record.py'
+      - '.github/workflows/binary-boundary-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  remeasure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: '.'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      STUDY: research/campaigns/20261120-binary-boundary-exchange
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==1.26.4 scipy==1.15.3
+      - name: Check recorded inputs and remeasure archived 3D positions
+        run: |
+          registered=$(python -c 'import json, os; print(json.load(open(os.environ["STUDY"] + "/evidence/record.json"))["registration_commit"])')
+          git fetch --no-tags --depth=1 origin "$registered"
+          python -m tools.study_record "$STUDY/PLAN.json" "$STUDY/evidence-first-launch/record.json"
+          python research/campaigns/20261120-argon-interface-turnover/fetch_evidence.py --campaign "$STUDY" --out "$RUNNER_TEMP/binary-evidence"
+          python "$STUDY/measure.py" --evidence "$RUNNER_TEMP/binary-evidence" --out "$RUNNER_TEMP/binary-analysis"
+          python "$STUDY/contacts.py" --evidence "$RUNNER_TEMP/binary-evidence" --out "$RUNNER_TEMP/binary-analysis/contacts.json"
+          python "$STUDY/winding.py" --evidence "$RUNNER_TEMP/binary-evidence" --results "$RUNNER_TEMP/binary-analysis/results.json" --out "$RUNNER_TEMP/binary-analysis/winding.json"
+          python "$STUDY/validate.py" --evidence "$RUNNER_TEMP/binary-evidence"
+          python - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          def compare(expected, measured, path=()):
+              if isinstance(expected, dict):
+                  assert expected.keys() == measured.keys(), path
+                  for name, value in expected.items():
+                      compare(value, measured[name], (*path, name))
+              elif isinstance(expected, list):
+                  assert len(expected) == len(measured), path
+                  for index, (left, right) in enumerate(zip(expected, measured)):
+                      compare(left, right, (*path, index))
+              elif isinstance(expected, float):
+                  assert math.isclose(expected, measured, rel_tol=1e-10, abs_tol=1e-12), (path, expected, measured)
+              else:
+                  assert expected == measured, (path, expected, measured)
+
+          for name in ("results.json", "contacts.json", "winding.json"):
+              measured = Path(os.environ["RUNNER_TEMP"], "binary-analysis", name)
+              archived = Path(os.environ["STUDY"], "analysis", name)
+              compare(json.loads(archived.read_text()), json.loads(measured.read_text()), (name,))
+          PY
