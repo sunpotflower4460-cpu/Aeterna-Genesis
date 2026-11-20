@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from coarsening_runs import PLAN, read_json, trials_for
+from conformation_balance import conformation_balance
 from mobility import MOBILITY_PLAN, trials_for as mobility_trials
 from pathways import Snapshot, material_budget, number_budget, observe_transitions, region_gap_at_least
 from survey import check_prefix
@@ -174,3 +175,10 @@ int main(int argc, char** argv) {
     for row in rows:
         counts = tuple(int(row[field]) for field in ("in_I", "out_I", "in_B", "out_B"))
         assert counts == ((1, 1, 0, 0) if row["label"] == "1" else (0, 0, 1, 0))
+
+
+def test_conformation_balance_matches_both_inventories():
+    terms = conformation_balance(-3, 5, 8, 6, 5, 5)
+    assert terms == {"delta_I": -3, "delta_B": 5, "net_I_hops": 2, "net_B_hops": 0, "net_I_to_B": 5}
+    with pytest.raises(ValueError, match="conversion"):
+        conformation_balance(-3, 6, 8, 6, 5, 5)
