@@ -12,6 +12,7 @@
 5. [ROOM_MODEL.md](ROOM_MODEL.md)：Genesis Room
 6. [DIMENSION_POLICY.md](DIMENSION_POLICY.md)、[3D_NATIVE_POLICY.md](3D_NATIVE_POLICY.md)：2D は候補、3D が本線
 7. [AI_EXPERIMENT_POLICY.md](AI_EXPERIMENT_POLICY.md)：AI が変えてよいもの
+8. [研究の前提と証拠の残し方](STUDY_DESIGN.md)。新しい物理の探索、事前登録、分裂や脳についての主張の条件。
 
 ## 2. 現在地（いまの地図）
 

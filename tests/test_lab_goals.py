@@ -24,6 +24,42 @@ def test_speed_is_derived_from_the_centroid():
     assert all("speed" not in x["metrics"] for x in goals.derived_series(many))   # several blobs: no speed
 
 
+def test_joint_holds_need_the_same_observed_sample():
+    criteria = [{"metric": k, "op": ">", "value": 0, "hold": h} for k, h in (("a", 2), ("b", 1))]
+    def observe(a, b):
+        return [{"t": t, "metrics": {"a": x, "b": y}} for t, (x, y) in enumerate(zip(a, b))]
+
+    disjoint = observe([1, 1, 1, 0, 0], [0, 0, 0, 1, 1])
+    result = goals.check_criteria(disjoint, criteria)
+    assert all(row["met"] for row in result["criteria"])
+    assert result["joint_at"] is None and not result["all_met"]
+    overlap = observe([1, 1, 1, 1], [0, 1, 1, 1])
+    assert goals.check_criteria(overlap, criteria)["joint_at"] == 2
+    assert goals.check_criteria(overlap, criteria, diverged=True)["joint_at"] is None
+    assert goals.check_criteria(overlap, [])["all_met"] is False
+    instant = [{"metric": "a", "op": ">", "value": 0, "hold": 0}]
+    assert goals.check_criteria(overlap, instant)["joint_at"] == 0
+    for missing in (None, float("inf"), float("nan")):
+        gapped = observe([1, missing, 1, 1], [1, 1, 1, 1])
+        assert not goals.check_criteria(gapped, criteria)["all_met"]
+
+
+def test_legacy_met_is_labelled_and_a_goal_edit_clears_its_witness(tmp_path):
+    book = goals.GoalBook(tmp_path)
+    g = book.create({"title": "timing", "criteria": [{"metric": "a", "op": ">", "value": 0}]})
+    path = tmp_path / f"{g['id']}.json"
+    path.write_text(json.dumps({**g, "status": "met"}))
+    reloaded = goals.GoalBook(tmp_path)
+    assert reloaded.get(g["id"])["status"] == "legacy_met"
+    measured = {"met": True, "criteria": g["criteria"], "whites": g["whites"],
+                "universes": [{"universe": "u", "all_met": True, "joint_at": 0}]}
+    reloaded.record_eval(g["id"], measured)
+    assert goals.GoalBook(tmp_path).get(g["id"])["joint_witness"] == {"universe": "u", "t": 0}
+    assert reloaded.update(g["id"], {"criteria": []})["status"] == "draft"
+    reloaded.record_eval(g["id"], measured)
+    assert reloaded.get(g["id"])["last_eval"] is None
+
+
 def test_validation_refuses_what_the_white_does_not_measure(tmp_path):
     book = goals.GoalBook(tmp_path)
     with pytest.raises(ValueError, match="測っていません"):

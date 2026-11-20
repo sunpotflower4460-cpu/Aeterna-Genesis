@@ -3,7 +3,7 @@
 > 自動生成：`python tools/build_compass.py`（正本は [`research/index.json`](research/index.json)）。手で編集しない。
 > 更新：2026-11-20
 
-**北極星**：完成形を置かず、宇宙の条件（法則・始め方・環境）だけを仮説にして t=0 から回し、この前提ならどうなるかを正直に測る。法則は現実の化学・物理だけ（2026-09-28）。届かなくてよい。どこで天井かを地図にする。
+**北極星**：現実の化学・物理に基づく一つの世界で、生命の宿りうる器や脳の働きを担う組織が、どこまで自然に育ちうるかを問う。完成形を置かず、法則・始め方・環境を明示して t=0 から測る。届いた範囲と天井を記録する。
 
 ## 白ごとの現在地（天井地図）
 
@@ -39,6 +39,7 @@
 - [research/campaigns/20261119-long-time-and-stationary/AUDIT.txt](research/campaigns/20261119-long-time-and-stationary/AUDIT.txt)：組成と反応頻度をそろえた3Dの長時間比較。2粒子の定常解と有限交換の計算で、反応障壁と燃料に接触できる面の寄与を調べた。
 - [research/campaigns/20261120-length-selection/AUDIT.txt](research/campaigns/20261120-length-selection/AUDIT.txt)：39本の3D履歴と旧4本の反応事象再計測。箱の大きさによる成長の違いと、燃料反応が材料の薄い領域に集中することを確かめた。
 - [research/campaigns/20261120-coarsening-pathways/AUDIT.txt](research/campaigns/20261120-coarsening-pathways/AUDIT.txt)：56³・64³を時刻4800まで追い、離れた領域間で材料が移る経路を粒子IDで実測。48³の再生6本で、駆動下のIの流入・Bの流出と内外で逆向きの状態転換を記録した。
+- [docs/reports/2026-11-20-evidence-foundations.md](docs/reports/2026-11-20-evidence-foundations.md)：水槽の同時成立判定を修正し、実験計画と全試行の台帳を導入。水の拡散でモデル内の証明、計算の再現、温度式と文献値のずれを個別に検証した。
 
 ## 提案と決定（`research/`）
 

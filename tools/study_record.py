@@ -99,7 +99,8 @@ def check_record(plan_path, record_path):
             files = attempt.get("artifacts", {})
             if not isinstance(files, dict) or (status == "completed" and not files):
                 raise ValueError(f"{name}: completed attempts need retained evidence")
-            if status != "completed" and not str(attempt.get("reason") or "").strip():
+            reason = attempt.get("reason")
+            if status != "completed" and (not isinstance(reason, str) or not reason.strip()):
                 raise ValueError(f"{name}: record why the attempt is {status}")
             for filename, expected in files.items():
                 artifact = _local_file(root, filename)

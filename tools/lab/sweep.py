@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import concurrent.futures as cf
 import itertools
+import math
 import multiprocessing as mp
 import os
 from typing import Any, Callable
@@ -29,13 +30,15 @@ def plan(white_id: str, base: dict[str, float], vary: dict[str, list[float]], se
     """All combinations, each checked against the registry (start knobs allowed: every variant starts at t=0)."""
     w = whites.get(white_id)
     names = list(vary)
+    seeds = seeds or [0]
+    size = len(seeds) * math.prod(len(vary[name]) for name in names)
+    if size > MAX_VARIANTS:
+        raise ValueError(f"組み合わせが {size} 通りあります（1 回 {MAX_VARIANTS} 通りまで）。値か seed を減らしてください")
     out = []
-    for seed in seeds or [0]:
-        for combo in itertools.product(*[vary[n] for n in names]) if names else [()]:
-            knobs = w.check_knobs({**base, **dict(zip(names, combo))}, allow_start=True)
+    for seed in seeds:
+        for combo in itertools.product(*(vary[n] for n in names)):
+            knobs = {**w.default_knobs(), **w.check_knobs({**base, **dict(zip(names, combo))}, allow_start=True)}
             out.append({"white": white_id, "seed": int(seed), "knobs": knobs})
-    if len(out) > MAX_VARIANTS:
-        raise ValueError(f"組み合わせが {len(out)} 通りあります（1 回 {MAX_VARIANTS} 通りまで）。値か seed を減らしてください")
     if not out:
         raise ValueError("試す組み合わせがありません")
     return out
@@ -54,46 +57,67 @@ def run_variant(v: dict[str, Any], frames: int, criteria: list[dict[str, Any]]) 
             break
         samples.append({"t": u.t, "metrics": u.metrics()})
     series = goalmod.derived_series(samples)
-    rows = [goalmod.check_criterion(series, c) for c in criteria]
+    judgement = goalmod.check_criteria(series, criteria, diverged=diverged)
+    rows = judgement["criteria"]
     met = sum(r["met"] for r in rows)
     closeness = sum(min(1.0, r["longest"] / r["hold"]) if r["hold"] else float(r["met"]) for r in rows)
     first, last = samples[0]["metrics"], samples[-1]["metrics"]
     return {**v, "frames": len(samples) - 1, "steps": u.step_index, "t": u.t, "diverged": diverged,
-            "sha256": None if diverged else u.sha256(), "criteria": rows, "met": met,
-            "all_met": bool(rows) and met == len(rows), "score": round(met + 0.5 * closeness, 4),
+            "sha256": None if diverged else u.sha256(), **judgement, "met": met,
+            "score": round(met + 0.5 * closeness, 4),
             "first": {k: _r(x) for k, x in first.items()}, "last": {k: _r(x) for k, x in last.items()}}
 
 
 def _r(x: Any) -> Any:
-    return round(float(x), 4) if isinstance(x, (int, float)) and x == x else None
+    return round(float(x), 4) if isinstance(x, (int, float)) and math.isfinite(x) else None
 
 
 def run(variants: list[dict[str, Any]], frames: int, criteria: list[dict[str, Any]], workers: int | None = None,
-        should_stop: Callable[[], bool] = lambda: False) -> list[dict[str, Any]]:
-    """Run all variants (in parallel processes when workers > 1) and return them best first."""
+        should_stop: Callable[[], bool] = lambda: False, on_trial=None) -> list[dict[str, Any]]:
+    """Report every planned trial by index. Drain already-running workers after a stop."""
     if not 1 <= frames <= MAX_FRAMES:
         raise ValueError(f"frames は 1〜{MAX_FRAMES} です")
     workers = max(1, min(workers or max(1, (os.cpu_count() or 2) - 1), len(variants)))
     results: list[dict[str, Any]] = []
-    if workers == 1:
-        for v in variants:
+    def collect(index, get_result):
+        try:
+            row = get_result()
+        except Exception as exc:
+            if on_trial is None:
+                raise
+            on_trial(index, "failed", None, f"{type(exc).__name__}: {exc}")
+        else:
+            results.append(row)
+            if on_trial is not None:
+                on_trial(index, "diverged" if row["diverged"] else "completed", row, "")
+
+    def cancelled(index):
+        if on_trial is not None:
+            on_trial(index, "not_run", None, "開始前に停止")
+
+    if workers == 1 or should_stop():
+        for index, variant in enumerate(variants):
             if should_stop():
-                break
-            results.append(run_variant(v, frames, criteria))
+                cancelled(index)
+            else:
+                collect(index, lambda: run_variant(variant, frames, criteria))
     else:
         with cf.ProcessPoolExecutor(max_workers=workers, mp_context=mp.get_context("spawn")) as pool:
-            futs = [pool.submit(run_variant, v, frames, criteria) for v in variants]
-            for f in cf.as_completed(futs):
+            futures = {pool.submit(run_variant, v, frames, criteria): i for i, v in enumerate(variants)}
+            for future in cf.as_completed(futures):
+                if future.cancelled():
+                    cancelled(futures[future])
+                else:
+                    collect(futures[future], future.result)
                 if should_stop():
-                    for g in futs:
-                        g.cancel()
-                    break
-                results.append(f.result())
+                    for pending in futures:
+                        pending.cancel()
     return rank(results)
 
 
 def rank(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(results, key=lambda r: (r["diverged"], -r["score"], r["seed"], sorted(r["knobs"].items())))
+    return sorted(results, key=lambda r: (r["diverged"], not r["all_met"], -r["score"],
+                                          r["seed"], sorted(r["knobs"].items())))
 
 
 def label(r: dict[str, Any], base: dict[str, float] | None = None) -> str:

@@ -63,6 +63,9 @@ def test_researcher_sweeps_inside_budget_and_records_it(tmp_path):
     g = book.get(g["id"])
     assert g["spent"]["steps"] == 3 * 5 * 120 and hub.ids() == []          # nothing was put in a tank
     s = g["sweeps"][0]
+    assert s["criteria"] == g["criteria"] and len(s["planned"]) == 3
+    assert [p["status"] for p in s["planned"]] == ["completed"] * 3
+    assert all("joint_at" in v and v["criteria"] for v in s["variants"])
     assert s["by"] == "研究員1" and len(s["variants"]) == 3 and s["variants"][0]["label"].startswith("F=")
     node = next(n for n in g["nodes"] if "まとめて" in n["text"])
     assert node["plain"] == "えさの量を 3 通り変えて試します" and node["status"] == "met"
@@ -72,6 +75,70 @@ def test_researcher_sweeps_inside_budget_and_records_it(tmp_path):
     text = "\n".join(lines)
     assert "点（まとまり）の数が 1 以上" in text and "まとめて 3 通り試しました" in text
     assert "目安をぜんぶ満たしたもの：まとめて試した 3 通り" in text and "生きている" in text   # the caveat is always there
+
+    # Saved sweeps stay visible, but their verdict cannot be attached to a newly edited goal.
+    book.update(g["id"], {"criteria": [{"metric": "spots", "op": ">", "value": 5000}]})
+    assert "目安をぜんぶ満たしたもの" not in "\n".join(plain.goal_plain(g, None, [], []))
+
+
+def test_all_planned_rows_survive_worker_errors_and_stops(monkeypatch):
+    variants = sweep.plan("gray-scott", {}, {}, [11, 12, 13])
+    run_variant = sweep.run_variant
+    def run(v, *args):
+        if v["seed"] == 11:
+            raise RuntimeError("worker failed")
+        return run_variant(v, *args)
+    monkeypatch.setattr(sweep, "run_variant", run)
+    trials = []
+    results = sweep.run(variants, 1, [], workers=1, should_stop=lambda: len(trials) == 2,
+                        on_trial=lambda *args: trials.append(args))
+    assert [(index, status) for index, status, *_ in trials] == [(0, "failed"), (1, "completed"), (2, "not_run")]
+    assert "worker failed" in trials[0][-1] and [r["seed"] for r in results] == [12]
+
+
+def test_parallel_stop_keeps_every_completed_future():
+    variants = sweep.plan("gray-scott", {}, {}, list(range(8)))
+    trials = []
+    results = sweep.run(variants, 1, [], workers=2, should_stop=lambda: bool(trials),
+                        on_trial=lambda *args: trials.append(args))
+    assert sorted(i for i, *_ in trials) == list(range(8))
+    assert results and all(status in ("completed", "not_run") for _, status, _, _ in trials)
+    assert {r["seed"] for r in results} == {variants[i]["seed"] for i, s, _, _ in trials if s == "completed"}
+
+
+def test_disjoint_and_diverged_prefix_never_promote_in_live_or_sweep(monkeypatch):
+    criteria = [{"metric": k, "op": ">", "value": 0, "hold": 0} for k in ("a", "b")]
+    class Trial:
+        white = type("Clock", (), {"steps_per_frame": 1})
+        def __init__(self, white, seed, knobs):
+            self.step_index, self.seed = 0, seed
+        @property
+        def t(self):
+            return self.step_index
+        def advance(self, n):
+            self.step_index += n
+        def finite(self):
+            return self.seed == 0 or self.t < 2
+        def metrics(self):
+            return {"a": int(self.t == 0), "b": int(self.seed == 1 or self.t > 0)}
+        def sha256(self):
+            return "finished"
+    monkeypatch.setattr(sweep, "Universe", Trial)
+    for seed in (0, 1):
+        trial = Trial("test", seed, {})
+        samples = []
+        for index in range(3):
+            trial.step_index = index
+            if trial.finite():
+                samples.append({"t": index, "metrics": trial.metrics()})
+        class Hub:
+            def ids(self): return ["u"]
+            def info(self, uid): return {"white": "test", "label": "A", "t": 2, "diverged": not trial.finite()}
+            def observation(self, uid): return samples, []
+        live = goals.evaluate({"id": "g", "whites": ["test"], "criteria": criteria}, Hub())
+        replay = sweep.run_variant({"white": "test", "seed": seed, "knobs": {}}, 2, criteria)
+        assert replay["met"] == 2 and not replay["all_met"] and not live["met"]
+        assert replay["joint_at"] is None and live["universes"][0]["joint_at"] is None
 
 
 def test_plain_text_without_criteria_or_activity(tmp_path):

@@ -91,46 +91,64 @@ def metrics_of(white_id: str) -> list[str]:
 
 
 # ------------------------------------------------------------------------------------------ evaluation
-def check_criterion(samples: list[dict[str, Any]], c: dict[str, Any]) -> dict[str, Any]:
-    """Longest stretch (in time units) during which `metric op value` held continuously; met once that
-    stretch reaches `hold` (hold=0: held at least at one sample)."""
+def _criterion_trace(samples, c):
+    """Return the ordinary per-criterion report and sample indices where its hold has matured."""
     op, metric, value, hold = OPS[c["op"]], c["metric"], float(c["value"]), float(c.get("hold", 0))
-    best, start, last_v, ever = 0.0, None, None, False
-    for s in samples:
+    best, start = 0.0, None
+    hits = set()
+    for index, s in enumerate(samples):
         v = s["metrics"].get(metric)
-        if not isinstance(v, (int, float)) or v != v:
+        if not isinstance(v, (int, float)) or not math.isfinite(v) or not op(v, value):
             start = None
             continue
-        last_v = float(v)
-        if op(last_v, value):
-            ever = True
-            start = s["t"] if start is None else start
-            best = max(best, s["t"] - start)
-        else:
-            start = None
+        if start is None:
+            start = s["t"]
+        duration = s["t"] - start
+        best = max(best, duration)
+        if duration >= hold:
+            hits.add(index)
     current = (samples[-1]["t"] - start) if (samples and start is not None) else 0.0
     end = samples[-1]["metrics"].get(metric) if samples else None      # "now" = the latest sample, not an old one
-    last_v = float(end) if isinstance(end, (int, float)) and end == end else None
-    met = ever and best >= hold
-    return {"metric": metric, "op": c["op"], "value": value, "hold": hold, "met": bool(met),
-            "longest": round(best, 4), "holding_now": round(current, 4) if start is not None else None,
-            "last": last_v}
+    last_v = float(end) if isinstance(end, (int, float)) and math.isfinite(end) else None
+    row = {"metric": metric, "op": c["op"], "value": value, "hold": hold, "met": bool(hits),
+           "longest": round(best, 4), "holding_now": round(current, 4) if start is not None else None,
+           "last": last_v}
+    return row, hits
+
+
+def check_criterion(samples: list[dict[str, Any]], c: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate one condition on the recorded samples."""
+    row, _ = _criterion_trace(samples, c)
+    return row
+
+
+def check_criteria(samples, criteria, *, diverged=False):
+    """A joint witness is a single sample at which every condition has met its own hold."""
+    rows, joint = [], None
+    for criterion in criteria:
+        row, hits = _criterion_trace(samples, criterion)
+        rows.append(row)
+        joint = hits if joint is None else joint.intersection(hits)
+    witness = samples[min(joint)]["t"] if joint and not diverged else None
+    return {"criteria": rows, "all_met": witness is not None, "joint_at": witness}
 
 
 def evaluate(goal: dict[str, Any], hub) -> dict[str, Any]:
     """Per universe of the goal's whites: which criteria are met. The goal is met when ONE universe meets all
     criteria (each criterion judged on that universe's own measurements)."""
+    criteria = [dict(c) for c in goal["criteria"]]
+    allowed = list(goal["whites"])
     per = []
     for uid in hub.ids():
         info = hub.info(uid)
-        if goal["whites"] and info["white"] not in goal["whites"]:
+        if allowed and info["white"] not in allowed:
             continue
         samples, _ = hub.observation(uid)
         samples = derived_series(samples)
-        rows = [check_criterion(samples, c) for c in goal["criteria"]]
         per.append({"universe": uid, "label": info["label"], "white": info["white"], "t": info["t"],
-                    "criteria": rows, "all_met": bool(rows) and all(r["met"] for r in rows)})
-    return {"goal": goal["id"], "met": any(p["all_met"] for p in per), "universes": per, "at": _now()}
+                    **check_criteria(samples, criteria, diverged=info.get("diverged", False))})
+    return {"goal": goal["id"], "criteria": criteria, "whites": allowed,
+            "met": any(p["all_met"] for p in per), "universes": per, "at": _now()}
 
 
 # ------------------------------------------------------------------------------------------ storage
@@ -143,6 +161,9 @@ class GoalBook:
         for f in sorted(self.root.glob("*.json")):
             try:
                 g = json.loads(f.read_text(encoding="utf-8"))
+                if g.get("status") == "met" and not g.get("joint_witness"):
+                    g["legacy_evaluation"] = g.get("last_eval")
+                    g["status"] = "legacy_met"
                 self._goals[g["id"]] = g
             except (OSError, ValueError, KeyError):
                 continue
@@ -170,7 +191,7 @@ class GoalBook:
             if ws and not any(metric in metrics_of(w) for w in ws):
                 raise ValueError(f"測定値 {metric} は、選んだ白（{', '.join(ws)}）では測っていません")
             v, hold = float(c.get("value")), float(c.get("hold", 0))
-            if not math.isfinite(v) or hold < 0:
+            if not math.isfinite(v) or not math.isfinite(hold) or hold < 0:
                 raise ValueError("条件の値が正しくありません")
             crit.append({"metric": metric, "op": c["op"], "value": v, "hold": hold, "label": str(c.get("label") or "")})
         budget = {**DEFAULT_BUDGET, **{k: float(v) for k, v in (body.get("budget") or {}).items() if k in DEFAULT_BUDGET}}
@@ -204,8 +225,17 @@ class GoalBook:
             g = self.get(gid)
             v = self.validate({**{k: g.get(k) for k in ("title", "question", "whites", "criteria", "budget", "researchers",
                                                          "hypothesis")}, **body})
+            if v["criteria"] != g["criteria"] or v["whites"] != g["whites"]:
+                g.setdefault("criteria_history", []).append({
+                    "until": _now(), "criteria": g["criteria"], "whites": g["whites"],
+                    "status": g["status"], "joint_witness": g.get("joint_witness"),
+                })
+                g["last_eval"] = None
+                g.pop("joint_witness", None)
+                if g["status"] in ("met", "legacy_met"):
+                    g["status"] = "draft"
             g.update(v)
-            if body.get("status") in ("draft", "running", "paused", "done", "met"):
+            if body.get("status") in ("draft", "running", "paused", "done"):
                 g["status"] = body["status"]
             self._save(g)
             return g
@@ -250,15 +280,36 @@ class GoalBook:
             return n
 
     def add_sweep(self, gid: str, record: dict[str, Any]) -> dict[str, Any]:
-        """A 「まとめて試す」 run: its variants (recipes + judgement + sha256), kept so a person can put any of
-        them in a tank and replay it."""
+        """Persist the denominator and reserve the step budget before running a sweep."""
         with self._lock:
             g = self.get(gid)
+            cost = len(record["planned"]) * record["steps_per_trial"]
+            if cost > g["budget"]["max_steps"] - g["spent"]["steps"]:
+                raise ValueError("計算の予算が足りません")
+            g["spent"]["steps"] += cost
             g.setdefault("sweeps", [])
             rec = {"id": f"s{len(g['sweeps']) + 1}", "at": _now(), **record}
             g["sweeps"].append(rec)
             self._save(g)
             return rec
+
+    def record_sweep_trial(self, gid, sid, index, status, row, reason):
+        from tools.lab.sweep import rank
+        with self._lock:
+            goal = self.get(gid)
+            rec = next(s for s in goal["sweeps"] if s["id"] == sid)
+            trial = rec["planned"][index]
+            if trial["status"] != "pending":
+                raise ValueError(f"already recorded: {sid} trial {index + 1}")
+            # A worker error can hide performed steps; keep its reservation and record that fact.
+            charged = rec["steps_per_trial"] if status == "failed" else (row["steps"] if row else 0)
+            goal["spent"]["steps"] -= rec["steps_per_trial"] - charged
+            trial.update(status=status, charged_steps=charged)
+            if reason:
+                trial["reason"] = reason
+            if row is not None:
+                rec["variants"] = rank([*rec["variants"], {**row, "trial": index + 1}])
+            self._save(goal)
 
     def log(self, gid: str, actor: str, what: str, universe: str | None = None) -> dict[str, Any]:
         """'いまやっていること': the newest entry per actor is what that actor is doing now."""
@@ -298,7 +349,11 @@ class GoalBook:
     def record_eval(self, gid: str, result: dict[str, Any]) -> None:
         with self._lock:
             g = self.get(gid)
+            if result["criteria"] != g["criteria"] or result["whites"] != g["whites"]:
+                return  # the goal was edited while its measurements were being read
             g["last_eval"] = result
-            if result["met"] and g["status"] == "running":
+            if result["met"] and g["status"] in ("running", "legacy_met"):
+                witness = next(u for u in result["universes"] if u["all_met"])
+                g["joint_witness"] = {"universe": witness["universe"], "t": witness["joint_at"]}
                 g["status"] = "met"
             self._save(g)

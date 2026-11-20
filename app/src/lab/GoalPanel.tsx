@@ -20,8 +20,12 @@ interface Goal {
 interface Variant {
   seed: number; knobs: Record<string, number>; met: number; all_met: boolean; diverged: boolean; label: string
   sha256: string | null; t: number; last: Record<string, number | null>
+  joint_at?: number | null
 }
-interface Sweep { id: string; at: string; by: string; white: string; why: string; plain: string; frames: number; variants: Variant[] }
+interface Sweep {
+  id: string; at: string; by: string; white: string; why: string; plain: string; frames: number; variants: Variant[]
+  planned?: { label: string; status: string; reason?: string }[]; criteria?: Criterion[]
+}
 interface Hypothesis {
   id: string; title: string; idea: string; question: string; measure: string; falsify: string; put_in: string
   status: 'ready' | 'needs'; needs: string
@@ -32,7 +36,7 @@ interface ResearcherState {
   tokens: { input: number; output: number }; transcript: { at: string; kind: string; text: string }[]
 }
 interface GoalView {
-  goal: Goal; evaluation: { met: boolean; universes: { universe: string; label: string; white: string; t: number; criteria: EvalRow[]; all_met: boolean }[] }
+  goal: Goal; evaluation: { met: boolean; universes: { universe: string; label: string; white: string; t: number; criteria: EvalRow[]; all_met: boolean; joint_at: number | null }[] }
   now: { at: string; actor: string; what: string; universe: string | null }[]; over_budget: string | null
   researchers: ResearcherState[]; plain: string[]
 }
@@ -77,7 +81,7 @@ function Researchers({ view, onStop }: { view: GoalView; onStop: (name: string) 
   )
 }
 
-const STATUS_LABEL: Record<string, string> = { draft: '下書き', running: '進行中', paused: '止めている', done: '終了', met: '条件を満たした（測定）' }
+const STATUS_LABEL: Record<string, string> = { draft: '下書き', running: '進行中', paused: '止めている', done: '終了', met: '条件を満たした（測定）', legacy_met: '旧判定・要再確認' }
 const NODE_LABEL: Record<string, string> = { todo: '未着手', doing: '進行中', met: '満たした', not_met: '満たさない', ceiling: '天井', info: '' }
 const KIND_LABEL: Record<string, string> = { question: '問い', attempt: '試した', note: 'メモ', result: '結果' }
 
@@ -127,25 +131,30 @@ function PlainCard({ gid, lines, onError }: { gid: string; lines: string[]; onEr
 function Sweeps({ goal, onTank }: { goal: Goal; onTank: (white: string, v: Variant) => void }) {
   const list = goal.sweeps ?? []
   if (!list.length) return null
-  const n = goal.criteria.length
   return (
     <details className="lab-section">
       <summary>まとめて試した結果（{list.reduce((a, s) => a + s.variants.length, 0)} 通り）</summary>
-      {list.slice().reverse().map((s) => (
+      {list.slice().reverse().map((s) => {
+        const n = s.criteria?.length
+        return (
         <div key={s.id} className="lab-sweep">
           <div>{s.plain || s.why || `${s.white} を ${s.variants.length} 通り`} <span className="mono muted">— {s.by}・{s.id}</span></div>
           <details className="lab-fold">
-            <summary>{n ? `近い順（いちばん近いもの：目安 ${n} つのうち ${s.variants[0]?.met ?? 0} つ）` : '一覧'}</summary>
-            {s.variants.slice(0, 12).map((v, i) => (
-              <div key={i} className={'lab-row lab-variant' + (v.all_met ? ' ok' : '')}>
-                <span className="mono lab-grow">{v.all_met ? '✓ ' : ''}{v.label}{v.diverged ? '（発散）' : ''}</span>
-                {n > 0 && <span className="mono muted">{v.met}/{n}</span>}
+            <summary>{s.planned ? `計画 ${s.planned.length} 通り・測定 ${s.variants.length} 通り` : '旧記録・当時の条件と同時成立は要再確認'}</summary>
+            {s.criteria?.map((c, i) => <div key={i} className="mono muted">{c.metric} {c.op} {c.value}（{c.hold} 時間）</div>)}
+            {s.variants.map((v, i) => (
+              <div key={i} className={'lab-row lab-variant' + (v.joint_at != null ? ' ok' : '')}>
+                <span className="mono lab-grow">{v.label}{v.diverged ? '（発散）' : ''}</span>
+                {n != null && n > 0 && <span className="mono muted">{v.joint_at != null ? `同時成立 t=${v.joint_at}` : `個別 ${v.met}/${n}`}</span>}
                 {!v.diverged && <button className="lab-mini" onClick={() => onTank(s.white, v)}>水槽に出す</button>}
               </div>
             ))}
+            {s.planned?.filter(p => !['completed', 'diverged'].includes(p.status)).map((p, i) => (
+              <div key={i} className="mono muted">{p.label}（{p.status === 'failed' ? '計算失敗' : p.status === 'not_run' ? '未実行' : '結果未記録'}）{p.reason}</div>
+            ))}
           </details>
         </div>
-      ))}
+      )})}
     </details>
   )
 }
@@ -430,7 +439,7 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
               <summary>宇宙ごとの数字</summary>
             {view.evaluation.universes.map((u) => (
               <div key={u.universe} className="lab-evalrow">
-                <b>{u.label}</b> <span className="mono muted">{u.white} t={u.t.toFixed(1)}</span> {u.all_met ? '✓ 全部' : ''}
+                <b>{u.label}</b> <span className="mono muted">{u.white} t={u.t.toFixed(1)}</span> {u.joint_at != null ? `同時成立 t=${u.joint_at}` : ''}
                 {u.criteria.map((c, i) => (
                   <div key={i} className={'mono lab-crit-row ' + (c.met ? 'ok' : '')}>
                     {c.met ? '✓' : '·'} {c.metric} {c.op} {c.value}（{c.hold} 時間）: いま {c.last === null ? '—' : Number(c.last.toPrecision(4))}・最長 {c.longest}

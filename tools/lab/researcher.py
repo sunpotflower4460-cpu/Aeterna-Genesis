@@ -104,7 +104,8 @@ BRIEF = RULES + """
 - 使えるのは渡された道具だけ。許された白・つまみの範囲・予算の外には出られません（道具が断ります）。
 - あなたが作った宇宙・分岐・摂動は、すべて「あなたが置いたもの」として記録されます。
 - 条件を満たしたかどうかは evaluate_goal（測定）だけが決めます。見た目や期待で「できた」と言わないこと。
-- たくさんのパターンは sweep（まとめて試す）で安く試し、見込みのあるものだけ create_universe で水槽に出して run → observe する。
+- sweep で条件の範囲を調べる。目安が空の問いでも全条件の変化を読める。順位は探索用で、水槽で同じレシピを再生することは追試とは区別する。
+- 意外な差や何も起きない領域も note に残す。次の比較には別の説明を退けられる対照や未使用の seed を選び、選択理由を書く。
 - 分かったことはこまめに note でマップに書く。note と finish の plain には、専門用語を使わず、中学生にも分かる言葉で書く
   （例：「点が 1 つのまま動き続ける宇宙を探して、24 通り試しました。θ を小さくすると、点が割れにくくなりました」）。
 - 他の研究員もいます。マップと「いまやっていること」を見て、同じことを重ねないようにしてください。
@@ -383,29 +384,39 @@ class Researcher:
                              + (f"frames を {fit} 以下にするか、組み合わせを減らしてください" if fit >= 1 else "組み合わせを減らしてください"))
         plain = a.get("plain") or ""
         book.log(self.gid, self.name, f"まとめて {len(variants)} 通り試している" + (f"：{plain}" if plain else ""))
-        results = sweep.run(variants, frames, g["criteria"], workers=self.runner.sweep_workers,
-                            should_stop=self._stop.is_set)
-        book.spend(self.gid, steps=sum(r["steps"] for r in results))
+        criteria = [dict(c) for c in g["criteria"]]
         rec = book.add_sweep(self.gid, {"by": self.name, "white": a["white"], "why": a.get("why", ""), "plain": plain,
-                                        "frames": frames, "base": base, "vary": vary,
-                                        "variants": [{**{k: r[k] for k in ("seed", "knobs", "met", "all_met", "score",
-                                                                             "diverged", "sha256", "steps", "t", "first", "last")},
-                                                      "label": sweep.label(r)} for r in results]})
-        n_c = len(g["criteria"])
+                                        "frames": frames, "base": base, "vary": vary, "criteria": criteria,
+                                        "planned": [{**v, "status": "pending", "label": sweep.label(v)} for v in variants],
+                                        "steps_per_trial": frames * spf, "variants": []})
+
+        def observed(index, status, row, reason):
+            if row is not None:
+                row = {**row, "label": sweep.label(row)}
+            book.record_sweep_trial(self.gid, rec["id"], index, status, row, reason)
+
+        results = sweep.run(variants, frames, criteria, workers=self.runner.sweep_workers,
+                            should_stop=self._stop.is_set, on_trial=observed)
+        n_c = len(criteria)
         best = results[0] if results else None
-        summary = (f"まとめて {len(results)} 通り試した（{rec['id']}）。" +
-                   (f"いちばん近いのは {sweep.label(best)}：目安 {n_c} つのうち {best['met']} つ" if best and n_c else ""))
+        summary = (f"まとめて計画した {len(variants)} 通りのうち測定記録 {len(results)} 通り（{rec['id']}）。" +
+                   (f"個別の目安は {sweep.label(best)} で {best['met']}/{n_c}。" if best and n_c else ""))
         book.add_node(self.gid, "result", summary + (f"。{a.get('why')}" if a.get("why") else ""), self.name,
                       status="met" if any(r["all_met"] for r in results) else "info",
                       plain=plain or summary)
         rows = []
-        for r in results[:12]:
+        for r in results:
             cs = "; ".join(f"{c['metric']}{c['op']}{c['value']:g}: {'○' if c['met'] else '×'}（最長 {c['longest']:g}/{c['hold']:g}）"
                            for c in r["criteria"])
-            rows.append(f"  {sweep.label(r)}: {'発散' if r['diverged'] else ''} 満たした {r['met']}/{n_c} {cs} 最後 {r['last']}")
-        stopped = "（途中で止められました）" if len(results) < len(variants) else ""
-        return (f"まとめて試した {rec['id']}: {len(results)}/{len(variants)} 通り{stopped}。近い順:\n" + "\n".join(rows)
-                + ("\n★ 条件をぜんぶ満たした組み合わせがあります。create_universe で水槽に出して確かめてください。"
+            joint = f" 同時成立 t={r['joint_at']:g}" if r["all_met"] else ""
+            judgement = f" 個別 {r['met']}/{n_c} {cs}{joint}" if n_c else ""
+            rows.append(f"  {sweep.label(r)}: {'発散' if r['diverged'] else ''}{judgement} 最後 {r['last']}")
+        for trial in rec["planned"]:
+            if trial["status"] in ("failed", "not_run"):
+                rows.append(f"  {trial['label']}: {trial['status']}（{trial['reason']}）")
+        ordering = "探索用の順位" if n_c else "全条件の一覧"
+        return (f"まとめて試した {rec['id']}: {len(results)}/{len(variants)} 通り。{ordering}\n" + "\n".join(rows)
+                + ("\n同じコマで全条件が成立した組み合わせがあります。再生には同じレシピを、追試には未使用条件を使います。"
                    if any(r["all_met"] for r in results) else ""))
 
     def _do(self, name: str, a: dict[str, Any]) -> str:
