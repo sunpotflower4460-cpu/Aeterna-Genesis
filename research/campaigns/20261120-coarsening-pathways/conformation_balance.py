@@ -131,6 +131,20 @@ def summarize_circulation(steps):
     return summaries
 
 
+def symmetric_circulation(steps):
+    endpoints = defaultdict(dict)
+    for rec in steps:
+        endpoints[rec["threshold"], rec["start"], rec["end"]][rec["endpoint"]] = rec
+    combined = []
+    for (threshold, start, end), pair in sorted(endpoints.items()):
+        if set(pair) != {0, 1}:
+            raise ValueError("Both masks are needed for the time-symmetric readout")
+        fields = ("net_I_hops", "net_B_hops", "net_I_to_B_inside", "net_I_to_B_outside", "global_B_change")
+        combined.append({"threshold": threshold, "start": start, "end": end, "endpoint": -1,
+                         **{key: pair[0][key] + pair[1][key] for key in fields}})
+    return summarize_circulation(combined)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--transport", type=Path, required=True)
@@ -149,7 +163,8 @@ def main():
         rows[record["archive"]] = data
         totals.append({"N": record["N"], "case": record["case"], "seed": record["seed"],
                        "archive": record["archive"], "balances": aggregate(data),
-                       "circulation": summarize_circulation(steps)})
+                       "circulation": summarize_circulation(steps),
+                       "circulation_twice_symmetric": symmetric_circulation(steps)})
     args.out.mkdir(parents=True, exist_ok=False)
     (args.out / "results.json").write_text(json_text({"registration_sha256": sha256(REGISTRATION),
         "circulation_registration_sha256": sha256(CIRCULATION_PLAN),

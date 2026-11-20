@@ -238,9 +238,10 @@ def transport_figure(result, raw_transitions, evidence, old_evidence, output):
 
 
 
-def hop_figure(audit, output):
+def hop_figure(audit, conversions, output):
     """Show directly accepted boundary events, with each seed as a separate point."""
-    figure, axes = plt.subplots(1, 2, figsize=(10.75, 4.55), layout="constrained")
+    columns = 3 if conversions else 2
+    figure, axes = plt.subplots(1, columns, figsize=(5.15*columns, 4.65), layout="constrained")
     cases = ("uniform_minus", "reversible_df0.2")
     for index, case in enumerate(cases):
         records = [row for row in audit["records"] if row["case"] == case]
@@ -260,6 +261,14 @@ def hop_figure(audit, output):
                             for row in reports]
             axes[1].scatter(index + position + offsets, measurements, color=color, s=44,
                             label=field if index == 0 else None)
+        if conversions:
+            balances = {row["seed"]: next(x for x in row["circulation"]
+                                           if x["threshold"] == .5 and x["endpoint"] == 0)
+                        for row in conversions["records"] if row["case"] == case}
+            for side, color, position in (("inside", TEAL, -.18), ("outside", ORANGE, .18)):
+                net = [balances[row["seed"]]["net_I_to_B_" + side] / 1000 for row in records]
+                axes[2].scatter(index + position + offsets, net, color=color, s=44,
+                                label=side.title() if index == 0 else None)
     for axis in axes:
         axis.set_xticks(range(2), ["Driven", "Reversible"])
         axis.set_xlim(-.47, 1.47)
@@ -270,6 +279,10 @@ def hop_figure(audit, output):
     axes[1].set_title("Signed net crossings at density > 0.5", loc="left")
     axes[1].set_ylabel("Net inward hops per 1,000 crossings")
     axes[1].axhline(0, color="#687785", linewidth=1)
+    if conversions:
+        axes[2].axhline(0, color="#687785", linewidth=1)
+        axes[2].set_title("Net I to B conversion", loc="left")
+        axes[2].set_ylabel("Net conversions (thousands)")
     figure.suptitle("Accepted particle hops through fixed boundaries", fontsize=18, fontweight="bold")
     figure.supxlabel("Masks fixed at the start of each 50-unit interval · 48³ · t = 1200–1800")
     figure.savefig(output / "fixed-interface-hops.png")
@@ -282,6 +295,7 @@ def main():
     parser.add_argument("--evidence", type=Path, default=HERE / "evidence")
     parser.add_argument("--previous", type=Path, default=PREVIOUS / "evidence")
     parser.add_argument("--transport", type=Path)
+    parser.add_argument("--conversion", type=Path)
     parser.add_argument("--figures", type=Path, required=True)
     args = parser.parse_args()
     configure()
@@ -291,7 +305,8 @@ def main():
     budget_figure(result, args.figures)
     mobility_figure(result, args.figures)
     if args.transport:
-        hop_figure(read_json(args.transport), args.figures)
+        conversion = read_json(args.conversion) if args.conversion else None
+        hop_figure(read_json(args.transport), conversion, args.figures)
     transport_figure(result, read_gzip(args.measurements / "transitions.json.gz"),
                      args.evidence, args.previous, args.figures)
 
