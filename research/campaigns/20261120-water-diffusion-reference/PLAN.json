@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "question": "How accurately does a two-temperature Arrhenius interpolation describe the published liquid-water diffusion coefficients, and does the sampled 3D tracer obey its specified transport law?",
+  "prior_access": "All seven published Table III values were visible when this protocol was written. The comparison is retrospective, outside the fit but unblinded. The Monte Carlo paths will first be sampled after registering this plan.",
+  "independent_unit": "Four separately seeded ensembles per temperature. Frames share a trajectory, temperatures come from the same publication, and the static condition is a deterministic numerical control.",
+  "inputs": "Unbounded cubic space, one micrometre per hop. Independent neutral tracers; a fixed temperature bath is imposed. Each tracer starts at its displacement origin. Water enters only through the tabulated effective transport coefficient. There are no intermolecular forces, reactions, interfaces or cells.",
+  "measurement": "At every recorded time report per-seed mean squared displacement in square metres. Compare the final estimate MSD/(6t) with the analytic D. Report residuals of the two-point temperature law against each published value, separately from sampling uncertainty. Keep the two fitted points visible.",
+  "alternatives": "Reconstruction of the two calibration points checks the fit. All five other temperatures, including two below the fitting interval, test transfer. A zero-rate control must remain exactly still. Report errors continuously without choosing a success cutoff. Use the first listed seed at 25 °C for the illustration.",
+  "stopping": "All listed cases, four fixed nonzero time intervals. Numerical failure and interruption retain their outcome and reason. No stopping on a statistic.",
+  "tracked_inputs": [
+    "research/campaigns/20261120-water-diffusion-reference/run.py"
+  ],
+  "source": {
+    "citation": "R. Mills (1973), Journal of Physical Chemistry 77, 685–688, Table III, H₂O–H₂O.",
+    "url": "https://fenix.ciencias.ulisboa.pt/downloadFile/2533412229372806/Mills1973.pdf",
+    "provenance": "The author calculated the pure-water coefficients from isotopic tracer data. The stated accuracy is a few tenths of a percent. The ±0.2% figure for raw tracer diffusion is not a per-row uncertainty for Table III."
+  },
+  "fit": "Linear in 1/T (kelvin) for log D, using 5 and 45 °C only. This is an effective constant-activation-energy approximation over a finite range. Comparator coefficients never enter a jump rate.",
+  "protocol": {
+    "spacing_m": 0.000001,
+    "interval_s": 0.00025,
+    "intervals": 4,
+    "tracers": 4096,
+    "seeds": [
+      82001,
+      82007,
+      82009,
+      82013
+    ],
+    "fit_temperatures_C": [
+      5,
+      45
+    ],
+    "reference_unit_m2_s": 1e-9
+  },
+  "cases": {
+    "water-1": {
+      "temperature_C": 1,
+      "reference_D": 1.149
+    },
+    "water-4": {
+      "temperature_C": 4,
+      "reference_D": 1.276
+    },
+    "water-5": {
+      "temperature_C": 5,
+      "reference_D": 1.313
+    },
+    "water-15": {
+      "temperature_C": 15,
+      "reference_D": 1.777
+    },
+    "water-25": {
+      "temperature_C": 25,
+      "reference_D": 2.299
+    },
+    "water-35": {
+      "temperature_C": 35,
+      "reference_D": 2.919
+    },
+    "water-45": {
+      "temperature_C": 45,
+      "reference_D": 3.575
+    },
+    "static": {
+      "temperature_C": null
+    }
+  }
+}

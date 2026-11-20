@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'research/campaigns/20261108-*/**'
+      - 'research/campaigns/20261120-water-diffusion-reference/**'
+      - 'tools/study_record.py'
       - '.github/workflows/research-campaign-instruments.yml'
   workflow_dispatch:
 permissions:
@@ -38,3 +40,32 @@ jobs:
         run: python -m pytest research/campaigns/20261108-local-reactive-fuel/test_instruments.py -q
       - name: Independent sparse proposal realization and absolute reaction clock
         run: python -m pytest research/campaigns/20261108-local-reactive-fuel/test_sparse.py -q
+
+  water-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==1.26.4
+      - name: Verify the registered inputs and replay every archived coordinate
+        env:
+          STUDY: research/campaigns/20261120-water-diffusion-reference
+        run: |
+          registered=$(python -c 'import json, os; print(json.load(open(os.environ["STUDY"] + "/evidence/record.json"))["registration_commit"])')
+          git fetch --no-tags --depth=1 origin "$registered"
+          python -m tools.study_record "$STUDY/PLAN.json" "$STUDY/evidence/record.json"
+          python "$STUDY/run.py" --registered-at "$registered" --out "$RUNNER_TEMP/tracers"
+          python "$STUDY/analyze.py" --evidence "$RUNNER_TEMP/tracers" --out "$RUNNER_TEMP/measurements"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          import numpy as np
+          study = Path(os.environ["STUDY"])
+          for case in json.loads((study / "PLAN.json").read_text())["cases"]:
+              name = f"{case}.npz"
+              with np.load(study / "evidence" / name) as archived, np.load(Path(os.environ["RUNNER_TEMP"]) / "tracers" / name) as replay:
+                  np.testing.assert_array_equal(archived["displacement_steps"], replay["displacement_steps"])
+          PY

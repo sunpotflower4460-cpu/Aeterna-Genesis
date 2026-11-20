@@ -20,4 +20,4 @@ argument-hint: <room-id | eNNN | X-xxxxxxxxxx>
 - **次元**：2D の結果を 3D の主張に使っていないか（`docs/DIMENSION_POLICY.md`）。
 - **X パターン**の場合：`ai_lab/dream/open_ended.py` の指紋は大域スカラーのジャンプを量子化したものなので、渦対消滅・粗大化・クエンチ終了・有限箱・数値誤差・ビン境界のどれで説明できるかを先に確かめる。
 
-結論は GREEN / YELLOW / RED と claim tier（measured / observed / interpretive / analogy / frontier）で出す。GREEN 以外を「成功」と呼ばない。
+結論は `docs/PHYSICS_INTEGRITY.md` の role と claim tier を主張ごとに付ける。`docs/STUDY_DESIGN.md` に沿って、発見時に見たデータ、固定後の検証、実物に照合した範囲を記す。数式上の証明を含む場合は仮定と導出を添える。

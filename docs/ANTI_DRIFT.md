@@ -8,6 +8,8 @@
 
 ## 合言葉（毎回これを通す）
 
+以下の Gray–Scott の L7-partial は、その模型でスポットが分かれたという歴史的な形態の記録である。現実の化学に基づく R3「分かれて増える」の状態は open。両者が答えた問いと、これから分裂をどう確かめるかは [法則の再監査](reports/2026-09-28-real-chemistry-audit.md) と [研究の前提](STUDY_DESIGN.md) に記録する。
+
 > **それは生まれたのか、置いたのか?（Did it GROW, or did I PUT it there?）**
 > **その部品、どこから持ってきたの?（Where did that come from?）**
 

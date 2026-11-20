@@ -62,7 +62,10 @@ def goal_plain(goal: dict[str, Any], evaluation: dict[str, Any] | None, now: lis
 
     if goal["criteria"]:
         hits = [u["label"] for u in ev["universes"] if u["all_met"]]
-        sweep_hits = [v for s in sweeps for v in s["variants"] if v.get("all_met")]
+        comparable = [v for s in sweeps if s.get("criteria") == goal["criteria"]
+                      and (not goal["whites"] or s["white"] in goal["whites"])
+                      for v in s["variants"] if not v["diverged"] and "joint_at" in v]
+        sweep_hits = [v for v in comparable if v["joint_at"] is not None]
         if hits or sweep_hits:
             where = []
             if hits:
@@ -72,9 +75,9 @@ def goal_plain(goal: dict[str, Any], evaluation: dict[str, Any] | None, now: lis
             out.append(f"🎉 目安をぜんぶ満たしたもの：{'、'.join(where)}。本当にそう言えるかは、あとで人が確かめます。")
         else:
             best = max([sum(c["met"] for c in u["criteria"]) for u in ev["universes"]]
-                       + [v.get("met", 0) for s in sweeps for v in s["variants"]] or [0])
-            if n_u or tried:
-                out.append(f"🔎 まだ見つかっていません。いちばん近いもので、目安 {len(goal['criteria'])} つのうち {best} つ。")
+                       + [v["met"] for v in comparable] or [0])
+            if n_u or comparable:
+                out.append(f"🔎 同時成立は未確認です。個別には最大 {best}/{len(goal['criteria'])} 条件を観測しました。")
 
     for e in now[-3:]:
         who = "うえきさん" if e["actor"] == "you" else e["actor"]
