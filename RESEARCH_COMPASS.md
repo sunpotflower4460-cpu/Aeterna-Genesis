@@ -41,6 +41,7 @@
 - [research/campaigns/20261120-coarsening-pathways/AUDIT.txt](research/campaigns/20261120-coarsening-pathways/AUDIT.txt)：56³・64³を時刻4800まで追い、離れた領域間で材料が移る経路を粒子IDで実測。48³の再生6本で、駆動下のIの流入・Bの流出と内外で逆向きの状態転換を記録した。
 - [docs/reports/2026-11-20-evidence-foundations.md](docs/reports/2026-11-20-evidence-foundations.md)：水槽の同時成立判定を修正し、実験計画と全試行の台帳を導入。水の拡散でモデル内の証明、計算の再現、温度式と文献値のずれを個別に検証した。
 - [docs/reports/2026-11-20-vortex-drive-stop.md](docs/reports/2026-11-20-vortex-drive-stop.md)：超流体の同一状態から駆動を継続・停止する12組を比較。早い停止で障害物を除いた後も渦を追跡できた。ルビジウムの円筒内振動の照合では高密度側に最大約18%の差が残る。
+- [docs/reports/2026-11-20-argon-interface-turnover.md](docs/reports/2026-11-20-argon-interface-turnover.md)：アルゴン尺度の3D分子動力学で、液滴の境界を追跡しながら同じ原子の蒸気との往復を測った。熱浴停止の対照、力の範囲と箱、実物と同じ法則の別計算への照合を収録。
 
 ## 提案と決定（`research/`）
 

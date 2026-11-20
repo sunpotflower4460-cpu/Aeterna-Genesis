@@ -5,6 +5,7 @@ on:
       - 'research/campaigns/20261108-*/**'
       - 'research/campaigns/20261120-water-diffusion-reference/**'
       - 'research/campaigns/20261120-vortex-*/**'
+      - 'research/campaigns/20261120-argon-*/**'
       - 'tools/study_record.py'
       - '.github/workflows/research-campaign-instruments.yml'
   workflow_dispatch:
@@ -95,3 +96,47 @@ jobs:
           python "$LATE/analyze.py" --evidence "$LATE/evidence" --out "$RUNNER_TEMP/late-measurements"
           python "$EARLY/paired_analysis.py" --evidence "$EARLY/evidence" --out "$RUNNER_TEMP/early-measurements"
           python "$LATE/crosscheck.py" --evidence "$LATE/evidence"
+
+  argon-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: '.'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      BASE: research/campaigns/20261120-argon-interface-turnover
+      RANGE: research/campaigns/20261120-argon-range-confirmation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==1.26.4 scipy==1.15.3
+      - name: Read the registered trajectories and integrate one archived checkpoint independently
+        run: |
+          for campaign in "$BASE" "$RANGE"; do
+            record="$campaign/evidence/record.json"
+            registered=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["registration_commit"])' "$record")
+            git fetch --no-tags --depth=1 origin "$registered"
+          done
+          python "$BASE/fetch_evidence.py" --campaign "$BASE" --out "$RUNNER_TEMP/argon-base-evidence"
+          python "$BASE/fetch_evidence.py" --campaign "$RANGE" --out "$RUNNER_TEMP/argon-range-evidence"
+          python "$BASE/analyze.py" --evidence "$RUNNER_TEMP/argon-base-evidence" --out "$RUNNER_TEMP/argon-base"
+          python "$RANGE/study.py" analyze --evidence "$RUNNER_TEMP/argon-range-evidence" --out "$RUNNER_TEMP/argon-range"
+          python "$BASE/validate.py" --evidence "$RUNNER_TEMP/argon-base-evidence"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          keys = ("track_through", "final_liquid_core_count", "final_core_from_initial_vapor",
+                  "initial_core_atoms_confirmed_in_vapor", "arrivals_with_displacement", "departures_with_displacement")
+          for study, scratch in (("BASE", "argon-base"), ("RANGE", "argon-range")):
+              archived = json.loads((Path(os.environ[study]) / "analysis/results.json").read_text())["cases"]
+              replay = json.loads((Path(os.environ["RUNNER_TEMP"]) / scratch / "results.json").read_text())["cases"]
+              assert archived.keys() == replay.keys(), study
+              for name, values in archived.items():
+                  for scheme in ("main", "low-density-cut", "high-density-cut", "deep-cores", "coarser-time"):
+                      for key in keys:
+                          assert replay[name][scheme].get(key) == values[scheme].get(key), (name, scheme, key)
+          PY
