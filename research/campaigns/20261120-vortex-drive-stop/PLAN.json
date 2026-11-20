@@ -1,0 +1,564 @@
+{
+  "version": 1,
+  "question": "In a 3D bulk-scale rubidium-87 Gross–Pitaevskii model, what happens to same-history vortex loops and to the first detection of new loops after a translating potential brakes and becomes stationary? How closely does the same equation predict axial oscillation frequencies in a separate, measured 87Rb cylindrical box?",
+  "prior_access": "P12's published dimensionless observations (notably rings at t≈70 and later at U=0.6 with gamma=0.01) and Garratt et al. Figs. 1, 2 and 5 were visible before design. Fig. 2 frequencies are read from published marker centres; none fixes a simulation coefficient. New intervention histories and computed cylinder eigenfrequencies are generated after registering this plan and declared code. Small synthetic checks test the instruments.",
+  "independent_unit": "Each of three independently drawn smooth phase perturbations is a paired numerical repeat under the same physical setup at each gamma. Arms are run separately from t=0 and must yield identical prefix field hashes within each pair. Earlier frames, loops within one history, the two gammas, and replays/refinements are not independent physical repeats. Each source frequency is a point from one published trap.",
+  "inputs": "A phase-perturbed condensate (uniform density, no vortex) in a real 3D periodic domain evolves by a local nearest-neighbour Gross–Pitaevskii stencil with an externally prescribed positive Gaussian potential. Its height, speed and times are set before observing the study runs. The zero damping limit is Hamiltonian. Gamma=0.01 is the old P12 sensitivity value for a phenomenological bath at fixed chemical potential, not a measured rubidium sink. The separate static-cylinder calculation has hard walls and regularity at r=0.",
+  "measurement": "Save work, bath loss, energy, particle norm, signed nonzero phase circulations and middle density sections starting at t=0. Direct dual-lattice loops must be closed, unambiguous and contractible. A resolved loop has RMS radius >=2 ell and all crossed-face centres at V<=0.5 mu. Track only mutual singleton neighbours within 1.5 ell/tau times the sampling interval and radius ratio in [2/3,3/2]. Cohort means eligible at t=120 and continuously linked back to t=116. Report continuous links at t=132,176,224 and newly detected tracks after t=132 with at least three observed frames when counting all confirmed arrivals. Keep unresolved pieces and track endings as observations. For the cylinder, compare the lowest axial-odd, azimuth-independent Bogoliubov frequency with each digitized figure point, report both cell sizes, geometry sensitivity and no fit.",
+  "alternatives": "Different arrivals with similar cohort retention would distinguish ongoing formation from short-term persistence; ending a track may reflect contraction below resolution, a tangle, or tracking ambiguity. A static-from-t=0 ramp controls the preparation and measurement. Compare gamma=0 and 0.01, spatial, temporal and extent variants, and re-read obstacle masks V<=0.25 and 1 plus four-time-unit sampling. Vary one solver/extent factor at a time. Axial and transverse sound can cross periodic seams. This is a bulk intervention, not a prediction of the experiment's ring lifetimes or apparatus. Use the declared seed 92101 and gamma=0 base grid for the raw-volume illustration regardless of result.",
+  "stopping": "All planned cases, t=0 through t=224 in the 3D histories with a fixed observation horizon. The ODE integration does not consult detections. In the cylinder solve, maximum 6000 projected imaginary-time iterations per ground state and convergence criterion residual <=1e-10, then compute the lowest positive odd frequency. Save failures, stops and unexecuted conditions.",
+  "tracked_inputs": [
+    "research/campaigns/20261120-vortex-drive-stop/evolve.cpp",
+    "research/campaigns/20261120-vortex-drive-stop/run.py",
+    "research/campaigns/20261120-vortex-drive-stop/cylinder.py",
+    "research/campaigns/20261120-vortex-drive-stop/loops.py",
+    "research/campaigns/20261120-vortex-drive-stop/analyze.py",
+    "tools/study_record.py"
+  ],
+  "reference": {
+    "paper": "Garratt et al. Phys. Rev. A 99, 021601(R) (2019), Fig. 2 and Sections II–III. https://arxiv.org/pdf/1810.08195",
+    "experimental_geometry": {
+      "length_um": 26,
+      "radius_um": 16,
+      "quoted_uncertainty_um": 1
+    },
+    "material": {
+      "mass_u": 86.909180531,
+      "atomic_mass_constant_kg": 1.66053906892e-27,
+      "a_bohr": 100,
+      "bohr_m": 5.29177210544e-11,
+      "hbar_J_s": 1.0545718176461565e-34,
+      "reference_atoms": 120000,
+      "provenance": "The paper uses a about 100 a0. Isotope mass from NIST and SI inputs from CODATA. N=1.2(1)e5 was used in Fig. 5, and the neutral atom mass approximates condensate atom inertial mass."
+    },
+    "digitization": {
+      "page": 2,
+      "dpi": 360,
+      "crop_xy": [
+        1580,
+        240
+      ],
+      "x_tick_px": [
+        266.5,
+        624.5,
+        983.5
+      ],
+      "y_tick_px": [
+        543.5,
+        336.5,
+        129.5
+      ],
+      "x_tick_atoms": [
+        1000,
+        10000,
+        100000
+      ],
+      "y_tick_hz": [
+        2,
+        4,
+        8
+      ],
+      "uncertainty_px": 2,
+      "procedure": "Fit log-axis coordinates to all three major ticks. Use leftmost isolated marker and the seven rightmost mutually isolated markers (no frequency residual-based selection). Coordinates are in the cropped raster with y down. Individual frequency error bars are unresolved at this scale; digitization and geometry bounds are reported as sensitivities, not confidence intervals."
+    }
+  },
+  "protocol": {
+    "duration": 224,
+    "interval": 2,
+    "brake_start": 120,
+    "brake_end": 132,
+    "preparation": {
+      "noise": "PCG64 independent normal sine/cosine coefficients, perturbation 0.005/sqrt(5), periods (12,12,48) ell; exact unit modulus in exact arithmetic",
+      "obstacle": "Positive periodized Gaussian, sigma=2.5 ell per axis, centred at transverse origin, z starts at 30 ell; height half-cosine ramp to 5 mu over t=0..16, moving-arm velocity half-cosine ramp to 0.68c over t=16..40."
+    },
+    "cuts": [
+      0,
+      80,
+      120,
+      132,
+      176,
+      224
+    ],
+    "software": "C++17/float64 with -O3 -ffp-contract=off, no fast math. Python 3.10 with NumPy 1.26.4, SciPy 1.15.3, and NumPy PCG64 for the initial field."
+  },
+  "cases": {
+    "base-g0-92101-continue": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "continue",
+      "witness": true
+    },
+    "base-g0-92101-brake": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "brake",
+      "witness": true
+    },
+    "base-g001-92101-continue": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "continue",
+      "witness": false
+    },
+    "base-g001-92101-brake": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "brake",
+      "witness": false
+    },
+    "base-g0-92107-continue": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92107,
+      "gamma": 0,
+      "mode": "continue",
+      "witness": false
+    },
+    "base-g0-92107-brake": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92107,
+      "gamma": 0,
+      "mode": "brake",
+      "witness": false
+    },
+    "base-g001-92107-continue": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92107,
+      "gamma": 0.01,
+      "mode": "continue",
+      "witness": false
+    },
+    "base-g001-92107-brake": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92107,
+      "gamma": 0.01,
+      "mode": "brake",
+      "witness": false
+    },
+    "base-g0-92113-continue": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92113,
+      "gamma": 0,
+      "mode": "continue",
+      "witness": false
+    },
+    "base-g0-92113-brake": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92113,
+      "gamma": 0,
+      "mode": "brake",
+      "witness": false
+    },
+    "base-g001-92113-continue": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92113,
+      "gamma": 0.01,
+      "mode": "continue",
+      "witness": false
+    },
+    "base-g001-92113-brake": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92113,
+      "gamma": 0.01,
+      "mode": "brake",
+      "witness": false
+    },
+    "static-g0": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "static",
+      "witness": false
+    },
+    "static-g001": {
+      "kind": "flow",
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "static",
+      "witness": false
+    },
+    "small-step-g0-continue": {
+      "kind": "flow",
+      "variant": "small-step",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "continue",
+      "witness": false
+    },
+    "small-step-g0-brake": {
+      "kind": "flow",
+      "variant": "small-step",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "brake",
+      "witness": false
+    },
+    "small-step-g001-continue": {
+      "kind": "flow",
+      "variant": "small-step",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "continue",
+      "witness": false
+    },
+    "small-step-g001-brake": {
+      "kind": "flow",
+      "variant": "small-step",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "brake",
+      "witness": false
+    },
+    "fine-g0-continue": {
+      "kind": "flow",
+      "variant": "fine",
+      "shape": [
+        48,
+        48,
+        384
+      ],
+      "dx": 0.5,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "continue",
+      "witness": false
+    },
+    "fine-g0-brake": {
+      "kind": "flow",
+      "variant": "fine",
+      "shape": [
+        48,
+        48,
+        384
+      ],
+      "dx": 0.5,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "brake",
+      "witness": false
+    },
+    "fine-g001-continue": {
+      "kind": "flow",
+      "variant": "fine",
+      "shape": [
+        48,
+        48,
+        384
+      ],
+      "dx": 0.5,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "continue",
+      "witness": false
+    },
+    "fine-g001-brake": {
+      "kind": "flow",
+      "variant": "fine",
+      "shape": [
+        48,
+        48,
+        384
+      ],
+      "dx": 0.5,
+      "dt": 0.0625,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "brake",
+      "witness": false
+    },
+    "wide-g0-continue": {
+      "kind": "flow",
+      "variant": "wide",
+      "shape": [
+        48,
+        48,
+        320
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "continue",
+      "witness": false
+    },
+    "wide-g0-brake": {
+      "kind": "flow",
+      "variant": "wide",
+      "shape": [
+        48,
+        48,
+        320
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0,
+      "mode": "brake",
+      "witness": false
+    },
+    "wide-g001-continue": {
+      "kind": "flow",
+      "variant": "wide",
+      "shape": [
+        48,
+        48,
+        320
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "continue",
+      "witness": false
+    },
+    "wide-g001-brake": {
+      "kind": "flow",
+      "variant": "wide",
+      "shape": [
+        48,
+        48,
+        320
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92101,
+      "gamma": 0.01,
+      "mode": "brake",
+      "witness": false
+    },
+    "cylinder-1": {
+      "kind": "cylinder",
+      "marker_xy": [
+        245,
+        421
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    },
+    "cylinder-2": {
+      "kind": "cylinder",
+      "marker_xy": [
+        740.5,
+        236
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    },
+    "cylinder-3": {
+      "kind": "cylinder",
+      "marker_xy": [
+        770.5,
+        223
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    },
+    "cylinder-4": {
+      "kind": "cylinder",
+      "marker_xy": [
+        814,
+        200
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    },
+    "cylinder-5": {
+      "kind": "cylinder",
+      "marker_xy": [
+        895.5,
+        166.5
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    },
+    "cylinder-6": {
+      "kind": "cylinder",
+      "marker_xy": [
+        944,
+        140
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    },
+    "cylinder-7": {
+      "kind": "cylinder",
+      "marker_xy": [
+        1008.5,
+        97
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    },
+    "cylinder-8": {
+      "kind": "cylinder",
+      "marker_xy": [
+        1031.5,
+        88.5
+      ],
+      "target_mesh_um": [
+        0.5,
+        0.25
+      ]
+    }
+  }
+}
