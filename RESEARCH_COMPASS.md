@@ -44,6 +44,7 @@
 - [docs/reports/2026-11-20-argon-interface-turnover.md](docs/reports/2026-11-20-argon-interface-turnover.md)：アルゴン尺度の3D分子動力学で、液滴の境界を追跡しながら同じ原子の蒸気との往復を測った。熱浴停止の対照、力の範囲と箱、実物と同じ法則の別計算への照合を収録。
 - [docs/reports/2026-11-20-binary-boundary-exchange.md](docs/reports/2026-11-20-binary-boundary-exchange.md)：3Dの Ar–Kr で、標準の孤立3本に両成分の往復と40〜46ポイントの組成差を同時に測定。対力同一の対照、既存物性との照合、周期境界の一周経路と測定条件の厳しさの診断を収録。
 - [docs/reports/2026-11-20-periodic-boundary-confirmation.md](docs/reports/2026-11-20-periodic-boundary-confirmation.md)：新規25本で周期箱の空平面と一周経路を同じ3D履歴上で比較。冷却24本の同時計測13→19本。実際に箱を一周した領域にも組成差があり、有限性と分配を別々に測った。
+- [docs/reports/2026-11-20-atom-contact-lineage.md](docs/reports/2026-11-20-atom-contact-lineage.md)：3件の追跡切れを原子IDで検査。4本を同一状態から細かく記録して共通時刻の一致を確認し、すべての切れに近い時刻で二群の連結を観測。接触による合流と密度の判定に2〜3τの差がある事例を記録した。
 
 ## 提案と決定（`research/`）
 

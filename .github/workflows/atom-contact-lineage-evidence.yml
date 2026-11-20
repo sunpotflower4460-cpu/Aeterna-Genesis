@@ -1,0 +1,56 @@
+name: Atom contact lineage evidence
+on:
+  pull_request:
+    paths:
+      - 'research/campaigns/20261120-atom-contact-lineage/**'
+      - 'research/campaigns/20261120-periodic-boundary-confirmation/**'
+      - 'research/campaigns/20261120-binary-boundary-exchange/**'
+      - 'research/campaigns/20261120-argon-interface-turnover/analyze.py'
+      - 'tools/study_record.py'
+      - '.github/workflows/atom-contact-lineage-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  replay-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: '.'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      STUDY: research/campaigns/20261120-atom-contact-lineage
+      ORIGINAL: research/campaigns/20261120-periodic-boundary-confirmation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==1.26.4 scipy==1.15.3
+      - name: Verify matching trajectories and remeasure material overlaps
+        run: |
+          for campaign in "$STUDY" "$ORIGINAL"; do
+            recorded=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["registration_commit"])' "$campaign/evidence/record.json")
+            git fetch --no-tags --depth=1 origin "$recorded"
+          done
+          analysis_commit=$(python -c 'import json, os; print(json.load(open(os.environ["STUDY"] + "/analysis/results.json"))["analysis_registration"])')
+          git fetch --no-tags --depth=1 origin "$analysis_commit"
+          fetcher=research/campaigns/20261120-argon-interface-turnover/fetch_evidence.py
+          original="$RUNNER_TEMP/original-contact-evidence"
+          replay="$RUNNER_TEMP/replayed-contact-evidence"
+          output="$RUNNER_TEMP/contact-analysis"
+          python "$fetcher" --campaign "$ORIGINAL" --out "$original"
+          python "$fetcher" --campaign "$STUDY" --out "$replay"
+          python "$STUDY/analyze.py" --original "$original" --replay "$replay" --out "$output" --analysis-at "$analysis_commit"
+          python "$STUDY/verify.py" --original "$original" --replay "$replay" --analysis "$output" --out "$output/validation.json"
+          python "$STUDY/inspect_losses.py" --original "$original" --replay "$replay" --analysis "$output" --out "$output/grid-contact-map.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          archived = Path(os.environ["STUDY"], "analysis")
+          calculated = Path(os.environ["RUNNER_TEMP"], "contact-analysis")
+          for name in ("results.json", "validation.json", "grid-contact-map.json"):
+              assert json.loads((archived / name).read_text()) == json.loads((calculated / name).read_text()), name
+          PY
