@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from coarsening_runs import PLAN, read_json, trials_for
-from conformation_balance import conformation_balance
+from conformation_balance import conformation_balance, symmetric_circulation
 from mobility import MOBILITY_PLAN, trials_for as mobility_trials
 from pathways import Snapshot, material_budget, number_budget, observe_transitions, region_gap_at_least
 from survey import check_prefix
@@ -182,3 +182,17 @@ def test_conformation_balance_matches_both_inventories():
     assert terms == {"delta_I": -3, "delta_B": 5, "net_I_hops": 2, "net_B_hops": 0, "net_I_to_B": 5}
     with pytest.raises(ValueError, match="conversion"):
         conformation_balance(-3, 6, 8, 6, 5, 5)
+
+
+def test_time_symmetric_current_changes_sign_on_reversing_the_path():
+    a = {"threshold": .5, "start": 0, "end": 50, "endpoint": 0, "net_I_hops": 5,
+         "net_B_hops": -2, "net_I_to_B_inside": 3, "net_I_to_B_outside": -4, "global_B_change": -1}
+    b = a | {"endpoint": 1, "net_I_hops": 2, "net_B_hops": -4}
+    originals, = symmetric_circulation([a, b])
+    fields = ("net_I_hops", "net_B_hops", "net_I_to_B_inside", "net_I_to_B_outside", "global_B_change")
+    reversed_inputs = [{**r, "endpoint": 1 - r["endpoint"], **{key: -r[key] for key in fields}}
+                       for r in (a, b)]
+    backwards, = symmetric_circulation(reversed_inputs)
+    assert originals["signed_circulation_for_total"] is True
+    assert backwards["signed_circulation_for_total"] is False
+    assert all(originals[k] == -backwards[k] for k in fields)

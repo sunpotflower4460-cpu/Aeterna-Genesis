@@ -108,8 +108,11 @@ def late_tests(windows):
 
     def change(ref, new, field):
         old, late = lookup[ref][field], lookup[new][field]
-        return {"of_means": late["mean"] / old["mean"] - 1,
-                "by_seed": [y / x - 1 for x, y in zip(old["by_seed"], late["by_seed"], strict=True)]}
+        def relative(x, y):
+            return y / x - 1 if x and y is not None else None
+
+        return {"of_means": relative(old["mean"], late["mean"]),
+                "by_seed": [relative(x, y) for x, y in zip(old["by_seed"], late["by_seed"], strict=True)]}
 
     time_steps = {
         f"{n}/{begin}-{end}": {field: change((n, begin), (n, end), field) for field in lengths}
@@ -117,11 +120,14 @@ def late_tests(windows):
     }
     size_step = {field: change((56, 4800), (64, 4800), field) for field in lengths}
     shell = {str(n): lookup[n, 4800]["first_shell_fraction"] for n in n_values}
+    def bounded(value, tolerance):
+        return value is not None and abs(value) <= tolerance
+
     evidence = {
-        "temporal_each_size_each_step_within_5pct": all(abs(val["of_means"]) <= 0.05
+        "temporal_each_size_each_step_within_5pct": all(bounded(val["of_means"], 0.05)
                                                         for p in time_steps.values() for val in p.values()),
-        "size_difference_within_10pct": all(abs(val["of_means"]) <= 0.10 for val in size_step.values()),
-        "last_first_shell_not_majority": all(val["mean"] <= 0.5 for val in shell.values()),
+        "size_difference_within_10pct": all(bounded(val["of_means"], 0.10) for val in size_step.values()),
+        "last_first_shell_not_majority": all(bounded(val["mean"], 0.5) for val in shell.values()),
     }
     return {"changes_over_time": time_steps, "changes_across_size": size_step, "last_first_shell": shell,
             "criteria": evidence, "all_pass": all(evidence.values())}
