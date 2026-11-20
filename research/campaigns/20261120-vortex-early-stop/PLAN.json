@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "question": "When braking begins during the first sparse wake, can any continuously tracked vortex loop survive without further work, including after the obstacle potential is removed? How do the results transfer across time step, spatial grid and box extent when time integration preserves the norm?",
+  "prior_access": "The base arms of 811bb343025e1bdb58c83afeb66f4dc8d87a9d67 were read first: the first resolved tracks began at t=46 (gamma 0) versus several tracks at t=120. Stop time t=58 is an author choice informed by those outcomes. The previous seeds and later-stop outcomes provide design context. No history using the early schedule, the split-step solver or seeds listed here was computed before registration.",
+  "independent_unit": "Three fresh independent draws of the small phase variation, with three interventions paired within each seed. The precision and extent variations repeat one seed and are sensitivity calculations. Each loop and successive frames within a history share the same fluid.",
+  "inputs": "The dimensionless rubidium bulk-scale Gross–Pitaevskii equation with gamma=0 and the same discrete Laplacian as the preceding experiment. Start with constant density and a small seeded phase modulation. The obstacle ramps and accelerates as before. Continue at 0.68 c, or brake over t=58..70; a third arm switches the stationary potential off smoothly from t=70 to t=82. No ring is present at t=0.",
+  "measurement": "Save signed nonzero phase windings, density slices, energy, work, mass and same-time prefix hashes. Use the original component and one-to-one association criteria. Cohort eligible with continuous associations from t=54 to t=58. Report at t=70,82,120,160 and count new sustained track starts after t=82; use V cutoffs 0.25,0.5,1 and temporal decimation by two. Track endpoints mean last observable association. Report final and peak energy residuals and mass drift. Plot the declared seed 92301 only.",
+  "alternatives": "The held-potential arm measures a stationary obstacle with zero work after t=70. The release arm controls whether the held potential is needed: it permits signed work during the fade but V and its time derivative vanish thereafter. Compare ongoing work, remaining energy and previous wake. Same time step, spatial or extent variants check transfer. Finite periodic images and internal stored motion remain present.",
+  "stopping": "Every listed case from t=0 to 160, output every 2 units and common images at 0,58,70,82,120,160. Record all completion states and any failure diagnostics. No result-based stopping.",
+  "tracked_inputs": [
+    "research/campaigns/20261120-vortex-early-stop/run.py",
+    "research/campaigns/20261120-vortex-early-stop/analyze.py",
+    "research/campaigns/20261120-vortex-drive-stop/loops.py",
+    "research/campaigns/20261120-vortex-drive-stop/run.py",
+    "research/campaigns/20261120-vortex-drive-stop/cylinder.py",
+    "research/campaigns/20261120-vortex-drive-stop/PLAN.json",
+    "tools/study_record.py"
+  ],
+  "protocol": {
+    "duration": 160,
+    "interval": 2,
+    "brake_start": 58,
+    "brake_end": 70,
+    "release_end": 82,
+    "cuts": [
+      0,
+      58,
+      70,
+      82,
+      120,
+      160
+    ],
+    "software": "NumPy float64/complex128, SciPy pocketfft workers=1 in each history. Strang split time step with exact phase and periodic kinetic update and the external potential at the midpoint. Work integrated by endpoint trapezoid."
+  },
+  "cases": {
+    "base-92301-continue": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92301,
+      "mode": "continue"
+    },
+    "base-92301-hold": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92301,
+      "mode": "hold"
+    },
+    "base-92301-release": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92301,
+      "mode": "release"
+    },
+    "base-92307-continue": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92307,
+      "mode": "continue"
+    },
+    "base-92307-hold": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92307,
+      "mode": "hold"
+    },
+    "base-92307-release": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92307,
+      "mode": "release"
+    },
+    "base-92311-continue": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92311,
+      "mode": "continue"
+    },
+    "base-92311-hold": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92311,
+      "mode": "hold"
+    },
+    "base-92311-release": {
+      "variant": "base",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92311,
+      "mode": "release"
+    },
+    "small-step-92301-hold": {
+      "variant": "small-step",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.0625,
+      "seed": 92301,
+      "mode": "hold"
+    },
+    "small-step-92301-release": {
+      "variant": "small-step",
+      "shape": [
+        32,
+        32,
+        256
+      ],
+      "dx": 0.75,
+      "dt": 0.0625,
+      "seed": 92301,
+      "mode": "release"
+    },
+    "fine-92301-hold": {
+      "variant": "fine",
+      "shape": [
+        48,
+        48,
+        384
+      ],
+      "dx": 0.5,
+      "dt": 0.0625,
+      "seed": 92301,
+      "mode": "hold"
+    },
+    "fine-92301-release": {
+      "variant": "fine",
+      "shape": [
+        48,
+        48,
+        384
+      ],
+      "dx": 0.5,
+      "dt": 0.0625,
+      "seed": 92301,
+      "mode": "release"
+    },
+    "wide-92301-hold": {
+      "variant": "wide",
+      "shape": [
+        48,
+        48,
+        320
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92301,
+      "mode": "hold"
+    },
+    "wide-92301-release": {
+      "variant": "wide",
+      "shape": [
+        48,
+        48,
+        320
+      ],
+      "dx": 0.75,
+      "dt": 0.125,
+      "seed": 92301,
+      "mode": "release"
+    }
+  }
+}
