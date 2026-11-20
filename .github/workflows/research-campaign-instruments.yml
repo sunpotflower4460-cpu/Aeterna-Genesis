@@ -4,6 +4,7 @@ on:
     paths:
       - 'research/campaigns/20261108-*/**'
       - 'research/campaigns/20261120-water-diffusion-reference/**'
+      - 'research/campaigns/20261120-vortex-*/**'
       - 'tools/study_record.py'
       - '.github/workflows/research-campaign-instruments.yml'
   workflow_dispatch:
@@ -69,3 +70,28 @@ jobs:
               with np.load(study / "evidence" / name) as archived, np.load(Path(os.environ["RUNNER_TEMP"]) / "tracers" / name) as replay:
                   np.testing.assert_array_equal(archived["displacement_steps"], replay["displacement_steps"])
           PY
+
+  vortex-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: '.'
+      OPENBLAS_NUM_THREADS: '1'
+      LATE: research/campaigns/20261120-vortex-drive-stop
+      EARLY: research/campaigns/20261120-vortex-early-stop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==1.26.4 scipy==1.15.3
+      - name: Verify registered plans and re-read the published states and interventions
+        run: |
+          for record in "$LATE/evidence/record.json" "$EARLY/evidence-first-attempt/record.json" "$EARLY/evidence/record.json"; do
+            registered=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["registration_commit"])' "$record")
+            git fetch --no-tags --depth=1 origin "$registered"
+          done
+          python -m tools.study_record "$EARLY/PLAN.json" "$EARLY/evidence-first-attempt/record.json"
+          python "$LATE/analyze.py" --evidence "$LATE/evidence" --out "$RUNNER_TEMP/late-measurements"
+          python "$EARLY/paired_analysis.py" --evidence "$EARLY/evidence" --out "$RUNNER_TEMP/early-measurements"
+          python "$LATE/crosscheck.py" --evidence "$LATE/evidence"

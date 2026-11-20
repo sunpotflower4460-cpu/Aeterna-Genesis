@@ -40,6 +40,7 @@
 - [research/campaigns/20261120-length-selection/AUDIT.txt](research/campaigns/20261120-length-selection/AUDIT.txt)：39本の3D履歴と旧4本の反応事象再計測。箱の大きさによる成長の違いと、燃料反応が材料の薄い領域に集中することを確かめた。
 - [research/campaigns/20261120-coarsening-pathways/AUDIT.txt](research/campaigns/20261120-coarsening-pathways/AUDIT.txt)：56³・64³を時刻4800まで追い、離れた領域間で材料が移る経路を粒子IDで実測。48³の再生6本で、駆動下のIの流入・Bの流出と内外で逆向きの状態転換を記録した。
 - [docs/reports/2026-11-20-evidence-foundations.md](docs/reports/2026-11-20-evidence-foundations.md)：水槽の同時成立判定を修正し、実験計画と全試行の台帳を導入。水の拡散でモデル内の証明、計算の再現、温度式と文献値のずれを個別に検証した。
+- [docs/reports/2026-11-20-vortex-drive-stop.md](docs/reports/2026-11-20-vortex-drive-stop.md)：超流体の同一状態から駆動を継続・停止する12組を比較。早い停止で障害物を除いた後も渦を追跡できた。ルビジウムの円筒内振動の照合では高密度側に最大約18%の差が残る。
 
 ## 提案と決定（`research/`）
 
