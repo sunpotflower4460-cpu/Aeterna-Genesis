@@ -38,6 +38,7 @@
 - [research/campaigns/20261119-transport-and-composition/AUDIT.txt](research/campaigns/20261119-transport-and-composition/AUDIT.txt)：無構造の3D格子273履歴で燃料供給・組成・移動度を比較。化学仕事と材料の濃淡を測り、周期境界と旧e060の数値計算を再検証した。
 - [research/campaigns/20261119-long-time-and-stationary/AUDIT.txt](research/campaigns/20261119-long-time-and-stationary/AUDIT.txt)：組成と反応頻度をそろえた3Dの長時間比較。2粒子の定常解と有限交換の計算で、反応障壁と燃料に接触できる面の寄与を調べた。
 - [research/campaigns/20261120-length-selection/AUDIT.txt](research/campaigns/20261120-length-selection/AUDIT.txt)：39本の3D履歴と旧4本の反応事象再計測。箱の大きさによる成長の違いと、燃料反応が材料の薄い領域に集中することを確かめた。
+- [research/campaigns/20261120-coarsening-pathways/AUDIT.txt](research/campaigns/20261120-coarsening-pathways/AUDIT.txt)：56³・64³を時刻4800まで追い、離れた領域間で材料が移る経路を粒子IDで実測。48³の再生6本で、駆動下のIの流入・Bの流出と内外で逆向きの状態転換を記録した。
 
 ## 提案と決定（`research/`）
 

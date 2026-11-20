@@ -192,7 +192,8 @@ def camera_angle(source, receivers, cut, size):
         projected = offsets - (offsets @ direction)[:, None] * direction
         return np.min(np.linalg.norm(projected, axis=1))
 
-    return max(range(-165, 180, 15), key=clearance)
+    angles = [angle for angle in range(-165, 180, 15) if 25 <= angle % 90 <= 65]
+    return max(angles, key=clearance)
 
 
 def transport_figure(result, raw_transitions, evidence, old_evidence, output):
@@ -252,23 +253,25 @@ def hop_figure(audit, conversions, output):
             fractions = [100 * row["gross_fraction_I"] for row in reports]
             axes[0].scatter(index + position + offsets, fractions, color=color, s=44,
                             label=f"Density > {threshold:g}" if index == 0 else None)
-        # Keep I and B signed, normalized against the same gross event count.
-        reports = [next(x for x in rec["totals"] if x["threshold"] == .5 and x["endpoint"] == 0)
-                   for rec in records]
-        for field, color, position in (("I", ORANGE, -.18), ("B", SIZE_COLORS[56], .18)):
-            measurements = [1000 * row["net_" + field] /
-                            sum(row[key] for key in ("in_I", "out_I", "in_B", "out_B"))
-                            for row in reports]
-            axes[1].scatter(index + position + offsets, measurements, color=color, s=44,
-                            label=field if index == 0 else None)
         if conversions:
-            balances = {row["seed"]: next(x for x in row["circulation"]
-                                           if x["threshold"] == .5 and x["endpoint"] == 0)
+            balances = {row["seed"]: next(x for x in row["circulation_twice_symmetric"] if x["threshold"] == .5)
                         for row in conversions["records"] if row["case"] == case}
+            phase_rows = [balances[row["seed"]] for row in records]
+            gross = [sum(x[key] for x in row["totals"] if x["threshold"] == .5
+                         for key in ("in_I", "out_I", "in_B", "out_B")) for row in records]
             for side, color, position in (("inside", TEAL, -.18), ("outside", ORANGE, .18)):
-                net = [balances[row["seed"]]["net_I_to_B_" + side] / 1000 for row in records]
+                net = [row["net_I_to_B_" + side] / 2000 for row in phase_rows]
                 axes[2].scatter(index + position + offsets, net, color=color, s=44,
                                 label=side.title() if index == 0 else None)
+        else:
+            phase_rows = [next(x for x in row["totals"] if x["threshold"] == .5 and x["endpoint"] == 0)
+                          for row in records]
+            gross = [sum(row[key] for key in ("in_I", "out_I", "in_B", "out_B")) for row in phase_rows]
+        for field, color, position in (("I", ORANGE, -.18), ("B", SIZE_COLORS[56], .18)):
+            key = "net_" + field + ("_hops" if conversions else "")
+            measurements = [1000 * row[key] / count for row, count in zip(phase_rows, gross, strict=True)]
+            axes[1].scatter(index + position + offsets, measurements, color=color, s=44,
+                            label=field if index == 0 else None)
     for axis in axes:
         axis.set_xticks(range(2), ["Driven", "Reversible"])
         axis.set_xlim(-.47, 1.47)
@@ -281,10 +284,12 @@ def hop_figure(audit, conversions, output):
     axes[1].axhline(0, color="#687785", linewidth=1)
     if conversions:
         axes[2].axhline(0, color="#687785", linewidth=1)
-        axes[2].set_title("Net I to B conversion", loc="left")
+        axes[2].set_title("Net I to B conversion at density > 0.5", loc="left")
         axes[2].set_ylabel("Net conversions (thousands)")
     figure.suptitle("Accepted particle hops through fixed boundaries", fontsize=18, fontweight="bold")
-    figure.supxlabel("Masks fixed at the start of each 50-unit interval · 48³ · t = 1200–1800")
+    method = ("Gross events from opening masks · net readings averaged over both endpoint masks"
+              if conversions else "Masks fixed at the start of each 50-unit interval")
+    figure.supxlabel(f"{method}  ·  48³  ·  t = 1200–1800")
     figure.savefig(output / "fixed-interface-hops.png")
     plt.close(figure)
 
