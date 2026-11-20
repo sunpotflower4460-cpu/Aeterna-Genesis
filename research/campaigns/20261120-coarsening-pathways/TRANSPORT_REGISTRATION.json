@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-20",
+  "question": "Which material conformation carries the gross and net accepted hops across the measured interfaces, in the otherwise unchanged driven and reversible histories?",
+  "reference": "Use the six archived N48 histories from the previous extent panel. Central reversible df=0.2 provides a single concrete control; report actual B fraction and turnover over the tracking exposure without a matched-composition claim unless independently warranted.",
+  "N": 48,
+  "seeds": [
+    4111,
+    4241,
+    4513
+  ],
+  "cases": [
+    "uniform_minus",
+    "reversible_df0.2"
+  ],
+  "first_time": 1200,
+  "T": 1800,
+  "cadence": 50,
+  "thresholds": [
+    0.5,
+    0.7
+  ],
+  "observer": "Replay from zero using an observation-only copy of the frozen solver. For each interval load both independently measured endpoint-label masks from the archived run before counting. Count individual accepted I and B hops with destination minus source membership in each fixed mask. Record gross in/out and signed net for every label in each mask, excluding background. Masks and counts never enter the physical rules or random draws.",
+  "verification": "All 37 complete physical checkpoints and all 181 ledger rows must match the reference prefix byte-for-byte. Every label's total accepted net I+B must match its independently counted endpoint inventory change. Observed single-hop in/out counts must be at least the corresponding unique endpoint-ID counts. Assay thresholds and the two endpoint masks are repeated views of the same trajectory.",
+  "summaries": "Report exact in/out, signed net and gross fraction carried by I separately by seed, chemistry, threshold and endpoint mask; label per-seed and total curves. No inference that the gross contribution necessarily has the sign or magnitude of net growth.",
+  "solver_source_sha256": "de4fd28e9d5dd2617d0265e3c4fbabdd89b90dbbd9c20b471fd73f3bd377a8ef"
+}

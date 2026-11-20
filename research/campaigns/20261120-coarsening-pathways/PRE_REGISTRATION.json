@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-20",
+  "starting_commit": "f4ec8d1608af9dcfdfd7c315e03cfdaeb75d26b1",
+  "questions": [
+    "At twice the previous maximum age, how do the lengths and the number of resolved regions depend on the edge length of the periodic box?",
+    "How many observed net losses of dense regions are accounted for by multiple-to-one correspondence, and how many by loss of correspondence? Can tracked material from a spatially separated shrinking region be found in the dilute phase and then inside other persistent regions?",
+    "For regions with one-to-one correspondence, what parts of the change in their measured material inventory are the integrated particle-hop flux through fixed boundaries and the motion of the observation boundary?"
+  ],
+  "solver": {
+    "dimensions": 3,
+    "starts_at_zero": true,
+    "shape_seeded": false,
+    "dx": 1,
+    "density": 0.18,
+    "case": "uniform_minus",
+    "exchange_per_site": 3.125,
+    "baseline_registration_sha256": "4bcf2e78f0291463ba6e8cfc540559614b86ae09163f6bddc5b1ffab8ec7a5af",
+    "sha256": "de4fd28e9d5dd2617d0265e3c4fbabdd89b90dbbd9c20b471fd73f3bd377a8ef",
+    "inherit": "Remove neither reaction path and use the existing unmodified exact local solver, initial conditions and source reservoirs. The actual microscopic update and the archival runner are unchanged. N changes physical volume at fixed lattice spacing."
+  },
+  "matrix": {
+    "phase": "long_extent",
+    "edges": [
+      64,
+      56
+    ],
+    "T": 4800,
+    "seeds": [
+      4111,
+      4241,
+      4513
+    ],
+    "histories": 6,
+    "prefix": "Independently rerun from t=0. At N56 compare all common physical files and the ledger through t=2400 to the old archives, which are prefixes and not independent replicates."
+  },
+  "comparison_windows": [
+    [
+      840,
+      1200
+    ],
+    [
+      1440,
+      1800
+    ],
+    [
+      2040,
+      2400
+    ],
+    [
+      2640,
+      3000
+    ],
+    [
+      3240,
+      3600
+    ],
+    [
+      3840,
+      4200
+    ],
+    [
+      4440,
+      4800
+    ]
+  ],
+  "scales": {
+    "inherited": "Periodic width-4 material density, the same full 3D spectral scale, independent axial half correlation, first-shell power, and width-4 variance. Include both seedwise changes and arithmetic means.",
+    "regions": "For each threshold report the number of eligible regions, total dense material, largest share of material in eligible regions, and volume-weighted mean component volume in 3D. Define sustained one region as six consecutive 50-unit frames with exactly one eligible region through that local interval. Report later reversals and missing windows.",
+    "late_test": "Carry forward the previous <=5% change in both mean lengths and <=10% mean size difference, with no majority of power in the first shell. Evaluate both final changes, from windows ending 3600 to 4200 and 4200 to 4800, at N56 versus N64. A pass is a candidate in the studied window, not an infinite-time conclusion.",
+    "old_references": "Previous 27 extent histories are retained as references at their original durations. Their N56 prefixes are shown once. At N32 and N48 use all three previous reversible control parameter values, sharing the same seeds and t=0 configurations. Composition and gross turnover conditions apply pointwise only to the earlier matched comparison windows; report if the separately summarized mechanism exposure cannot establish the same match."
+  },
+  "domains": {
+    "thresholds": [
+      0.5,
+      0.7
+    ],
+    "minimum_region_sites": 64,
+    "first_time": 1200,
+    "cadences": [
+      50,
+      100
+    ],
+    "minimum_shared_material_identities": 16,
+    "minimum_shared_fraction_of_each_group": 0.2,
+    "minimum_geometric_overlap_of_smaller_region": 0.1,
+    "topology": "Six-neighbor components joined across all periodic boundaries. Reuse the previous overlap and particle-identity rule, with the identical thresholds and with labels local to each frame. Register both 50 and 100 as distinct observational cadences, not independent experiments.",
+    "number_budget": "At each interval sum graph-component (number after minus number before), binned as one-to-one, many-to-one, one-to-many, and many-to-many. Add unmatched appearances and subtract unmatched losses. Verify the exact equality with the endpoint change. Report per-history counts and normalized exposure, including positive contributions and changes that reverse. Count losses of correspondence as ambiguous unless they meet the fixed separation and shrinkage criteria.",
+    "population_budget": "For each one-to-one correspondence split the population change symmetrically across the two endpoint masks into a signed net hop count through fixed masks and a signed boundary-membership term. Use the exact four sums of material indicators, with all-particle endpoint identities to check the signed crossings. Report both directed crossing counts at each fixed mask, signed net, and positive and negative magnitudes. These are finite intervals, and the measurement mask has no physical permeability.",
+    "separated_loss": {
+      "prior_one_to_one_steps": 2,
+      "minimum_relative_decline": 0.2,
+      "minimum_periodic_manhattan_gap": 4,
+      "later_steps_at_cadence": 4,
+      "dilute_below": 0.3,
+      "rule": "Report all losses and test these cases at cadence 50 and 100. A strict candidate has two one-to-one predecessors, strictly decreasing voxel AND material counts over these three frames and >=20% decline of both, and no other eligible region closer than four nearest-neighbor lattice steps in those three frames. For the initial cohort count the particle identities outside eligible regions, in width-4 density below 0.3 at the first frame after loss, and subsequently in a distinct recipient present at the beginning and continuing one-to-one up to four further steps. Keep censoring, topology ambiguity, and negative outcomes. When comparing the two thresholds do not collapse them into additional independent replicates."
+    }
+  },
+  "audit": "All registered histories start from unstructured random t=0 at fixed local physical parameters. No official Room, gate, prior evidence, engine or automation changes. Documentation and figures are derived from physical data, and exploration does not retroactively define a prior pass."
+}
