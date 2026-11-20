@@ -219,11 +219,51 @@ def transport_figure(result, raw_transitions, evidence, old_evidence, output):
     plt.close(figure)
 
 
+
+def hop_figure(audit, output):
+    """Show directly accepted boundary events, with each seed as a separate point."""
+    figure, axes = plt.subplots(1, 2, figsize=(10.75, 4.55), layout="constrained")
+    cases = ("uniform_minus", "reversible_df0.2")
+    for index, case in enumerate(cases):
+        records = [row for row in audit["records"] if row["case"] == case]
+        offsets = np.linspace(-.09, .09, len(records))
+        for threshold, color, position in ((0.5, TEAL, -.18), (0.7, PURPLE, .18)):
+            reports = [next(x for x in rec["totals"] if x["threshold"] == threshold and x["endpoint"] == 0)
+                       for rec in records]
+            fractions = [100 * row["gross_fraction_I"] for row in reports]
+            axes[0].scatter(index + position + offsets, fractions, color=color, s=44,
+                            label=f"Density > {threshold:g}" if index == 0 else None)
+        # Keep I and B signed, normalized against the same gross event count.
+        reports = [next(x for x in rec["totals"] if x["threshold"] == .5 and x["endpoint"] == 0)
+                   for rec in records]
+        for field, color, position in (("I", ORANGE, -.18), ("B", SIZE_COLORS[56], .18)):
+            measurements = [1000 * row["net_" + field] /
+                            sum(row[key] for key in ("in_I", "out_I", "in_B", "out_B"))
+                            for row in reports]
+            axes[1].scatter(index + position + offsets, measurements, color=color, s=44,
+                            label=field if index == 0 else None)
+    for axis in axes:
+        axis.set_xticks(range(2), ["Driven", "Reversible"])
+        axis.set_xlim(-.47, 1.47)
+        axis.grid(axis="y", color=GRID)
+        axis.legend(frameon=False)
+    axes[0].set_title("I share of all crossings", loc="left")
+    axes[0].set_ylabel("Fraction carried in state I (%)")
+    axes[1].set_title("Signed net crossings at density > 0.5", loc="left")
+    axes[1].set_ylabel("Net inward hops per 1,000 crossings")
+    axes[1].axhline(0, color="#687785", linewidth=1)
+    figure.suptitle("Accepted particle hops through fixed boundaries", fontsize=18, fontweight="bold")
+    figure.supxlabel("Masks fixed at the start of each 50-unit interval · 48³ · t = 1200–1800")
+    figure.savefig(output / "fixed-interface-hops.png")
+    plt.close(figure)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--measurements", type=Path, required=True)
     parser.add_argument("--evidence", type=Path, default=HERE / "evidence")
     parser.add_argument("--previous", type=Path, default=PREVIOUS / "evidence")
+    parser.add_argument("--transport", type=Path)
     parser.add_argument("--figures", type=Path, required=True)
     args = parser.parse_args()
     configure()
@@ -232,6 +272,8 @@ def main():
     age_figure(result, args.figures)
     budget_figure(result, args.figures)
     mobility_figure(result, args.figures)
+    if args.transport:
+        hop_figure(read_json(args.transport), args.figures)
     transport_figure(result, read_gzip(args.measurements / "transitions.json.gz"),
                      args.evidence, args.previous, args.figures)
 
