@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "question": "Does the range of the attractive pair force change persistence of the same bounded dense component and its material exchange? Confirm both previously published interaction ranges at the same density and temperature schedule, using matched fresh seeds and a separate larger-box condition.",
+  "prior_access": "The first campaign fd7d2dd2a7aa96a180d34784994b1192045f5a03 and its completed base histories were examined before choosing this replication. The base cases did not all retain track identity, and the published LJ tables differ in saturated vapor density by a factor of about four between the two force ranges. Both ranges and the measurement protocol were already fixed in the first study. The seeds and trajectories in this follow-up are new.",
+  "independent_unit": "Three fresh seeds, each shared across the two ranges. Each range produces its own cold prefix and then forks into bath and isolated arms. Different ranges can give different states by the fork; cross-range contrasts concern the whole history. One larger-box condition repeats seed 93401 at the longer range.",
+  "inputs": "All runs begin on a spatially uniform, low-density FCC arrangement with independent Maxwell velocities at T*=1.5 and zero initial centre-of-mass momentum. Preparation removes the initial grid correlations by moving the atoms at this temperature. The cube, periodic boundaries, pair force, thermostat, quench time and time budget are given. No liquid droplet, surface, or atom-phase identity is assigned in the force law. Atoms never enter or leave the simulated box. Boundaries may move through the periodic seam.",
+  "measurement": "From saved 3D atom positions every 2 tau, bin into round(L/sigma) voxels along each axis and smooth with a periodic Gaussian of standard deviation 1 sigma. At density 0.35 per sigma^3 use six-connected periodic labels. The largest component must have volume >=80 sigma^3 and at least one empty plane in each direction to count as bounded. After the common t=300 checkpoint, follow only consecutive bounded largest components with Jaccard voxel overlap >=0.5, with no gap stitching. Record second component sizes. Erode the largest dense mask by a 2-sigma centre-based discrete ball to define the dense bulk and keep vapor bulk that far from every dense mask. Count both directed transfers after the new bulk is observed in three consecutive frames following an established visit to the other bulk. The same ID must also move >=2 sigma by minimum-image endpoint distance for the displacement-filtered counts. Record all transfers, initial & terminal core cohorts and fixed-position null counts. For real-material comparison average raw counts per bulk volume at t>=400 along the tracked segment of the T*=0.8 bath arms. Report temperature, energy, momentum and signed bath work.",
+  "alternatives": "Use the original warm uniform controls as method checks, reproduce the observation over density cutoffs 0.30 and 0.40, depth 3 sigma, and every 4 tau at the same three-frame residence rule. Use the actual changing masks with all coordinates frozen at t=300 as a classification null, not as a physical history; its raw transitions need no displacement test. Distinguish climate controls from the additional force range, temporal and finite-size comparisons. A switch in component identity, loss at the fork or boundary-scale sensitivity restricts interpretation. The vapor density of a nanoscale drop is compared directly, without a curvature correction or fit, with two bulk references. Compare the fraction of full tracks, endpoint identity fractions, paired transfer counts, and bulk density differences at both ranges. Use the base long-range seed 93401 as the illustration.",
+  "stopping": "All planned cases run t=0 through 580 tau. Cold histories change the target to T*=0.8 at t=32. Each cold group splits at t=300 into continued collisions with the heat bath and isolated Hamiltonian dynamics from the identical position and velocity arrays. Horizon and analysis are fixed. Preserve any interrupted or nonfinite run and reason.",
+  "tracked_inputs": [
+    "research/campaigns/20261120-argon-range-confirmation/study.py",
+    "research/campaigns/20261120-argon-interface-turnover/fluid.cpp",
+    "research/campaigns/20261120-argon-interface-turnover/run.py",
+    "research/campaigns/20261120-argon-interface-turnover/analyze.py",
+    "tools/study_record.py"
+  ],
+  "protocol": {
+    "quench": 32,
+    "fork": 300,
+    "end": 580,
+    "sample": 2,
+    "collision_rate": 0.3,
+    "hot_temperature": 1.5,
+    "cold_temperature": 0.8,
+    "smooth_sigma": 1,
+    "minimum_component_volume": 80,
+    "overlap_min": 0.5,
+    "minimum_displacement": 2,
+    "residence_frames": 3,
+    "density_window_starts": 400,
+    "integrator": "Velocity Verlet; at the end of each bath step independently replace each atom's velocity with probability 1-exp(-0.30 dt), drawn from the specified Maxwell distribution. Save each replacement's signed kinetic energy change in the heat ledger. The isolated arm performs no such replacements after the split.",
+    "storage": "At each observation record the force-evolved particle IDs implicitly by array order and map each wrapped coordinate to uint16 by floor(65536*x/L) for compact evidence. Read the quantized bin midpoint. Presence and velocities at each fork are retained separately in float64. The integrator uses float64 and never uses its diagnostic representation."
+  },
+  "material": {
+    "mass_u": 39.948,
+    "atomic_mass_constant": 1.66053906892e-27,
+    "boltzmann_J_per_K": 1.380649e-23,
+    "sigma_m": 3.405e-10,
+    "epsilon_over_k_K": 119.8,
+    "sources": [
+      "https://doi.org/10.1103/PhysRev.136.A405",
+      "https://doi.org/10.1002/pssb.202000344",
+      "https://www.physics.nist.gov/cuu/pdf/wall_2022.pdf"
+    ]
+  },
+  "coexistence_reference": {
+    "nist_reduced": {
+      "2.5": {
+        "liquid": 0.6521,
+        "vapor": 0.05044,
+        "liquid_half_width_95": 0.0001511,
+        "vapor_half_width_95": 0.00001233,
+        "source": "https://www.nist.gov/mml/csd/chemical-informatics-group/sat-tmmc-liquid-vapor-coexistence-properties-linear-force-1"
+      },
+      "3.5": {
+        "liquid": 0.7583,
+        "vapor": 0.01284,
+        "liquid_half_width_95": 0.0000513,
+        "vapor_half_width_95": 0.000001655,
+        "source": "https://www.nist.gov/mml/csd/chemical-informatics-group/sat-tmmc-liquid-vapor-coexistence-properties-linear-force-0"
+      }
+    },
+    "argon": {
+      "temperature_K": 95.84,
+      "liquid_kg_m3": 1341.3,
+      "vapor_kg_m3": 12.239,
+      "pressure_MPa": 0.22929,
+      "provenance": "NIST Chemistry WebBook saturation row at 95.84 K, experimental-data equation of state, not a new direct experiment. The Tegeler–Span–Wagner Eq. (2.10) and (2.11) provide separate interpolating correlations.",
+      "source": "https://webbook.nist.gov/cgi/fluid.cgi?ID=C7440371&Action=Page",
+      "equation_of_state": "https://doi.org/10.1063/1.556037"
+    }
+  },
+  "cases": {
+    "range-25-93401-bath": {
+      "group": "range-25-93401",
+      "seed": 93401,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 2.5,
+      "mode": "bath"
+    },
+    "range-25-93401-isolated": {
+      "group": "range-25-93401",
+      "seed": 93401,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 2.5,
+      "mode": "isolated"
+    },
+    "range-35-93401-bath": {
+      "group": "range-35-93401",
+      "seed": 93401,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath"
+    },
+    "range-35-93401-isolated": {
+      "group": "range-35-93401",
+      "seed": 93401,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated"
+    },
+    "range-25-93407-bath": {
+      "group": "range-25-93407",
+      "seed": 93407,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 2.5,
+      "mode": "bath"
+    },
+    "range-25-93407-isolated": {
+      "group": "range-25-93407",
+      "seed": 93407,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 2.5,
+      "mode": "isolated"
+    },
+    "range-35-93407-bath": {
+      "group": "range-35-93407",
+      "seed": 93407,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath"
+    },
+    "range-35-93407-isolated": {
+      "group": "range-35-93407",
+      "seed": 93407,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated"
+    },
+    "range-25-93413-bath": {
+      "group": "range-25-93413",
+      "seed": 93413,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 2.5,
+      "mode": "bath"
+    },
+    "range-25-93413-isolated": {
+      "group": "range-25-93413",
+      "seed": 93413,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 2.5,
+      "mode": "isolated"
+    },
+    "range-35-93413-bath": {
+      "group": "range-35-93413",
+      "seed": 93413,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath"
+    },
+    "range-35-93413-isolated": {
+      "group": "range-35-93413",
+      "seed": 93413,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated"
+    },
+    "large-35-93401-bath": {
+      "group": "large-35-93401",
+      "seed": 93401,
+      "cells": 9,
+      "length": 28.8,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath"
+    },
+    "large-35-93401-isolated": {
+      "group": "large-35-93401",
+      "seed": 93401,
+      "cells": 9,
+      "length": 28.8,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated"
+    }
+  }
+}
