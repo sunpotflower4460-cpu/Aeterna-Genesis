@@ -1,0 +1,409 @@
+{
+  "version": 1,
+  "question": "On fresh 3D binary-fluid trajectories, how often does a dense component occupy every plane along some axis without a winding path? At identical density, core and continuity thresholds, how does using the winding test change the continuous record of composition and two-way core transfers? What dense- and thin-side compositions can also be measured when the component winds?",
+  "prior_access": "PR 185 reported one fine-step anchor and one equal-interaction loss with a full projection but no winding, and one larger-box anchor with real y winding. That outcome and all earlier binary and pure-argon studies were used to choose this test. No new case in this plan was integrated or inspected. Literature on finite periodic liquids motivates both directions of a density perturbation. Equilibrium phase separation is established separately from the question about this instrument and these nonequilibrium trajectories.",
+  "independent_unit": "Four new seeds crossed with two cube sizes at the original number density. The first two seeds also run in the larger particle count with lattice spacing 0.2 sigma smaller and larger. Seed is the independent unit. At fixed N, common seed gives identical velocity arrays and species placement; changing N uses a seed block, not an identical microscopic state. Each cold condition shares its full prefix between paired branches. A warm larger-box control uses the first seed. Paired branches, frames, atoms and alternate readouts are dependent.",
+  "inputs": "Reuse the archived three central Ar\u2013Kr pair potentials and their shift at 3.5 pair sigma, masses, t=0 FCC arrangement, seed-shuffled 60% Kr and mass-weighted Maxwell velocities. Change only number of atoms and uniform spacing. The periodic volume, externally scheduled thermostat and observation clocks are specified here. No droplet, winding path, concentration profile or phase labels are input to forces. Three-dimensional double-precision positions and velocities evolve continuously except for scheduled stochastic bath redraws.",
+  "measurement": "Binning round(L) voxels per axis and Gaussian width 1 sigma, select the six-connected periodic component of greatest total number density mask volume above the cutoff. Apply the original minimum 80 sigma^3 and compare an empty plane along each axis with no nonzero lifted return displacement on any axis. The same component, Jaccard >=0.5, time anchor t=240 and no re-anchoring or bridging gaps apply to both. Count all frames with sufficient volume, true winding, or accepted only by the winding test. From 320 through 500 tau, require >=10 atoms in each core, dense-side mask eroded and thin side outside every active mask by 2 sigma. Report complete windows and pooled Kr nucleus fractions (difference) plus three consecutive subwindows. For each atom count confirmed changes of core with 3 consecutive observations, real endpoint displacement >=2 sigma and both endpoints in the window. Record counts, distinct IDs and the source-core exposure. Keep full data for both methods including partial windows and first stop reason. Also read composition and component volume point by point in finite and winding snapshots, regardless of tracking, with no claim of continuous identity for this readout.",
+  "alternatives": "Use the same grid at total number-density cutoffs 0.30 and 0.40 and shift every grid axis by half a voxel at the main cutoff (0.35). Shifting the sampling grid can change the discretized component; translating a fixed voxel mask by whole cells cannot change its winding class. Check with synthetic masks, direct unit-step lifts on the first post-fork example of each diagnostic type per history, and the frozen prior reader on the two named standard-size histories. Use fixed atom positions from the fork to measure assignment-only changes and require real displacement for transit. Retain untracked cold cases and warm null. Count losses and sample frequencies without inference based on independent frames. Keep Ar\u2013Kr force parameterization fixed; bulk coexistence and nanoscale permeability are outside this comparison. The illustration starts at t=0 in small-94201-isolated and shows both reference sizes at t=240 and t=500. For a geometry detail select the first finite-without-plane and the first winding snapshot at or after t=240 by the order of cases then ascending time.",
+  "stopping": "Execute every listed case from t=0 through t=500. Warm bath T*=1.9; cold groups change target to 117.5 K at t=32, then branch at t=240 into continued bath and isolated histories. The integration step is 0.004 tau and saved frame interval 2 tau. Preserve all attempted runs and registration. No follow-up after reading results can alter the tracked window, analysis thresholds, initial conditions or cases of this registration.",
+  "tracked_inputs": [
+    "research/campaigns/20261120-periodic-boundary-confirmation/study.py",
+    "research/campaigns/20261120-periodic-boundary-confirmation/readouts.py",
+    "research/campaigns/20261120-periodic-boundary-confirmation/verify.py",
+    "research/campaigns/20261120-binary-boundary-exchange/run.py",
+    "research/campaigns/20261120-binary-boundary-exchange/fluid.cpp",
+    "research/campaigns/20261120-binary-boundary-exchange/measure.py",
+    "research/campaigns/20261120-binary-boundary-exchange/winding.py",
+    "research/campaigns/20261120-binary-boundary-exchange/validate.py",
+    "research/campaigns/20261120-argon-interface-turnover/analyze.py",
+    "research/campaigns/20261119-transport-and-composition/observe.py",
+    "genesis/diagnostics/topology3d.py",
+    "tools/study_record.py"
+  ],
+  "protocol": {
+    "quench": 32,
+    "fork": 240,
+    "end": 500,
+    "sample": 2,
+    "collision_rate": 0.3,
+    "hot_temperature": 1.9,
+    "cold_temperature_K": 117.5,
+    "krypton_fraction": 0.6,
+    "smooth_sigma": 1,
+    "minimum_component_volume": 80,
+    "overlap_min": 0.5,
+    "minimum_displacement": 2,
+    "residence_frames": 3,
+    "comparison_start": 320,
+    "composition_block_edges": [
+      320,
+      380,
+      440,
+      500
+    ],
+    "minimum_core_count": 10,
+    "integrator": "Mass-weighted velocity Verlet in double precision. Each pair is force-shifted to zero at 3.5 of its own sigma. Independent end-of-step Maxwell redraws use 1-exp(-0.30 dt) and record signed energy transfer. After isolation redraw probability is zero. The neighbour radii each include a 0.6 sigma_Ar buffer.",
+    "storage": "Atom index persists, species 0=light and 1=heavy. Native little-endian snapshots and ledgers are stored as compressed NumPy arrays. Each float64 position is archived as floor(x/L*65536) for observation and read at the midpoint. Exact float64 arrays include t=0 and (for paired histories) positions and velocities at their common fork. The integrator does not consume the snapshot format.",
+    "core_depth": 2.0
+  },
+  "schemes": {
+    "main": {
+      "threshold": 0.35,
+      "half_voxel_shift": 0
+    },
+    "lower-cutoff": {
+      "threshold": 0.3,
+      "half_voxel_shift": 0
+    },
+    "higher-cutoff": {
+      "threshold": 0.4,
+      "half_voxel_shift": 0
+    },
+    "shifted-grid": {
+      "threshold": 0.35,
+      "half_voxel_shift": 1
+    }
+  },
+  "material": {
+    "parameter_source": "https://doi.org/10.1063/1.4824140",
+    "parameter_location": "Miller et al. Table I, pair model for transport, with independently chosen linear force shift and pair-specific cutoff in this study",
+    "boltzmann_J_per_K": 1.380649e-23,
+    "ar_mass_kg": 6.634e-26,
+    "kr_mass_kg": 1.3915e-25,
+    "pairs_ar_ar_ar_kr_kr_kr": [
+      {
+        "sigma_m": 3.405e-10,
+        "epsilon_J": 1.654e-21
+      },
+      {
+        "sigma_m": 3.519e-10,
+        "epsilon_J": 1.952e-21
+      },
+      {
+        "sigma_m": 3.663e-10,
+        "epsilon_J": 2.305e-21
+      }
+    ]
+  },
+  "real_material_reference": {
+    "temperature_K": 117.5,
+    "ar_saturation_rows_K_MPa": [
+      [
+        117.468,
+        1.05168
+      ],
+      [
+        117.599,
+        1.05967
+      ]
+    ],
+    "kr_saturation_rows_K_MPa": [
+      [
+        117.181,
+        0.0826158
+      ],
+      [
+        118.472,
+        0.0917016
+      ]
+    ],
+    "interpolation": "Linear in ln(P) versus 1/T. For ideal solutions and ideal vapor, y_Kr = x_Kr P*_Kr / (x_Kr P*_Kr + (1-x_Kr) P*_Ar). This ignores finite size, nonideal mixing and curved interfaces. Binary partitioning abundance is not inferred from isotope ratios.",
+    "ar_webbook": "https://webbook.nist.gov/cgi/fluid.cgi?ID=C7440371&Action=Page",
+    "kr_webbook": "https://webbook.nist.gov/cgi/fluid.cgi?ID=C7439909&Action=Page",
+    "ar_eos": "https://doi.org/10.1063/1.556037",
+    "kr_eos": "https://doi.org/10.1021/je050186n",
+    "binary_bubble_pressure_115_77_K": "https://doi.org/10.1039/TF9676300855",
+    "binary_compositions_other_temperatures": "https://www.sciencedirect.com/science/article/pii/0378437175900424",
+    "binary_isotope_experiment_117_5_K": "https://www.osti.gov/servlets/purl/7212128"
+  },
+  "interpretation_sources": {
+    "periodic_winding": "https://doi.org/10.1103/PhysRevE.64.016706",
+    "finite_periodic_liquid_shape": "https://arxiv.org/abs/1509.02324"
+  },
+  "validation": {
+    "legacy_cases": [
+      "small-94201-isolated",
+      "large-94201-isolated"
+    ],
+    "integrator_case": "large-94201-isolated",
+    "full_determinism_group": "small-94201"
+  },
+  "cases": {
+    "small-94201-bath": {
+      "group": "small-94201",
+      "seed": 94201,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "small-94201-isolated": {
+      "group": "small-94201",
+      "seed": 94201,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "large-94201-bath": {
+      "group": "large-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "large-94201-isolated": {
+      "group": "large-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "small-94207-bath": {
+      "group": "small-94207",
+      "seed": 94207,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "small-94207-isolated": {
+      "group": "small-94207",
+      "seed": 94207,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "large-94207-bath": {
+      "group": "large-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "large-94207-isolated": {
+      "group": "large-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "small-94213-bath": {
+      "group": "small-94213",
+      "seed": 94213,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "small-94213-isolated": {
+      "group": "small-94213",
+      "seed": 94213,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "large-94213-bath": {
+      "group": "large-94213",
+      "seed": 94213,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "large-94213-isolated": {
+      "group": "large-94213",
+      "seed": 94213,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "small-94219-bath": {
+      "group": "small-94219",
+      "seed": 94219,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "small-94219-isolated": {
+      "group": "small-94219",
+      "seed": 94219,
+      "cells": 7,
+      "length": 22.4,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "large-94219-bath": {
+      "group": "large-94219",
+      "seed": 94219,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "large-94219-isolated": {
+      "group": "large-94219",
+      "seed": 94219,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "lower-density-94201-bath": {
+      "group": "lower-density-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 30.6,
+      "lattice_spacing": 3.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "lower-density-94201-isolated": {
+      "group": "lower-density-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 30.6,
+      "lattice_spacing": 3.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "higher-density-94201-bath": {
+      "group": "higher-density-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 27.0,
+      "lattice_spacing": 3.0,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "higher-density-94201-isolated": {
+      "group": "higher-density-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 27.0,
+      "lattice_spacing": 3.0,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "lower-density-94207-bath": {
+      "group": "lower-density-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 30.6,
+      "lattice_spacing": 3.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "lower-density-94207-isolated": {
+      "group": "lower-density-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 30.6,
+      "lattice_spacing": 3.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "higher-density-94207-bath": {
+      "group": "higher-density-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 27.0,
+      "lattice_spacing": 3.0,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "higher-density-94207-isolated": {
+      "group": "higher-density-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 27.0,
+      "lattice_spacing": 3.0,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "warm-94201": {
+      "group": "warm-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "warm",
+      "model": "ar-kr"
+    }
+  }
+}
