@@ -1,0 +1,61 @@
+name: Periodic fluid boundary evidence
+on:
+  pull_request:
+    paths:
+      - 'research/campaigns/20261120-periodic-boundary-confirmation/**'
+      - 'research/campaigns/20261120-binary-boundary-exchange/**'
+      - 'research/campaigns/20261120-argon-interface-turnover/analyze.py'
+      - 'research/campaigns/20261119-transport-and-composition/observe.py'
+      - 'genesis/diagnostics/topology3d.py'
+      - 'tools/study_record.py'
+      - '.github/workflows/periodic-boundary-confirmation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  remeasure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: '.'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      STUDY: research/campaigns/20261120-periodic-boundary-confirmation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==1.26.4 scipy==1.15.3
+      - name: Remeasure each archived trajectory and check the periodic paths
+        run: |
+          registered=$(python -c 'import json, os; print(json.load(open(os.environ["STUDY"] + "/evidence/record.json"))["registration_commit"])')
+          git fetch --no-tags --depth=1 origin "$registered"
+          python research/campaigns/20261120-argon-interface-turnover/fetch_evidence.py --campaign "$STUDY" --out "$RUNNER_TEMP/periodic-evidence"
+          python "$STUDY/readouts.py" --evidence "$RUNNER_TEMP/periodic-evidence" --out "$RUNNER_TEMP/periodic-analysis"
+          python "$STUDY/verify.py" --evidence "$RUNNER_TEMP/periodic-evidence" --analysis "$RUNNER_TEMP/periodic-analysis" --out "$RUNNER_TEMP/periodic-analysis/validation.json"
+          python - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          def compare(left, right, path):
+              if isinstance(left, dict):
+                  assert left.keys() == right.keys(), path
+                  for key in left:
+                      compare(left[key], right[key], (*path, key))
+              elif isinstance(left, list):
+                  assert len(left) == len(right), path
+                  for index, (one, other) in enumerate(zip(left, right)):
+                      compare(one, other, (*path, index))
+              elif isinstance(left, float):
+                  assert math.isclose(left, right, rel_tol=1e-10, abs_tol=1e-12), (path, left, right)
+              else:
+                  assert left == right, path
+
+          stored = Path(os.environ["STUDY"], "analysis")
+          replay = Path(os.environ["RUNNER_TEMP"], "periodic-analysis")
+          for name in ("results.json", "validation.json"):
+              compare(json.loads((stored / name).read_text()), json.loads((replay / name).read_text()), (name,))
+          PY
