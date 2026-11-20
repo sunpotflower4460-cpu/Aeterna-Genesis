@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "question": "In a spatially uniform mixture cooled in a 3D periodic box, how do the two species distribute across an emerging bounded dense region while the same particles can enter and leave? How much of the composition contrast survives a classical equal-interaction control and the removal of the bath?",
+  "prior_access": "The pure-argon trajectories and limitations in PR 184 were examined. Published argon-krypton parameters, pure-component saturation tables, and existing binary bulk experiments were read as documented below. The binary composition contrast is a known bulk possibility. No mixture trajectory from these cases was examined. The joint shape, composition and particle-history observation is a new test of the project's boundary instruments.",
+  "independent_unit": "Three fresh seeds are paired between the physical force parameterization and the equal-interaction control at the baseline size. A spatially larger condition and a smaller integration step reuse the first seed as sensitivities. A warm case supplies a physical near-uniform control. A cooled group generates one common history and branches from identical phase space. The two branches, frames, atoms and remeasurements are not independent replicates.",
+  "inputs": "Uniform FCC positions, uniformly shuffled fixed species with the prescribed total, mass-dependent hot Maxwell velocities with centre-of-mass momentum removed at t=0, periodic cube, three finite-range central pair laws, and a spatially homogeneous Andersen bath. At the registered time the bath target changes without instant velocity scaling. At the fork, collisions cease in the isolated branch and continue in the paired branch. All atoms are retained, with fixed IDs. There are no inserted droplets, imposed concentration gradients, surface forces or assigned phase labels.",
+  "measurement": "Use the original argon observer on total number density, unaware of species. Bin atom coordinates on round(L/sigma) periodic cubic voxels, with Gaussian width 1 sigma. Read the largest six-connected component above density 0.35, bounded by volume >=80 and at least one vacant plane per axis. Erode dense bulk and keep vapor bulk at distance 2 sigma from active voxels. From the t=240 fork, follow successive bounded dominant components with Jaccard voxel overlap >=0.5, stopping at the first gap. Within the fixed window 320 through 500 tau, require >=10 atoms in each core in each sampled frame for a complete composition comparison. Pool Kr/total particle-frames separately in each core to estimate x_Kr and y_Kr, and retain the per-frame and chronological 60-tau block contrasts. Count directed core visits confirmed for three consecutive observations, with both endpoints within the same window and endpoint movement >=2 sigma. Report counts and distinct IDs in both directions and counts per sampled particle-time in the source core. A realized association requires a full track, full composition window and events in both directions in that same history. Report counts and effect sizes by independent seed and paired arm, with missing comparisons explicit.",
+  "alternatives": "Same labelled masses, initial positions, velocities and total composition at equal pair forces (all Kr-Kr) isolate the role of pair-force differences in the classical model. The control can have a different dense-phase volume and equilibration history. The classical canonical coordinate distribution has no mass factor after integrating out momenta; finite histories can still be biased by slow mixing. Re-read by thresholds 0.30 and 0.40, core depth 3 sigma, and frame stride 4 tau. Use moving masks with positions fixed at the fork as a geometrical classification null; retain raw and displacement-filtered null counts. Compare x and y to the no-fit Raoult relation at 117.5 K using pure saturation pressures, without a curvature or nonideality correction. Reference values derive from pure-component experimental-data equations of state. Davies et al. and Schouten et al. supply context for real binary coexistence; unavailable tabulated binary compositions are not used as a numerical comparator. Record the whole-box virial pressure for context only. Treat the finite-horizon core counts and ideal reference as unable to measure intrinsic permeability. Use binary-93601-isolated for the primary illustration at t=0, 240 and 500.",
+  "stopping": "All histories from t=0 to t=500 tau. At t=32 tau the cold groups change bath target to 117.5 K. From t=240 tau each cold history has a continued bath arm and an isolated arm. The warm control stays at T*=1.9. No adaptive stopping, compensating cases or threshold adjustments. Benchmark windows are 320-380, 380-440, 440-500; use half-open intervals except include 500 in the last composition block. Preserve incomplete histories and reasons.",
+  "tracked_inputs": [
+    "research/campaigns/20261120-binary-boundary-exchange/fluid.cpp",
+    "research/campaigns/20261120-binary-boundary-exchange/run.py",
+    "research/campaigns/20261120-binary-boundary-exchange/measure.py",
+    "research/campaigns/20261120-binary-boundary-exchange/validate.py",
+    "research/campaigns/20261120-argon-interface-turnover/analyze.py",
+    "tools/study_record.py"
+  ],
+  "protocol": {
+    "quench": 32,
+    "fork": 240,
+    "end": 500,
+    "sample": 2,
+    "collision_rate": 0.3,
+    "hot_temperature": 1.9,
+    "cold_temperature_K": 117.5,
+    "krypton_fraction": 0.6,
+    "smooth_sigma": 1,
+    "minimum_component_volume": 80,
+    "overlap_min": 0.5,
+    "minimum_displacement": 2,
+    "residence_frames": 3,
+    "comparison_start": 320,
+    "composition_block_edges": [
+      320,
+      380,
+      440,
+      500
+    ],
+    "minimum_core_count": 10,
+    "scales": [
+      "main",
+      "low-density-cut",
+      "high-density-cut",
+      "deep-cores",
+      "coarser-time"
+    ],
+    "illustration_case": "binary-93601-isolated",
+    "integrator": "Mass-weighted velocity Verlet in double precision. Each pair is force-shifted to zero at 3.5 of its own sigma. Independent end-of-step Maxwell redraws use 1-exp(-0.30 dt) and record signed energy transfer. After isolation redraw probability is zero. The neighbour radii each include a 0.6 sigma_Ar buffer.",
+    "storage": "Atom index persists, species 0=light and 1=heavy. Native little-endian snapshots and ledgers are stored as compressed NumPy arrays. Each float64 position is archived as floor(x/L*65536) for observation and read at the midpoint. Exact float64 arrays include t=0 and (for paired histories) positions and velocities at their common fork. The integrator does not consume the snapshot format."
+  },
+  "material": {
+    "parameter_source": "https://doi.org/10.1063/1.4824140",
+    "parameter_location": "Miller et al. Table I, pair model for transport, with independently chosen linear force shift and pair-specific cutoff in this study",
+    "boltzmann_J_per_K": 1.380649e-23,
+    "ar_mass_kg": 6.634e-26,
+    "kr_mass_kg": 1.3915e-25,
+    "pairs_ar_ar_ar_kr_kr_kr": [
+      {
+        "sigma_m": 3.405e-10,
+        "epsilon_J": 1.654e-21
+      },
+      {
+        "sigma_m": 3.519e-10,
+        "epsilon_J": 1.952e-21
+      },
+      {
+        "sigma_m": 3.663e-10,
+        "epsilon_J": 2.305e-21
+      }
+    ]
+  },
+  "real_material_reference": {
+    "temperature_K": 117.5,
+    "ar_saturation_rows_K_MPa": [
+      [
+        117.468,
+        1.05168
+      ],
+      [
+        117.599,
+        1.05967
+      ]
+    ],
+    "kr_saturation_rows_K_MPa": [
+      [
+        117.181,
+        0.0826158
+      ],
+      [
+        118.472,
+        0.0917016
+      ]
+    ],
+    "interpolation": "Linear in ln(P) versus 1/T. For ideal solutions and ideal vapor, y_Kr = x_Kr P*_Kr / (x_Kr P*_Kr + (1-x_Kr) P*_Ar). This ignores finite size, nonideal mixing and curved interfaces. Binary partitioning abundance is not inferred from isotope ratios.",
+    "ar_webbook": "https://webbook.nist.gov/cgi/fluid.cgi?ID=C7440371&Action=Page",
+    "kr_webbook": "https://webbook.nist.gov/cgi/fluid.cgi?ID=C7439909&Action=Page",
+    "ar_eos": "https://doi.org/10.1063/1.556037",
+    "kr_eos": "https://doi.org/10.1021/je050186n",
+    "binary_bubble_pressure_115_77_K": "https://doi.org/10.1039/TF9676300855",
+    "binary_compositions_other_temperatures": "https://www.sciencedirect.com/science/article/pii/0378437175900424",
+    "binary_isotope_experiment_117_5_K": "https://www.osti.gov/servlets/purl/7212128"
+  },
+  "cases": {
+    "binary-93601-bath": {
+      "group": "binary-93601",
+      "seed": 93601,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "binary-93601-isolated": {
+      "group": "binary-93601",
+      "seed": 93601,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "equal-interactions-93601-bath": {
+      "group": "equal-interactions-93601",
+      "seed": 93601,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "equal"
+    },
+    "equal-interactions-93601-isolated": {
+      "group": "equal-interactions-93601",
+      "seed": 93601,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "equal"
+    },
+    "binary-93607-bath": {
+      "group": "binary-93607",
+      "seed": 93607,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "binary-93607-isolated": {
+      "group": "binary-93607",
+      "seed": 93607,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "equal-interactions-93607-bath": {
+      "group": "equal-interactions-93607",
+      "seed": 93607,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "equal"
+    },
+    "equal-interactions-93607-isolated": {
+      "group": "equal-interactions-93607",
+      "seed": 93607,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "equal"
+    },
+    "binary-93613-bath": {
+      "group": "binary-93613",
+      "seed": 93613,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "binary-93613-isolated": {
+      "group": "binary-93613",
+      "seed": 93613,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "equal-interactions-93613-bath": {
+      "group": "equal-interactions-93613",
+      "seed": 93613,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "equal"
+    },
+    "equal-interactions-93613-isolated": {
+      "group": "equal-interactions-93613",
+      "seed": 93613,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "equal"
+    },
+    "large-93601-bath": {
+      "group": "large-93601",
+      "seed": 93601,
+      "cells": 9,
+      "length": 28.8,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "large-93601-isolated": {
+      "group": "large-93601",
+      "seed": 93601,
+      "cells": 9,
+      "length": 28.8,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "fine-step-93601-bath": {
+      "group": "fine-step-93601",
+      "seed": 93601,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.002,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "fine-step-93601-isolated": {
+      "group": "fine-step-93601",
+      "seed": 93601,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.002,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "warm-93601": {
+      "group": "warm-93601",
+      "seed": 93601,
+      "cells": 7,
+      "length": 22.4,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "warm",
+      "model": "ar-kr"
+    }
+  }
+}
