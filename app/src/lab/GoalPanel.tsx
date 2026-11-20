@@ -17,6 +17,16 @@ interface Goal {
   budget: Record<string, number>; researchers: Researcher[]; status: string; nodes: MapNode[]
   spent: Record<string, number>; hypothesis?: string | null; sweeps?: Sweep[]
 }
+function downloadGoalRecord(goal: Goal) {
+  const data = new Blob([JSON.stringify(goal, null, 2) + '\n'], { type: 'application/json' })
+  const url = URL.createObjectURL(data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `aeterna-${goal.id}.json`
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 interface Variant {
   seed: number; knobs: Record<string, number>; met: number; all_met: boolean; diverged: boolean; label: string
   sha256: string | null; t: number; last: Record<string, number | null>
@@ -424,6 +434,7 @@ export default function GoalPanel({ whites, models, activeGoal, setActiveGoal, o
                 ? <button className="tbtn pri" onClick={() => setStatus('running')}>始める（研究員が動き出す）</button>
                 : <button className="tbtn" onClick={() => setStatus('paused')}>■ 全員止める</button>}
               <button className="tbtn" onClick={() => setStatus('done')}>終える</button>
+              <button className="tbtn" onClick={() => downloadGoalRecord(view.goal)}>この時点の研究記録を保存</button>
             </div>
             {startNote && <div className="lab-error">始められなかった研究員: {startNote}</div>}
           </div>

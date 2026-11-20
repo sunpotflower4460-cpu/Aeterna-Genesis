@@ -9,7 +9,7 @@
 A criterion is judged only from the measured time series the lab already keeps (hub.observation): the value
 must satisfy `op value` continuously for at least `hold` time units. Nothing here decides that anything is
 "alive" or "an individual" -- it only says whether the numbers someone chose were met. Goals live in
-lab/goals/ (git-ignored) and are included when a session is exported.
+lab/goals/ (git-ignored). The research panel can download a snapshot including all planned sweep trials.
 """
 from __future__ import annotations
 
