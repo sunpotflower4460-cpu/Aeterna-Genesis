@@ -1,5 +1,8 @@
 """Regression checks on exact budgets, periodic separation and tagged transport."""
+import csv
+import subprocess
 from io import BytesIO
+from pathlib import Path
 from zipfile import ZipFile
 
 import numpy as np
@@ -134,3 +137,40 @@ def test_prefix_requires_same_state_even_if_the_ledger_agrees(tmp_path):
             archive.writestr(name, data)
     with ZipFile(memory) as archive, pytest.raises(ValueError, match="positions"):
         check_prefix(archive, old)
+
+
+def test_observer_keeps_repeated_hops_and_conformation_direction(tmp_path):
+    header = Path(__file__).with_name("fixed_boundary_observer.hpp")
+    source = tmp_path / "exercise.cpp"
+    source.write_text('''#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <stdexcept>
+#include <vector>
+#include "fixed_boundary_observer.hpp"
+
+int main(int argc, char** argv) {
+  FixedBoundaryObserver audit(argv[1], 4);
+  audit.hop(1, 0, 3);
+  audit.sample(1200);
+  audit.hop(1, 0, 1);
+  audit.hop(1, 1, 3);
+  audit.hop(1, 3, 1);
+  audit.hop(2, 3, 2);
+  audit.hop(3, 3, 1);
+  audit.sample(1250);
+}
+''')
+    masks = np.tile(np.array([1, 1, 2, 0], dtype="<i4"), 8)
+    (tmp_path / "observer-masks.bin").write_bytes(masks.tobytes())
+    binary = tmp_path / "exercise"
+    subprocess.run(["g++", "-std=c++17", "-I", str(header.parent), str(source), "-o", str(binary)], check=True)
+    subprocess.run([str(binary), str(tmp_path)], check=True)
+    with (tmp_path / "boundary-hops.csv").open() as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 8
+    for row in rows:
+        counts = tuple(int(row[field]) for field in ("in_I", "out_I", "in_B", "out_B"))
+        assert counts == ((1, 1, 0, 0) if row["label"] == "1" else (0, 0, 1, 0))

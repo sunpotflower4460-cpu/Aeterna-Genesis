@@ -13,7 +13,7 @@ from coarsening_runs import HERE, PLAN, PREVIOUS, read_json, sha256
 from analyse import check_initial_matching, composition_residual
 from mobility import MOBILITY_PLAN
 from pathways import BUDGET_KEYS, KINDS
-from survey import MECHANISM_PLAN, REGION_FIELDS, SCALES, write_gzip
+from survey import MECHANISM_PLAN, REGION_FIELDS, SCALES, check_prefix, write_gzip
 from run import json_text
 
 
@@ -255,6 +255,32 @@ def choose_transfer_event(active, events):
     return {"archive": archive, "threshold": threshold, "cadence": cadence, **loss}
 
 
+
+def reference_prefix_checks(evidence, archives, completed):
+    """Verify the archived stock-solver prefixes against full specialized histories."""
+    known = {row["recipe"]["seed"]: row for row in completed if row["recipe"]["N"] == 64}
+    results = []
+    for archive in sorted(archives):
+        with ZipFile(evidence / archive) as stock:
+            meta = json.loads(stock.read("reference-stop.json"))
+            recipe = json.loads(stock.read("recipe.json"))
+            execution = json.loads(stock.read("execution.json"))
+        match = known[recipe["seed"]]
+        if recipe != match["recipe"]:
+            raise ValueError(f"Reference run parameters differ: {archive}")
+        if execution["binary_sha256"] == match["execution"]["binary_sha256"]:
+            raise ValueError(f"Expected independently compiled stock and specialized binaries: {archive}")
+        with ZipFile(evidence / match["archive"]) as active:
+            validation = check_prefix(active, evidence / archive)
+        if (validation["byte_identical_states"] != meta["checkpoints"]
+                or validation["byte_identical_ledger_rows"] != meta["ledger_rows"]):
+            raise ValueError(f"Reference observation count differs: {archive}")
+        results.append({"seed": recipe["seed"], "stock_prefix": archive, "completed_history": match["archive"],
+                        "stock_binary_sha256": execution["binary_sha256"],
+                        "specialized_binary_sha256": match["execution"]["binary_sha256"], **validation})
+    return results
+
+
 def summarize(sources, evidence):
     plan = read_json(PLAN)
     roster, frames, events, by_phase = read_surveys(sources, plan)
@@ -276,9 +302,11 @@ def summarize(sources, evidence):
         with ZipFile(path) as bundle:
             if bundle.testzip() is not None:
                 raise ValueError(f"Invalid archive CRC: {row['archive']}")
-    attempts = []
+    attempts, stock_prefixes = [], []
     for key, archive in sorted(evidence_archives.items()):
-        if key.startswith("failures/"):
+        if key.startswith("reference-prefixes/"):
+            stock_prefixes.append(key)
+        if key.startswith(("failures/", "reference-prefixes/")):
             attempts.append({"path": key, "sha256": sha256(archive)})
             expected.add(key)
     if set(evidence_archives) != expected:
@@ -289,6 +317,7 @@ def summarize(sources, evidence):
         "mechanism_registration_sha256": sha256(MECHANISM_PLAN),
         "mobility_registration_sha256": sha256(MOBILITY_PLAN),
         "archives": new, "reused_archives": by_phase["extent"], "partial_attempts": attempts,
+        "validated_stock_solver_prefixes": reference_prefix_checks(evidence, stock_prefixes, new),
         "matched_initial_groups": check_initial_matching(roster),
         "maximum_relative_medium_error": max(row["max_relative_medium_error"] for row in roster),
         "active_scale_windows": scales, "finite_window_length_test": late_tests(scales),
