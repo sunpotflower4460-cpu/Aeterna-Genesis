@@ -178,6 +178,23 @@ def boundary(mask):
     return np.argwhere(mask & ~interior)
 
 
+def camera_angle(source, receivers, cut, size):
+    # Choose a clearance at the marked time and keep that projection fixed.
+    centroid = ((np.argwhere(source) - cut) % size).mean(axis=0)
+    offsets = (boundary(receivers) - cut) % size - centroid
+    elevation = np.deg2rad(23)
+
+    def clearance(angle):
+        azimuth = np.deg2rad(angle)
+        direction = np.array([np.cos(azimuth) * np.cos(elevation),
+                              np.sin(azimuth) * np.cos(elevation),
+                              np.sin(elevation)])
+        projected = offsets - (offsets @ direction)[:, None] * direction
+        return np.min(np.linalg.norm(projected, axis=1))
+
+    return max(range(-165, 180, 15), key=clearance)
+
+
 def transport_figure(result, raw_transitions, evidence, old_evidence, output):
     example = result["witnessed_transport_example"]
     if example is None:
@@ -186,6 +203,7 @@ def transport_figure(result, raw_transitions, evidence, old_evidence, output):
     composite = sum((s | r).astype(int) for s, r, _ in diagrams)
     cut = np.array([np.argmin(composite.sum(axis=tuple(k for k in range(3) if k != a))) for a in range(3)])
 
+    azimuth = camera_angle(*diagrams[0][:2], cut, size)
     figure = plt.figure(figsize=(10.8, 8.8))
     figure.subplots_adjust(left=.02, right=.98, top=.84, bottom=.12, wspace=.06, hspace=.06)
     titles = ["Marked in a dense region", "The source region shrinks",
@@ -199,7 +217,7 @@ def transport_figure(result, raw_transitions, evidence, old_evidence, output):
         marked = (points - cut) % size
         axis.scatter(*marked.T, c=ORANGE, s=8.5, depthshade=False, alpha=.84, linewidths=0)
         axis.set(xlim=(0, size), ylim=(0, size), zlim=(0, size))
-        axis.view_init(elev=23, azim=-55)
+        axis.view_init(elev=23, azim=azimuth)
         for set_ticks in (axis.set_xticks, axis.set_yticks, axis.set_zticks):
             set_ticks([0, size // 2, size])
         axis.tick_params(labelsize=8, pad=0)

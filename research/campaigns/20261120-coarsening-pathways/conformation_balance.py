@@ -14,10 +14,11 @@ import numpy as np
 from coarsening_runs import HERE, PLAN, PREVIOUS, read_json, sha256
 from audit_transport import HOP_PLAN
 from run import json_text
-from survey import read_snapshots, write_gzip
+from survey import ledgers, read_snapshots, write_gzip
 from track_domains import region_frame
 
 REGISTRATION = HERE / "CONVERSION_REGISTRATION.json"
+CIRCULATION_PLAN = HERE / "CIRCULATION_NOTE.json"
 FIELDS = ("delta_I", "delta_B", "net_I_hops", "net_B_hops", "net_I_to_B")
 
 
@@ -43,6 +44,7 @@ def verified_rows(record, traces, previous, plan):
     times = range(plan["first_time"], plan["T"] + 1, plan["cadence"])
     with ZipFile(path) as zipfile:
         recipe = json.loads(zipfile.read("recipe.json"))
+        ledger = ledgers(zipfile, recipe)
         snapshots = list(read_snapshots(zipfile, recipe, [{"time": t} for t in times]))
         cells = {t: np.frombuffer(zipfile.read(f"state-{t//10}-cells.bin"), dtype=np.uint8) for t in times}
     minimum = read_json(PLAN)["domains"]["minimum_region_sites"]
@@ -70,7 +72,9 @@ def verified_rows(record, traces, previous, plan):
                          "endpoint": row["endpoint"], **balance})
     if lookup or len(rows) != record["verified_fixed_region_tallies"]:
         raise ValueError("The conversion budget does not cover the archived hop tallies")
-    return rows
+    global_changes = {(start, end): int(ledger["B"][end//10] - ledger["B"][start//10])
+                      for start, end in zip(times, times[1:])}
+    return rows, global_changes
 
 
 def aggregate(rows):
@@ -87,6 +91,46 @@ def aggregate(rows):
     return result
 
 
+
+def circulation(rows, global_changes, settings):
+    """Close the signed reaction conversion in the dense union and its complement."""
+    groups = defaultdict(list)
+    for row in rows:
+        groups[row["start"], row["end"], row["threshold"], row["endpoint"]].append(row)
+    steps = []
+    for threshold in settings["thresholds"]:
+        for endpoint in (0, 1):
+            for (start, end), delta in global_changes.items():
+                matched = groups[start, end, threshold, endpoint]
+                inside = sum(row["net_I_to_B"] for row in matched)
+                net_i = sum(row["net_I_hops"] for row in matched)
+                net_b = sum(row["net_B_hops"] for row in matched)
+                steps.append({"start": start, "end": end, "threshold": threshold, "endpoint": endpoint,
+                              "net_I_hops": net_i, "net_B_hops": net_b, "global_B_change": delta,
+                              "net_I_to_B_inside": inside, "net_I_to_B_outside": delta - inside})
+    return steps
+
+
+def summarize_circulation(steps):
+    groups = defaultdict(list)
+    for row in steps:
+        groups[row["threshold"], row["endpoint"]].append(row)
+    fields = ("net_I_hops", "net_B_hops", "net_I_to_B_inside", "net_I_to_B_outside", "global_B_change")
+
+    def direction(r):
+        return (r["net_I_hops"] > 0 and r["net_B_hops"] < 0
+                and r["net_I_to_B_inside"] > 0 and r["net_I_to_B_outside"] < 0)
+
+    summaries = []
+    for (threshold, endpoint), group in sorted(groups.items()):
+        sums = {f: sum(r[f] for r in group) for f in fields}
+        summaries.append({"threshold": threshold, "endpoint": endpoint, **sums,
+                          "signed_circulation_for_total": direction(sums),
+                          "intervals_with_signed_circulation": sum(direction(r) for r in group),
+                          "intervals": len(group)})
+    return summaries
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--transport", type=Path, required=True)
@@ -97,16 +141,21 @@ def main():
     if evidence["registration_sha256"] != sha256(HOP_PLAN):
         raise ValueError("Different transport registration")
     plan = read_json(HOP_PLAN)
-    rows, totals = {}, []
+    rows, flow, totals = {}, {}, []
     for record in evidence["records"]:
-        data = verified_rows(record, args.transport, args.previous, plan)
+        data, global_changes = verified_rows(record, args.transport, args.previous, plan)
+        steps = circulation(data, global_changes, plan)
+        flow[record["archive"]] = steps
         rows[record["archive"]] = data
         totals.append({"N": record["N"], "case": record["case"], "seed": record["seed"],
-                       "archive": record["archive"], "balances": aggregate(data)})
+                       "archive": record["archive"], "balances": aggregate(data),
+                       "circulation": summarize_circulation(steps)})
     args.out.mkdir(parents=True, exist_ok=False)
     (args.out / "results.json").write_text(json_text({"registration_sha256": sha256(REGISTRATION),
+        "circulation_registration_sha256": sha256(CIRCULATION_PLAN),
         "transport_sha256": sha256(args.transport / "results.json"), "records": totals}))
     write_gzip(args.out / "fixed_mask_balances.json.gz", rows)
+    write_gzip(args.out / "circulation_intervals.json.gz", flow)
 
 
 if __name__ == "__main__":
