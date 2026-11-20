@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "question": "At the three archived losses of voxel overlap, do the atom IDs trace a single continuing contact component, a change in which component ranks first, or a mixing or separation of substantial components? What winding and time-resolution limits remain?",
+  "prior_access": "PR 186 summaries were examined, including archived loss times and the emergence of winding in one large branch. Three selected histories and their shared seeds are known. No particle-level ancestry, contact components of these histories, or trajectories at the finer cadence were examined to choose these settings. This is a targeted secondary analysis, with a deterministic replay for temporal resolution.",
+  "independent_unit": "Two previously published seeds in the large-box standard-density condition. Two arms for each, sharing the position and velocity state at 240 tau, are treated as dependent. The already-tracked bath arm is retained. Extra controls use archived cases. Four replays, two cadences, neighboring frames, atoms and neighboring thresholds are not independent confirmations.",
+  "inputs": "Reuse the exact binary molecular dynamics source, initial particle IDs and species shuffle, box, heat bath, and force parameters. Change output cadence from 2 to 0.5 tau; the Verlet step stays 0.004 tau. Verify every shared stored position and ledger row, the full t=0 state, species and exact fork digest before linking a fine replay to its archived labels. Observe point clouds with periodic distances and no feedback to forces.",
+  "measurement": "Use periodic minimum-image contact edges at radius 1.8 sigma, keep atoms with at least 8 neighbors before selecting induced components of at least 48 atoms. Select by size and break ties by smallest ID. A contact cycle winds if summing the minimum-image offsets gives a nonzero box displacement. Between frames use shared IDs, number carried out of parent and number supplied to child. For geometric affiliation use the contact component with the unique largest intersection with the leading voxel component if both shares exceed one half. For ordinary continuation use a mutual majority (strictly greater than half of parent and child); cancel continuing links incident to a specified merger or split. A geometric label switch requires two different continuations and agreement of grid-contact affiliation at both ends. A substantial merge requires at least two parents each contributing >=24 shared IDs, >=50 percent of its own membership and >=20 percent of the child, with total child coverage >=60 percent. Split reverses parent and child. Store all link counts and categories for t_loss-2 to t_loss at the old sampling period, and t_loss-4 to t_loss+4 as a check. At 0.5 tau, observe the full timeline and retain events around t_loss +/-6 tau. Count an event as persistent when all involved parent components admit reciprocal one-to-one chains for 2 tau before the event, and all child components for 2 tau after. Starting from the contact representative of the grid leader at 240 tau, follow each unique majority continuation without gaps or rank dependence. Report first winding and first loss of one-to-one lineage separately.",
+  "alternatives": "Recompute at radii 1.7 and 1.9 sigma with the same coordination, and at 7 and 9 neighbors with the same radius. Read both 0.5 and 2 tau cadences without changing the physical trajectories. Save sizes, intersections and event times even when categories vary or the inference is unresolved. Use the warm control, a known winding arm, and a continuously tracked small box as controls. Test periodic crossing, winding, changes in rank, merge and split with constructed inputs. Use t=0 from the same replay for the first view and fixed t_loss-2 and t_loss views for all three targets.",
+  "stopping": "Replay four listed cases from t=0 to t=500 with the registered input. The earlier t=240 bath decision is the same. Stop a tracked one-to-one lineage at its first failure, with no re-anchoring. Keep all listed targets and controls, all comparison windows and all missing categories. Use the archived 2 tau trajectory on its own if an exact shared-state replay cannot be verified.",
+  "tracked_inputs": [
+    "research/campaigns/20261120-atom-contact-lineage/study.py",
+    "research/campaigns/20261120-binary-boundary-exchange/run.py",
+    "research/campaigns/20261120-binary-boundary-exchange/fluid.cpp",
+    "tools/study_record.py"
+  ],
+  "previous_archive": "research/campaigns/20261120-periodic-boundary-confirmation",
+  "protocol": {
+    "quench": 32,
+    "fork": 240,
+    "end": 500,
+    "sample": 0.5,
+    "collision_rate": 0.3,
+    "hot_temperature": 1.9,
+    "cold_temperature_K": 117.5,
+    "krypton_fraction": 0.6,
+    "smooth_sigma": 1,
+    "minimum_component_volume": 80,
+    "overlap_min": 0.5,
+    "minimum_displacement": 2,
+    "residence_frames": 3,
+    "comparison_start": 320,
+    "composition_block_edges": [
+      320,
+      380,
+      440,
+      500
+    ],
+    "minimum_core_count": 10,
+    "integrator": "Mass-weighted velocity Verlet in double precision. Each pair is force-shifted to zero at 3.5 of its own sigma. Independent end-of-step Maxwell redraws use 1-exp(-0.30 dt) and record signed energy transfer. After isolation redraw probability is zero. The neighbour radii each include a 0.6 sigma_Ar buffer.",
+    "storage": "Atom index persists, species 0=light and 1=heavy. Native little-endian snapshots and ledgers are stored as compressed NumPy arrays. Each float64 position is archived as floor(x/L*65536) for observation and read at the midpoint. Exact float64 arrays include t=0 and (for paired histories) positions and velocities at their common fork. The integrator does not consume the snapshot format.",
+    "core_depth": 2.0
+  },
+  "material": {
+    "parameter_source": "https://doi.org/10.1063/1.4824140",
+    "parameter_location": "Miller et al. Table I, pair model for transport, with independently chosen linear force shift and pair-specific cutoff in this study",
+    "boltzmann_J_per_K": 1.380649e-23,
+    "ar_mass_kg": 6.634e-26,
+    "kr_mass_kg": 1.3915e-25,
+    "pairs_ar_ar_ar_kr_kr_kr": [
+      {
+        "sigma_m": 3.405e-10,
+        "epsilon_J": 1.654e-21
+      },
+      {
+        "sigma_m": 3.519e-10,
+        "epsilon_J": 1.952e-21
+      },
+      {
+        "sigma_m": 3.663e-10,
+        "epsilon_J": 2.305e-21
+      }
+    ]
+  },
+  "real_material_reference": {
+    "temperature_K": 117.5,
+    "ar_saturation_rows_K_MPa": [
+      [
+        117.468,
+        1.05168
+      ],
+      [
+        117.599,
+        1.05967
+      ]
+    ],
+    "kr_saturation_rows_K_MPa": [
+      [
+        117.181,
+        0.0826158
+      ],
+      [
+        118.472,
+        0.0917016
+      ]
+    ],
+    "interpolation": "Linear in ln(P) versus 1/T. For ideal solutions and ideal vapor, y_Kr = x_Kr P*_Kr / (x_Kr P*_Kr + (1-x_Kr) P*_Ar). This ignores finite size, nonideal mixing and curved interfaces. Binary partitioning abundance is not inferred from isotope ratios.",
+    "ar_webbook": "https://webbook.nist.gov/cgi/fluid.cgi?ID=C7440371&Action=Page",
+    "kr_webbook": "https://webbook.nist.gov/cgi/fluid.cgi?ID=C7439909&Action=Page",
+    "ar_eos": "https://doi.org/10.1063/1.556037",
+    "kr_eos": "https://doi.org/10.1021/je050186n",
+    "binary_bubble_pressure_115_77_K": "https://doi.org/10.1039/TF9676300855",
+    "binary_compositions_other_temperatures": "https://www.sciencedirect.com/science/article/pii/0378437175900424",
+    "binary_isotope_experiment_117_5_K": "https://www.osti.gov/servlets/purl/7212128"
+  },
+  "targets": {
+    "large-94201-bath": 352.0,
+    "large-94201-isolated": 268.0,
+    "large-94207-isolated": 362.0
+  },
+  "controls": [
+    "warm-94201",
+    "higher-density-94201-isolated",
+    "small-94213-isolated"
+  ],
+  "contact_schemes": {
+    "main": {
+      "radius": 1.8,
+      "coordination": 8
+    },
+    "shorter-radius": {
+      "radius": 1.7,
+      "coordination": 8
+    },
+    "longer-radius": {
+      "radius": 1.9,
+      "coordination": 8
+    },
+    "lower-coordination": {
+      "radius": 1.8,
+      "coordination": 7
+    },
+    "higher-coordination": {
+      "radius": 1.8,
+      "coordination": 9
+    }
+  },
+  "lineage": {
+    "minimum_component_atoms": 48,
+    "minimum_shared_atoms": 24,
+    "branch_fraction": 0.2,
+    "branch_coverage": 0.6,
+    "branch_majority": 0.5,
+    "reciprocal_majority": 0.5,
+    "anchor_tau": 240.0,
+    "end_tau": 500.0,
+    "original_interval_tau": 2.0,
+    "window_tau": 6.0,
+    "persistence_tau": 2.0,
+    "wide_pair_half_width_tau": 4.0
+  },
+  "cases": {
+    "large-94201-bath": {
+      "group": "large-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "large-94201-isolated": {
+      "group": "large-94201",
+      "seed": 94201,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    },
+    "large-94207-bath": {
+      "group": "large-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "bath",
+      "model": "ar-kr"
+    },
+    "large-94207-isolated": {
+      "group": "large-94207",
+      "seed": 94207,
+      "cells": 9,
+      "length": 28.8,
+      "lattice_spacing": 3.2,
+      "dt": 0.004,
+      "cutoff": 3.5,
+      "mode": "isolated",
+      "model": "ar-kr"
+    }
+  }
+}
