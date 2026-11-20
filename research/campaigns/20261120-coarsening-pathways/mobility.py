@@ -5,7 +5,7 @@ import argparse
 from itertools import product
 from pathlib import Path
 
-from extend import HERE, PLAN, read_json, run_phase, trials_for as extent_trials
+from coarsening_runs import HERE, PLAN, read_json, run_phase, trials_for as extent_trials
 from run import Trial
 
 MOBILITY_PLAN = HERE / "MOBILITY_REGISTRATION.json"
