@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-20",
+  "question": "At fixed chemical transition rates and local reservoir parameters, how does selectively changing the permitted hopping frequency of each material conformation affect late spatial lengths, region count, and realized chemistry?",
+  "preregistration": "Frozen before mobility histories or any new length measurements. Reuse the N48/T3000 uniform_minus reference through T1800. Retain all histories. Same initial state by case at each seed and physical settings at t=0.",
+  "N": 48,
+  "T": 1800,
+  "seeds": [
+    4111,
+    4241,
+    4513
+  ],
+  "phase": "mobility",
+  "histories": 6,
+  "cases": [
+    {
+      "id": "slow_I",
+      "D_I": 25
+    },
+    {
+      "id": "slow_B",
+      "D_B": 25
+    }
+  ],
+  "reference": {
+    "id": "uniform_minus",
+    "D_I": 100,
+    "D_B": 100,
+    "archive_panel": "extent",
+    "T": 3000
+  },
+  "windows": [
+    [
+      840,
+      1200
+    ],
+    [
+      1440,
+      1800
+    ]
+  ],
+  "results": "In each seed, report paired changes in spectral length, half-correlation, resolved count at both thresholds, width-4 variance, B fraction, work rate, and gross and signed reaction rates. The intervention only rescales existing detailed-balance-compatible hops in one conformation. If abs(delta B) exceeds 0.02 label the contrast as combined transport/composition. With a smaller difference detailed composition and reaction kinetics can still vary; do not treat comparisons as proof of independent slopes or a microscopic mechanism.",
+  "bounds": "Diffusion of the solvent-proxy fuel and waste and both chemical pathways keep their original parameters. Vary the rate of forward and reverse hops together; no orientation, region label, or configured boundary is used."
+}
